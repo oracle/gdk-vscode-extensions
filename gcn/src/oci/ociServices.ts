@@ -5,6 +5,7 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
+import * as vscode from 'vscode';
 import * as model from '../model';
 import * as nodes from '../nodes';
 import * as ociSupport from './ociSupport';
@@ -16,6 +17,9 @@ export class ServicePlugin {
 
     constructor(serviceType: string) {
         this.serviceType = serviceType;
+    }
+
+    initialize(_folder: vscode.WorkspaceFolder, _data : any, _dataChanged : ociSupport.DataChanged) : any {
     }
 
     getServiceType() {
@@ -38,14 +42,33 @@ export class ServicePlugin {
 
 export class OciServices implements model.CloudServices {
 
-    private oci: ociContext.Context;
-    private data: any;
-    // private dataChanged: ociSupport.DataChanged;
+    private readonly oci: ociContext.Context;
+    private readonly data: any;
+    private readonly dataChanged: ociSupport.DataChanged;
 
-    constructor(oci: ociContext.Context, data: any, _dataChanged: ociSupport.DataChanged) {
+    constructor(oci: ociContext.Context, folder : vscode.WorkspaceFolder, data: any, dataChanged: ociSupport.DataChanged) {
         this.oci = oci;
         this.data = data;
-        // this.dataChanged = dataChanged;
+        this.dataChanged = dataChanged;
+
+    
+        let saveData : boolean = false;
+        for (const featurePlugin of ociSupport.SERVICE_PLUGINS) {
+            const featureData = this.data.services?.[featurePlugin.getServiceType()] || {};
+
+            const createdData : any = featurePlugin.initialize(folder, featureData, () => {
+                this.data.services[featurePlugin.getServiceType()] = createdData;
+                this.dataChanged();
+            }) || featureData;
+
+            if (createdData != featureData) {
+                this.data.services[featurePlugin.getServiceType()] = createdData;
+                saveData = true;
+            }
+        }
+        if (saveData) {
+            dataChanged();
+        }
     }
 
     buildNodes(treeChanged: nodes.TreeChanged): nodes.BaseNode[] {

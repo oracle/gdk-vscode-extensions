@@ -6,6 +6,8 @@
  */
 
 import * as nodes from './nodes';
+import * as vscode from 'vscode';
+
 
 export class ServicesConfiguration {
 
@@ -48,7 +50,7 @@ export interface CloudSupport {
 
     deployFolders(): Promise<DeployResult | undefined>
 
-    getServices(configuration: ServicesConfiguration): CloudServices | undefined;
+    getServices(folder : vscode.WorkspaceFolder, configuration: ServicesConfiguration): CloudServices | undefined;
 
 }
 

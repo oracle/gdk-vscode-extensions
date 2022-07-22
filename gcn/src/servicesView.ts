@@ -35,7 +35,7 @@ export async function rebuild() {
                 for (const configuration of configurations) {
                     const cloudSupport = getCloudSupport(configuration.getType());
                     if (cloudSupport) {
-                        const supportServices = cloudSupport.getServices(configuration);
+                        const supportServices = cloudSupport.getServices(folder, configuration);
                         if (supportServices) {
                             const folderServicesNode = new FolderServicesNode(configuration.getName(), supportServices, treeChanged);
                             serviceNodes.push(folderServicesNode);
