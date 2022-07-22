@@ -94,11 +94,11 @@ export async function populateNewRepository(address: string, source: string): Pr
         return `git checkout master: ${err}`;
     }
     try {
-        const command = `${gitPath} add *`;
+        const command = `${gitPath} add .`;
         // console.log('>>> ' + command + ' in ' + source);
         await execute(command, source);
     } catch (err) {
-        return `git add *: ${err}`;
+        return `git add: ${err}`;
     }
     try {
         const command = `${gitPath} commit -m "Initial commit from VS Code"`;
