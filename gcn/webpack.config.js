@@ -10,7 +10,6 @@ const config = {
 
     entry: {
         extension: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
-        debug: './src/extension.ts'
     },
     output: { // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
         path: path.resolve(__dirname, 'dist'),
@@ -20,20 +19,15 @@ const config = {
     },
     devtool: 'source-map',
     externals: {
-        vscode: "commonjs vscode", // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
-        bufferutil: "bufferutil",
-        "utf-8-validate": "utf-8-validate",
+        vscode: "commonjs vscode" // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
     },
     resolve: { // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
-        extensions: ['.ts', '.js'],
-        symlinks: false,
-        mainFields: ['main', 'module']
+        extensions: ['.ts', '.js']
     },
     module: {
         rules: [{
             test: /\.ts$/,
             exclude: /node_modules/,
-            include: path.resolve(__dirname, 'src'),
             use: [{
                 loader: 'ts-loader',
             }]

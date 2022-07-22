@@ -156,11 +156,11 @@ class ContainerRepositoryNode extends nodes.AsyncNode {
 
 class ContainerImageNode extends nodes.BaseNode {
 
-    private ocid: string;
+    // private ocid: string;
 
-    constructor(ocid: string, displayName: string, imageDescription?: string) {
+    constructor(_ocid: string, displayName: string, imageDescription?: string) {
         super(displayName, imageDescription, 'gcn.oci.containerImageNode', undefined, undefined);
-        this.ocid = ocid;
+        // this.ocid = ocid;
         this.iconPath = new vscode.ThemeIcon('primitive-square');
         this.updateAppearance();
     }

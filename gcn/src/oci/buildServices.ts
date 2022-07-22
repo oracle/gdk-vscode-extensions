@@ -94,7 +94,6 @@ class ProjectBuildPipelinesNode extends nodes.AsyncNode {
     constructor(displayName: string | undefined, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
         super(displayName ? displayName : 'Build', undefined, 'gcn.oci.projectBuildPipelinesNode', treeChanged);
         this.oci = oci;
-        // this.iconPath = new vscode.ThemeIcon('debug-line-by-line');
         this.iconPath = new vscode.ThemeIcon('play-circle');
         this.updateAppearance();
     }
@@ -125,7 +124,6 @@ class CustomBuildPipelinesNode extends nodes.AsyncNode {
     constructor(displayName: string | undefined, items: any, treeChanged: nodes.TreeChanged) {
         super(displayName ? displayName : 'Build (Custom)', undefined, 'gcn.oci.customBuildPipelinesNode', treeChanged);
         this.items = items;
-        // this.iconPath = new vscode.ThemeIcon('debug-line-by-line');
         this.iconPath = new vscode.ThemeIcon('play-circle');
         this.updateAppearance();
     }
@@ -142,12 +140,11 @@ class CustomBuildPipelinesNode extends nodes.AsyncNode {
 
 class BuildPipelineNode extends nodes.BaseNode {
 
-    private ocid: string;
+    // private ocid: string;
 
-    constructor(ocid: string, displayName: string) {
+    constructor(_ocid: string, displayName: string) {
         super(displayName, undefined, 'gcn.oci.buildPipelineNode', undefined, undefined);
-        this.ocid = ocid;
-        // this.iconPath = new vscode.ThemeIcon('debug-line-by-line');
+        // this.ocid = ocid;
         this.iconPath = new vscode.ThemeIcon('play-circle');
         this.updateAppearance();
     }

@@ -281,14 +281,14 @@ class ArtifactRepositoryNode extends nodes.AsyncNode {
 
 class ProjectArtifactNode extends nodes.BaseNode {
 
-    private ocid: string;
+    // private ocid: string;
 
-    constructor(ocid: string, displayName: string, description?: string, tooltip?: string) {
+    constructor(_ocid: string, displayName: string, description?: string, tooltip?: string) {
         super(displayName, undefined, 'gcn.oci.projectArtifactNode', undefined, undefined);
-        this.ocid = ocid;
+        // this.ocid = ocid;
         this.iconPath = new vscode.ThemeIcon('file-binary');
         this.description = description;
-        this.tooltip = tooltip ? `${this.label}: ${tooltip}` : this.label;
+        this.tooltip = tooltip ? `${this.label}: ${tooltip}` : this.label as string;
     }
 
     // download() {

@@ -150,11 +150,11 @@ class KnowledgeBaseNode extends nodes.AsyncNode {
 
 class AuditReportNode extends nodes.BaseNode {
 
-    private ocid: string;
+    // private ocid: string;
 
-    constructor(ocid: string, displayName: string, vulnerableArtifactsCount: number) {
+    constructor(_ocid: string, displayName: string, vulnerableArtifactsCount: number) {
         super(displayName, vulnerableArtifactsCount === 0 ? undefined : `(${vulnerableArtifactsCount} ${vulnerableArtifactsCount === 1 ? 'problem' : 'problems'})`, 'gcn.oci.auditReportNode', undefined, undefined);
-        this.ocid = ocid;
+        // this.ocid = ocid;
         this.iconPath = new vscode.ThemeIcon('primitive-dot', new vscode.ThemeColor(vulnerableArtifactsCount === 0 ? 'charts.green' : 'charts.red'));
         this.updateAppearance();
     }

@@ -40,12 +40,12 @@ export class OciServices implements model.CloudServices {
 
     private oci: ociContext.Context;
     private data: any;
-    private dataChanged: ociSupport.DataChanged;
+    // private dataChanged: ociSupport.DataChanged;
 
-    constructor(oci: ociContext.Context, data: any, dataChanged: ociSupport.DataChanged) {
+    constructor(oci: ociContext.Context, data: any, _dataChanged: ociSupport.DataChanged) {
         this.oci = oci;
         this.data = data;
-        this.dataChanged = dataChanged;
+        // this.dataChanged = dataChanged;
     }
 
     buildNodes(treeChanged: nodes.TreeChanged): nodes.BaseNode[] {

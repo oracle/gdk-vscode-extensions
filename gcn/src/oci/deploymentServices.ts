@@ -66,11 +66,11 @@ function buildItemNodes(items: any): nodes.BaseNode[] {
 
 class ProjectDeploymentPipelinesNode extends nodes.AsyncNode {
 
-    private oci: ociContext.Context;
+    // private oci: ociContext.Context;
 
-    constructor(displayName: string | undefined, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
+    constructor(displayName: string | undefined, _oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
         super(displayName ? displayName : 'Build', undefined, 'gcn.oci.projectDeploymentPipelinesNode', treeChanged);
-        this.oci = oci;
+        // this.oci = oci;
         this.iconPath = new vscode.ThemeIcon('rocket');
         this.updateAppearance();
     }
@@ -115,11 +115,11 @@ class CustomDeploymentPipelinesNode extends nodes.AsyncNode {
 
 class DeploymentPipelineNode extends nodes.BaseNode {
 
-    private ocid: string;
+    // private ocid: string;
 
-    constructor(ocid: string, displayName: string) {
+    constructor(_ocid: string, displayName: string) {
         super(displayName, undefined, 'gcn.oci.deploymentPipelineNode', undefined, undefined);
-        this.ocid = ocid;
+        // this.ocid = ocid;
         this.iconPath = new vscode.ThemeIcon('rocket');
         this.updateAppearance();
     }

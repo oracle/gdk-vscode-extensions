@@ -10,7 +10,7 @@
 		"name": "Oracle Labs"
 	},
 	"icon": "images/graalvm-cloud-logo.png",
-	"homepage": "https://github.com/graalvm/vscode-extensions/blob/master/graalvm/README.md",
+	"homepage": "https://github.com/graalvm/vscode-extensions/blob/master/gcn/README.md",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/graalvm/vscode-extensions.git"
@@ -23,19 +23,15 @@
 	},
 	"categories": [
 		"Programming Languages",
-		"Debuggers",
-		"Snippets",
 		"Other"
 	],
 	"keywords": [
 		"java",
-		"polyglot",
-		"graalvm",
-		"truffle",
+		"cloud",
 		"native image"
 	],
 	"activationEvents": [
-		"*"
+		"onView:gcn-services"
 	],
 	"main": "./dist/extension",
 	"contributes": {
@@ -94,34 +90,23 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "webpack --mode production",
-		"compile": "tsc -p ./",
-		"webpack": "webpack --mode development",
+		"compile": "webpack --mode development",
 		"info": "webpack --display-modules",
 		"watch": "webpack --mode development --watch",
+		"test-compile": "tsc -p ./",
 		"lint": "tslint -p ./"
 	},
 	"dependencies": {
-		"decompress": "4.2.1",
-		"mustache": "4.0.1",
 		"oci-sdk": "^2.28.0",
-		"sax": "^1.2.4",
-		"vscode-chrome-debug-core": "^6.8.8",
-		"vscode-kubernetes-tools-api": "^1.0.0",
-		"vscode-languageclient": "^5.2.1",
-		"xml2js": "^0.4.23"
+		"vscode-kubernetes-tools-api": "^1.0.0"
 	},
 	"devDependencies": {
-		"@types/decompress": "^4.2.3",
-		"@types/mocha": "^7.0.2",
-		"@types/mustache": "^4.0.1",
-		"@types/node": "^12.12.30",
-		"@types/sax": "^1.2.1",
+		"@types/node": "^12.12.0",
 		"@types/vscode": "^1.49.0",
-		"@types/xml2js": "^0.4.8",
 		"@vscode/codicons": "0.0.20",
+		"typescript": "^3.3.1",
+		"tslint": "^5.12.1",
 		"ts-loader": "^6.2.1",
-		"tslint": "^6.1.0",
-		"typescript": "^3.8.3",
 		"webpack": "^5.40.0",
 		"webpack-cli": "^4.7.2"
 	}

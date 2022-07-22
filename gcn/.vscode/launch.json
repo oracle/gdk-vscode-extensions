@@ -16,19 +16,6 @@
 			"outFiles": [
 				"${workspaceFolder}/dist/**/*.js"
 			],
-			"preLaunchTask": "npm: webpack"
-		},
-		{
-			"type": "node",
-			"request": "launch",
-			"name": "Run Debug Adapter",
-			"program": "${workspaceFolder}/src/graalVMDebugAdapter.ts",
-			"args": [
-				"--server=4711"
-			],
-			"outFiles": [
-				"${workspaceFolder}/out/**/*.js"
-			],
 			"preLaunchTask": "npm: compile"
 		}
 	]
