@@ -10,16 +10,31 @@ import * as nodes from '../nodes';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociServices from './ociServices';
+import * as ociSupport from './ociSupport';
 
-export function createFeaturePlugins(_context: vscode.ExtensionContext): ociServices.ServicePlugin[] {
-    // TODO: initialize actions using context
-    return [ new Plugin() ];
+const audits : Map<vscode.WorkspaceFolder, ProjectAudit> = new Map();
+
+export interface ProjectAudit {
+    
 }
 
+export function createFeaturePlugins(_context: vscode.ExtensionContext): ociServices.ServicePlugin[] {
+    const p : Plugin = new Plugin();
+    // TODO: initialize actions using context
+    return [ p ];
+}
+
+
+
 class Plugin extends ociServices.ServicePlugin {
+    private folder : vscode.WorkspaceFolder | undefined;
 
     constructor() {
         super('knowledgeBases');
+    }
+
+    initialize(folder : vscode.WorkspaceFolder, data : any, changed : ociSupport.DataChanged) {
+        this.folder = folder;
     }
 
     buildInline(oci: ociContext.Context, knowledgeBases: any, treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {

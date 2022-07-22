@@ -14,6 +14,7 @@ import * as projectUtils from '../projectUtils';
 import * as importUtils from './importUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
+import * as devops from 'oci-devops';
 
 export type SaveConfig = (folder: string, config: any) => boolean;
 
@@ -118,7 +119,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                     resolve(`Failed to create source code repository ${repositoryName}.`);
                     return;
                 }
-                const codeRepositoryUrl = codeRepository.httpUrl; // TODO: ssl
+                const codeRepositoryUrl = codeRepository.sshUrl; // TODO: ssl
                 if (!codeRepositoryUrl) {
                     resolve(`Failed to resolve URL of source code repository ${repositoryName}.`);
                     return;
@@ -207,6 +208,16 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                     return;
                 }
 
+                // --- Create a default knowledgebase; tie it to a project + mark so it can be recognized later
+                // displayName must match ".*(?:^[a-zA-Z_](-?[a-zA-Z_0-9])*$).*"
+                progress.report({
+                    message: `Creating ADM knowledge base for ${projectName}...`
+                });
+                const knowledgeBaseOCID = await ociUtils.createKnowledgeBase(provider, compartment, `Audits-for-${projectName}`, {
+                    "gcn_tooling_projectOCID" : project,
+                    "gcn_tooling_usage" : "gcn-adm-audit"
+                });
+
                 // --- Store cloud services configuration (.vscode/gcn.json)
                 progress.report({
                     message: `Configuring project services for ${repositoryName}...`
@@ -228,7 +239,12 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                                 'displayName': 'Build Native Image'
                             }
                         ]
-                    }
+                    },
+                    knowledgeBases: {
+                        settings: {
+                            sourceKnowledgeBase: knowledgeBaseOCID
+                        }
+                    },
                 };
                 const saved = saveConfig(repositoryDir, data);
                 if (!saved) {

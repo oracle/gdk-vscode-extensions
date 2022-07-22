@@ -12,6 +12,7 @@ import * as artifacts from 'oci-artifacts';
 import * as adm from 'oci-adm';
 import * as ons from 'oci-ons';
 import * as logging from 'oci-logging';
+import { v4 as uuid} from 'uuid';
 
 const DEFAULT_NOTIFICATION_TOPIC = 'NotificationTopic';
 const DEFAULT_LOG_GROUP = 'Default_Group';
@@ -238,11 +239,116 @@ export async function listNotificationTopics(authenticationDetailsProvider: comm
     }
 }
 
+/**
+ * Waits for the work request ID to complete. The request is expected to work with a single resource only. The function terminates when the resource reaches 
+ * either the success status, or one of the failure status(es). The returned Promise completes on Succeeded status with the resource's OCID; if the request
+ * completes with Canceled or Failed status, the Promise will be rejected with an error that describes the state.
+ * 
+ * @param requestId the work request ID from the original operation
+ * @param resourceDescription description of the resource operated on, for error reporting
+ * @returns promise that will be completed with the operated resource's OCID after it finishes to Succeeded status.
+ */
+export async function waitForResourceCompletionStatus(
+    authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider,
+    resourceDescription : string, requestId : string) : Promise<string> {
+    
+    // TODO: handle timeout, use increasing polling time.
+    const idClient = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const req : identity.requests.GetWorkRequestRequest = {
+        workRequestId : requestId
+    };
+
+    let requestState : identity.models.WorkRequest | undefined;
+
+    // TODO: make this configurable, in vscode/workspace options
+    const maxWaitingTimeMillis = 60 * 1000; 
+    const initialPollTime = 2000;
+    W: for (let waitCount = (maxWaitingTimeMillis / initialPollTime); waitCount > 0; waitCount--) {
+        const response = await idClient.getWorkRequest(req);
+        switch (response.workRequest.status) {
+            case identity.models.WorkRequest.Status.Succeeded:
+            case identity.models.WorkRequest.Status.Failed:
+            case identity.models.WorkRequest.Status.Canceled:
+                requestState = response.workRequest;
+                break W;
+        }
+        await delay(2000);
+    }
+    if (!requestState) {
+        throw `Timeout while creating ${resourceDescription}`;
+    }
+    if (requestState.status !== identity.models.WorkRequest.Status.Succeeded) {
+        // PENDING: make some abortion exception that can carry WorkRequest errors, should be caught top-level & reported to the user instead of plain message.
+        let msg : string = `Creation of ${resourceDescription} failed`;
+        let errors = requestState.errors?.map(e => e.message)?.join(". ");
+        if (errors) {
+            msg += errors;
+        }
+        throw msg;
+    }
+    if (requestState.resources?.length != 1) {
+        // PENDING: should throw some hard error
+        throw `Unexpected number of items created for ${resourceDescription}`;
+    }
+    return requestState.resources[0].identifier;
+}
+
+export async function createKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, 
+    compartmentID: string, displayName : string, flags? : { [key:string] : string } | undefined) :Promise<string | undefined> {
+    const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    
+    // PENDING: displayName must match ".*(?:^[a-zA-Z_](-?[a-zA-Z_0-9])*$).*" -- transliterate invalid characters in name
+    const request : adm.requests.CreateKnowledgeBaseRequest = {
+        createKnowledgeBaseDetails : {
+            "compartmentId" : compartmentID,
+            "displayName": displayName
+        }
+    }
+
+    // Because I can't query GetWorkRequest despite ID is available, I'll mark the Knowledgebase with some UUID, then
+    // search for such created knowledgebase
+    const id = uuid();
+    if (!flags) {
+        flags = {};
+    }
+    flags['gcn_tooling_creationid'] = id;
+
+    if (flags) {
+        request.createKnowledgeBaseDetails.freeformTags = flags;
+    }
+
+    const resp = await client.createKnowledgeBase(request);
+
+    // Since GetWorkRequest does not fork for some reason, let's do it this way:
+    const maxWaitingTimeMillis = 60 * 1000; 
+    const initialPollTime = 2000;
+    W: for (let waitCount = (maxWaitingTimeMillis / initialPollTime); waitCount > 0; waitCount--) {
+        const lst = await listKnowledgeBases(authenticationDetailsProvider, compartmentID);
+        const found = lst?.knowledgeBaseCollection?.items.find(kb => kb.freeformTags['gcn_tooling_creationid'] === id);
+        if (found) {
+            return found.id;
+        }
+        await delay(2000);
+    }
+
+    // return waitForResourceCompletionStatus(authenticationDetailsProvider, `Knowledge base ${displayName}`, resp.opcWorkRequestId);
+    throw `Timeout while creating ${displayName}`;
+}
+
 export async function createDefaultNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<ons.responses.CreateTopicResponse | undefined> {
     try {
+        const idClient = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const getCompartmentsRequest: identity.requests.GetCompartmentRequest = {
+          compartmentId: compartmentID,
+        };
+        // PENDING: Creating a notification with a name already used within the tenancy (although in a different compartment) fails - whether it is a feature or a bug is not known.
+        // Let's default the name to <Compartment-Name>+constant -- althoug even compartment name may not be unique (same name in 2 different parents). Should be the OCID there :) ?
+        const resp = await idClient.getCompartment(getCompartmentsRequest);
+        const compName : string = resp.compartment.name
+
         const client = new ons.NotificationControlPlaneClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createTopicDetails = {
-            name: DEFAULT_NOTIFICATION_TOPIC,
+            name: compName + DEFAULT_NOTIFICATION_TOPIC,
             compartmentId: compartmentID,
             description: "Default notification topic created from VS Code"
         };

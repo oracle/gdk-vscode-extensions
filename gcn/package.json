@@ -97,6 +97,7 @@
 		"lint": "tslint -p ./"
 	},
 	"dependencies": {
+		"@types/uuid": "^8.3.4",
 		"oci-sdk": "^2.28.0",
 		"vscode-kubernetes-tools-api": "^1.0.0"
 	},
