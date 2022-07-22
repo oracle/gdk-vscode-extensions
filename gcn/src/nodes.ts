@@ -42,7 +42,7 @@ export class BaseNode extends vscode.TreeItem {
     }
 
     public updateAppearance() {
-        this.tooltip = this.description ? `${this.label}: ${this.description}` : this.label as string;
+        this.tooltip = this.description ? `${this.label}: ${this.description}` : (typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label);
     }
 
 }

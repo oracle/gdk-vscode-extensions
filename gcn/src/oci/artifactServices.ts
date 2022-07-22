@@ -288,7 +288,7 @@ class ProjectArtifactNode extends nodes.BaseNode {
         // this.ocid = ocid;
         this.iconPath = new vscode.ThemeIcon('file-binary');
         this.description = description;
-        this.tooltip = tooltip ? `${this.label}: ${tooltip}` : this.label as string;
+        this.tooltip = tooltip ? `${this.label}: ${tooltip}` : (typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label);
     }
 
     // download() {
