@@ -1,0 +1,54 @@
+version: 0.1
+component: build
+timeoutInSeconds: 15000
+runAs: root
+shell: bash
+env:
+  variables:
+    GRAALVM_DOWNLOAD_ADDRESS: https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-22.1.0/graalvm-ce-java11-linux-amd64-22.1.0.tar.gz
+  exportedVariables:
+    - JAVA_HOME
+    - GRAALVM_HOME
+steps:
+  - type: Command
+    name: "Setup"
+    timeoutInSeconds: 40
+    command: |
+      chmod 777 ./mvnw
+      GRAALVM_FILENAME="graalvm.tar.gz"
+      TMP_DIR=${OCI_PRIMARY_SOURCE_DIR}/tmp
+      mkdir ${TMP_DIR}
+      curl -4 -L ${GRAALVM_DOWNLOAD_ADDRESS} -o ${TMP_DIR}/${GRAALVM_FILENAME}
+      export JAVA_HOME=${OCI_PRIMARY_SOURCE_DIR}/graalvm
+      export GRAALVM_HOME=${JAVA_HOME}
+      mkdir ${GRAALVM_HOME}
+      tar -zxvf ${TMP_DIR}/${GRAALVM_FILENAME} -C ${GRAALVM_HOME} --strip-components=1
+      rm -rf ${TMP_DIR}
+  - type: Command
+    timeoutInSeconds: 600
+    name: "Compile"
+    command: |
+      ./mvnw compile
+    onFailure:
+      - type: Command
+        command: |
+          echo "Handling Failure"
+          echo "Failure successfully handled"
+        timeoutInSeconds: 40
+        runAs: root
+  - type: Command
+    timeoutInSeconds: 600
+    name: "Package"
+    command: |
+      ./mvnw package
+    onFailure:
+      - type: Command
+        command: |
+          echo "Handling Failure"
+          echo "Failure successfully handled"
+        timeoutInSeconds: 40
+        runAs: root
+outputArtifacts:
+  - name: MicronautMavenApp_dev_fatjar
+    type: BINARY
+    location: ${OCI_PRIMARY_SOURCE_DIR}/target/${{project_devbuild_artifact}}
