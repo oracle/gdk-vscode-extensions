@@ -22,12 +22,12 @@ class Plugin extends ociServices.ServicePlugin {
         super('buildPipelines');
     }
 
-    buildInline(_oci: ociContext.Context, buildPipelines: any, _treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
+    buildInline(_oci: ociContext.Context, buildPipelines: any, treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
         const items = buildPipelines.inline;
         if (!items || items.length === 0) {
             return undefined;
         }
-        const itemNodes = buildItemNodes(items);
+        const itemNodes = buildItemNodes(items, treeChanged);
         return itemNodes;
     }
 
@@ -76,12 +76,12 @@ class Plugin extends ociServices.ServicePlugin {
 
 }
 
-function buildItemNodes(items: any): nodes.BaseNode[] {
+function buildItemNodes(items: any, treeChanged: nodes.TreeChanged): nodes.BaseNode[] {
     const itemNodes: nodes.BaseNode[] = [];
     for (const item of items) {
         const ocid = item.ocid;
         const displayName = item.displayName;
-        const buildPipelineNode = new BuildPipelineNode(ocid, displayName);
+        const buildPipelineNode = new BuildPipelineNode(displayName, ocid, treeChanged);
         itemNodes.push(buildPipelineNode);
     }
     return itemNodes;
@@ -108,7 +108,7 @@ class ProjectBuildPipelinesNode extends nodes.AsyncNode {
             for (const buildPipeline of buildPipelines) {
                 const ocid = buildPipeline.id;
                 const displayName = buildPipeline.displayName;
-                children.push(new BuildPipelineNode(ocid, displayName ? displayName : `Build Pipeline ${idx++}`));
+                children.push(new BuildPipelineNode(displayName ? displayName : `Build Pipeline ${idx++}`, ocid, this.treeChanged));
             }
             return children;
         }
@@ -130,7 +130,7 @@ class CustomBuildPipelinesNode extends nodes.AsyncNode {
 
     async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
         if (this.items?.length > 0) {
-            const itemNodes = buildItemNodes(this.items);
+            const itemNodes = buildItemNodes(this.items, this.treeChanged);
             return itemNodes;
         }
         return [ new nodes.NoItemsNode() ];
@@ -138,12 +138,12 @@ class CustomBuildPipelinesNode extends nodes.AsyncNode {
 
 }
 
-class BuildPipelineNode extends nodes.BaseNode {
+class BuildPipelineNode extends nodes.ChangeableNode {
 
     // private ocid: string;
 
-    constructor(_ocid: string, displayName: string) {
-        super(displayName, undefined, 'gcn.oci.buildPipelineNode', undefined, undefined);
+    constructor(displayName: string, _ocid: string, treeChanged: nodes.TreeChanged) {
+        super(displayName, undefined, 'gcn.oci.buildPipelineNode', undefined, undefined, treeChanged);
         // this.ocid = ocid;
         this.iconPath = new vscode.ThemeIcon('play-circle');
         this.updateAppearance();

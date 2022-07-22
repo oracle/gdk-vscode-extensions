@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode';
 
-export type TreeChanged = () => void;
+export type TreeChanged = (tree?: vscode.TreeItem) => void;
 
 export class BaseNode extends vscode.TreeItem {
 
@@ -47,15 +47,20 @@ export class BaseNode extends vscode.TreeItem {
 
 }
 
-export class AsyncNode extends BaseNode {
+export class ChangeableNode extends BaseNode {
 
-    treeChanged: TreeChanged;
+    constructor(label: string, description: string | undefined, contextValue: string | undefined, children: BaseNode[] | undefined | null, expanded: boolean | undefined, protected readonly treeChanged: TreeChanged) {
+        super(label, description, contextValue, children, expanded);
+    }
+
+}
+
+export class AsyncNode extends ChangeableNode {
 
     constructor(label: string, description: string | undefined, contextValue: string | undefined, treeChanged: TreeChanged) {
-        super(label, description, contextValue, null, false);
+        super(label, description, contextValue, null, false, treeChanged);
         this.description = description;
         this.contextValue = contextValue;
-        this.treeChanged = treeChanged;
     }
 
     public getChildren(): BaseNode[] | undefined {

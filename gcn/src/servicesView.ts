@@ -22,8 +22,8 @@ export async function rebuild() {
     const folders = vscode.workspace.workspaceFolders;
     const folderNodes: FolderNode[] = [];
     if (folders) {
-        const treeChanged: nodes.TreeChanged = () => {
-            nodeProvider.refresh()
+        const treeChanged: nodes.TreeChanged = (tree?: vscode.TreeItem) => {
+            nodeProvider.refresh(tree);
         }
         for (const folder of folders) {
             // folderStorage.createSampleConfiguration(folder);
@@ -125,8 +125,8 @@ class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 
     private roots: FolderNode[] = [];
 
-    refresh() {
-        this._onDidChangeTreeData.fire(undefined);
+    refresh(element?: vscode.TreeItem) {
+        this._onDidChangeTreeData.fire(element);
 	}
 
     setRoots(roots: FolderNode[]) {
@@ -135,7 +135,7 @@ class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     }
 
 	getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
-		return element;
+        return element;
 	}
 
 	getChildren(element?: vscode.TreeItem): vscode.ProviderResult<vscode.TreeItem[]> {
