@@ -35,7 +35,7 @@ export function create(data: any): Context {
         return new Context(undefined, undefined, undefined, undefined, `Failed to initialize authorization provider: ${err}`);
     }
     const context = data.context;
-    return new Context(provider, context.compartment, context.devopsProject, context.codeRepository);
+    return new Context(provider, context.compartment?.ocid, context.devopsProject?.ocid, context.codeRepository?.ocid);
 }
 
 export class Context  {

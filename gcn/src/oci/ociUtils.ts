@@ -21,14 +21,27 @@ export async function listCompartments(authenticationDetailsProvider: common.Con
     try {
         const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const listCompartmentsRequest: identity.requests.ListCompartmentsRequest = {
-          compartmentId: authenticationDetailsProvider.getTenantId(),
-          compartmentIdInSubtree: true,
-          lifecycleState: identity.models.Compartment.LifecycleState.Active,
-          accessLevel: identity.requests.ListCompartmentsRequest.AccessLevel.Accessible
+            compartmentId: authenticationDetailsProvider.getTenantId(),
+            compartmentIdInSubtree: true,
+            lifecycleState: identity.models.Compartment.LifecycleState.Active,
+            accessLevel: identity.requests.ListCompartmentsRequest.AccessLevel.Accessible
         };
         return client.listCompartments(listCompartmentsRequest);
     } catch (error) {
         console.log('>>> listCompartments ' + error);
+        return undefined;
+    }
+}
+
+export async function getCompartment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<identity.responses.GetCompartmentResponse | undefined> {
+    try {
+        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const getCompartmentRequest: identity.requests.GetCompartmentRequest = {
+            compartmentId: compartmentID
+        };
+        return client.getCompartment(getCompartmentRequest);
+    } catch (error) {
+        console.log('>>> getCompartment ' + error);
         return undefined;
     }
 }
@@ -240,9 +253,14 @@ export async function listNotificationTopics(authenticationDetailsProvider: comm
 
 export async function createDefaultNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<ons.responses.CreateTopicResponse | undefined> {
     try {
+        // PENDING: Creating a notification with a name already used within the tenancy (although in a different compartment) fails - whether it is a feature or a bug is not known.
+        // Let's default the name to <Compartment-Name>+constant
+        const resp = await getCompartment(authenticationDetailsProvider, compartmentID);
+        const compName : string = resp?.compartment.name || '';
+
         const client = new ons.NotificationControlPlaneClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createTopicDetails = {
-            name: DEFAULT_NOTIFICATION_TOPIC,
+            name: compName + DEFAULT_NOTIFICATION_TOPIC,
             compartmentId: compartmentID,
             description: "Default notification topic created from VS Code"
         };

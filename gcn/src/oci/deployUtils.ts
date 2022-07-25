@@ -118,7 +118,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                     resolve(`Failed to create source code repository ${repositoryName}.`);
                     return;
                 }
-                const codeRepositoryUrl = codeRepository.httpUrl; // TODO: ssl
+                const codeRepositoryUrl = codeRepository.sshUrl; // TODO: https
                 if (!codeRepositoryUrl) {
                     resolve(`Failed to resolve URL of source code repository ${repositoryName}.`);
                     return;
