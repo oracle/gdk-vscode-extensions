@@ -41,6 +41,12 @@
 				"title": "Configure Cloud",
 				"icon": "$(cloud-download)",
 				"category": "GCN"
+			},
+			{
+				"command": "extension.gcn.runBuildPipeline",
+				"title": "Run Build Pipeline",
+				"icon": "$(run)",
+				"category": "GCN"
 			}
 		],
 		"viewsWelcome": [
@@ -83,6 +89,11 @@
 				{
 					"command": "extension.gcn.notImplementedYet",
 					"when": "viewItem == gcn.compartmentNode",
+					"group": "inline@3"
+				},
+				{
+					"command": "extension.gcn.runBuildPipeline",
+					"when": "viewItem == gcn.oci.buildPipelineNode",
 					"group": "inline@3"
 				}
 			]

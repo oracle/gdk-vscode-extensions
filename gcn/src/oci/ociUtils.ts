@@ -12,6 +12,7 @@ import * as artifacts from 'oci-artifacts';
 import * as adm from 'oci-adm';
 import * as ons from 'oci-ons';
 import * as logging from 'oci-logging';
+import * as loggingsearch  from 'oci-loggingsearch';
 
 const DEFAULT_NOTIFICATION_TOPIC = 'NotificationTopic';
 const DEFAULT_LOG_GROUP = 'Default_Group';
@@ -253,14 +254,9 @@ export async function listNotificationTopics(authenticationDetailsProvider: comm
 
 export async function createDefaultNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<ons.responses.CreateTopicResponse | undefined> {
     try {
-        // PENDING: Creating a notification with a name already used within the tenancy (although in a different compartment) fails - whether it is a feature or a bug is not known.
-        // Let's default the name to <Compartment-Name>+constant
-        const resp = await getCompartment(authenticationDetailsProvider, compartmentID);
-        const compName : string = resp?.compartment.name || '';
-
         const client = new ons.NotificationControlPlaneClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createTopicDetails = {
-            name: compName + DEFAULT_NOTIFICATION_TOPIC,
+            name: DEFAULT_NOTIFICATION_TOPIC,
             compartmentId: compartmentID,
             description: "Default notification topic created from VS Code"
         };
@@ -274,16 +270,18 @@ export async function createDefaultNotificationTopic(authenticationDetailsProvid
     }
 }
 
-export async function getOrCreateNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<string | undefined> {
+export async function getNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean): Promise<string | undefined> {
     const notificationTopics = await listNotificationTopics(authenticationDetailsProvider, compartmentID);
     if (notificationTopics) {
         if (notificationTopics.items.length > 0) {
             return notificationTopics.items[0].topicId;
         }
     }
-    const created = await createDefaultNotificationTopic(authenticationDetailsProvider, compartmentID);
-    if (created) {
-        return created.notificationTopic.topicId;
+    if (create) {
+        const created = await createDefaultNotificationTopic(authenticationDetailsProvider, compartmentID);
+        if (created) {
+            return created.notificationTopic.topicId;
+        }
     }
     return undefined;
 }
@@ -323,6 +321,55 @@ export async function listLogGroups(authenticationDetailsProvider: common.Config
     }
 }
 
+export async function listLogs(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, logGroupID: string, resourceID?: string): Promise<logging.responses.ListLogsResponse | undefined> {
+    try {
+        const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+
+        const listLogsRequest: logging.requests.ListLogsRequest = {
+            logGroupId: logGroupID,
+            sourceResource: resourceID
+        };
+
+        return client.listLogs(listLogsRequest);
+    } catch (error) {
+        console.log('>>> listLogs ' + error);
+        return undefined;
+    }
+}
+
+export async function searchLogs(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, logGroupID: string, logID: string, buildRunID: string, timeStart: Date, timeEnd: Date): Promise<loggingsearch.models.SearchResult[] | undefined> {
+    try {
+        const client = new loggingsearch.LogSearchClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+
+        const searchLogsDetails = {
+            timeStart: timeStart,
+            timeEnd: timeEnd,
+            searchQuery: `search "${compartmentID}/${logGroupID}/${logID}" | where data.buildRunId = '${buildRunID}'`,
+            isReturnFieldInfo: false
+        };
+
+        const result: loggingsearch.models.SearchResult[] = [];
+        let nextPage;
+        do {
+            const searchLogsRequest: loggingsearch.requests.SearchLogsRequest = {
+                searchLogsDetails: searchLogsDetails,
+                limit: 1000,
+                page: nextPage
+            };
+            const searchLogsResponse = await client.searchLogs(searchLogsRequest);
+            if (searchLogsResponse.searchResponse.results) {
+                result.push(...searchLogsResponse.searchResponse.results);
+            }
+            nextPage = searchLogsResponse.opcNextPage;
+        } while (nextPage);
+
+        return result;
+    } catch (error) {
+        console.log('>>> searchLogs ' + error);
+        return undefined;
+    }
+}
+
 export async function createDefaultLogGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<logging.responses.CreateLogGroupResponse | undefined> {
     try {
         const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
@@ -341,23 +388,25 @@ export async function createDefaultLogGroup(authenticationDetailsProvider: commo
     }
 }
 
-export async function getOrCreateDefaultLogGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<string | undefined> {
+export async function getDefaultLogGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean): Promise<string | undefined> {
     const logGroup = await listLogGroups(authenticationDetailsProvider, compartmentID, DEFAULT_LOG_GROUP);
     if (logGroup) {
         if (logGroup.items.length > 0) {
             return logGroup.items[0].id;
         }
     }
-    const created = await createDefaultLogGroup(authenticationDetailsProvider, compartmentID);
-    if (created) {
-        // TODO: wait for the work request to be processed
-        await delay(30000);
-        // const request = created.opcWorkRequestId;
+    if (create) {
+        const created = await createDefaultLogGroup(authenticationDetailsProvider, compartmentID);
+        if (created) {
+            // TODO: wait for the work request to be processed
+            await delay(30000);
+            // const request = created.opcWorkRequestId;
 
-        const logGroup = await listLogGroups(authenticationDetailsProvider, compartmentID, DEFAULT_LOG_GROUP);
-        if (logGroup) {
-            if (logGroup.items.length > 0) {
-                return logGroup.items[0].id;
+            const logGroup = await listLogGroups(authenticationDetailsProvider, compartmentID, DEFAULT_LOG_GROUP);
+            if (logGroup) {
+                if (logGroup.items.length > 0) {
+                    return logGroup.items[0].id;
+                }
             }
         }
     }
@@ -528,6 +577,53 @@ export async function createBuildPipelineArtifactsStage(authenticationDetailsPro
         return await client.createBuildPipelineStage(createBuildPipelineStageRequest);
     } catch (error) {
         console.log('>>> createBuildPipelineArtifactsStage ' + error);
+        return undefined;
+    }
+}
+
+export async function listBuildRuns(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, buildPipelineID: string): Promise<devops.responses.ListBuildRunsResponse | undefined> {
+    try {
+        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const listBuildRunsRequest: devops.requests.ListBuildRunsRequest = {
+            buildPipelineId: buildPipelineID,
+            limit: 10
+        };
+        return client.listBuildRuns(listBuildRunsRequest);
+    } catch (error) {
+        console.log('>>> listBuildRuns ' + error);
+        return undefined;
+    }
+}
+
+export async function getBuildRun(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, buildRunID: string): Promise<devops.responses.GetBuildRunResponse | undefined> {
+    try {
+        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const getBuildRunRequest: devops.requests.GetBuildRunRequest = {
+            buildRunId: buildRunID
+        };
+        return client.getBuildRun(getBuildRunRequest);
+    } catch (error) {
+        console.log('>>> getBuildRun ' + error);
+        return undefined;
+    }
+}
+
+export async function createBuildRun(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, name: string, params: { name: string, value: string }[] = []): Promise<devops.responses.CreateBuildRunResponse | undefined> {
+    try {
+        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const createBuildRunDetails: devops.models.CreateBuildRunDetails = {
+            displayName: name,
+            buildPipelineId: pipelineID,
+            buildRunArguments: {
+                items: params
+            }
+        };
+        const createBuildRunRequest: devops.requests.CreateBuildRunRequest = {
+            createBuildRunDetails: createBuildRunDetails
+        };
+        return client.createBuildRun(createBuildRunRequest);
+    } catch (error) {
+        console.log('>>> createBuildRun ' + error);
         return undefined;
     }
 }

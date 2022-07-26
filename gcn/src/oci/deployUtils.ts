@@ -64,7 +64,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
             progress.report({
                 message: 'Setting up notifications...'
             });
-            const notificationTopic = await ociUtils.getOrCreateNotificationTopic(provider, compartment);
+            const notificationTopic = await ociUtils.getNotificationTopic(provider, compartment, true);
             if (!notificationTopic) {
                 resolve('Failed to prepare notification topic.');
                 return;
@@ -84,7 +84,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
             progress.report({
                 message: 'Setting up logging...'
             });
-            const logGroup = await ociUtils.getOrCreateDefaultLogGroup(provider, compartment);
+            const logGroup = await ociUtils.getDefaultLogGroup(provider, compartment, true);
             if (!logGroup) {
                 resolve('Failed to resolve default log group.');
                 return;
@@ -118,8 +118,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                     resolve(`Failed to create source code repository ${repositoryName}.`);
                     return;
                 }
-                const codeRepositoryUrl = codeRepository.sshUrl; // TODO: https
-                if (!codeRepositoryUrl) {
+                if (!codeRepository.sshUrl || !codeRepository.httpUrl) {
                     resolve(`Failed to resolve URL of source code repository ${repositoryName}.`);
                     return;
                 }
@@ -163,7 +162,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                     resolve(`Failed to create devbuild pipeline for ${repositoryName}.`);
                     return;
                 }
-                const devbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, devbuildPipeline, codeRepository.id, repositoryName, codeRepositoryUrl, devbuildspec_template))?.buildPipelineStage.id;
+                const devbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, devbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, devbuildspec_template))?.buildPipelineStage.id;
                 if (!devbuildPipelineBuildStage) {
                     resolve(`Failed to create devbuild pipeline build stage for ${repositoryName}.`);
                     return;
@@ -196,7 +195,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                     resolve(`Failed to create native executables pipeline for ${repositoryName}.`);
                     return;
                 }
-                const nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, nibuildPipeline, codeRepository.id, repositoryName, codeRepositoryUrl, nibuildspec_template))?.buildPipelineStage.id;
+                const nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, nibuildspec_template))?.buildPipelineStage.id;
                 if (!nibuildPipelineBuildStage) {
                     resolve(`Failed to create native executables pipeline build stage for ${repositoryName}.`);
                     return;
@@ -240,7 +239,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 progress.report({
                     message: `Populating source code repository ${repositoryName}...`
                 });
-                const pushErr = await gitUtils.populateNewRepository(codeRepositoryUrl, repositoryDir);
+                const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir); // TODO: codeRepository.httpUrl ?
                 if (pushErr) {
                     resolve(`Failed to push ${repositoryName}: ${pushErr}`);
                     return;
