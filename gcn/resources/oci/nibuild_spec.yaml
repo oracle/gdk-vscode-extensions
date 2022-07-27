@@ -12,7 +12,7 @@ env:
 steps:
   - type: Command
     name: "Setup"
-    timeoutInSeconds: 40
+    timeoutInSeconds: 300
     command: |
       chmod 777 ./mvnw
       GRAALVM_FILENAME="graalvm.tar.gz"
@@ -38,6 +38,6 @@ steps:
         timeoutInSeconds: 40
         runAs: root
 outputArtifacts:
-  - name: MicronautMavenApp_dev_executable
+  - name: ${{deploy_artifact_name}}
     type: BINARY
-    location: ${OCI_PRIMARY_SOURCE_DIR}/target/${{project_native_executable_artifact}}
+    location: ${OCI_PRIMARY_SOURCE_DIR}/target/${{project_build_artifact}}

@@ -497,19 +497,19 @@ export async function createKnowledgeBase(authenticationDetailsProvider: common.
 }
 
 export async function createDefaultNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<ons.responses.CreateTopicResponse | undefined> {
-try {
+    try {
         const idClient = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const getCompartmentsRequest: identity.requests.GetCompartmentRequest = {
-          compartmentId: compartmentID,
+            compartmentId: compartmentID,
         };
 
         // PENDING: Creating a notification with a name already used within the tenancy (although in a different compartment) fails - whether it is a feature or a bug is not known.
         // Let's default the name to <Compartment-Name>+constant -- althoug even compartment name may not be unique (same name in 2 different parents). Should be the OCID there :) ?
-         const resp = await idClient.getCompartment(getCompartmentsRequest);
+        const resp = await idClient.getCompartment(getCompartmentsRequest);
 
         const client = new ons.NotificationControlPlaneClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createTopicDetails = {
-            name: resp.compartment.name + DEFAULT_NOTIFICATION_TOPIC,
+            name: resp.compartment.name.replace(/\W+/g,'') + DEFAULT_NOTIFICATION_TOPIC,
             compartmentId: compartmentID,
             description: "Default notification topic created from VS Code"
         };
@@ -524,19 +524,24 @@ try {
 }
 
 export async function getNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean): Promise<string | undefined> {
-    const notificationTopics = await listNotificationTopics(authenticationDetailsProvider, compartmentID);
-    if (notificationTopics) {
-        if (notificationTopics.items.length > 0) {
-            return notificationTopics.items[0].topicId;
+    try {
+        const notificationTopics = await listNotificationTopics(authenticationDetailsProvider, compartmentID);
+        if (notificationTopics) {
+            if (notificationTopics.items.length > 0) {
+                return notificationTopics.items[0].topicId;
+            }
         }
-    }
-    if (create) {
-        const created = await createDefaultNotificationTopic(authenticationDetailsProvider, compartmentID);
-        if (created) {
-            return created.notificationTopic.topicId;
+        if (create) {
+            const created = await createDefaultNotificationTopic(authenticationDetailsProvider, compartmentID);
+            if (created) {
+                return created.notificationTopic.topicId;
+            }
         }
+        return undefined;
+    } catch (error) {
+        console.log('>>> getNotificationTopic ' + error);
+        return undefined;
     }
-    return undefined;
 }
 
 export async function createDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectName: string, compartmentID: string, notificationTopicID: string): Promise<devops.responses.CreateProjectResponse | undefined> {
@@ -574,13 +579,12 @@ export async function listLogGroups(authenticationDetailsProvider: common.Config
     }
 }
 
-export async function listLogs(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, logGroupID: string, resourceID?: string): Promise<logging.responses.ListLogsResponse | undefined> {
+export async function listLogs(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, logGroupID: string): Promise<logging.responses.ListLogsResponse | undefined> {
     try {
         const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
 
         const listLogsRequest: logging.requests.ListLogsRequest = {
-            logGroupId: logGroupID,
-            sourceResource: resourceID
+            logGroupId: logGroupID
         };
 
         return client.listLogs(listLogsRequest);
@@ -610,7 +614,10 @@ export async function searchLogs(authenticationDetailsProvider: common.ConfigFil
                 page: nextPage
             };
             const searchLogsResponse = await client.searchLogs(searchLogsRequest);
-            if (searchLogsResponse.searchResponse.results) {
+            if (searchLogsResponse.searchResponse.results?.length) {
+                if (!result.length && !searchLogsResponse.opcNextPage) {
+                    return searchLogsResponse.searchResponse.results;
+                }
                 result.push(...searchLogsResponse.searchResponse.results);
             }
             nextPage = searchLogsResponse.opcNextPage;
@@ -634,7 +641,14 @@ export async function createDefaultLogGroup(authenticationDetailsProvider: commo
         const createLogGroupRequest: logging.requests.CreateLogGroupRequest = {
             createLogGroupDetails: createLogGroupDetails
         };
-        return client.createLogGroup(createLogGroupRequest);
+        const createLogGroupResponse = await client.createLogGroup(createLogGroupRequest);
+        if (createLogGroupResponse.opcWorkRequestId) {
+            const getWorkRequestRequest: logging.requests.GetWorkRequestRequest = {
+                workRequestId: createLogGroupResponse.opcWorkRequestId
+            };
+            await completion(2000, async () => (await client.getWorkRequest(getWorkRequestRequest)).workRequest.status);
+        }
+        return createLogGroupResponse;
     } catch (error) {
         console.log('>>> createLogGroup ' + error);
         return undefined;
@@ -651,10 +665,6 @@ export async function getDefaultLogGroup(authenticationDetailsProvider: common.C
     if (create) {
         const created = await createDefaultLogGroup(authenticationDetailsProvider, compartmentID);
         if (created) {
-            // TODO: wait for the work request to be processed
-            await delay(30000);
-            // const request = created.opcWorkRequestId;
-
             const logGroup = await listLogGroups(authenticationDetailsProvider, compartmentID, DEFAULT_LOG_GROUP);
             if (logGroup) {
                 if (logGroup.items.length > 0) {
@@ -738,15 +748,21 @@ export async function createProjectLog(authenticationDetailsProvider: common.Con
             logGroupId: logGroupID,
             createLogDetails: createLogDetails
         };
-        // TODO: wait for the work request to be processed
-        return await client.createLog(createLogRequest);
+        const createLogResponse = await client.createLog(createLogRequest);
+        if (createLogResponse.opcWorkRequestId) {
+            const getWorkRequestRequest: logging.requests.GetWorkRequestRequest = {
+                workRequestId: createLogResponse.opcWorkRequestId
+            };
+            await completion(2000, async () => (await client.getWorkRequest(getWorkRequestRequest)).workRequest.status);
+        }
+        return createLogResponse;
     } catch (error) {
         console.log('>>> createProjectLog ' + error);
         return undefined;
     }
 }
 
-export async function createArtifactsRegistry(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, projectName: string): Promise<artifacts.responses.CreateRepositoryResponse | undefined> {
+export async function createArtifactsRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, projectName: string): Promise<artifacts.responses.CreateRepositoryResponse | undefined> {
     try {
         const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createRepositoryDetails = {
@@ -761,7 +777,7 @@ export async function createArtifactsRegistry(authenticationDetailsProvider: com
         };
         return await client.createRepository(createRepositoryRequest);
     } catch (error) {
-        console.log('>>> createArtifactRegistry ' + error);
+        console.log('>>> createArtifactRepository ' + error);
         return undefined;
     }
 }
@@ -779,10 +795,14 @@ export async function createCodeRepository(authenticationDetailsProvider: common
         const createRepositoryRequest: devops.requests.CreateRepositoryRequest = {
             createRepositoryDetails: createRepositoryDetails
         };
-        // TODO: wait for the work request to be processed
-        const repositoryResp = await client.createRepository(createRepositoryRequest);
-        await delay(30000);
-        return repositoryResp;
+        const createRepositoryResponse = await client.createRepository(createRepositoryRequest);
+        if (createRepositoryResponse.opcWorkRequestId) {
+            const getWorkRequestRequest: devops.requests.GetWorkRequestRequest = {
+                workRequestId: createRepositoryResponse.opcWorkRequestId
+            };
+            await completion(2000, async () => (await client.getWorkRequest(getWorkRequestRequest)).workRequest.status);
+        }
+        return createRepositoryResponse;
     } catch (error) {
         console.log('>>> createCodeRepository ' + error);
         return undefined;
@@ -954,6 +974,26 @@ export async function createProjectDevArtifact(authenticationDetailsProvider: co
     }
 }
 
-function delay(ms: number) {
+export async function completion(initialPollTime: number, getState: () => Promise<string | undefined>): Promise<string | undefined> {
+    try {
+        // TODO: use increasing polling time
+        const pollTime = initialPollTime;
+        let state: string | undefined;
+        do {
+            await delay(pollTime);
+            state = await getState();
+        } while (isRunning(state));
+        return state;
+    } catch (error) {
+        console.log('>>> completion ' + error);
+        return undefined;
+    }
+}
+
+export function isRunning(state?: string) {
+    return state === 'ACCEPTED' || state === 'IN_PROGRESS' || state === 'CANCELING';
+}
+
+export function delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
 }

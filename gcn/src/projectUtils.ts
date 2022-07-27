@@ -10,9 +10,9 @@ import * as vscode from 'vscode';
 // TODO: implement for Maven/Gradle projects
 
 export function getProjectDevbuildArtifact(folder: vscode.WorkspaceFolder): string | undefined {
-    return `${folder.name.toLowerCase()}-0.1.jar`;
+    return `${folder.name}-0.1.jar`;
 }
 
 export function getProjectNativeExecutableArtifact(folder: vscode.WorkspaceFolder): string | undefined {
-    return folder.name.toLowerCase();
+    return folder.name;
 }

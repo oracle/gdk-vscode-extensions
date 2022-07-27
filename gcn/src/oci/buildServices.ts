@@ -16,8 +16,8 @@ export function createFeaturePlugins(context: vscode.ExtensionContext): ociServi
     context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.runBuildPipeline', (node: BuildPipelineNode) => {
 		node.runPipeline();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.showBuildReport', (node: BuildPipelineNode) => {
-		node.showReport();
+    context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.showBuildOutput', (node: BuildPipelineNode) => {
+		node.showBuildOutput();
 	}));
     return [ new Plugin() ];
 }
@@ -150,26 +150,28 @@ class BuildPipelineNode extends nodes.ChangeableNode {
 
     private oci: ociContext.Context;
     private ocid: string;
-    private lastRun?: { ocid: string, state?: string };
-    private output?: vscode.OutputChannel;
+    private lastRun?: { ocid: string, state?: string, output?: vscode.OutputChannel };
 
     constructor(displayName: string, oci: ociContext.Context, ocid: string, treeChanged: nodes.TreeChanged) {
         super(displayName, undefined, 'gcn.oci.buildPipelineNode', undefined, undefined, treeChanged);
         this.oci = oci;
         this.ocid = ocid;
         this.iconPath = new vscode.ThemeIcon('play-circle');
-        this.command = { command: 'extension.gcn.showBuildReport', title: 'Show Build Report', arguments: [this] };
+        this.command = { command: 'extension.gcn.showBuildOutput', title: 'Show Build Output', arguments: [this] };
         this.updateAppearance();
         ociUtils.listBuildRuns(this.oci.getProvider(), this.ocid).then(response => {
             if (response?.buildRunSummaryCollection.items.length) {
                 const run = response.buildRunSummaryCollection.items[0];
-                this.updateLastRun(run.id, run.lifecycleState);
+                const output = run.displayName ? vscode.window.createOutputChannel(run.displayName) : undefined;
+                output?.hide();
+                this.updateLastRun(run.id, run.lifecycleState, output);
+                this.updateWhenCompleted(run.id, run.compartmentId, run.timeCreated);
             }
         });
     }
 
     runPipeline() {
-        if (!this.lastRun?.state || (this.lastRun.state !== 'ACCEPTED' && this.lastRun.state !== 'IN_PROGRESS')) {
+        if (!ociUtils.isRunning(this.lastRun?.state)) {
             graalvmUtils.getActiveGVMVersion().then(version => {
                 if (version) {
                     const buildName = `${this.label}-${this.getTimestamp()} (from VS Code)`;
@@ -179,15 +181,13 @@ class BuildPipelineNode extends nodes.ChangeableNode {
                         cancellable: false
                     }, (_progress, _token) => {
                         return new Promise(async (resolve) => {
-                            ociUtils.createBuildRun(this.oci.getProvider(), this.ocid, buildName, []).then(response => {
-                                if (response?.buildRun) {
-                                    this.output?.hide();
-                                    this.output?.dispose();
-                                    this.output = undefined;
-                                    this.updateLastRun(response.buildRun.id, response.buildRun.lifecycleState);
-                                }
-                                resolve(true);
-                            });
+                            const buildRun = (await ociUtils.createBuildRun(this.oci.getProvider(), this.ocid, buildName, []))?.buildRun;
+                            resolve(true);
+                            if (buildRun) {
+                                this.updateLastRun(buildRun.id, buildRun.lifecycleState, buildRun.displayName ? vscode.window.createOutputChannel(buildRun.displayName) : undefined);
+                                this.showBuildOutput();
+                                this.updateWhenCompleted(buildRun.id, buildRun.compartmentId, buildRun.timeCreated);
+                            }
                         });
                     })
                 } else {
@@ -197,46 +197,8 @@ class BuildPipelineNode extends nodes.ChangeableNode {
         }
     }
 
-    async showReport() {
-        if (this.output) {
-            this.output.show();
-        } else if (this.lastRun?.state && this.lastRun.state !== 'ACCEPTED' && this.lastRun.state !== 'IN_PROGRESS') {
-            try {
-                const buildRunResp = await ociUtils.getBuildRun(this.oci.getProvider(), this.lastRun.ocid);
-                const buildRun = buildRunResp?.buildRun;
-                if (!buildRun || !buildRun.compartmentId || !buildRun.displayName) {
-                    vscode.window.showErrorMessage('Build run cannot be resolved');
-                    return;
-                }
-                const timeStart = buildRun.timeCreated;
-                const timeEnd = buildRun.timeUpdated;
-                if (timeStart && timeEnd) {
-                    this.output = vscode.window.createOutputChannel(buildRun.displayName);
-                    this.output.show();
-                    const groupId = await ociUtils.getDefaultLogGroup(this.oci.getProvider(), buildRun.compartmentId);
-                    if (!groupId) {
-                        vscode.window.showErrorMessage('Default log group cannot be resolved');
-                        return;
-                    }
-                    const logs = await ociUtils.listLogs(this.oci.getProvider(), groupId, this.oci.getDevOpsProject());
-                    if (!logs?.items) {
-                        vscode.window.showErrorMessage('Project log cannot be resolved');
-                        return;
-                    }
-                    const logId = logs.items[0].id;
-                    const results = await ociUtils.searchLogs(this.oci.getProvider(), buildRun.compartmentId, groupId, logId, buildRun.id, timeStart, timeEnd);
-                    if (results) {
-                        for (let result of results) {
-                            this.output.appendLine(`${result.data.logContent.time}: ${result.data.logContent.data.message}`);
-                        }
-                    }
-                }
-            } catch (error) {
-                if ((error as any).toString() === 'Error: EndTime cannot be before StartTime') {
-                    vscode.window.showWarningMessage('Build log not ready yet, try again later.');
-                }
-            }
-        }
+    showBuildOutput() {
+        this.lastRun?.output?.show();
     }
 
     private getTimestamp(): string {
@@ -253,11 +215,16 @@ class BuildPipelineNode extends nodes.ChangeableNode {
         return `${year}${month}${day}-${hours}${minutes}`;
     }
 
-    private updateLastRun(ocid: string, state?: string) {
-        this.lastRun = { ocid, state };
+    private updateLastRun(ocid: string, state?: string, output?: vscode.OutputChannel ) {
+        if (this.lastRun?.output !== output) {
+            this.lastRun?.output?.hide();
+            this.lastRun?.output?.dispose();
+        }
+        this.lastRun = { ocid, state, output };
         switch (state) {
             case 'ACCEPTED':
             case 'IN_PROGRESS':
+            case 'CANCELING':
                 this.iconPath = new vscode.ThemeIcon('play-circle', new vscode.ThemeColor('charts.orange'));
                 break;
             case 'SUCCEEDED':
@@ -270,5 +237,43 @@ class BuildPipelineNode extends nodes.ChangeableNode {
                 this.iconPath = new vscode.ThemeIcon('play-circle');
         }
         this.treeChanged(this);
+    }
+
+    private async updateWhenCompleted(buildRunId: string, compartmentId?: string, timeStart?: Date) {
+        const groupId = compartmentId ? await ociUtils.getDefaultLogGroup(this.oci.getProvider(), compartmentId) : undefined;
+        const logId = groupId ? (await ociUtils.listLogs(this.oci.getProvider(), groupId))?.items.find(item => item.configuration?.source.resource === this.oci.getDevOpsProject())?.id : undefined;
+        let lastResults: any[] = [];
+        const update = async () => {
+            const buildRun = (await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId))?.buildRun;
+            if (this.lastRun?.output && buildRun && compartmentId && groupId && logId && timeStart) {
+                const timeEnd = ociUtils.isRunning(buildRun.lifecycleState) ? new Date() : buildRun.timeUpdated;
+                if (timeEnd) {
+                    const results = await ociUtils.searchLogs(this.oci.getProvider(), compartmentId, groupId, logId, buildRun.id, timeStart, timeEnd);
+                    if (results?.length && results.length > lastResults.length) {
+                        if (lastResults.find((result: any, idx: number) => result.data.logContent.time !== results[idx].data.logContent.time || result.data.logContent.data.message !== results[idx].data.logContent.data.message)) {
+                            this.lastRun.output.clear();
+                            for (let result of results) {
+                                this.lastRun.output.appendLine(`${result.data.logContent.time}  ${result.data.logContent.data.message}`);
+                            }
+                        } else {
+                            for (let result of results.slice(lastResults.length)) {
+                                this.lastRun.output.appendLine(`${result.data.logContent.time}  ${result.data.logContent.data.message}`);
+                            }
+                        }
+                        lastResults = results;
+                    }
+                }
+            }
+            return buildRun?.lifecycleState;
+        };
+        const state = await ociUtils.completion(5000, update);
+        this.updateLastRun(buildRunId, state, this.lastRun?.output);
+        for (let i = 0; i < 60; i++) {
+            if (this.lastRun?.ocid !== buildRunId) {
+                return;
+            }
+            await ociUtils.delay(10000);
+            await update();
+        }
     }
 }

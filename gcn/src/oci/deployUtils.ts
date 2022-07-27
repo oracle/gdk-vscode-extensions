@@ -99,11 +99,11 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
 
             // --- Create artifact registry
             progress.report({
-                message: `Creating artifact registry...`
+                message: `Creating artifact repository...`
             });
-            const artifactsRegistry = (await ociUtils.createArtifactsRegistry(provider, compartment, projectName))?.repository.id;
-            if (!artifactsRegistry) {
-                resolve('Failed to create artifact registry.');
+            const artifactsRepository = (await ociUtils.createArtifactsRepository(provider, compartment, projectName))?.repository.id;
+            if (!artifactsRepository) {
+                resolve('Failed to create artifact repository.');
                 return;
             }
 
@@ -125,22 +125,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                     return;
                 }
 
-                // --- Generate build specs
-                progress.report({
-                    message: `Creating build specs for source code repository ${repositoryName}...`
-                });
                 const devbuildspec_template = 'devbuild_spec.yaml';
-                const devbuildTemplateError = expandTemplate(devbuildspec_template, folder, resourcesPath);
-                if (devbuildTemplateError) {
-                    resolve(`Failed to configure devbuild build spec for ${repositoryName}: ${devbuildTemplateError}`);
-                    return;
-                }
-                const nibuildspec_template = 'nibuild_spec.yaml';
-                const nibuildTemplateError = expandTemplate(nibuildspec_template, folder, resourcesPath);
-                if (nibuildTemplateError) {
-                    resolve(`Failed to configure native executable build spec for ${repositoryName}: ${devbuildTemplateError}`);
-                    return;
-                }
 
                 // --- Create devbuild artifact
                 progress.report({
@@ -149,7 +134,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 const devbuildArtifactPath = `${projectName}-dev.jar`;
                 const devbuildArtifactName = `${projectName}_dev_fatjar`;
                 const devbuildArtifactDescription = `Devbuild artifact for project ${projectName} & repository ${repositoryName}`;
-                const devbuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactsRegistry, project, devbuildArtifactPath, devbuildArtifactName, devbuildArtifactDescription))?.deployArtifact.id;
+                const devbuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactsRepository, project, devbuildArtifactPath, devbuildArtifactName, devbuildArtifactDescription))?.deployArtifact.id;
                 if (!devbuildArtifact) {
                     resolve(`Failed to create devbuild artifacts for ${repositoryName}.`);
                     return;
@@ -175,6 +160,8 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                     return;
                 }
 
+                const nibuildspec_template = 'nibuild_spec.yaml';
+
                 // --- Create native image artifact
                 progress.report({
                     message: `Creating native executable artifacts for ${repositoryName}...`
@@ -182,7 +169,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 const nibuildArtifactPath = `${projectName}-dev`;
                 const nibuildArtifactName = `${projectName}_dev_executable`;
                 const nibuildArtifactDescription = `Native executable artifact for project ${projectName} & repository ${repositoryName}`;
-                const nibuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactsRegistry, project, nibuildArtifactPath, nibuildArtifactName, nibuildArtifactDescription))?.deployArtifact.id;
+                const nibuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactsRepository, project, nibuildArtifactPath, nibuildArtifactName, nibuildArtifactDescription))?.deployArtifact.id;
                 if (!nibuildArtifact) {
                     resolve(`Failed to create native executable artifacts for ${repositoryName}.`);
                     return;
@@ -205,6 +192,29 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 const nibuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, nibuildPipeline, nibuildPipelineBuildStage, nibuildArtifact, nibuildArtifactName))?.buildPipelineStage.id;
                 if (!nibuildPipelineArtifactsStage) {
                     resolve(`Failed to create native executables pipeline artifacts stage for ${repositoryName}.`);
+                    return;
+                }
+
+                // --- Generate build specs
+                progress.report({
+                    message: `Creating build specs for source code repository ${repositoryName}...`
+                });
+                const project_devbuild_artifact = projectUtils.getProjectDevbuildArtifact(folder);
+                if (!project_devbuild_artifact) {
+                    return `Failed to resolve project devbuild artifact for folder ${folder.uri.fsPath}`;
+                }
+                const devbuildTemplateError = expandTemplate(devbuildspec_template, folder, project_devbuild_artifact, devbuildArtifactName, resourcesPath);
+                if (devbuildTemplateError) {
+                    resolve(`Failed to configure devbuild build spec for ${repositoryName}: ${devbuildTemplateError}`);
+                    return;
+                }
+                const project_native_executable_artifact = projectUtils.getProjectNativeExecutableArtifact(folder);
+                if (!project_native_executable_artifact) {
+                    return `Failed to resolve project native executable artifact for folder ${folder.uri.fsPath}`;
+                }
+                const nibuildTemplateError = expandTemplate(nibuildspec_template, folder, project_native_executable_artifact, nibuildArtifactName, resourcesPath);
+                if (nibuildTemplateError) {
+                    resolve(`Failed to configure native executable build spec for ${repositoryName}: ${devbuildTemplateError}`);
                     return;
                 }
 
@@ -324,21 +334,12 @@ async function selectProjectName(): Promise<string | undefined> {
     return projectName
 }
 
-function expandTemplate(template: string, folder: vscode.WorkspaceFolder, templatesStorage: string): string | undefined {
+function expandTemplate(template: string, folder: vscode.WorkspaceFolder, projectBuildArtifact: string, deployArtifactName: string, templatesStorage: string): string | undefined {
     const templatespec = path.join(templatesStorage, template);
     let templateString = fs.readFileSync(templatespec).toString();
 
-    const project_devbuild_artifact = projectUtils.getProjectDevbuildArtifact(folder);
-    if (!project_devbuild_artifact) {
-        return `Failed to resolve project devbuild artifact for folder ${folder.uri.fsPath}`;
-    }
-    const project_native_executable_artifact = projectUtils.getProjectNativeExecutableArtifact(folder);
-    if (!project_native_executable_artifact) {
-        return `Failed to resolve project native executable artifact for folder ${folder.uri.fsPath}`;
-    }
-
-    templateString = templateString.replace('${{project_devbuild_artifact}}', project_devbuild_artifact);
-    templateString = templateString.replace('${{project_native_executable_artifact}}', project_native_executable_artifact);
+    templateString = templateString.replace('${{project_build_artifact}}', projectBuildArtifact);
+    templateString = templateString.replace('${{deploy_artifact_name}}', deployArtifactName);
 
     const templatedest = path.join(folder.uri.fsPath, template);
     fs.writeFileSync(templatedest, templateString);
