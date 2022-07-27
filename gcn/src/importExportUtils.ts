@@ -47,6 +47,14 @@ export async function deployOpenedFolders() {
     vscode.commands.executeCommand('extension.gcn.reloadServicesView');
 }
 
+export async function undeploySelectedFolder(folder : vscode.WorkspaceFolder)  {
+    const cloudSupport = await selectCloudSupport();
+    if (!cloudSupport) {
+        return;
+    }
+    return cloudSupport.undeployFolder(folder.uri);
+}
+
 async function selectCloudSupport(): Promise<model.CloudSupport | undefined> {
     if (CLOUD_SUPPORTS.length === 1) {
         return CLOUD_SUPPORTS[0];

@@ -50,6 +50,8 @@ export interface CloudSupport {
 
     deployFolders(): Promise<DeployResult | undefined>
 
+    undeployFolder(folder : vscode.Uri) : Promise<DeployResult>;
+
     getServices(folder : vscode.WorkspaceFolder, configuration: ServicesConfiguration): CloudServices | undefined;
 
 }

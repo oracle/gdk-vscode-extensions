@@ -66,6 +66,11 @@ class OciSupport implements model.CloudSupport {
         return new ociServices.OciServices(oci, folder, data, configuration.dataChanged);
     }
 
+    async undeployFolder(folder: vscode.Uri): Promise<model.DeployResult> {
+        await  deployUtils.undeployFolder(folder);
+        return { folders: [ folder.fsPath ], servicesData: []};
+    }
+
 }
 
 

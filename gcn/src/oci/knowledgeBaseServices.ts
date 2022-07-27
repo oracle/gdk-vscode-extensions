@@ -24,17 +24,16 @@ export function createFeaturePlugins(_context: vscode.ExtensionContext): ociServ
     return [ p ];
 }
 
-
-
-class Plugin extends ociServices.ServicePlugin {
-    private folder : vscode.WorkspaceFolder | undefined;
+class Plugin extends ociServices.ServicePlugin implements ProjectAudit {
+    // private _folder : vscode.WorkspaceFolder | undefined;
 
     constructor() {
         super('knowledgeBases');
     }
 
-    initialize(folder : vscode.WorkspaceFolder, data : any, changed : ociSupport.DataChanged) {
-        this.folder = folder;
+    initialize(folder : vscode.WorkspaceFolder, _data : any, _changed : ociSupport.DataChanged) {
+        // this._folder = folder;
+        audits.set(folder, this);
     }
 
     buildInline(oci: ociContext.Context, knowledgeBases: any, treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
