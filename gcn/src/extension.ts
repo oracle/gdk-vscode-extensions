@@ -113,6 +113,18 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.window.showWarningMessage('Not implemented yet.');
 	}));
 
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.undeployProject', () => {
+		const uri : vscode.Uri | undefined = vscode.window.activeTextEditor?.document?.uri;
+		if (!uri) {
+			return;
+		}
+		const f = vscode.workspace.getWorkspaceFolder(uri);
+		if (!f) {
+			return;
+		}
+		importExportUtils.undeploySelectedFolder(f).then( () => servicesView.rebuild() );
+	}));
+
 	servicesView.initialize(context);
 	context.subscriptions.push(vscode.window.registerTreeDataProvider('gcn-services', servicesView.nodeProvider));
 

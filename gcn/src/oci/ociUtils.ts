@@ -18,6 +18,156 @@ const DEFAULT_NOTIFICATION_TOPIC = 'NotificationTopic';
 const DEFAULT_LOG_GROUP = 'Default_Group';
 const BUILD_IMAGE = 'OL7_X86_64_STANDARD_10';
 
+// PENDING: the waitForResourceCompletionStatus will be replicated for each API, but the semantic should be consistent;
+// must invent some abstraction that allows to extract the loop / result inspection algorithm
+
+/**
+ * Waits for the work request ID to complete. The request is expected to work with a single resource only. The function terminates when the resource reaches 
+ * either the success status, or one of the failure status(es). The returned Promise completes on Succeeded status with the resource's OCID; if the request
+ * completes with Canceled or Failed status, the Promise will be rejected with an error that describes the state.
+ * 
+ * @param requestId the work request ID from the original operation
+ * @param resourceDescription description of the resource operated on, for error reporting
+ * @returns promise that will be completed with the operated resource's OCID after it finishes to Succeeded status.
+ */
+ export async function loggingWaitForResourceCompletionStatus(
+    authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider,
+    resourceDescription : string, requestId : string) : Promise<string> {
+    
+    // TODO: handle timeout, use increasing polling time.
+    const logClient = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const req : logging.requests.GetWorkRequestRequest = {
+        workRequestId : requestId,
+    };
+
+    let requestState : logging.models.WorkRequest | undefined;
+
+    // TODO: make this configurable, in vscode/workspace options
+    const maxWaitingTimeMillis = 60 * 1000; 
+    const initialPollTime = 2000;
+    W: for (let waitCount = (maxWaitingTimeMillis / initialPollTime); waitCount > 0; waitCount--) {
+        // console.log(`>>> getRequest ${req.workRequestId}`);
+        const response = await logClient.getWorkRequest(req);
+        // console.log(`>>> getRequest ${req.workRequestId} = ${response.workRequest.status}`);
+        switch (response.workRequest.status) {
+            case logging.models.OperationStatus.Succeeded:
+            case logging.models.OperationStatus.Failed:
+            case logging.models.OperationStatus.Canceled:
+                requestState = response.workRequest;
+                break W;
+        }
+        await delay(2000);
+    }
+    if (!requestState) {
+        throw `Timeout while creating ${resourceDescription}`;
+    }
+    if (requestState.status !== logging.models.OperationStatus.Succeeded) {
+        // PENDING: make some abortion exception that can carry WorkRequest errors, should be caught top-level & reported to the user instead of plain message.
+        let msg : string = `Creation of ${resourceDescription} failed`;
+        throw msg;
+    }
+    // PENDING: what exactly do the 'affected resources' mean ???
+    return requestState.resources[0].identifier;
+}
+
+/**
+ * Waits for the work request ID to complete. The request is expected to work with a single resource only. The function terminates when the resource reaches 
+ * either the success status, or one of the failure status(es). The returned Promise completes on Succeeded status with the resource's OCID; if the request
+ * completes with Canceled or Failed status, the Promise will be rejected with an error that describes the state.
+ * 
+ * @param requestId the work request ID from the original operation
+ * @param resourceDescription description of the resource operated on, for error reporting
+ * @returns promise that will be completed with the operated resource's OCID after it finishes to Succeeded status.
+ */
+ export async function admWaitForResourceCompletionStatus(
+    authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider,
+    resourceDescription : string, requestId : string) : Promise<string> {
+    
+    // TODO: handle timeout, use increasing polling time.
+    const admClient = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const req : adm.requests.GetWorkRequestRequest = {
+        workRequestId : requestId,
+    };
+
+    let requestState : adm.models.WorkRequest | undefined;
+
+    // TODO: make this configurable, in vscode/workspace options
+    const maxWaitingTimeMillis = 60 * 1000; 
+    const initialPollTime = 2000;
+    W: for (let waitCount = (maxWaitingTimeMillis / initialPollTime); waitCount > 0; waitCount--) {
+        // console.log(`>>> getRequest ${req.workRequestId}`);
+        const response = await admClient.getWorkRequest(req);
+        // console.log(`>>> getRequest ${req.workRequestId} = ${response.workRequest.status}`);
+        switch (response.workRequest.status) {
+            case adm.models.OperationStatus.Succeeded:
+            case adm.models.OperationStatus.Failed:
+            case adm.models.OperationStatus.Canceled:
+                requestState = response.workRequest;
+                break W;
+        }
+        await delay(2000);
+    }
+    if (!requestState) {
+        throw `Timeout while creating ${resourceDescription}`;
+    }
+    if (requestState.status !== adm.models.OperationStatus.Succeeded) {
+        // PENDING: make some abortion exception that can carry WorkRequest errors, should be caught top-level & reported to the user instead of plain message.
+        let msg : string = `Creation of ${resourceDescription} failed`;
+        throw msg;
+    }
+    // PENDING: what exactly do the 'affected resources' mean ???
+    return requestState.resources[0].identifier;
+}
+
+/**
+ * Waits for the work request ID to complete. The request is expected to work with a single resource only. The function terminates when the resource reaches 
+ * either the success status, or one of the failure status(es). The returned Promise completes on Succeeded status with the resource's OCID; if the request
+ * completes with Canceled or Failed status, the Promise will be rejected with an error that describes the state.
+ * 
+ * @param requestId the work request ID from the original operation
+ * @param resourceDescription description of the resource operated on, for error reporting
+ * @returns promise that will be completed with the operated resource's OCID after it finishes to Succeeded status.
+ */
+export async function devopsWaitForResourceCompletionStatus(
+    authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider,
+    resourceDescription : string, requestId : string) : Promise<string> {
+    
+    // TODO: handle timeout, use increasing polling time.
+    const devClient = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const req : devops.requests.GetWorkRequestRequest = {
+        workRequestId : requestId,
+    };
+
+    let requestState : devops.models.WorkRequest | undefined;
+
+    // TODO: make this configurable, in vscode/workspace options
+    const maxWaitingTimeMillis = 60 * 1000; 
+    const initialPollTime = 2000;
+    W: for (let waitCount = (maxWaitingTimeMillis / initialPollTime); waitCount > 0; waitCount--) {
+        // console.log(`>>> getRequest ${req.workRequestId}`);
+        const response = await devClient.getWorkRequest(req);
+        // console.log(`>>> getRequest ${req.workRequestId} = ${response.workRequest.status}`);
+        switch (response.workRequest.status) {
+            case devops.models.OperationStatus.Succeeded:
+            case devops.models.OperationStatus.Failed:
+            case devops.models.OperationStatus.Canceled:
+                requestState = response.workRequest;
+                break W;
+        }
+        await delay(2000);
+    }
+    if (!requestState) {
+        throw `Timeout while creating ${resourceDescription}`;
+    }
+    if (requestState.status !== devops.models.OperationStatus.Succeeded) {
+        // PENDING: make some abortion exception that can carry WorkRequest errors, should be caught top-level & reported to the user instead of plain message.
+        let msg : string = `Creation of ${resourceDescription} failed`;
+        throw msg;
+    }
+    // PENDING: what exactly do the 'affected resources' mean ???
+    return requestState.resources[0].identifier;
+}
+
 export async function listCompartments(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.responses.ListCompartmentsResponse | undefined> {
     try {
         const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
@@ -61,6 +211,24 @@ export async function listDevOpsProjects(authenticationDetailsProvider: common.C
     }
 }
 
+export async function getDevopsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectId : string): Promise<devops.models.Project> {
+    try {
+        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const getProjectsRequest: devops.requests.GetProjectRequest = {
+            projectId : projectId
+        };
+        return client.getProject(getProjectsRequest).then(r => r.project);
+    } catch (error) {
+        console.log('>>> getDevopsProjects ' + error);
+        throw error;
+    }
+}
+
+export async function deleteDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectId : string) {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    return client.deleteProject({ projectId : projectId});
+}
+
 export async function listCodeRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.responses.ListRepositoriesResponse | undefined> {
     try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
@@ -73,6 +241,11 @@ export async function listCodeRepositories(authenticationDetailsProvider: common
         console.log('>>> listRepositories ' + error);
         return undefined;
     }
+}
+
+export async function deleteCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repo : string) : Promise<devops.responses.DeleteRepositoryResponse> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    return client.deleteRepository({ repositoryId: repo });
 }
 
 export async function listBuildPipelines(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.responses.ListBuildPipelinesResponse | undefined> {
@@ -89,6 +262,19 @@ export async function listBuildPipelines(authenticationDetailsProvider: common.C
     }
 }
 
+export async function deleteBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipeId: string, wait : boolean = false) : Promise<devops.responses.DeleteBuildPipelineResponse>{
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    if (!wait) {
+        return client.deleteBuildPipeline({ buildPipelineId : pipeId });
+    } else {
+        // console.log(`> deletePipeline ${pipeId}`);
+        const resp = await client.deleteBuildPipeline({ buildPipelineId : pipeId });
+        // console.log(`> deletePipeline ${pipeId}will wait for ${resp.opcWorkRequestId}`);
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting build pipeline", resp.opcWorkRequestId);
+        return resp;
+    }
+}
+
 export async function listBuildPipelineStages(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string): Promise<devops.responses.ListBuildPipelineStagesResponse | undefined> {
     try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
@@ -100,6 +286,20 @@ export async function listBuildPipelineStages(authenticationDetailsProvider: com
     } catch (error) {
         console.log('>>> listBuildPipelineStages ' + error);
         return undefined;
+    }
+}
+
+
+export async function deleteBuildPipelineStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, stage : string, wait : boolean = false) : Promise<devops.responses.DeleteBuildPipelineStageResponse>{
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    if (!wait) {
+        return client.deleteBuildPipelineStage({ buildPipelineStageId : stage });
+    } else {
+        // console.log(`> deleteBuildPipelineStage${stage}`);
+        const resp = await client.deleteBuildPipelineStage({ buildPipelineStageId : stage });
+        // console.log(`> deleteBuildPipelineStage${stage} will wait for ${resp.opcWorkRequestId}`);
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting build pipeline stage", resp.opcWorkRequestId);
+        return resp;
     }
 }
 
@@ -166,6 +366,18 @@ export async function listGenericArtifacts(authenticationDetailsProvider: common
     }
 }
 
+export async function deleteProjectDeployArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactId : string, wait : boolean = false) {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    // console.log(`> deleteDeployArtifact ${artifactId}`);
+    const resp = client.deleteDeployArtifact({ deployArtifactId : artifactId });
+    if (wait) {
+        const requestId = (await resp).opcWorkRequestId;
+        // console.log(`> deleteDeployArtifact ${artifactId} will wait for ${requestId}`);
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy artifact", requestId);
+    }
+    return resp;
+}
+
 export async function listProjectDeployArtifacts(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.responses.ListDeployArtifactsResponse | undefined> {
     try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
@@ -223,6 +435,15 @@ export async function listKnowledgeBases(authenticationDetailsProvider: common.C
     }
 }
 
+export async function deleteKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, knowledgeId : string, wait : boolean = false): Promise<adm.responses.DeleteKnowledgeBaseResponse> {
+    const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    let resp = client.deleteKnowledgeBase({ knowledgeBaseId : knowledgeId});
+    if (wait) {
+        admWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting knowledge base", (await resp).opcWorkRequestId);
+    }
+    return resp;
+}    
+
 export async function listVulnerabilityAudits(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, knowledgeBaseID: string): Promise<adm.responses.ListVulnerabilityAuditsResponse | undefined> {
     try {
         const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
@@ -243,7 +464,8 @@ export async function listNotificationTopics(authenticationDetailsProvider: comm
     try {
         const client = new ons.NotificationControlPlaneClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const listTopicsRequest: ons.requests.ListTopicsRequest = {
-            compartmentId:compartmentID
+            compartmentId:compartmentID,
+            lifecycleState : ons.models.NotificationTopic.LifecycleState.Active
         };
         return client.listTopics(listTopicsRequest);
     } catch (error) {
@@ -252,11 +474,42 @@ export async function listNotificationTopics(authenticationDetailsProvider: comm
     }
 }
 
+export async function createKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, 
+    compartmentID: string, displayName : string, flags? : { [key:string] : string } | undefined) :Promise<string | undefined> {
+    const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    
+    // PENDING: displayName must match ".*(?:^[a-zA-Z_](-?[a-zA-Z_0-9])*$).*" -- transliterate invalid characters in name
+    const request : adm.requests.CreateKnowledgeBaseRequest = {
+        createKnowledgeBaseDetails : {
+            "compartmentId" : compartmentID,
+            "displayName": displayName
+        }
+    }
+
+    // Because I can't query GetWorkRequest despite ID is available, I'll mark the Knowledgebase with some UUID, then
+    // search for such created knowledgebase
+    if (flags) {
+        request.createKnowledgeBaseDetails.freeformTags = flags;
+    }
+
+    let resp = await client.createKnowledgeBase(request);
+    return admWaitForResourceCompletionStatus(authenticationDetailsProvider, `Create knowledge base ${displayName}`, resp.opcWorkRequestId);
+}
+
 export async function createDefaultNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<ons.responses.CreateTopicResponse | undefined> {
-    try {
+try {
+        const idClient = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const getCompartmentsRequest: identity.requests.GetCompartmentRequest = {
+          compartmentId: compartmentID,
+        };
+
+        // PENDING: Creating a notification with a name already used within the tenancy (although in a different compartment) fails - whether it is a feature or a bug is not known.
+        // Let's default the name to <Compartment-Name>+constant -- althoug even compartment name may not be unique (same name in 2 different parents). Should be the OCID there :) ?
+         const resp = await idClient.getCompartment(getCompartmentsRequest);
+
         const client = new ons.NotificationControlPlaneClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createTopicDetails = {
-            name: DEFAULT_NOTIFICATION_TOPIC,
+            name: resp.compartment.name + DEFAULT_NOTIFICATION_TOPIC,
             compartmentId: compartmentID,
             description: "Default notification topic created from VS Code"
         };
@@ -411,6 +664,52 @@ export async function getDefaultLogGroup(authenticationDetailsProvider: common.C
         }
     }
     return undefined;
+}
+
+export async function listLogsByProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentId : string, projectId : string) : Promise<logging.models.LogSummary[]> {
+    const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const value : logging.models.LogSummary[] = [];
+
+    let groups = (await listLogGroups(authenticationDetailsProvider, compartmentId))?.items;
+
+    if (!groups) {
+        return value;
+    }
+
+    for (let lg of groups) {
+        let logs = (await client.listLogs({ 
+                logGroupId : lg.id, 
+                sourceResource : projectId
+            }))?.items;
+        logs.forEach(l => {
+            if (l.configuration?.source?.resource === projectId) {
+                // for some reason, the filter for "sourceResource" in listLogs does not work.
+                switch (l.lifecycleState) {
+                    case logging.models.LogLifecycleState.Active:
+                    case logging.models.LogLifecycleState.Creating:
+                    case logging.models.LogLifecycleState.Updating:
+                        value.push(l);
+                        break;
+                }
+            }
+        })
+    }
+    return value;
+}
+
+export async function deleteLog(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, logId : string, logGroupID: string, wait : boolean = false) {
+    const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    // console.log(`> deleteLog ${logId}`);
+    const delResp = client.deleteLog({ 
+        logGroupId : logGroupID, 
+        logId : logId
+    });
+    if (wait) {
+        const requestId = (await delResp).opcWorkRequestId;
+        // console.log(`> will wait for ${requestId}`);
+        await loggingWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting project log", requestId);
+    }
+    return delResp;
 }
 
 export async function createProjectLog(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, logGroupID: string, projectID: string, projectName: string): Promise<logging.responses.CreateLogResponse | undefined> {

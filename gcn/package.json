@@ -47,6 +47,11 @@
 				"title": "Run Build Pipeline",
 				"icon": "$(run)",
 				"category": "GCN"
+			},
+			{
+				"command": "gcn.undeployProject",
+				"title": "Undeploy project",
+				"category": "GCN"
 			}
 		],
 		"viewsWelcome": [
