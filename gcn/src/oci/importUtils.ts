@@ -65,14 +65,14 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                 progress.report({
                     message: `Cloning code repository ${repository.name}...`
                 });
-                if (repository.httpUrl) { // TODO ssh
-                    const cloned = await gitUtils.cloneRepository(repository.httpUrl, targetDirectory.fsPath);
+                if (repository.sshUrl) { // TODO: https
+                    const cloned = await gitUtils.cloneRepository(repository.sshUrl, targetDirectory.fsPath);
                     if (!cloned) {
                         resolve(`Failed to clone repository ${repository.name}.`);
                         return;
                     }
                 } else {
-                    resolve(`Failed to clone repository ${repository.name}: http url not available.`);
+                    resolve(`Failed to clone repository ${repository.name}: ssh url not available.`);
                     return;
                 }
             }
