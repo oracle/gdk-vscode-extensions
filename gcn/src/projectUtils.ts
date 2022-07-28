@@ -6,13 +6,55 @@
  */
 
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 
-// TODO: implement for Maven/Gradle projects
+// TODO: implement correctly for Maven/Gradle projects
 
-export function getProjectDevbuildArtifact(folder: vscode.WorkspaceFolder): string | undefined {
-    return `${folder.name}-0.1.jar`;
+export function getProjectBuildCommand(folder: vscode.WorkspaceFolder): string | undefined {
+    if (isMaven(folder)) {
+        return './mvnw --no-transfer-progress package';
+    }
+    if (isGradle(folder)) {
+        return './gradlew build';
+    }
+    return undefined;
 }
 
-export function getProjectNativeExecutableArtifact(folder: vscode.WorkspaceFolder): string | undefined {
-    return folder.name;
+export function getProjectBuildNativeExecutableCommand(folder: vscode.WorkspaceFolder): string | undefined {
+    if (isMaven(folder)) {
+        return './mvnw install --no-transfer-progress -Dpackaging=native-image -DskipTests';
+    }
+    if (isGradle(folder)) {
+        return './gradlew nativeCompile -x test';
+    }
+    return undefined;
+}
+
+export function getProjectBuildArtifactLocation(folder: vscode.WorkspaceFolder): string | undefined {
+    if (isMaven(folder)) {
+        return `target/${folder.name}-0.1.jar`;
+    }
+    if (isGradle(folder)) {
+        return `build/libs/${folder.name}-0.1-all.jar`;
+    }
+    return undefined;
+}
+
+export function getProjectNativeExecutableArtifactLocation(folder: vscode.WorkspaceFolder): string | undefined {
+    if (isMaven(folder)) {
+        return `target/${folder.name}`;
+    }
+    if (isGradle(folder)) {
+        return `build/native/nativeCompile/${folder.name}`;
+    }
+    return undefined;
+}
+
+function isMaven(folder: vscode.WorkspaceFolder) {
+    return fs.existsSync(path.join(folder.uri.fsPath, 'mvnw'));
+}
+
+function isGradle(folder: vscode.WorkspaceFolder) {
+    return fs.existsSync(path.join(folder.uri.fsPath, 'gradlew'));
 }

@@ -18,53 +18,28 @@ export async function getActiveGVMVersion(): Promise<string[] | undefined> {
     return getGraalVMVersions(gvm);
 }
 
-export function getGVMDownloadParameters(versions: string[]): { name: string, value: string }[] | undefined {
-    const javaVersion = versions[0];
-
-    const graalVMVersion = getGraalVMVersion(versions[1]);
-    if (!graalVMVersion) {
-        return undefined;
-    }
-
+export function getGVMBuildRunParameters(versions: string[]): { name: string, value: string }[] | undefined {
     const parameters: { name: string, value: string }[] = [];
+    if (versions.length === 2) {
+        const javaVersion = versions[0];
+        if (javaVersion) {
+            const javaVersionKey = 'JAVA_VERSION';
+            parameters.push({ name: javaVersionKey, value: javaVersion });
+        }
 
-    if (graalVMVersion[0] === 'CE') {
-        // --- GraalVM CE ---
-        // TODO: handle devbuilds (graalVMVersion[2] === '-dev')
-        const graalvmDownloadKey = 'GRAALVM_DOWNLOAD_ADDRESS';
-        const graalVMArch = 'linux-amd64';
-        const graalvmDownloadAddress = `https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${graalVMVersion[1]}/graalvm-ce-java${javaVersion}-${graalVMArch}-${graalVMVersion[1]}.tar.gz`;
-        parameters.push({ name: graalvmDownloadKey, value: graalvmDownloadAddress });
-    } else {
-        // --- GraalVM EE ---
-        // TODO: provide GRAALVM_ARTIFACT_ID instead of GRAALVM_DOWNLOAD_ADDRESS!
-        // TODO: add GRAALVM_DOWNLOAD_TOKEN parameter to download EE!
+        const graalVMVersion = versions[1];
+        if (graalVMVersion) {
+            const graalVMVersionKey = 'GRAALVM_VERSION';
+            parameters.push({ name: graalVMVersionKey, value: graalVMVersion });
+        }
+
+        if (graalVMVersion === '22') {
+            // Set USE_NATIVE_IMAGE_JAVA_PLATFORM_MODULE_SYSTEM=false only for GraalVM 22.2.0 Native image builds, due to bug in NI
+            const useNIJavaPlatformModuleSystemKey = 'USE_NATIVE_IMAGE_JAVA_PLATFORM_MODULE_SYSTEM';
+            parameters.push({ name: useNIJavaPlatformModuleSystemKey, value: 'false' });
+        }
     }
-
     return parameters;
-}
-
-function getGraalVMVersion(versionString: string): string[] | undefined {
-    const versionStrings = versionString.split(' ');
-    if (versionStrings.length !== 3) {
-        return undefined;
-    }
-    if (versionStrings[0] !== 'GraalVM') {
-        return undefined;
-    }
-    // let version = versionStrings[2].slice(0, versionStrings[2].length - 1);
-    let version = versionStrings[2];
-    const dev = version.endsWith('-dev') ? '-dev' : '';
-    if (dev) {
-        version = version.slice(0, version.length - '-dev'.length);
-    }
-    if (versionStrings[1] === 'CE') {
-        return [ 'CE', version, dev ];
-    }
-    if (versionStrings[1] === 'EE') {
-        return [ 'EE', version, dev ];
-    }
-    return undefined;
 }
 
 function findExecutable(executable: string, graalVMHome: string): string | undefined {
@@ -115,6 +90,18 @@ async function getGraalVMVersions(homeFolder: string): Promise<string[] | undefi
                             let i = javaVersion.indexOf('.');
                             if (i > -1) {
                                 javaVersion = javaVersion.slice(0, i);
+                            }
+                            const versionStrings = graalVMVersion.split(' ')
+                            if (versionStrings.length !== 3) {
+                                resolve(undefined);
+                            }
+                            if (versionStrings[0] !== 'GraalVM') {
+                                resolve(undefined);
+                            }
+                            graalVMVersion = versionStrings[2];
+                            i = graalVMVersion.indexOf('.');
+                            if (i > -1) {
+                                graalVMVersion = graalVMVersion.slice(0, i);
                             }
                             resolve([ javaVersion, graalVMVersion ]);
                         } else {

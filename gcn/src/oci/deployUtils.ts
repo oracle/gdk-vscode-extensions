@@ -149,7 +149,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                     resolve(`Failed to create devbuild pipeline for ${repositoryName}.`);
                     return;
                 }
-                const devbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, devbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, devbuildspec_template))?.buildPipelineStage.id;
+                const devbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, devbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${devbuildspec_template}`))?.buildPipelineStage.id;
                 if (!devbuildPipelineBuildStage) {
                     resolve(`Failed to create devbuild pipeline build stage for ${repositoryName}.`);
                     return;
@@ -184,7 +184,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                     resolve(`Failed to create native executables pipeline for ${repositoryName}.`);
                     return;
                 }
-                const nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, nibuildspec_template))?.buildPipelineStage.id;
+                const nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${nibuildspec_template}`))?.buildPipelineStage.id;
                 if (!nibuildPipelineBuildStage) {
                     resolve(`Failed to create native executables pipeline build stage for ${repositoryName}.`);
                     return;
@@ -199,20 +199,28 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 progress.report({
                     message: `Creating build specs for source code repository ${repositoryName}...`
                 });
-                const project_devbuild_artifact = projectUtils.getProjectDevbuildArtifact(folder);
-                if (!project_devbuild_artifact) {
+                const project_devbuild_command = projectUtils.getProjectBuildCommand(folder);
+                if (!project_devbuild_command) {
+                    return `Failed to resolve project devbuild command for folder ${folder.uri.fsPath}`;
+                }
+                const project_devbuild_artifact_location = projectUtils.getProjectBuildArtifactLocation(folder);
+                if (!project_devbuild_artifact_location) {
                     return `Failed to resolve project devbuild artifact for folder ${folder.uri.fsPath}`;
                 }
-                const devbuildTemplateError = expandTemplate(devbuildspec_template, folder, project_devbuild_artifact, devbuildArtifactName, resourcesPath);
+                const devbuildTemplateError = expandTemplate(devbuildspec_template, folder, project_devbuild_command, project_devbuild_artifact_location, devbuildArtifactName, resourcesPath);
                 if (devbuildTemplateError) {
                     resolve(`Failed to configure devbuild build spec for ${repositoryName}: ${devbuildTemplateError}`);
                     return;
                 }
-                const project_native_executable_artifact = projectUtils.getProjectNativeExecutableArtifact(folder);
-                if (!project_native_executable_artifact) {
+                const project_build_native_executable_command = projectUtils.getProjectBuildNativeExecutableCommand(folder);
+                if (!project_build_native_executable_command) {
+                    return `Failed to resolve project build native executable command for folder ${folder.uri.fsPath}`;
+                }
+                const project_native_executable_artifact_location = projectUtils.getProjectNativeExecutableArtifactLocation(folder);
+                if (!project_native_executable_artifact_location) {
                     return `Failed to resolve project native executable artifact for folder ${folder.uri.fsPath}`;
                 }
-                const nibuildTemplateError = expandTemplate(nibuildspec_template, folder, project_native_executable_artifact, nibuildArtifactName, resourcesPath);
+                const nibuildTemplateError = expandTemplate(nibuildspec_template, folder, project_build_native_executable_command, project_native_executable_artifact_location, nibuildArtifactName, resourcesPath);
                 if (nibuildTemplateError) {
                     resolve(`Failed to configure native executable build spec for ${repositoryName}: ${devbuildTemplateError}`);
                     return;
@@ -334,14 +342,19 @@ async function selectProjectName(): Promise<string | undefined> {
     return projectName
 }
 
-function expandTemplate(template: string, folder: vscode.WorkspaceFolder, projectBuildArtifact: string, deployArtifactName: string, templatesStorage: string): string | undefined {
+function expandTemplate(template: string, folder: vscode.WorkspaceFolder, projectBuildCommand: string, projectArtifactLocation: string, deployArtifactName: string, templatesStorage: string): string | undefined {
     const templatespec = path.join(templatesStorage, template);
     let templateString = fs.readFileSync(templatespec).toString();
 
-    templateString = templateString.replace('${{project_build_artifact}}', projectBuildArtifact);
+    templateString = templateString.replace('${{project_build_command}}', projectBuildCommand);
+    templateString = templateString.replace('${{project_artifact_location}}', projectArtifactLocation);
     templateString = templateString.replace('${{deploy_artifact_name}}', deployArtifactName);
 
-    const templatedest = path.join(folder.uri.fsPath, template);
+    const dest = path.join(folder.uri.fsPath, '.gcn');
+    if (!fs.existsSync(dest)) {
+        fs.mkdirSync(dest);
+    }
+    const templatedest = path.join(dest, template);
     fs.writeFileSync(templatedest, templateString);
 
     return undefined;
