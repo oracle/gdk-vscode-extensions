@@ -13,6 +13,7 @@ import * as adm from 'oci-adm';
 import * as ons from 'oci-ons';
 import * as logging from 'oci-logging';
 import * as loggingsearch  from 'oci-loggingsearch';
+import * as genericartifactscontent from 'oci-genericartifactscontent';
 
 const DEFAULT_NOTIFICATION_TOPIC = 'NotificationTopic';
 const DEFAULT_LOG_GROUP = 'Default_Group';
@@ -362,6 +363,32 @@ export async function listGenericArtifacts(authenticationDetailsProvider: common
         return client.listGenericArtifacts(listGenericArtifactsRequest);
     } catch (error) {
         console.log('>>> listGenericArtifacts ' + error);
+        return undefined;
+    }
+}
+
+export async function getGenericArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactID: string): Promise<artifacts.responses.GetGenericArtifactResponse | undefined> {
+    try {
+        const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const getGenericArtifactRequest: artifacts.requests.GetGenericArtifactRequest = {
+            artifactId: artifactID
+        };
+        return client.getGenericArtifact(getGenericArtifactRequest);
+    } catch (error) {
+        console.log('>>> getGenericArtifact ' + error);
+        return undefined;
+    }
+}
+
+export async function getGenericArtifactContent(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactID: string): Promise<genericartifactscontent.responses.GetGenericArtifactContentByPathResponse | undefined> {
+    try {
+        const client = new genericartifactscontent.GenericArtifactsContentClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const getGenericArtifactContentRequest: genericartifactscontent.requests.GetGenericArtifactContentRequest = {
+            artifactId: artifactID
+        };
+        return client.getGenericArtifactContent(getGenericArtifactContentRequest);
+    } catch (error) {
+        console.log('>>> getGenericArtifactContent ' + error);
         return undefined;
     }
 }
@@ -992,6 +1019,10 @@ export async function completion(initialPollTime: number, getState: () => Promis
 
 export function isRunning(state?: string) {
     return state === 'ACCEPTED' || state === 'IN_PROGRESS' || state === 'CANCELING';
+}
+
+export function isSuccess(state?: string) {
+    return state === 'SUCCEEDED';
 }
 
 export function delay(ms: number) {

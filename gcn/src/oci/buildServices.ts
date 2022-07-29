@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import * as nodes from '../nodes';
 import * as graalvmUtils from '../graalvmUtils';
 import * as ociUtils from './ociUtils';
@@ -15,6 +16,9 @@ import * as ociServices from './ociServices';
 export function createFeaturePlugins(context: vscode.ExtensionContext): ociServices.ServicePlugin[] {
     context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.runBuildPipeline', (node: BuildPipelineNode) => {
 		node.runPipeline();
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.downloadArtifact', (node: BuildPipelineNode) => {
+		node.downloadArtifact();
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.showBuildOutput', (node: BuildPipelineNode) => {
 		node.showBuildOutput();
@@ -148,12 +152,13 @@ class CustomBuildPipelinesNode extends nodes.AsyncNode {
 
 class BuildPipelineNode extends nodes.ChangeableNode {
 
+    static readonly CONTEXT = 'gcn.oci.buildPipelineNode';
     private oci: ociContext.Context;
     private ocid: string;
-    private lastRun?: { ocid: string, state?: string, output?: vscode.OutputChannel };
+    private lastRun?: { ocid: string, state?: string, output?: vscode.OutputChannel, deliveredArtifacts?: string[] };
 
     constructor(displayName: string, oci: ociContext.Context, ocid: string, treeChanged: nodes.TreeChanged) {
-        super(displayName, undefined, 'gcn.oci.buildPipelineNode', undefined, undefined, treeChanged);
+        super(displayName, undefined, BuildPipelineNode.CONTEXT, undefined, undefined, treeChanged);
         this.oci = oci;
         this.ocid = ocid;
         this.iconPath = new vscode.ThemeIcon('play-circle');
@@ -198,6 +203,74 @@ class BuildPipelineNode extends nodes.ChangeableNode {
         }
     }
 
+    async downloadArtifact() {
+        const choices: { label: string, path: string, id: string }[] = await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Reading available artifacts...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async resolve => {
+                const choices: { label: string, path: string, id: string }[] = [];
+                if (this.lastRun?.deliveredArtifacts) {
+                    for (const artifact of this.lastRun.deliveredArtifacts) {
+                        const genericArtifact = (await ociUtils.getGenericArtifact(this.oci.getProvider(), artifact))?.genericArtifact;
+                        if (genericArtifact?.displayName && genericArtifact.artifactPath) {
+                            choices.push({ label: genericArtifact.displayName, path: genericArtifact.artifactPath, id: genericArtifact.id });
+                        }
+                    }
+                }
+                resolve(choices);
+            });
+        });
+        if (choices.length > 0) {
+            const choice = choices.length === 1 ? choices[0] : (await vscode.window.showQuickPick(choices, {
+                placeHolder: 'Select Artifact to Download'
+            }));
+            if (choice) {
+                ociUtils.getGenericArtifactContent(this.oci.getProvider(), choice.id).then(content => {
+                    if (content) {
+                        vscode.window.showSaveDialog({
+                            defaultUri: vscode.Uri.file(choice.path),
+                            title: 'Save Artifact As'
+                        }).then(fileUri => {
+                            if (fileUri) {
+                                vscode.window.withProgress({
+                                    location: vscode.ProgressLocation.Notification,
+                                    title: `Downloading artifact ${choice.path}...`,
+                                    cancellable: false
+                                }, (_progress, _token) => {
+                                    return new Promise(async (resolve) => {
+                                        const data = content.value;
+                                        const file = fs.createWriteStream(fileUri.fsPath);
+                                        data.pipe(file);
+                                        data.on('error', (err: Error) => {
+                                            vscode.window.showErrorMessage(err.message);
+                                            file.destroy();
+                                            resolve(false);
+                                        });
+                                        data.on('end', () => {
+                                            const open = 'Open File Location';
+                                            vscode.window.showInformationMessage(`Artifact ${choice.path} downloaded.`, open).then(choice => {
+                                                if (choice === open) {
+                                                    vscode.commands.executeCommand('revealFileInOS', fileUri);
+                                                }
+                                            });
+                                            resolve(true);
+                                        });
+                                    });
+                                })
+                            }
+                        });
+                    } else {
+                        vscode.window.showErrorMessage('Failed to download artifact.');
+                    }
+                });
+            }
+        } else {
+            vscode.window.showErrorMessage('No artifact to download.');
+        }
+    }
+
     showBuildOutput() {
         this.lastRun?.output?.show();
     }
@@ -216,26 +289,30 @@ class BuildPipelineNode extends nodes.ChangeableNode {
         return `${year}${month}${day}-${hours}${minutes}`;
     }
 
-    private updateLastRun(ocid: string, state?: string, output?: vscode.OutputChannel ) {
+    private updateLastRun(ocid: string, state?: string, output?: vscode.OutputChannel, deliveredArtifacts?: string[] ) {
         if (this.lastRun?.output !== output) {
             this.lastRun?.output?.hide();
             this.lastRun?.output?.dispose();
         }
-        this.lastRun = { ocid, state, output };
+        this.lastRun = { ocid, state, output, deliveredArtifacts };
         switch (state) {
             case 'ACCEPTED':
             case 'IN_PROGRESS':
             case 'CANCELING':
                 this.iconPath = new vscode.ThemeIcon('play-circle', new vscode.ThemeColor('charts.orange'));
+                this.contextValue = BuildPipelineNode.CONTEXT + "-in-progress";
                 break;
             case 'SUCCEEDED':
                 this.iconPath = new vscode.ThemeIcon('play-circle', new vscode.ThemeColor('charts.green'));
+                this.contextValue = deliveredArtifacts?.length ? BuildPipelineNode.CONTEXT + "-artifacts-available" : BuildPipelineNode.CONTEXT;
                 break;
             case 'FAILED':
                 this.iconPath = new vscode.ThemeIcon('play-circle', new vscode.ThemeColor('charts.red'));
+                this.contextValue = BuildPipelineNode.CONTEXT;
                 break;
             default:
                 this.iconPath = new vscode.ThemeIcon('play-circle');
+                this.contextValue = BuildPipelineNode.CONTEXT;
         }
         this.treeChanged(this);
     }
@@ -243,18 +320,19 @@ class BuildPipelineNode extends nodes.ChangeableNode {
     private async updateWhenCompleted(buildRunId: string, compartmentId?: string, timeStart?: Date) {
         const groupId = compartmentId ? await ociUtils.getDefaultLogGroup(this.oci.getProvider(), compartmentId) : undefined;
         const logId = groupId ? (await ociUtils.listLogs(this.oci.getProvider(), groupId))?.items.find(item => item.configuration?.source.resource === this.oci.getDevOpsProject())?.id : undefined;
+        let deliveredArtifacts: string[] | undefined;
         let lastResults: any[] = [];
         const update = async () => {
             if (this.lastRun?.ocid !== buildRunId) {
                 return undefined;
             }
             const buildRun = (await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId))?.buildRun;
-            if (this.lastRun?.output && buildRun && compartmentId && groupId && logId && timeStart) {
+            if (this.lastRun?.output && this.lastRun?.ocid === buildRunId && buildRun && compartmentId && groupId && logId && timeStart) {
                 const timeEnd = ociUtils.isRunning(buildRun.lifecycleState) ? new Date() : buildRun.timeUpdated;
                 if (timeEnd) {
                     // While the build run is in progress, messages in the log cloud appear out of order.
                     const results = await ociUtils.searchLogs(this.oci.getProvider(), compartmentId, groupId, logId, buildRun.id, timeStart, timeEnd);
-                    if (results?.length && results.length > lastResults.length) {
+                    if (this.lastRun?.output && this.lastRun?.ocid === buildRunId && results?.length && results.length > lastResults.length) {
                         if (lastResults.find((result: any, idx: number) => result.data.logContent.time !== results[idx].data.logContent.time || result.data.logContent.data.message !== results[idx].data.logContent.data.message)) {
                             this.lastRun.output.clear();
                             for (let result of results) {
@@ -269,11 +347,15 @@ class BuildPipelineNode extends nodes.ChangeableNode {
                     }
                 }
             }
-            return buildRun?.lifecycleState;
+            const state = buildRun?.lifecycleState;
+            if (ociUtils.isSuccess(state)) {
+                deliveredArtifacts = buildRun?.buildOutputs?.deliveredArtifacts?.items.filter(artifact => artifact.artifactType === 'GENERIC_ARTIFACT').map((artifact: any) => artifact.deliveredArtifactId);
+            }
+            return state;
         };
         const state = await ociUtils.completion(5000, update);
         if (this.lastRun?.ocid === buildRunId) {
-            this.updateLastRun(buildRunId, state, this.lastRun?.output);
+            this.updateLastRun(buildRunId, state, this.lastRun?.output, deliveredArtifacts);
             // Some messages can appear in the log minutes after the build run finished.
             // Wating for 10 minutes periodiccaly polling for them.
             for (let i = 0; i < 60; i++) {
@@ -283,6 +365,6 @@ class BuildPipelineNode extends nodes.ChangeableNode {
                 await ociUtils.delay(10000);
                 await update();
             }
-            }
+        }
     }
 }

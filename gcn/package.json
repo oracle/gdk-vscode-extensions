@@ -49,6 +49,12 @@
 				"category": "GCN"
 			},
 			{
+				"command": "extension.gcn.downloadArtifact",
+				"title": "Download Artifact",
+				"icon": "$(cloud-download)",
+				"category": "GCN"
+			},
+			{
 				"command": "gcn.undeployProject",
 				"title": "Undeploy project",
 				"category": "GCN"
@@ -98,8 +104,13 @@
 				},
 				{
 					"command": "extension.gcn.runBuildPipeline",
-					"when": "viewItem == gcn.oci.buildPipelineNode",
-					"group": "inline@3"
+					"when": "viewItem == gcn.oci.buildPipelineNode || viewItem == gcn.oci.buildPipelineNode-artifacts-available",
+					"group": "inline@1"
+				},
+				{
+					"command": "extension.gcn.downloadArtifact",
+					"when": "viewItem == gcn.oci.buildPipelineNode-artifacts-available",
+					"group": "inline@2"
 				}
 			]
 		}
