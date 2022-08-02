@@ -13,20 +13,20 @@ import * as path from 'path';
 
 export function getProjectBuildCommand(folder: vscode.WorkspaceFolder): string | undefined {
     if (isMaven(folder)) {
-        return './mvnw --no-transfer-progress package';
+        return 'chmod 777 ./mvnw && ./mvnw --no-transfer-progress package';
     }
     if (isGradle(folder)) {
-        return './gradlew build';
+        return 'chmod 777 ./gradlew && ./gradlew build';
     }
     return undefined;
 }
 
 export function getProjectBuildNativeExecutableCommand(folder: vscode.WorkspaceFolder): string | undefined {
     if (isMaven(folder)) {
-        return './mvnw install --no-transfer-progress -Dpackaging=native-image -DskipTests';
+        return 'chmod 777 ./mvnw && ./mvnw install --no-transfer-progress -Dpackaging=native-image -DskipTests';
     }
     if (isGradle(folder)) {
-        return './gradlew nativeCompile -x test';
+        return 'chmod 777 ./gradlew && ./gradlew nativeCompile -x test';
     }
     return undefined;
 }
