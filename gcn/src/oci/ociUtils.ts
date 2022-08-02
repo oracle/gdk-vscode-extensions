@@ -352,6 +352,21 @@ export async function listArtifactRepositories(authenticationDetailsProvider: co
     }
 }
 
+export async function deleteArtifactsRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string): Promise<artifacts.responses.DeleteRepositoryResponse> {
+    const items = (await listGenericArtifacts(authenticationDetailsProvider, compartmentID, repositoryID))?.genericArtifactCollection.items;
+    const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    if (items) {
+        for (const item of items) {
+            const deleteGenericArtifactRequest: artifacts.requests.DeleteGenericArtifactRequest = {
+                artifactId: item.id
+            };
+            await client.deleteGenericArtifact(deleteGenericArtifactRequest);
+        }
+    }
+    let resp = client.deleteRepository({ repositoryId : repositoryID});
+    return resp;
+}
+
 export async function listGenericArtifacts(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string): Promise<artifacts.responses.ListGenericArtifactsResponse | undefined> {
     try {
         const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
@@ -789,7 +804,7 @@ export async function createProjectLog(authenticationDetailsProvider: common.Con
     }
 }
 
-export async function createArtifactsRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, projectName: string): Promise<artifacts.responses.CreateRepositoryResponse | undefined> {
+export async function createArtifactsRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, projectName: string, flags? : { [key:string] : string } | undefined): Promise<artifacts.responses.CreateRepositoryResponse | undefined> {
     try {
         const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createRepositoryDetails = {
@@ -797,14 +812,15 @@ export async function createArtifactsRepository(authenticationDetailsProvider: c
             displayName: `${projectName}ArtifactRepository`,
             compartmentId: compartmentID,
             description: `Mutable artifact repository for devops project ${projectName}`,
-            isImmutable: false
+            isImmutable: false,
+            freeformTags: flags
         };
         const createRepositoryRequest: artifacts.requests.CreateRepositoryRequest = {
             createRepositoryDetails: createRepositoryDetails
         };
         return await client.createRepository(createRepositoryRequest);
     } catch (error) {
-        console.log('>>> createArtifactRepository ' + error);
+        console.log('>>> createArtifactsRepository ' + error);
         return undefined;
     }
 }

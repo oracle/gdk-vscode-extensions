@@ -101,7 +101,9 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
             progress.report({
                 message: `Creating artifact repository...`
             });
-            const artifactsRepository = (await ociUtils.createArtifactsRepository(provider, compartment, projectName))?.repository.id;
+            const artifactsRepository = (await ociUtils.createArtifactsRepository(provider, compartment, projectName, {
+                "gcn_tooling_projectOCID" : project
+            }))?.repository.id;
             if (!artifactsRepository) {
                 resolve('Failed to create artifact repository.');
                 return;
@@ -337,7 +339,7 @@ async function selectProjectName(): Promise<string | undefined> {
         // validateInput: input => (input && Number.parseInt(input) >= 0) ? undefined : 'PID must be positive integer',
     });
     if (projectName) {
-        projectName = projectName.replace(' ', '');
+        projectName = projectName.replace(/\s+/g, '');
     }
     return projectName
 }
@@ -346,9 +348,9 @@ function expandTemplate(template: string, folder: vscode.WorkspaceFolder, projec
     const templatespec = path.join(templatesStorage, template);
     let templateString = fs.readFileSync(templatespec).toString();
 
-    templateString = templateString.replace('${{project_build_command}}', projectBuildCommand);
-    templateString = templateString.replace('${{project_artifact_location}}', projectArtifactLocation);
-    templateString = templateString.replace('${{deploy_artifact_name}}', deployArtifactName);
+    templateString = templateString.replace(/\${{project_build_command}}/g, projectBuildCommand);
+    templateString = templateString.replace(/\${{project_artifact_location}}/g, projectArtifactLocation);
+    templateString = templateString.replace(/\${{deploy_artifact_name}}/g, deployArtifactName);
 
     const dest = path.join(folder.uri.fsPath, '.gcn');
     if (!fs.existsSync(dest)) {
@@ -518,12 +520,21 @@ export async function undeployFolder(resource : vscode.Uri) {
         _progress.report({message : "Listing deploy artifacts"});
         let artifacts = (await ociUtils.listProjectDeployArtifacts(authProvider, devopsId))?.deployArtifactCollection.items || [];
         for (let a of artifacts) {
-            _progress.report({ message: `Deleting artfiact ${a.displayName}`});
+            _progress.report({ message: `Deleting artifact ${a.displayName}`});
             // console.log(`Delete artifact ${a.displayName}`);
             // seems that deleteArtifact also transaction-conflicts on the project.
             await ociUtils.deleteProjectDeployArtifact(authProvider, a.id, true);
         };
-
+        _progress.report({ message: 'Searching artifact repositories'});
+        const artifactsRepositories = (await ociUtils.listArtifactRepositories(authProvider, compartmentId))?.repositoryCollection.items;
+        if (artifactsRepositories) {
+            for (const repo of artifactsRepositories) {
+                if ((repo.freeformTags?.['gcn_tooling_projectOCID'] == devopsId)) {
+                    _progress.report({message : `Deleting artifact repository ${repo.displayName}`});
+                    await ociUtils.deleteArtifactsRepository(authProvider, compartmentId, repo.id);
+                }
+            }
+        }
         // PENDING: knowledgebase search + deletion should be done by the Services Plugin; need API to invoke it on the OCI configuration.
         _progress.report({ message: 'Searching knowledge bases'});
         let knowledgeBases = (await ociUtils.listKnowledgeBases(authProvider, compartmentId))?.knowledgeBaseCollection.items || [];
@@ -536,8 +547,13 @@ export async function undeployFolder(resource : vscode.Uri) {
         }
         _progress.report({message : `Deleting project ${data[0].name}`});
         let p = ociUtils.deleteDevOpsProject(authProvider, devopsId);
-        _progress.report({message : `Deleting GCN regsitration ${gcnPath}`});
+        _progress.report({message : `Deleting GCN registration ${gcnPath}`});
         fs.unlinkSync(gcnPath); 
+        const gcnFolderPath = path.join(resource.fsPath, '.gcn');
+        if (fs.existsSync(gcnFolderPath)) {
+            _progress.report({message : 'Deleting local OCI resources'});
+            fs.rmdirSync(gcnFolderPath, { recursive : true});
+        }
 
         return p;
     });
