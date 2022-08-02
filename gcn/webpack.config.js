@@ -17,7 +17,7 @@ const config = {
         libraryTarget: "commonjs2",
         devtoolModuleFilenameTemplate: "../[resource-path]",
     },
-    devtool: 'source-map',
+    devtool: 'eval-cheap-module-source-map',
     externals: {
         vscode: "commonjs2 vscode", // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
     },
@@ -32,14 +32,20 @@ const config = {
             'isomorphic-fetch': {
                 mainFields: ['main', 'module']
             }
-        }
+        },
+        symlinks: false,
+        cacheWithContext: false
     },
     module: {
         rules: [{
             test: /\.ts$/,
             exclude: /node_modules/,
+            include: path.resolve(__dirname, 'src'),
             use: [{
                 loader: 'ts-loader',
+                options: {
+                    transpileOnly: true,
+                }
             }]
         }]
     },
