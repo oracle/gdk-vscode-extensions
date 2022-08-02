@@ -14,26 +14,102 @@ import * as ociSupport from './ociSupport';
 
 const audits : Map<vscode.WorkspaceFolder, ProjectAudit> = new Map();
 
+export let auditService : ProjectAudit | undefined = undefined;
+
 export interface ProjectAudit {
     
 }
 
-export function createFeaturePlugins(_context: vscode.ExtensionContext): ociServices.ServicePlugin[] {
+export function createFeaturePlugins(context: vscode.ExtensionContext): ociServices.ServicePlugin[] {
     const p : Plugin = new Plugin();
     // TODO: initialize actions using context
+
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.projectAudit.execute', (...args) => {
+        let uri = undefined;
+
+        if (args.length > 0) {
+            uri = args[0]?.uri;
+        }
+        return uri ? p.executeProjectAudit(uri) : false;
+    }));
+
     return [ p ];
+}
+
+interface AuditConfiguration {
+    sourceKnowledgeBase? : string;
 }
 
 class Plugin extends ociServices.ServicePlugin implements ProjectAudit {
     // private _folder : vscode.WorkspaceFolder | undefined;
-
+    private config : AuditConfiguration = {}
+    private folder : vscode.WorkspaceFolder | undefined;
+    
     constructor() {
         super('knowledgeBases');
+        auditService = this;
+    }
+
+    async executeProjectAudit(uri : string) {
+        if (!(await vscode.commands.getCommands(true)).includes('nbls.gcn.projectAudit.execute')) {
+            vscode.window.showErrorMessage('Required Language Server is not ready.');
+            return;
+        }
+
+        if (!this.config?.sourceKnowledgeBase) {
+            vscode.window.showErrorMessage(`No KnowledgeBase bound for ${uri}.`);
+            return;
+        }
+        
+        const context = ociSupport.findOciConfiguration(vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(uri)))
+        if (!context) {
+            vscode.window.showErrorMessage(`No OCI context configured for ${uri}.`);
+            return;
+        }
+
+        return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri, 
+            this.config.sourceKnowledgeBase, 
+            context.getCompartment(), 
+            context.getDevOpsProject()
+        )
+    }
+
+    displayProjectAudit() {
+        if (!this.config.sourceKnowledgeBase || !this.folder) {
+            return;
+        }
+        const ctx = ociSupport.findOciConfiguration(this.folder);
+        if (ctx) {
+            vscode.commands.executeCommand('nbls.gcn.projectAudit.display', this.folder.uri, this.config.sourceKnowledgeBase, 
+                ctx.getCompartment(), ctx.getDevOpsProject());
+        }
+    }
+
+    tryDisplayProjectAudit(attempt : number) {
+        vscode.commands.getCommands().then(cmds => {
+            if (cmds.includes('nbls.gcn.projectAudit.display')) {
+                this.displayProjectAudit();
+                return;
+            }
+            if (attempt < 5) {
+                setTimeout(() => this.tryDisplayProjectAudit(attempt + 1) , 2000);
+            }
+        });
     }
 
     initialize(folder : vscode.WorkspaceFolder, _data : any, _changed : ociSupport.DataChanged) {
+        this.folder = folder;
+        try {
+            this.config = _data as AuditConfiguration;
+        } catch (e) {}
+
         // this._folder = folder;
         audits.set(folder, this);
+
+        // schedule fetching of existing data using the LS
+        if (folder && this.config.sourceKnowledgeBase) {
+            this.tryDisplayProjectAudit(0);
+        }
     }
 
     buildInline(oci: ociContext.Context, knowledgeBases: any, treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {

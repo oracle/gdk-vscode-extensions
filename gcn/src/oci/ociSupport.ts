@@ -34,6 +34,35 @@ export function create(context: vscode.ExtensionContext): model.CloudSupport {
 
 export type DataChanged = () => void;
 
+const workspaceContexts : Map<vscode.WorkspaceFolder, ociContext.Context> = new Map();
+
+export function findOciConfiguration(location : vscode.WorkspaceFolder | vscode.Uri | string | undefined) : ociContext.Context | undefined {
+    if (!location) {
+        return undefined;
+    }
+    let wsf = undefined;
+    let u = undefined;
+    if (location instanceof vscode.Uri) {
+        u = location as vscode.Uri;
+    } else {
+        let l = location;
+
+        if ((location as any).uri) {
+            l = (location as any).uri;
+        }
+        if (typeof l === 'string') {
+            u = vscode.Uri.parse(l);
+        } else if (l instanceof vscode.Uri) {
+            u = l as vscode.Uri;
+        }
+    }
+    if (!u) {
+        return undefined;
+    }
+    wsf = vscode.workspace.getWorkspaceFolder(u);
+    return wsf ? workspaceContexts.get(wsf) : undefined;
+}
+
 class OciSupport implements model.CloudSupport {
 
     getName(): string {
@@ -63,6 +92,7 @@ class OciSupport implements model.CloudSupport {
     getServices(folder : vscode.WorkspaceFolder, configuration: model.ServicesConfiguration): model.CloudServices | undefined {
         const data = configuration.data;
         const oci = ociContext.create(data);
+        workspaceContexts.set(folder, oci);
         return new ociServices.OciServices(oci, folder, data, configuration.dataChanged);
     }
 

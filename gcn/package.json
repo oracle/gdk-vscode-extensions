@@ -58,6 +58,11 @@
 				"command": "gcn.undeployProject",
 				"title": "Undeploy project",
 				"category": "GCN"
+			},
+			{
+				"command": "gcn.projectAudit.execute",
+				"title": "Run Project Audit",
+				"category": "GCN"
 			}
 		],
 		"viewsWelcome": [
@@ -111,6 +116,10 @@
 					"command": "extension.gcn.downloadArtifact",
 					"when": "viewItem == gcn.oci.buildPipelineNode-artifacts-available",
 					"group": "inline@2"
+				},
+				{
+					"command": "gcn.projectAudit.execute",
+					"when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/"
 				}
 			]
 		}

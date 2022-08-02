@@ -20,6 +20,7 @@ export class ServicePlugin {
     }
 
     initialize(_folder: vscode.WorkspaceFolder, _data : any, _dataChanged : ociSupport.DataChanged) : any {
+        return undefined;
     }
 
     getServiceType() {
@@ -54,15 +55,15 @@ export class OciServices implements model.CloudServices {
     
         let saveData : boolean = false;
         for (const featurePlugin of ociSupport.SERVICE_PLUGINS) {
-            const featureData = this.data.services?.[featurePlugin.getServiceType()] || {};
+            const featureData = this.data.services?.[featurePlugin.getServiceType()]?.settings || {};
 
             const createdData : any = featurePlugin.initialize(folder, featureData, () => {
-                this.data.services[featurePlugin.getServiceType()] = createdData;
+                this.data.services[featurePlugin.getServiceType()].settings = createdData;
                 this.dataChanged();
             }) || featureData;
 
             if (createdData != featureData) {
-                this.data.services[featurePlugin.getServiceType()] = createdData;
+                this.data.services[featurePlugin.getServiceType()].settings = createdData;
                 saveData = true;
             }
         }
