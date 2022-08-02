@@ -50,6 +50,7 @@ steps:
     name: "Package application"
     timeoutInSeconds: 600
     command: |
+      echo "Executing build command: ${{project_build_command}}"
       ${{project_build_command}}
     onFailure:
       - type: Command

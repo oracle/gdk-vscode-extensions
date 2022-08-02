@@ -52,6 +52,7 @@ steps:
     name: "Build application native image"
     timeoutInSeconds: 3600
     command: |
+      echo "Executing build command: ${{project_build_command}}"
       ${{project_build_command}}
     onFailure:
       - type: Command
