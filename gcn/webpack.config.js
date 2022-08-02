@@ -3,7 +3,6 @@
 'use strict';
 
 const path = require('path');
-//const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin'); // https://github.com/TypeStrong/ts-loader#faster-builds
 
 /**@type {import('webpack').Configuration}*/
 const config = {
@@ -49,9 +48,6 @@ const config = {
 const devConf = {
     target: 'node', // vscode extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
 
-    plugins: [
-        //new ForkTsCheckerWebpackPlugin() // https://github.com/TypeStrong/ts-loader#faster-builds
-      ],
     entry: {
         extension: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
     },
