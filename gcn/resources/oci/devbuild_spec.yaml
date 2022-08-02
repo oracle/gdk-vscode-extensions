@@ -31,7 +31,7 @@ env:
     - JAVA_HOME
 steps:
   - type: Command
-    name: "Install GraalVM EE - JDK and Native Image"
+    name: "Install GraalVM EE - JDK"
     timeoutInSeconds: 300
     command: |
       if [ ! -n "${GRAALVM_VERSION}" ]; then export GRAALVM_VERSION=22; fi
