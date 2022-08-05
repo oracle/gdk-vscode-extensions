@@ -327,29 +327,32 @@ class BuildPipelineNode extends nodes.ChangeableNode {
                 return undefined;
             }
             const buildRun = (await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId))?.buildRun;
-            if (this.lastRun?.output && this.lastRun?.ocid === buildRunId && buildRun && compartmentId && groupId && logId && timeStart) {
-                const timeEnd = ociUtils.isRunning(buildRun.lifecycleState) ? new Date() : buildRun.timeUpdated;
-                if (timeEnd) {
-                    // While the build run is in progress, messages in the log cloud appear out of order.
-                    const results = await ociUtils.searchLogs(this.oci.getProvider(), compartmentId, groupId, logId, buildRun.id, timeStart, timeEnd);
-                    if (this.lastRun?.output && this.lastRun?.ocid === buildRunId && results?.length && results.length > lastResults.length) {
-                        if (lastResults.find((result: any, idx: number) => result.data.logContent.time !== results[idx].data.logContent.time || result.data.logContent.data.message !== results[idx].data.logContent.data.message)) {
-                            this.lastRun.output.clear();
-                            for (let result of results) {
-                                this.lastRun.output.appendLine(`${result.data.logContent.time}  ${result.data.logContent.data.message}`);
+            const state = buildRun?.lifecycleState;
+            if (this.lastRun?.ocid === buildRunId && buildRun) {
+                if (ociUtils.isSuccess(state)) {
+                    deliveredArtifacts = buildRun?.buildOutputs?.deliveredArtifacts?.items.filter(artifact => artifact.artifactType === 'GENERIC_ARTIFACT').map((artifact: any) => artifact.deliveredArtifactId);
+                    this.updateLastRun(buildRunId, state, this.lastRun?.output, deliveredArtifacts);
+                }
+                if (this.lastRun?.output && compartmentId && groupId && logId && timeStart) {
+                    const timeEnd = ociUtils.isRunning(buildRun.lifecycleState) ? new Date() : buildRun.timeUpdated;
+                    if (timeEnd) {
+                        // While the build run is in progress, messages in the log cloud appear out of order.
+                        const results = await ociUtils.searchLogs(this.oci.getProvider(), compartmentId, groupId, logId, buildRun.id, timeStart, timeEnd);
+                        if (this.lastRun?.output && this.lastRun?.ocid === buildRunId && results?.length && results.length > lastResults.length) {
+                            if (lastResults.find((result: any, idx: number) => result.data.logContent.time !== results[idx].data.logContent.time || result.data.logContent.data.message !== results[idx].data.logContent.data.message)) {
+                                this.lastRun.output.clear();
+                                for (let result of results) {
+                                    this.lastRun.output.appendLine(`${result.data.logContent.time}  ${result.data.logContent.data.message}`);
+                                }
+                            } else {
+                                for (let result of results.slice(lastResults.length)) {
+                                    this.lastRun.output.appendLine(`${result.data.logContent.time}  ${result.data.logContent.data.message}`);
+                                }
                             }
-                        } else {
-                            for (let result of results.slice(lastResults.length)) {
-                                this.lastRun.output.appendLine(`${result.data.logContent.time}  ${result.data.logContent.data.message}`);
-                            }
+                            lastResults = results;
                         }
-                        lastResults = results;
                     }
                 }
-            }
-            const state = buildRun?.lifecycleState;
-            if (ociUtils.isSuccess(state)) {
-                deliveredArtifacts = buildRun?.buildOutputs?.deliveredArtifacts?.items.filter(artifact => artifact.artifactType === 'GENERIC_ARTIFACT').map((artifact: any) => artifact.deliveredArtifactId);
             }
             return state;
         };

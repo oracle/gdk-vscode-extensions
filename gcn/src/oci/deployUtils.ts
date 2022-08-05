@@ -97,7 +97,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 return;
             }
 
-            // --- Create artifact registry
+            // --- Create artifact repository
             progress.report({
                 message: `Creating artifact repository...`
             });
@@ -106,6 +106,16 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
             }))?.repository.id;
             if (!artifactsRepository) {
                 resolve('Failed to create artifact repository.');
+                return;
+            }
+
+            // --- Create container repository
+            progress.report({
+                message: `Creating container repository...`
+            });
+            const containerRepository = (await ociUtils.createContainerRepository(provider, compartment, projectName))?.containerRepository;
+            if (!containerRepository) {
+                resolve('Failed to create container repository.');
                 return;
             }
 
@@ -197,6 +207,42 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                     return;
                 }
 
+                const docker_nibuildspec_template = 'docker_nibuild_spec.yaml';
+
+                // --- Create docker native image artifact
+                progress.report({
+                    message: `Creating docker native executable artifacts for ${repositoryName}...`
+                });
+                const tenancy = (await ociUtils.getTenancy(provider, provider.getTenantId()))?.tenancy.name;
+                const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${tenancy}/${containerRepository.displayName}:dev`;
+                const docker_nibuildArtifactName = `${projectName}_dev_docker_image`;
+                const docker_nibuildArtifactDescription = `Docker native executable artifact for project ${projectName} & repository ${repositoryName}`;
+                const docker_nibuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, project, docker_nibuildImage, docker_nibuildArtifactName, docker_nibuildArtifactDescription))?.deployArtifact.id;
+                if (!docker_nibuildArtifact) {
+                    resolve(`Failed to create docker native executable artifacts for ${repositoryName}.`);
+                    return;
+                }
+
+                // --- Create docker native image pipeline
+                progress.report({
+                    message: `Creating build pipeline for docker native executables of ${repositoryName}...`
+                });
+                const docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, 'DockerNativeImagePipeline'))?.buildPipeline.id;
+                if (!docker_nibuildPipeline) {
+                    resolve(`Failed to create docker native executables pipeline for ${repositoryName}.`);
+                    return;
+                }
+                const docker_nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, docker_nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${docker_nibuildspec_template}`))?.buildPipelineStage.id;
+                if (!docker_nibuildPipelineBuildStage) {
+                    resolve(`Failed to create docker native executables pipeline build stage for ${repositoryName}.`);
+                    return;
+                }
+                const docker_nibuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, docker_nibuildPipeline, docker_nibuildPipelineBuildStage, docker_nibuildArtifact, docker_nibuildArtifactName))?.buildPipelineStage.id;
+                if (!docker_nibuildPipelineArtifactsStage) {
+                    resolve(`Failed to create docker native executables pipeline artifacts stage for ${repositoryName}.`);
+                    return;
+                }
+
                 // --- Generate build specs
                 progress.report({
                     message: `Creating build specs for source code repository ${repositoryName}...`
@@ -224,7 +270,18 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 }
                 const nibuildTemplateError = expandTemplate(nibuildspec_template, folder, project_build_native_executable_command, project_native_executable_artifact_location, nibuildArtifactName, resourcesPath);
                 if (nibuildTemplateError) {
-                    resolve(`Failed to configure native executable build spec for ${repositoryName}: ${devbuildTemplateError}`);
+                    resolve(`Failed to configure native executable build spec for ${repositoryName}: ${nibuildTemplateError}`);
+                    return;
+                }
+                const docker_nibuildTemplateError = expandTemplate(docker_nibuildspec_template, folder, project_build_native_executable_command, project_native_executable_artifact_location, docker_nibuildArtifactName, resourcesPath);
+                if (nibuildTemplateError) {
+                    resolve(`Failed to configure docker native executable build spec for ${repositoryName}: ${docker_nibuildTemplateError}`);
+                    return;
+                }
+                const docker_ni_file = 'Dockerfile.native';
+                const docker_niFileError = expandTemplate(docker_ni_file, folder, '', '', '', resourcesPath);
+                if (docker_niFileError) {
+                    resolve(`Failed to configure docker naive file for ${repositoryName}: ${docker_niFileError}`);
                     return;
                 }
 
@@ -259,6 +316,10 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                             {
                                 'ocid': nibuildPipeline,
                                 'displayName': 'Build Native Image'
+                            },
+                            {
+                                'ocid': docker_nibuildPipeline,
+                                'displayName': 'Build Docker Native Image'
                             }
                         ]
                     },
@@ -532,6 +593,16 @@ export async function undeployFolder(resource : vscode.Uri) {
                 if ((repo.freeformTags?.['gcn_tooling_projectOCID'] == devopsId)) {
                     _progress.report({message : `Deleting artifact repository ${repo.displayName}`});
                     await ociUtils.deleteArtifactsRepository(authProvider, compartmentId, repo.id);
+                }
+            }
+        }
+        _progress.report({ message: 'Searching container repositories'});
+        const containerRepositories = (await ociUtils.listContainerRepositories(authProvider, compartmentId))?.containerRepositoryCollection.items;
+        if (containerRepositories) {
+            for (const repo of containerRepositories) {
+                if ((repo.displayName === `${data[0].name.toLowerCase()}_container_repository`)) {
+                    _progress.report({message : `Deleting container repository ${repo.displayName}`});
+                    await ociUtils.deleteContainerRepository(authProvider, repo.id);
                 }
             }
         }

@@ -169,6 +169,19 @@ export async function devopsWaitForResourceCompletionStatus(
     return requestState.resources[0].identifier;
 }
 
+export async function getTenancy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, tenancyID: string): Promise<identity.responses.GetTenancyResponse | undefined> {
+    try {
+        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const getTenancyRequest: identity.requests.GetTenancyRequest = {
+            tenancyId: tenancyID
+        };
+        return client.getTenancy(getTenancyRequest);
+    } catch (error) {
+        console.log('>>> getTenancy ' + error);
+        return undefined;
+    }
+}
+
 export async function listCompartments(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.responses.ListCompartmentsResponse | undefined> {
     try {
         const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
@@ -447,6 +460,12 @@ export async function listContainerRepositories(authenticationDetailsProvider: c
         return undefined;
     }
 }
+
+export async function deleteContainerRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string): Promise<artifacts.responses.DeleteContainerRepositoryResponse> {
+    const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    return client.deleteContainerRepository({ repositoryId : repositoryID});
+}
+
 
 export async function listContainerImages(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string): Promise<artifacts.responses.ListContainerImagesResponse | undefined> {
     try {
@@ -825,6 +844,25 @@ export async function createArtifactsRepository(authenticationDetailsProvider: c
     }
 }
 
+export async function createContainerRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, projectName: string): Promise<artifacts.responses.CreateContainerRepositoryResponse | undefined> {
+    try {
+        const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const createContainerRepositoryDetails = {
+            compartmentId: compartmentID,
+            displayName: `${projectName.toLowerCase()}_container_repository`,
+            isImmutable: false,
+            isPublic: true
+        };
+        const createContainerRepositoryRequest: artifacts.requests.CreateContainerRepositoryRequest = {
+            createContainerRepositoryDetails: createContainerRepositoryDetails
+        };
+        return await client.createContainerRepository(createContainerRepositoryRequest);
+    } catch (error) {
+        console.log('>>> createContainerRepository  ' + error);
+        return undefined;
+    }
+}
+
 export async function createCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, repositoryName: string, defaultBranchName: string): Promise<devops.responses.CreateRepositoryResponse | undefined> {
     try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
@@ -991,20 +1029,29 @@ export async function createBuildRun(authenticationDetailsProvider: common.Confi
 }
 
 export async function createProjectDevArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string, projectID: string, artifactPath: string, artifactName: string, artifactDescription: string): Promise<devops.responses.CreateDeployArtifactResponse | undefined> {
-    try {
+    return createDeployArtifact(authenticationDetailsProvider, projectID, artifactName, artifactDescription, devops.models.DeployArtifact.DeployArtifactType.GenericFile, {
+        repositoryId: repositoryID,
+        deployArtifactPath: artifactPath,
+        deployArtifactVersion: 'dev',
+        deployArtifactSourceType: devops.models.GenericDeployArtifactSource.deployArtifactSourceType
+    });
+}
+
+export async function createProjectDockerArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, imageURI: string, artifactName: string, artifactDescription: string): Promise<devops.responses.CreateDeployArtifactResponse | undefined> {
+    return createDeployArtifact(authenticationDetailsProvider, projectID, artifactName, artifactDescription, devops.models.DeployArtifact.DeployArtifactType.DockerImage, {
+        imageUri: imageURI,
+        deployArtifactSourceType: devops.models.OcirDeployArtifactSource.deployArtifactSourceType
+    });
+}
+
+async function createDeployArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, displayName: string, description: string, deployArtifactType: string, deployArtifactSource: devops.models.GenericDeployArtifactSource | devops.models.OcirDeployArtifactSource): Promise<devops.responses.CreateDeployArtifactResponse | undefined> {    try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createDeployArtifactDetails = {
-            displayName: artifactName,
-            description: artifactDescription,
-            deployArtifactType: devops.models.DeployArtifact.DeployArtifactType.GenericFile,
-            deployArtifactSource: { // model.GenericDeployArtifactSource
-                repositoryId: repositoryID,
-                deployArtifactPath: artifactPath,
-                deployArtifactVersion: 'dev',
-                deployArtifactSourceType: devops.models.GenericDeployArtifactSource.deployArtifactSourceType
-            },
-            argumentSubstitutionMode:
-            devops.models.DeployArtifact.ArgumentSubstitutionMode.None,
+            displayName,
+            description,
+            deployArtifactType,
+            deployArtifactSource,
+            argumentSubstitutionMode: devops.models.DeployArtifact.ArgumentSubstitutionMode.SubstitutePlaceholders,
             projectId: projectID
         };
         const createDeployArtifactRequest: devops.requests.CreateDeployArtifactRequest = {
