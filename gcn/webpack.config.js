@@ -57,7 +57,7 @@ const devConf = {
         libraryTarget: "commonjs2",
         devtoolModuleFilenameTemplate: "../[resource-path]",
     },
-    devtool: 'eval-cheap-module-source-map', // https://webpack.js.org/configuration/devtool/#devtool
+    devtool: 'source-map',
     externals: {
         vscode: "commonjs2 vscode", // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
     },
