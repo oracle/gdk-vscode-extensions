@@ -43,6 +43,11 @@
 				"category": "GCN"
 			},
 			{
+				"command": "extension.gcn.initializeSshKeys",
+				"title": "Initialize SSH Keys",
+				"category": "GCN"
+			},
+			{
 				"command": "extension.gcn.runBuildPipeline",
 				"title": "Run Build Pipeline",
 				"icon": "$(run)",
