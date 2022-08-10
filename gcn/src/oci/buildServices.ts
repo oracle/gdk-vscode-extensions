@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as nodes from '../nodes';
+import * as gitUtils from '../gitUtils';
 import * as graalvmUtils from '../graalvmUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
@@ -188,7 +189,18 @@ class BuildPipelineNode extends nodes.ChangeableNode {
                         cancellable: false
                     }, (_progress, _token) => {
                         return new Promise(async (resolve) => {
-                            const buildRun = (await ociUtils.createBuildRun(this.oci.getProvider(), this.ocid, buildName, params))?.buildRun;
+                            let commitInfo;
+                            const branchName = await gitUtils.getBranchName(this.oci.getFolder().fsPath);
+                            if (branchName) {
+                                const repository = (await ociUtils.getCodeRepository(this.oci.getProvider(), this.oci.getCodeRepository()))?.repository;
+                                if (repository && repository.httpUrl && `refs/heads/${branchName}` !== repository.defaultBranch) {
+                                    const hash = await gitUtils.getLastCommitHash(this.oci.getFolder().fsPath);
+                                    if (hash) {
+                                        commitInfo = { repositoryUrl: repository.httpUrl, repositoryBranch: branchName, commitHash: hash };
+                                    }
+                                }
+                            }
+                            const buildRun = (await ociUtils.createBuildRun(this.oci.getProvider(), this.ocid, buildName, params, commitInfo))?.buildRun;
                             resolve(true);
                             if (buildRun) {
                                 this.updateLastRun(buildRun.id, buildRun.lifecycleState, buildRun.displayName ? vscode.window.createOutputChannel(buildRun.displayName) : undefined);

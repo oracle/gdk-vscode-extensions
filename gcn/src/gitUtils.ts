@@ -56,8 +56,37 @@ export async function cloneRepository(address: string, target: string): Promise<
         vscode.window.showErrorMessage('Failed to clone repository.');
         return false;
     }
-    // console.log('>>> CLONED');
     return true;
+}
+
+export async function getBranchName(target: string): Promise<string | undefined> {
+    const gitPath = getPath();
+    if (!gitPath) {
+        vscode.window.showErrorMessage('Cannot access Git support.');
+        return undefined;
+    }
+    try {
+        const command = `${gitPath} branch --show-current`;
+        return (await execute(command, target)).trim();
+    } catch (err) {
+        vscode.window.showErrorMessage('Failed to get branch name.');
+        return undefined;
+    }
+}
+
+export async function getLastCommitHash(target: string): Promise<string | undefined> {
+    const gitPath = getPath();
+    if (!gitPath) {
+        vscode.window.showErrorMessage('Cannot access Git support.');
+        return undefined;
+    }
+    try {
+        const command = `${gitPath} log -n 1 --pretty=format:"%H"`;
+        return (await execute(command, target)).trim();
+    } catch (err) {
+        vscode.window.showErrorMessage('Failed to get the last commit hash.');
+        return undefined;
+    }
 }
 
 export async function populateNewRepository(address: string, source: string): Promise<string | undefined> {

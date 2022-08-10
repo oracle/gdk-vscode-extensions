@@ -213,7 +213,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 progress.report({
                     message: `Creating docker native executable artifacts for ${repositoryName}...`
                 });
-                const tenancy = (await ociUtils.getTenancy(provider, provider.getTenantId()))?.tenancy.name;
+                const tenancy = (await ociUtils.getTenancy(provider))?.tenancy.name;
                 const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${tenancy}/${containerRepository.displayName}:dev`;
                 const docker_nibuildArtifactName = `${projectName}_dev_docker_image`;
                 const docker_nibuildArtifactDescription = `Docker native executable artifact for project ${projectName} & repository ${repositoryName}`;
@@ -304,7 +304,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 const data: any = {
                     version: '1.0'
                 };
-                const oci = new ociContext.Context(provider, compartment, project, codeRepository.id);
+                const oci = new ociContext.Context(folder.uri, provider, compartment, project, codeRepository.id);
                 oci.store(data);
                 data.services = {
                     buildPipelines: {

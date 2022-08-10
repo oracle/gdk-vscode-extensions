@@ -157,7 +157,7 @@ class OciSupport implements model.CloudSupport {
 
     getServices(folder : vscode.WorkspaceFolder, configuration: model.ServicesConfiguration): model.CloudServices | undefined {
         const data = configuration.data;
-        const oci = ociContext.create(data);
+        const oci = ociContext.create(folder.uri, data);
         workspaceContexts.set(folder, oci);
         return new ociServices.OciServices(oci, folder, data, configuration.dataChanged);
     }

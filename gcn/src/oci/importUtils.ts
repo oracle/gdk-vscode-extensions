@@ -84,7 +84,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                 const folder = path.join(targetDirectory.fsPath, repository.name); // TODO: name and toplevel dir might differ!
                 folders.push(folder);
 
-                const services = await importServices(provider, compartment, devopsProject.ocid, repository.ocid);
+                const services = await importServices(targetDirectory, provider, compartment, devopsProject.ocid, repository.ocid);
                 servicesData.push(services);
             }
 
@@ -264,11 +264,11 @@ async function selectTargetDirectory(): Promise<vscode.Uri | undefined> {
     return target && target.length === 1 ? target[0] : undefined;
 }
 
-async function importServices(provider: common.ConfigFileAuthenticationDetailsProvider, compartment: string, devopsProject: string, repository: string): Promise<any> {
+async function importServices(folder: vscode.Uri, provider: common.ConfigFileAuthenticationDetailsProvider, compartment: string, devopsProject: string, repository: string): Promise<any> {
     const data: any = {
         version: '1.0'
     };
-    const oci = new ociContext.Context(provider, compartment, devopsProject, repository);
+    const oci = new ociContext.Context(folder, provider, compartment, devopsProject, repository);
     oci.store(data);
 
     const services: any = {};

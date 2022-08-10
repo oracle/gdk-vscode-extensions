@@ -169,11 +169,24 @@ export async function devopsWaitForResourceCompletionStatus(
     return requestState.resources[0].identifier;
 }
 
-export async function getTenancy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, tenancyID: string): Promise<identity.responses.GetTenancyResponse | undefined> {
+export async function getUser(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.responses.GetUserResponse | undefined> {
+    try {
+        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const getUserRequest: identity.requests.GetUserRequest = {
+            userId: authenticationDetailsProvider.getUser()
+        };
+        return client.getUser(getUserRequest);
+    } catch (error) {
+        console.log('>>> getUser ' + error);
+        return undefined;
+    }
+}
+
+export async function getTenancy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.responses.GetTenancyResponse | undefined> {
     try {
         const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const getTenancyRequest: identity.requests.GetTenancyRequest = {
-            tenancyId: tenancyID
+            tenancyId: authenticationDetailsProvider.getTenantId()
         };
         return client.getTenancy(getTenancyRequest);
     } catch (error) {
@@ -253,6 +266,19 @@ export async function listCodeRepositories(authenticationDetailsProvider: common
         return client.listRepositories(listRepositoriesRequest);
     } catch (error) {
         console.log('>>> listRepositories ' + error);
+        return undefined;
+    }
+}
+
+export async function getCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string): Promise<devops.responses.GetRepositoryResponse | undefined> {
+    try {
+        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const getRepositoryRequest: devops.requests.GetRepositoryRequest = {
+            repositoryId: repositoryID
+        };
+        return client.getRepository(getRepositoryRequest);
+    } catch (error) {
+        console.log('>>> getRepository ' + error);
         return undefined;
     }
 }
@@ -1008,7 +1034,7 @@ export async function getBuildRun(authenticationDetailsProvider: common.ConfigFi
     }
 }
 
-export async function createBuildRun(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, name: string, params: { name: string, value: string }[] = []): Promise<devops.responses.CreateBuildRunResponse | undefined> {
+export async function createBuildRun(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, name: string, params: { name: string, value: string }[] = [], commitInfo?: devops.models.CommitInfo): Promise<devops.responses.CreateBuildRunResponse | undefined> {
     try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createBuildRunDetails: devops.models.CreateBuildRunDetails = {
@@ -1016,7 +1042,8 @@ export async function createBuildRun(authenticationDetailsProvider: common.Confi
             buildPipelineId: pipelineID,
             buildRunArguments: {
                 items: params
-            }
+            },
+            commitInfo
         };
         const createBuildRunRequest: devops.requests.CreateBuildRunRequest = {
             createBuildRunDetails: createBuildRunDetails

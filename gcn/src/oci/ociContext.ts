@@ -5,41 +5,42 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
+import * as vscode from 'vscode';
 import * as common from 'oci-common';
-
 const AUTH_TYPE_CONFIG_FILE = 'configFile';
 const CONFIG_FILE_PATH_DEFAULT = 'default';
 const CONFIG_FILE_PROFILE_DEFAULT = 'default';
 
-export function create(data: any): Context {
+export function create(folder: vscode.Uri, data: any): Context {
     const authorization = data.authorization;
     if (!authorization) {
-        return new Context(undefined, undefined, undefined, undefined, 'Authorization config missing');
+        return new Context(folder, undefined, undefined, undefined, undefined, 'Authorization config missing');
     }
     const type: any = authorization.type;
     if (type !== AUTH_TYPE_CONFIG_FILE) {
-        return new Context(undefined, undefined, undefined, undefined, `Unsupported authorization type: ${type}`);
+        return new Context(folder, undefined, undefined, undefined, undefined, `Unsupported authorization type: ${type}`);
     }
     const path = authorization.path;
     if (path !== CONFIG_FILE_PATH_DEFAULT) {
-        return new Context(undefined, undefined, undefined, undefined, `Unsupported config file path: ${path}`);
+        return new Context(folder, undefined, undefined, undefined, undefined, `Unsupported config file path: ${path}`);
     }
     const profile = authorization.profile;
     if (profile !== CONFIG_FILE_PROFILE_DEFAULT) {
-        return new Context(undefined, undefined, undefined, undefined, `Unsupported config file profile: ${profile}`);
+        return new Context(folder, undefined, undefined, undefined, undefined, `Unsupported config file profile: ${profile}`);
     }
     let provider: common.ConfigFileAuthenticationDetailsProvider;
     try {
         provider = new common.ConfigFileAuthenticationDetailsProvider();
     } catch (err) {
-        return new Context(undefined, undefined, undefined, undefined, `Failed to initialize authorization provider: ${err}`);
+        return new Context(folder, undefined, undefined, undefined, undefined, `Failed to initialize authorization provider: ${err}`);
     }
     const context = data.context;
-    return new Context(provider, context.compartment?.ocid, context.devopsProject?.ocid, context.codeRepository?.ocid);
+    return new Context(folder, provider, context.compartment?.ocid, context.devopsProject?.ocid, context.codeRepository?.ocid);
 }
 
 export class Context  {
 
+    private folder: vscode.Uri;
     private provider: common.ConfigFileAuthenticationDetailsProvider | undefined;
     private compartmentID: string | undefined;
     private devopsProjectID: string | undefined;
@@ -47,7 +48,8 @@ export class Context  {
 
     private configurationProblem: string | undefined;
 
-    constructor (provider: common.ConfigFileAuthenticationDetailsProvider | undefined, compartmentID: string | undefined, devopsProjectID: string | undefined, codeRepositoryID: string | undefined, configurationProblem?: string | undefined) {
+    constructor (folder: vscode.Uri, provider: common.ConfigFileAuthenticationDetailsProvider | undefined, compartmentID: string | undefined, devopsProjectID: string | undefined, codeRepositoryID: string | undefined, configurationProblem?: string | undefined) {
+        this.folder = folder;
         this.provider = provider;
         this.compartmentID = compartmentID;
         this.devopsProjectID = devopsProjectID;
@@ -57,6 +59,10 @@ export class Context  {
 
     getConfigurationProblem(): string | undefined {
         return this.configurationProblem;
+    }
+
+    getFolder(): vscode.Uri {
+        return this.folder;
     }
 
     getProvider(): common.ConfigFileAuthenticationDetailsProvider {
