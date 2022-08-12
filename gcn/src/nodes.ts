@@ -7,7 +7,53 @@
 
 import * as vscode from 'vscode';
 
-export type TreeChanged = (tree?: vscode.TreeItem) => void;
+
+export type TreeChanged = (treeItem?: vscode.TreeItem) => void;
+
+export interface AddContentNode {
+    addContent(): void;
+}
+
+const ADD_CONTENT_NODES: string[] = [];
+
+export async function registerAddContentNode(context: string | string[]) {
+    if (typeof context === 'string' || context instanceof String) {
+        ADD_CONTENT_NODES.push(context as string);
+    } else {
+        ADD_CONTENT_NODES.push(...context);
+    }
+    await vscode.commands.executeCommand('setContext', 'gcn.addContentNodes', ADD_CONTENT_NODES);
+}
+
+export interface RenameableNode {
+    rename(): void;
+}
+
+const RENAMEABLE_NODES: string[] = [];
+
+export async function registerRenameableNode(context: string | string[]) {
+    if (typeof context === 'string' || context instanceof String) {
+        RENAMEABLE_NODES.push(context as string);
+    } else {
+        RENAMEABLE_NODES.push(...context);
+    }
+    await vscode.commands.executeCommand('setContext', 'gcn.renameableNodes', RENAMEABLE_NODES);
+}
+
+export interface RemovableNode {
+    remove(): void;
+}
+
+const REMOVABLE_NODES: string[] = [];
+
+export async function registerRemovableNode(context: string | string[]) {
+    if (typeof context === 'string' || context instanceof String) {
+        REMOVABLE_NODES.push(context as string);
+    } else {
+        REMOVABLE_NODES.push(...context);
+    }
+    await vscode.commands.executeCommand('setContext', 'gcn.removableNodes', REMOVABLE_NODES);
+}
 
 export class BaseNode extends vscode.TreeItem {
 
@@ -28,7 +74,12 @@ export class BaseNode extends vscode.TreeItem {
         }
     }
 
-    setChildren(children: BaseNode[] | undefined | null) {
+    public setChildren(children: BaseNode[] | undefined | null) {
+        if (this.children) {
+            for (const child of this.children) {
+                child.parent = undefined;
+            }
+        }
         this.children = children;
         if (this.children) {
             for (const child of this.children) {
@@ -39,6 +90,31 @@ export class BaseNode extends vscode.TreeItem {
 
     public getChildren(): BaseNode[] | undefined {
         return this.children ? this.children : undefined;
+    }
+
+    public removeFromParent(treeChanged?: TreeChanged): boolean {
+        const parent = this.parent;
+        if (parent) {
+            if (parent.removeChild(this)) {
+                if (treeChanged) {
+                    treeChanged(parent);
+                }
+                return true;
+            }
+            this.parent = undefined;
+        }
+        return false;
+    }
+
+    removeChild(child: BaseNode): boolean {
+        if (this.children) {
+            const idx = this.children.indexOf(child);
+            if (idx >= 0) {
+                this.children.splice(idx, 1);
+                return true;
+            }
+        }
+        return false;
     }
 
     public updateAppearance() {

@@ -7,8 +7,10 @@
 
 import * as vscode from 'vscode';
 import * as model from './model';
+import * as gcnServices from './gcnServices';
 import * as servicesView from './servicesView';
 import * as importExportUtils from './importExportUtils';
+
 
 export const CLOUD_SUPPORTS: model.CloudSupport[] = [];
 
@@ -19,119 +21,20 @@ export function activate(context: vscode.ExtensionContext) {
 		// TODO: add another cloud implementations here
 	);
 
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.importFromCloud', () => {
-	// 	importUtils.importDevopsProject();
-	// }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.selectTenancy', () => {
-	// 	gcn.selectTenancy();
-	// }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.selectCompartment', () => {
-	// 	gcn.selectCompartment();
-	// }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.selectRegion', () => {
-	// 	gcn.selectRegion();
-	// }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.selectProject', () => {
-	// 	gcn.selectProject();
-	// }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.showRootCause', () => {
-	// 	gcn.notImplementedYet();
-	// }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.runBuildPipeline', (...params: any[]) => {
-	// 	gcn.runBuildPipeline(params);
-	// }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.addCodeRepository', () => {
-	// 	gcn.notImplementedYet();
-	// }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.openCodeRepository', (...params: any[]) => {
-	// 	gcn.handleSourceRepository(params);
-	// }));
-	// // context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.runAudits', () => {
-	// // 	gcn.notImplementedYet();
-	// // }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.refreshBuilds', () => {
-	// 	gcn.refreshBuilds();
-	// }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.showBuildReport', (...params: any[]) => {
-	// 	gcn.showBuildReport(params);
-	// }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.showAuditReport', () => {
-	// 	gcn.notImplementedYet();
-	// }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.downloadArtifact', (...params: any[]) => {
-	// 	gcn.downloadArtifact(params);
-	// }));
-	// // context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.openCloudShell', () => {
-	// // 	gcn.notImplementedYet();
-	// // }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.refreshView', () => {
-	// 	// gcn.simulateErrors();
-	// 	gcn.refreshUI();
-	// }));
-
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.notImplementedYet', () => {
-	// 	vscode.window.showWarningMessage('Not implemented yet.');
-	// }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.openWebConsole', (...params: any[]) => {
-	// 	gcn.openWebConsole(params);
-	// }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.importLocally', (...params: any[]) => {
-	// 	gcn.importLocally(params);
-	// }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.deployToCloud', () => {
-	// 	gcn.deployWorkspaceToCloud(context.extensionPath);
-	// }));
-	// context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.removeService', (...params: any[]) => {
-	// 	gcn.removeService(params);
-	// }));
-
-	// // context.subscriptions.push(vscode.window.registerTreeDataProvider('gcn-context', gcn.contextNodeProvider));
-	// context.subscriptions.push(vscode.window.registerTreeDataProvider('gcn-view', gcn.resourcesNodeProvider));
-
-	// gcn.initializeWorkspace(context.workspaceState, context.globalState);
-	// if (vscode.workspace.workspaceFolders) {
-	// 	gcn.lazilyImportToWorkspace();
-	// }
-
-
-	// const statusBarItem = gcn.initializeStatusBarItem();
-	// context.subscriptions.push(statusBarItem);
-	// context.subscriptions.push(vscode.commands.registerCommand(statusBarItem.command as string, () => {
-	// 	gcn.statusBarAction();
-	// }));
-
-	context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.importFromCloud', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.importFromCloud', () => {
 		importExportUtils.importDevopsProject();
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.deployToCloud', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.deployToCloud', () => {
 		importExportUtils.deployOpenedFolders();
-	}));
-	context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.reloadServicesView', () => {
-		servicesView.rebuild();
-	}));
-	context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.notImplementedYet', () => {
-		vscode.window.showWarningMessage('Not implemented yet.');
-	}));
-
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.undeployProject', () => {
-		const uri : vscode.Uri | undefined = vscode.window.activeTextEditor?.document?.uri;
-		if (!uri) {
-			return;
-		}
-		const f = vscode.workspace.getWorkspaceFolder(uri);
-		if (!f) {
-			return;
-		}
-		importExportUtils.undeploySelectedFolder(f).then( () => servicesView.rebuild() );
 	}));
 
 	servicesView.initialize(context);
 	context.subscriptions.push(vscode.window.registerTreeDataProvider('gcn-services', servicesView.nodeProvider));
 
-	context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(() => {
-		servicesView.rebuild();
+	context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(async () => {
+		await gcnServices.build();
 	}));
 
-	servicesView.rebuild();
+	gcnServices.build();
 
 }

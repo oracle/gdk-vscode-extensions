@@ -6,71 +6,157 @@
  */
 
 import * as vscode from 'vscode';
+import * as artifacts from 'oci-artifacts';
 import * as nodes from '../nodes';
+import * as dialogs from '../dialogs';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
-import * as ociServices from './ociServices';
+import * as ociService from './ociService';
+import * as ociServices  from './ociServices';
+import * as dataSupport from './dataSupport';
 
-export function createFeaturePlugins(_context: vscode.ExtensionContext): ociServices.ServicePlugin[] {
-    // TODO: initialize actions using context
-    return [ new Plugin() ];
+
+export const DATA_NAME = 'containerRepositories';
+
+type ContainerRepository = {
+    ocid: string,
+    displayName: string
 }
 
-class Plugin extends ociServices.ServicePlugin {
+export function initialize(_context: vscode.ExtensionContext) {
+    nodes.registerRenameableNode(ContainerRepositoryNode.CONTEXT);
+    nodes.registerRemovableNode(ContainerRepositoryNode.CONTEXT);
+}
 
-    constructor() {
-        super('containerRepository');
-    }
+export async function importServices(_oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
+    // TODO: Might return populated instance of Service which internally called importServices()
+    return undefined;
+}
 
-    buildInline(oci: ociContext.Context, containerRepository: any, treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
-        const items = containerRepository.inline;
-        if (!items || items.length === 0) {
-            return undefined;
-        }
-        const itemNodes = buildContainerNodes(items, oci, treeChanged);
-        return itemNodes;
-    }
+export function create(oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged): ociService.Service {
+    return new Service(oci, serviceData, dataChanged);
+}
 
-    buildContainers(oci: ociContext.Context, containerRepository: any, treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
-        const containers = containerRepository.containers;
-        if (!containers || containers.length === 0) {
-            return undefined;
-        }
-        const containerNodes: nodes.BaseNode[] = [];
-        for (const container of containers) {
-            const type = container.type;
-            if (type === 'compartment') {
-                const displayName = container.displayName;
-                const containerNode = new CompartmentContainerRepositoriesNode(displayName, oci, treeChanged);
-                containerNodes.push(containerNode);
-            } else if (type === 'custom') {
-                const displayName = container.displayName;
-                const containerNode = new CustomContainerRepositoriesNode(displayName, container.items, oci, treeChanged);
-                containerNodes.push(containerNode);
+export function findByNode(node: nodes.BaseNode): Service | undefined {
+    const services = ociServices.findByNode(node);
+    const service = services?.getService(DATA_NAME);
+    return service instanceof Service ? service as Service : undefined;
+}
+
+async function selectContainerRepositories(oci: ociContext.Context, ignore: ContainerRepository[]): Promise<ContainerRepository[] | undefined> {
+    function shouldIgnore(ocid: string) {
+        for (const item of ignore) {
+            if (item.ocid === ocid) {
+                return true;
             }
         }
-        return containerNodes;
+        return false;
+    }
+    async function listContainerRepositories(oci: ociContext.Context): Promise<artifacts.models.ContainerRepositorySummary[] | undefined> {
+        // TODO: display the progress in QuickPick
+        return await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Reading compartment container repositories...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async (resolve) => {
+                resolve((await ociUtils.listContainerRepositories(oci.getProvider(), oci.getCompartment()))?.containerRepositoryCollection.items);
+            });
+        })
+    }
+    const containerRepositories: ContainerRepository[] = [];
+    const existing = await listContainerRepositories(oci);
+    if (existing) {
+        let idx = 1;
+        for (const item of existing) {
+            if (!shouldIgnore(item.id)) {
+                const displayName = item.displayName ? item.displayName : `Container Repository ${idx++}`;
+                containerRepositories.push({
+                    ocid: item.id,
+                    displayName: displayName
+                });
+            }
+        }
+    }
+    const choices: dialogs.QuickPickObject[] = [];
+    for (const containerRepository of containerRepositories) {
+        choices.push(new dialogs.QuickPickObject(containerRepository.displayName, undefined, undefined, containerRepository));
+    }
+    // TODO: provide a possibility to create a new container repository
+    // TODO: provide a possibility to select container repositories from different compartments
+    if (choices.length === 0) {
+        vscode.window.showWarningMessage('All container repositories already added or no container repositories available.')
+    } else {
+        const selection = await vscode.window.showQuickPick(choices, {
+            placeHolder: 'Select Container Repository(s) to Add',
+            canPickMany: true
+        })
+        if (selection && selection.length > 0) {
+            const selected: ContainerRepository[] = [];
+            for (const sel of selection) {
+                selected.push(sel.object as ContainerRepository);
+            }
+            return selected;
+        }
+    }
+    return undefined;
+}
+
+class Service extends ociService.Service {
+
+    constructor(oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged) {
+        super(oci, DATA_NAME, serviceData, dataChanged);
+    }
+
+    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
+        const addContent = async () => {
+            if (this.treeChanged) {
+                const displayed = this.itemsData ? this.itemsData as ContainerRepository[] : [];
+                const selected = await selectContainerRepositories(this.oci, displayed);
+                if (selected) {
+                    const added: nodes.BaseNode[] = [];
+                    for (const pipeline of selected) {
+                        added.push(new ContainerRepositoryNode(pipeline, this.oci, this.treeChanged));
+                    }
+                    this.addServiceNodes(added);
+                    this.treeChanged();
+                }
+            }
+        }
+        return [
+            new dialogs.QuickPickObject('Add Container Repository', undefined, 'Add existing container repository', addContent)
+        ];
+    }
+
+    protected buildNodesImpl(oci: ociContext.Context, itemsData: any[], treeChanged: nodes.TreeChanged): nodes.BaseNode[] {
+        const nodes: nodes.BaseNode[] = [];
+        for (const itemData of itemsData) {
+            const ocid = itemData.ocid;
+            const displayName = itemData.displayName;
+            if (ocid && displayName) {
+                const object: ContainerRepository = {
+                    ocid: ocid,
+                    displayName: displayName
+                }
+                nodes.push(new ContainerRepositoryNode(object, oci, treeChanged));
+            }
+        }
+        return nodes;
     }
 
 }
 
-function buildContainerNodes(items: any, oci: ociContext.Context, treeChanged: nodes.TreeChanged): nodes.BaseNode[] {
-    const itemNodes: nodes.BaseNode[] = [];
-    for (const item of items) {
-        const ocid = item.ocid;
-        const displayName = item.displayName;
-        const containerRepositoryNode = new ContainerRepositoryNode(ocid, oci, displayName, treeChanged);
-        itemNodes.push(containerRepositoryNode);
-    }
-    return itemNodes;
-}
+class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, dataSupport.DataProducer {
 
-export class CompartmentContainerRepositoriesNode extends nodes.AsyncNode {
+    static readonly DATA_NAME = 'containerRepositoryNode';
+    static readonly CONTEXT = `gcn.oci.${ContainerRepositoryNode.DATA_NAME}`;
 
-    private oci: ociContext.Context
+    private object: ContainerRepository;
+    private oci: ociContext.Context;
 
-    constructor(displayName: string | undefined, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
-        super(displayName ? displayName : 'Container Repositories', undefined, 'gcn.oci.compartmentContainerRepositoriesNode', treeChanged);
+    constructor(object: ContainerRepository, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
+        super(object.displayName, undefined, ContainerRepositoryNode.CONTEXT, treeChanged);
+        this.object = object;
         this.oci = oci;
         this.iconPath = new vscode.ThemeIcon('extensions');
         this.updateAppearance();
@@ -79,60 +165,7 @@ export class CompartmentContainerRepositoriesNode extends nodes.AsyncNode {
     async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
         const provider = this.oci.getProvider();
         const compartment = this.oci.getCompartment();
-        const containerRepositories = (await ociUtils.listContainerRepositories(provider, compartment))?.containerRepositoryCollection.items;
-        if (containerRepositories) {
-            const children: nodes.BaseNode[] = []
-            for (const containerRepository of containerRepositories) {
-                const ocid = containerRepository.id;
-                const displayName = containerRepository.displayName;
-                children.push(new ContainerRepositoryNode(ocid, this.oci, displayName, this.treeChanged));
-            }
-            return children;
-        }
-        return [ new nodes.NoItemsNode() ];
-    }
-
-}
-
-class CustomContainerRepositoriesNode extends nodes.AsyncNode {
-
-    private items: any;
-    private oci: ociContext.Context;
-
-    constructor(displayName: string | undefined, items: any, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
-        super(displayName ? displayName : 'Container Repositories (Custom)', undefined, 'gcn.oci.customContainerRepositoriesNode', treeChanged);
-        this.items = items;
-        this.oci = oci;
-        this.iconPath = new vscode.ThemeIcon('extensions');
-        this.updateAppearance();
-    }
-
-    async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
-        if (this.items?.length > 0) {
-            const itemNodes = buildContainerNodes(this.items, this.oci, this.treeChanged);
-            return itemNodes;
-        }
-        return [ new nodes.NoItemsNode() ];
-    }
-}
-
-class ContainerRepositoryNode extends nodes.AsyncNode {
-
-    private ocid: string;
-    private oci: ociContext.Context;
-
-    constructor(ocid: string, oci: ociContext.Context, displayName: string, treeChanged: nodes.TreeChanged) {
-        super(displayName, undefined, 'gcn.oci.containerRepositoryNode', treeChanged);
-        this.ocid = ocid;
-        this.oci = oci;
-        this.iconPath = new vscode.ThemeIcon('extensions');
-        this.updateAppearance();
-    }
-
-    async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
-        const provider = this.oci.getProvider();
-        const compartment = this.oci.getCompartment();
-        const repository = this.ocid;
+        const repository = this.object.ocid;
         const images = (await ociUtils.listContainerImages(provider, compartment, repository))?.containerImageCollection.items;
         if (images) {
             const children: nodes.BaseNode[] = []
@@ -152,14 +185,47 @@ class ContainerRepositoryNode extends nodes.AsyncNode {
         return [ new nodes.NoItemsNode() ];
     }
 
+    rename() {
+        const currentName = typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label
+        vscode.window.showInputBox({
+            title: 'Rename Container Repository',
+            value: currentName
+        }).then(name => {
+            if (name) {
+                this.object.displayName = name;
+                this.label = this.object.displayName;
+                this.updateAppearance();
+                this.treeChanged(this);
+                const service = findByNode(this);
+                service?.serviceNodesChanged(this)
+            }
+        });
+    }
+
+    remove() {
+        const service = findByNode(this);
+        this.removeFromParent(this.treeChanged);
+        service?.serviceNodesRemoved(this)
+    }
+
+    getDataName() {
+        return ContainerRepositoryNode.DATA_NAME;
+    }
+
+    getData(): any {
+        return this.object;
+    }
+
 }
 
 class ContainerImageNode extends nodes.BaseNode {
 
+    static readonly CONTEXT = 'gcn.oci.containerImageNode';
+
     // private ocid: string;
 
     constructor(_ocid: string, displayName: string, imageDescription?: string) {
-        super(displayName, imageDescription, 'gcn.oci.containerImageNode', undefined, undefined);
+        super(displayName, imageDescription, ContainerImageNode.CONTEXT, undefined, undefined);
         // this.ocid = ocid;
         this.iconPath = new vscode.ThemeIcon('primitive-square');
         this.updateAppearance();

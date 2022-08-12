@@ -7,40 +7,36 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import * as common from 'oci-common';
 import * as model from '../model';
+import * as dialogs from '../dialogs';
 import * as gitUtils from '../gitUtils';
 import * as ociUtils from './ociUtils';
-import * as ociSupport from './ociSupport';
+import * as ociServices from './ociServices';
+import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
+
 
 // TODO: extract functions shared by deployUtils.ts
 
 export async function importFolders(): Promise<model.ImportResult | undefined> {
-    let resolvedProvider: common.ConfigFileAuthenticationDetailsProvider | undefined;
-    // TODO: implement support for additional authentication methods (custom file/profile, credentials, etc.)
-    // TODO: should be implemented in ociContext.ts or authenticationUtils.ts
-    try {
-        resolvedProvider = new common.ConfigFileAuthenticationDetailsProvider();
-    } catch (err) {
-        vscode.window.showErrorMessage('Cannot access OCI using the default profile in .oci/config file, or config file not available.');
-    }
-    if (!resolvedProvider) {
+    const authentication = ociAuthentication.createDefault();
+    const configurationProblem = authentication.getConfigurationProblem();
+    if (configurationProblem) {
+        vscode.window.showErrorMessage(configurationProblem);
         return undefined;
     }
-    const provider = resolvedProvider;
 
-    const compartment = await selectCompartment(provider);
+    const compartment = await selectCompartment(authentication);
     if (!compartment) {
         return undefined;
     }
 
-    const devopsProject = await selectDevOpsProject(provider, compartment);
+    const devopsProject = await selectDevOpsProject(authentication, compartment);
     if (!devopsProject) {
         return undefined;
     }
 
-    const repositories = await selectCodeRepositories(provider, devopsProject.ocid);
+    const repositories = await selectCodeRepositories(authentication, devopsProject.ocid);
     if (!repositories || repositories.length === 0) {
         return undefined;
     }
@@ -84,7 +80,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                 const folder = path.join(targetDirectory.fsPath, repository.name); // TODO: name and toplevel dir might differ!
                 folders.push(folder);
 
-                const services = await importServices(targetDirectory, provider, compartment, devopsProject.ocid, repository.ocid);
+                const services = await importServices(authentication, compartment, devopsProject.ocid, repository.ocid);
                 servicesData.push(services);
             }
 
@@ -104,22 +100,22 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
     };
 }
 
-export async function selectCompartment(provider: common.ConfigFileAuthenticationDetailsProvider): Promise<string | undefined> {
+export async function selectCompartment(authentication: ociAuthentication.Authentication): Promise<string | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
-    const choices: QuickPickObject[] | undefined = await vscode.window.withProgress({
+    const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: 'Reading available compartments...',
         cancellable: false
     }, (_progress, _token) => {
         return new Promise(async resolve => {
-            ociUtils.listCompartments(provider).then(compartments => {
+            ociUtils.listCompartments(authentication.getProvider()).then(compartments => {
                 if (!compartments) {
                     resolve(undefined);
                 } else {
-                    const choices: QuickPickObject[] = [];
+                    const choices: dialogs.QuickPickObject[] = [];
                     for (const compartment of compartments.items) {
-                        // const choice = new QuickPickObject(compartment.name, compartment.description, undefined, compartment.id);
-                        const choice = new QuickPickObject(compartment.name, undefined, undefined, compartment.id);
+                        // const choice = new dialogs.QuickPickObject(compartment.name, compartment.description, undefined, compartment.id);
+                        const choice = new dialogs.QuickPickObject(compartment.name, undefined, undefined, compartment.id);
                         choices.push(choice);
                     }
                     resolve(choices);
@@ -150,22 +146,22 @@ export async function selectCompartment(provider: common.ConfigFileAuthenticatio
 }
 
 type DevOpsProject = { ocid: string, name: string }
-async function selectDevOpsProject(provider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<DevOpsProject | undefined> {
+async function selectDevOpsProject(authentication: ociAuthentication.Authentication, compartmentID: string): Promise<DevOpsProject | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
-    const choices: QuickPickObject[] | undefined = await vscode.window.withProgress({
+    const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: 'Reading available devops projects...',
         cancellable: false
     }, (_progress, _token) => {
         return new Promise(async resolve => {
-            ociUtils.listDevOpsProjects(provider, compartmentID).then(projects => {
+            ociUtils.listDevOpsProjects(authentication.getProvider(), compartmentID).then(projects => {
                 if (!projects) {
                     resolve(undefined);
                 } else {
-                    const choices: QuickPickObject[] = [];
+                    const choices: dialogs.QuickPickObject[] = [];
                     for (const project of projects.projectCollection.items) {
-                        // const choice = new QuickPickObject(project.name, project.description, undefined, project.id);
-                        const choice = new QuickPickObject(project.name, undefined, undefined, { ocid: project.id, name: project.name });
+                        // const choice = new dialogs.QuickPickObject(project.name, project.description, undefined, project.id);
+                        const choice = new dialogs.QuickPickObject(project.name, undefined, undefined, { ocid: project.id, name: project.name });
                         choices.push(choice);
                     }
                     resolve(choices);
@@ -196,25 +192,25 @@ async function selectDevOpsProject(provider: common.ConfigFileAuthenticationDeta
 }
 
 type CodeRepository = { ocid: string, name: string, httpUrl: string | undefined, sshUrl: string | undefined }
-async function selectCodeRepositories(provider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<CodeRepository[] | undefined> {
+async function selectCodeRepositories(authentication: ociAuthentication.Authentication, projectID: string): Promise<CodeRepository[] | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
-    const choices: QuickPickObject[] | undefined = await vscode.window.withProgress({
+    const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: 'Reading available code repositories...',
         cancellable: false
     }, (_progress, _token) => {
         return new Promise(async resolve => {
-            ociUtils.listCodeRepositories(provider, projectID).then(repositories => {
+            ociUtils.listCodeRepositories(authentication.getProvider(), projectID).then(repositories => {
                 if (!repositories) {
                     resolve(undefined);
                 } else {
-                    const choices: QuickPickObject[] = [];
+                    const choices: dialogs.QuickPickObject[] = [];
                     let idx = 0;
                     for (const repository of repositories.repositoryCollection.items) {
-                        // const choice = new QuickPickObject(project.name, project.description, undefined, project.compartmentId);
+                        // const choice = new dialogs.QuickPickObject(project.name, project.description, undefined, project.compartmentId);
                         // TODO: name must exist and must represent an unique directory name!
                         const name = repository.name ? repository.name : `CodeRepository${idx++}`;
-                        const choice = new QuickPickObject(name, undefined, undefined, { ocid: repository.id, name: name, httpUrl: repository.httpUrl, sshUrl: repository.sshUrl });
+                        const choice = new dialogs.QuickPickObject(name, undefined, undefined, { ocid: repository.id, name: name, httpUrl: repository.httpUrl, sshUrl: repository.sshUrl });
                         choices.push(choice);
                     }
                     resolve(choices);
@@ -264,29 +260,14 @@ async function selectTargetDirectory(): Promise<vscode.Uri | undefined> {
     return target && target.length === 1 ? target[0] : undefined;
 }
 
-async function importServices(folder: vscode.Uri, provider: common.ConfigFileAuthenticationDetailsProvider, compartment: string, devopsProject: string, repository: string): Promise<any> {
+async function importServices(authentication: ociAuthentication.Authentication, compartment: string, devopsProject: string, repository: string): Promise<any> {
     const data: any = {
         version: '1.0'
     };
-    const oci = new ociContext.Context(folder, provider, compartment, devopsProject, repository);
-    oci.store(data);
-
-    const services: any = {};
-    for (const servicePlugin of ociSupport.SERVICE_PLUGINS) {
-        const featureServices = await servicePlugin.importServices(oci);
-        if (featureServices) {
-            services[servicePlugin.getServiceType()] = featureServices;
-        }
-    }
-    data.services = services;
+    data[authentication.getDataName()] = authentication.getData();
+    const oci = new ociContext.Context(authentication, compartment, devopsProject, repository);
+    data[oci.getDataName()] = oci.getData();
+    const services = await ociServices.importServices(oci);
+    data[services.getDataName()] = services.getData();
     return data;
-}
-
-export class QuickPickObject implements vscode.QuickPickItem {
-    constructor(
-        public readonly label: string,
-        public readonly description : string | undefined,
-        public readonly detail: string | undefined,
-        public readonly object?: any
-    ) {}
 }

@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
+
 // TODO: implement correctly for Maven/Gradle projects
 
 export function getProjectBuildCommand(folder: vscode.WorkspaceFolder): string | undefined {

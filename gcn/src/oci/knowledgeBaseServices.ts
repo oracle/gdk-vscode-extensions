@@ -6,11 +6,45 @@
  */
 
 import * as vscode from 'vscode';
+import * as adm from 'oci-adm';
 import * as nodes from '../nodes';
+import * as dialogs from '../dialogs';
+import * as ociSupport from './ociSupport';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
-import * as ociServices from './ociServices';
-import * as ociSupport from './ociSupport';
+import * as ociService from './ociService';
+import * as ociServices  from './ociServices';
+import * as dataSupport from './dataSupport';
+
+
+export const DATA_NAME = 'knowledgeBases';
+
+type KnowledgeBase = {
+    ocid: string,
+    displayName: string
+}
+
+export function initialize(_context: vscode.ExtensionContext) {
+    nodes.registerRenameableNode(KnowledgeBaseNode.CONTEXT);
+    nodes.registerRemovableNode(KnowledgeBaseNode.CONTEXT);
+}
+
+export async function importServices(_oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
+    // TODO: Might return populated instance of Service which internally called importServices()
+    return undefined;
+}
+
+export function create(oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged): ociService.Service {
+    return new Service(oci, serviceData, dataChanged);
+}
+
+export function findByNode(node: nodes.BaseNode): Service | undefined {
+    const services = ociServices.findByNode(node);
+    const service = services?.getService(DATA_NAME);
+    return service instanceof Service ? service as Service : undefined;
+}
+
+
 
 const audits : Map<vscode.WorkspaceFolder, ProjectAudit> = new Map();
 
@@ -20,38 +54,118 @@ export interface ProjectAudit {
     
 }
 
-export function createFeaturePlugins(context: vscode.ExtensionContext): ociServices.ServicePlugin[] {
-    const p : Plugin = new Plugin();
-    // TODO: initialize actions using context
+// export function create(): ociServices.Service[] {
+    // const p : Service = new Service();
 
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.projectAudit.execute', (...args) => {
-        let uri = undefined;
+    // context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.projectAudit.execute', (...args) => {
+    //     let uri = undefined;
 
-        if (args.length > 0) {
-            uri = args[0]?.uri;
-        }
-        return uri ? p.executeProjectAudit(uri) : false;
-    }));
+    //     if (args.length > 0) {
+    //         uri = args[0]?.uri;
+    //     }
+    //     return uri ? p.executeProjectAudit(uri) : false;
+    // }));
 
-    return [ p ];
-}
+    // return [ p ];
+// }
 
 interface AuditConfiguration {
     sourceKnowledgeBase? : string;
 }
 
-class Plugin extends ociServices.ServicePlugin implements ProjectAudit {
+
+
+async function selectKnowledgeBases(oci: ociContext.Context, ignore: KnowledgeBase[]): Promise<KnowledgeBase[] | undefined> {
+    function shouldIgnore(ocid: string) {
+        for (const item of ignore) {
+            if (item.ocid === ocid) {
+                return true;
+            }
+        }
+        return false;
+    }
+    async function listKnowledgeBases(oci: ociContext.Context): Promise<adm.models.KnowledgeBaseSummary[] | undefined> {
+        // TODO: display the progress in QuickPick
+        return await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Reading compartment knowledge bases...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async (resolve) => {
+                resolve((await ociUtils.listKnowledgeBases(oci.getProvider(), oci.getCompartment()))?.knowledgeBaseCollection.items);
+            });
+        })
+    }
+    const knowledgeBases: KnowledgeBase[] = [];
+    const existing = await listKnowledgeBases(oci);
+    if (existing) {
+        let idx = 1;
+        for (const item of existing) {
+            if (!shouldIgnore(item.id)) {
+                const displayName = item.displayName ? item.displayName : `Knowledge Base ${idx++}`;
+                knowledgeBases.push({
+                    ocid: item.id,
+                    displayName: displayName
+                });
+            }
+        }
+    }
+    const choices: dialogs.QuickPickObject[] = [];
+    for (const knowledgeBase of knowledgeBases) {
+        choices.push(new dialogs.QuickPickObject(knowledgeBase.displayName, undefined, undefined, knowledgeBase));
+    }
+    // TODO: provide a possibility to create a new knowledge base
+    // TODO: provide a possibility to select knowledge bases from different compartments
+    if (choices.length === 0) {
+        vscode.window.showWarningMessage('All knowledge bases already added or no knowledge bases available.')
+    } else {
+        const selection = await vscode.window.showQuickPick(choices, {
+            placeHolder: 'Select Knowledge Base(s) to Add',
+            canPickMany: true
+        })
+        if (selection && selection.length > 0) {
+            const selected: KnowledgeBase[] = [];
+            for (const sel of selection) {
+                selected.push(sel.object as KnowledgeBase);
+            }
+            return selected;
+        }
+    }
+    return undefined;
+}
+
+class Service extends ociService.Service implements ProjectAudit {
     // private _folder : vscode.WorkspaceFolder | undefined;
     private config : AuditConfiguration = {}
     private folder : vscode.WorkspaceFolder | undefined;
     
-    constructor() {
-        super('knowledgeBases');
+    constructor(oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged) {
+        super(oci, DATA_NAME, serviceData, dataChanged);
         auditService = this;
     }
 
+    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
+        const addContent = async () => {
+            if (this.treeChanged) {
+                const displayed = this.itemsData ? this.itemsData as KnowledgeBase[] : [];
+                const selected = await selectKnowledgeBases(this.oci, displayed);
+                if (selected) {
+                    const added: nodes.BaseNode[] = [];
+                    for (const pipeline of selected) {
+                        added.push(new KnowledgeBaseNode(pipeline, this.oci, this.treeChanged));
+                    }
+                    this.addServiceNodes(added);
+                    this.treeChanged();
+                }
+            }
+        }
+        return [
+            new dialogs.QuickPickObject('Add Knowledge Base', undefined, 'Add existing knowledge base', addContent)
+        ];
+    }
+
     async executeProjectAudit(uri : string) {
-        if (!(await vscode.commands.getCommands(true)).includes('nbls.gcn.projectAudit.execute')) {
+        if (!(await vscode.commands.getCommands(true)).includes('nbls.gcn.oci.projectAudit.execute')) {
             vscode.window.showErrorMessage('Required Language Server is not ready.');
             return;
         }
@@ -67,7 +181,7 @@ class Plugin extends ociServices.ServicePlugin implements ProjectAudit {
             return;
         }
 
-        return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri, 
+        return vscode.commands.executeCommand('nbls.gcn.oci.projectAudit.execute', uri, 
             this.config.sourceKnowledgeBase, 
             context.getCompartment(), 
             context.getDevOpsProject()
@@ -97,70 +211,50 @@ class Plugin extends ociServices.ServicePlugin implements ProjectAudit {
         });
     }
 
-    initialize(folder : vscode.WorkspaceFolder, _data : any, _changed : ociSupport.DataChanged) {
-        this.folder = folder;
-        try {
-            this.config = _data as AuditConfiguration;
-        } catch (e) {}
+    // initialize(folder : vscode.WorkspaceFolder, _data : any, _changed : ociSupport.DataChanged) {
+    //     this.folder = folder;
+    //     try {
+    //         this.config = _data as AuditConfiguration;
+    //     } catch (e) {}
 
-        // this._folder = folder;
-        audits.set(folder, this);
+    //     // this._folder = folder;
+    //     audits.set(folder, this);
 
-        // schedule fetching of existing data using the LS
-        if (folder && this.config.sourceKnowledgeBase) {
-            this.tryDisplayProjectAudit(0);
-        }
-    }
+    //     // schedule fetching of existing data using the LS
+    //     if (folder && this.config.sourceKnowledgeBase) {
+    //         this.tryDisplayProjectAudit(0);
+    //     }
+    // }
 
-    buildInline(oci: ociContext.Context, knowledgeBases: any, treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
-        const items = knowledgeBases.inline;
-        if (!items || items.length === 0) {
-            return undefined;
-        }
-        const itemNodes = buildKnowledgeBaseNodes(items, oci, treeChanged);
-        return itemNodes;
-    }
-
-    buildContainers(oci: ociContext.Context, knowledgeBases: any, treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
-        const containers = knowledgeBases.containers;
-        if (!containers || containers.length === 0) {
-            return undefined;
-        }
-        const containerNodes: nodes.BaseNode[] = [];
-        for (const container of containers) {
-            const type = container.type;
-            if (type === 'compartment') {
-                const displayName = container.displayName;
-                const containerNode = new CompartmentKnowledgeBasesNode(displayName, oci, treeChanged);
-                containerNodes.push(containerNode);
-            } else if (type === 'custom') {
-                const displayName = container.displayName;
-                const containerNode = new CustomKnowledgeBasesNode(displayName, container.items, oci, treeChanged);
-                containerNodes.push(containerNode);
+    protected buildNodesImpl(oci: ociContext.Context, itemsData: any[], treeChanged: nodes.TreeChanged): nodes.BaseNode[] {
+        const nodes: nodes.BaseNode[] = [];
+        for (const itemData of itemsData) {
+            const ocid = itemData.ocid;
+            const displayName = itemData.displayName;
+            if (ocid && displayName) {
+                const object: KnowledgeBase = {
+                    ocid: ocid,
+                    displayName: displayName
+                }
+                nodes.push(new KnowledgeBaseNode(object, oci, treeChanged));
             }
         }
-        return containerNodes;
+        return nodes;
     }
 
 }
 
-function buildKnowledgeBaseNodes(items: any, oci: ociContext.Context, treeChanged: nodes.TreeChanged): nodes.BaseNode[] {
-    const itemNodes: nodes.BaseNode[] = [];
-    for (const item of items) {
-        const ocid = item.ocid;
-        const displayName = item.displayName;
-        const knowledgeBaseNode = new KnowledgeBaseNode(ocid, oci, displayName, treeChanged);
-        itemNodes.push(knowledgeBaseNode);
-    }
-    return itemNodes;
-}
+class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, dataSupport.DataProducer {
 
-class CompartmentKnowledgeBasesNode extends nodes.AsyncNode {
+    static readonly DATA_NAME = 'knowledgeBaseNode';
+    static readonly CONTEXT = `gcn.oci.${KnowledgeBaseNode.DATA_NAME}`;
+    
+    private object: KnowledgeBase;
+    private oci: ociContext.Context;
 
-    private oci: ociContext.Context
-
-    constructor(displayName: string | undefined, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
-        super(displayName ? displayName : 'Knowledge Bases', undefined, 'gcn.oci.compartmentKnowledgeBasesNode', treeChanged);
+    constructor(object: KnowledgeBase, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
+        super(object.displayName, undefined, KnowledgeBaseNode.CONTEXT, treeChanged);
+        this.object = object;
         this.oci = oci;
         this.iconPath = new vscode.ThemeIcon('book');
         this.updateAppearance();
@@ -169,61 +263,9 @@ class CompartmentKnowledgeBasesNode extends nodes.AsyncNode {
     async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
         const provider = this.oci.getProvider();
         const compartment = this.oci.getCompartment();
-        const knowledgeBases = (await ociUtils.listKnowledgeBases(provider, compartment))?.knowledgeBaseCollection.items;
-        if (knowledgeBases) {
-            const children: nodes.BaseNode[] = []
-            for (const knowledgeBase of knowledgeBases) {
-                const ocid = knowledgeBase.id;
-                const displayName = knowledgeBase.displayName;
-                children.push(new KnowledgeBaseNode(ocid, this.oci, displayName, this.treeChanged));
-            }
-            return children;
-        }
-        return [ new nodes.NoItemsNode() ];
-    }
-}
-
-class CustomKnowledgeBasesNode extends nodes.AsyncNode {
-
-    private items: any;
-    private oci: ociContext.Context;
-
-    constructor(displayName: string | undefined, items: any, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
-        super(displayName ? displayName : 'Knowledge Bases (Custom)', undefined, 'gcn.oci.customKnowledgeBasesNode', treeChanged);
-        this.items = items;
-        this.oci = oci;
-        this.iconPath = new vscode.ThemeIcon('book');
-        this.updateAppearance();
-    }
-
-    async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
-        if (this.items?.length > 0) {
-            const itemNodes = buildKnowledgeBaseNodes(this.items, this.oci, this.treeChanged);
-            return itemNodes;
-        }
-        return [ new nodes.NoItemsNode() ];
-    }
-}
-
-class KnowledgeBaseNode extends nodes.AsyncNode {
-
-    private ocid: string;
-    private oci: ociContext.Context;
-
-    constructor(ocid: string, oci: ociContext.Context, displayName: string, treeChanged: nodes.TreeChanged) {
-        super(displayName, undefined, 'gcn.oci.knowledgeBaseNode', treeChanged);
-        this.ocid = ocid;
-        this.oci = oci;
-        this.iconPath = new vscode.ThemeIcon('book');
-        this.updateAppearance();
-    }
-
-    async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
-        const provider = this.oci.getProvider();
-        const compartment = this.oci.getCompartment();
-        const knowledgeBase = this.ocid;
+        const knowledgeBase = this.object.ocid;
         const audits = (await ociUtils.listVulnerabilityAudits(provider, compartment, knowledgeBase))?.vulnerabilityAuditCollection.items;
-        if (audits) {
+        if (audits !== undefined && audits.length > 0) {
             const children: nodes.BaseNode[] = []
             for (const audit of audits) {
                 const ocid = audit.id;
@@ -236,14 +278,47 @@ class KnowledgeBaseNode extends nodes.AsyncNode {
         return [ new nodes.NoItemsNode() ];
     }
 
+    rename() {
+        const currentName = typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label
+        vscode.window.showInputBox({
+            title: 'Rename Knowledge Base',
+            value: currentName
+        }).then(name => {
+            if (name) {
+                this.object.displayName = name;
+                this.label = this.object.displayName;
+                this.updateAppearance();
+                this.treeChanged(this);
+                const service = findByNode(this);
+                service?.serviceNodesChanged(this)
+            }
+        });
+    }
+
+    remove() {
+        const service = findByNode(this);
+        this.removeFromParent(this.treeChanged);
+        service?.serviceNodesRemoved(this)
+    }
+
+    getDataName() {
+        return KnowledgeBaseNode.DATA_NAME;
+    }
+
+    getData(): any {
+        return this.object;
+    }
+
 }
 
 class AuditReportNode extends nodes.BaseNode {
 
+    static readonly CONTEXT = 'gcn.oci.auditReportNode';
+
     // private ocid: string;
 
     constructor(_ocid: string, displayName: string, vulnerableArtifactsCount: number) {
-        super(displayName, vulnerableArtifactsCount === 0 ? undefined : `(${vulnerableArtifactsCount} ${vulnerableArtifactsCount === 1 ? 'problem' : 'problems'})`, 'gcn.oci.auditReportNode', undefined, undefined);
+        super(displayName, vulnerableArtifactsCount === 0 ? undefined : `(${vulnerableArtifactsCount} ${vulnerableArtifactsCount === 1 ? 'problem' : 'problems'})`, AuditReportNode.CONTEXT, undefined, undefined);
         // this.ocid = ocid;
         this.iconPath = new vscode.ThemeIcon('primitive-dot', new vscode.ThemeColor(vulnerableArtifactsCount === 0 ? 'charts.green' : 'charts.red'));
         this.updateAppearance();

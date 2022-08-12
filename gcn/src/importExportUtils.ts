@@ -6,12 +6,13 @@
  */
 
 import * as vscode from 'vscode';
-import { CLOUD_SUPPORTS } from './extension';
-import * as model from './model';
+import * as gcnServices from './gcnServices';
+import * as dialogs from './dialogs';
 import * as folderStorage from './folderStorage';
 
+
 export async function importDevopsProject() {
-    const cloudSupport = await selectCloudSupport();
+    const cloudSupport = await dialogs.selectCloudSupport();
     if (!cloudSupport) {
         return;
     }
@@ -37,44 +38,10 @@ export async function importDevopsProject() {
 }
 
 export async function deployOpenedFolders() {
-    const cloudSupport = await selectCloudSupport();
+    const cloudSupport = await dialogs.selectCloudSupport();
     if (!cloudSupport) {
         return;
     }
-
     await cloudSupport.deployFolders();
-
-    vscode.commands.executeCommand('extension.gcn.reloadServicesView');
-}
-
-export async function undeploySelectedFolder(folder : vscode.WorkspaceFolder)  {
-    const cloudSupport = await selectCloudSupport();
-    if (!cloudSupport) {
-        return;
-    }
-    return cloudSupport.undeployFolder(folder.uri);
-}
-
-async function selectCloudSupport(): Promise<model.CloudSupport | undefined> {
-    if (CLOUD_SUPPORTS.length === 1) {
-        return CLOUD_SUPPORTS[0];
-    }
-    const choices: QuickPickObject[] = [];
-    for (const cloudSupport of CLOUD_SUPPORTS) {
-        const choice = new QuickPickObject(cloudSupport.getName(), undefined, cloudSupport.getDescription(), cloudSupport);
-        choices.push(choice);
-    }
-    const selection = await vscode.window.showQuickPick(choices, {
-        placeHolder: 'Select Cloud Service'
-    })
-    return selection?.object;
-}
-
-class QuickPickObject implements vscode.QuickPickItem {
-    constructor(
-        public readonly label: string,
-        public readonly description : string | undefined,
-        public readonly detail: string | undefined,
-        public readonly object?: any,
-    ) {}
+    await gcnServices.build();
 }

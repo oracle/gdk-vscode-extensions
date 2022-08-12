@@ -6,122 +6,192 @@
  */
 
 import * as vscode from 'vscode';
+import * as devops from 'oci-devops';
 import * as nodes from '../nodes';
+import * as dialogs from '../dialogs';
+import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
-import * as ociServices from './ociServices';
+import * as ociService from './ociService';
+import * as ociServices  from './ociServices';
+import * as dataSupport from './dataSupport';
 
-export function createFeaturePlugins(_context: vscode.ExtensionContext): ociServices.ServicePlugin[] {
-    // TODO: initialize actions using context
-    return [ new Plugin() ];
+
+export const DATA_NAME = 'deploymentPipelines';
+
+type DeploymentPipeline = {
+    ocid: string,
+    displayName: string
 }
 
-class Plugin extends ociServices.ServicePlugin {
+export function initialize(_context: vscode.ExtensionContext) {
+    nodes.registerRenameableNode(DeploymentPipelineNode.CONTEXT);
+    nodes.registerRemovableNode(DeploymentPipelineNode.CONTEXT);
+}
 
-    constructor() {
-        super('deploymentPipelines');
-    }
+export async function importServices(_oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
+    // TODO: Might return populated instance of Service which internally called importServices()
+    return undefined;
+}
 
-    buildInline(_oci: ociContext.Context, deploymentPipelines: any, _treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
-        const items = deploymentPipelines.inline;
-        if (!items || items.length === 0) {
-            return undefined;
-        }
-        const itemNodes = buildItemNodes(items);
-        return itemNodes;
-    }
+export function create(oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged): ociService.Service {
+    return new Service(oci, serviceData, dataChanged);
+}
 
-    buildContainers(oci: ociContext.Context, deploymentPipelines: any, treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
-        const containers = deploymentPipelines.containers;
-        if (!containers || containers.length === 0) {
-            return undefined;
-        }
-        const containerNodes: nodes.BaseNode[] = [];
-        for (const container of containers) {
-            const type = container.type;
-            if (type === 'project') {
-                const displayName = container.displayName;
-                const containerNode = new ProjectDeploymentPipelinesNode(displayName, oci, treeChanged);
-                containerNodes.push(containerNode);
-            } else if (type === 'custom') {
-                const displayName = container.displayName;
-                const defaultContainerNode = new CustomDeploymentPipelinesNode(displayName, container.items, treeChanged);
-                containerNodes.push(defaultContainerNode);
+export function findByNode(node: nodes.BaseNode): Service | undefined {
+    const services = ociServices.findByNode(node);
+    const service = services?.getService(DATA_NAME);
+    return service instanceof Service ? service as Service : undefined;
+}
+
+async function selectDeploymentPipelines(oci: ociContext.Context, ignore: DeploymentPipeline[]): Promise<DeploymentPipeline[] | undefined> {
+    function shouldIgnore(ocid: string) {
+        for (const item of ignore) {
+            if (item.ocid === ocid) {
+                return true;
             }
         }
-        return containerNodes;
+        return false;
     }
-
-}
-
-function buildItemNodes(items: any): nodes.BaseNode[] {
-    const itemNodes: nodes.BaseNode[] = [];
-    for (const item of items) {
-        const ocid = item.ocid;
-        const displayName = item.displayName;
-        const buildPipelineNode = new DeploymentPipelineNode(ocid, displayName);
-        itemNodes.push(buildPipelineNode);
+    async function listDeploymentPipelines(oci: ociContext.Context): Promise<devops.models.DeployPipelineSummary[] | undefined> {
+        // TODO: display the progress in QuickPick
+        return await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Reading project build pipelines...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async (resolve) => {
+                resolve((await ociUtils.listDeploymentPipelines(oci.getProvider(), oci.getDevOpsProject()))?.deployPipelineCollection?.items);
+            });
+        })
     }
-    return itemNodes;
-}
-
-class ProjectDeploymentPipelinesNode extends nodes.AsyncNode {
-
-    // private oci: ociContext.Context;
-
-    constructor(displayName: string | undefined, _oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
-        super(displayName ? displayName : 'Build', undefined, 'gcn.oci.projectDeploymentPipelinesNode', treeChanged);
-        // this.oci = oci;
-        this.iconPath = new vscode.ThemeIcon('rocket');
-        this.updateAppearance();
-    }
-
-    async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
-        // const deploymentPipelines = (await ociUtils.listDeploymentPipelines(this.settings.devopsProject.ocid))?.deploymentPipelineCollection.items;
-        // if (deploymentPipelines) {
-        //     const children: nodes.BaseNode[] = []
-        //     let idx = 0;
-        //     for (const deploymentPipeline of deploymentPipelines) {
-        //         const ocid = deploymentPipeline.id;
-        //         const displayName = deploymentPipeline.displayName;
-        //         children.push(new ServicesDeploymentPipelineNode(ocid, displayName ? displayName : `Deployment Pipeline ${idx++}`));
-        //     }
-        //     return children;
-        // }
-        return [ new nodes.NoItemsNode() ];
-    }
-
-}
-
-class CustomDeploymentPipelinesNode extends nodes.AsyncNode {
-
-    private items: any;
-
-    constructor(displayName: string | undefined, items: any, treeChanged: nodes.TreeChanged) {
-        super(displayName ? displayName : 'Deploy (Custom)', undefined, 'gcn.oci.customDeploymentPipelinesNode', treeChanged);
-        this.items = items;
-        this.iconPath = new vscode.ThemeIcon('rocket');
-        this.updateAppearance();
-    }
-
-    async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
-        if (this.items?.length > 0) {
-            const itemNodes = buildItemNodes(this.items);
-            return itemNodes;
+    const pipelines: DeploymentPipeline[] = [];
+    const existing = await listDeploymentPipelines(oci);
+    if (existing) {
+        let idx = 1;
+        for (const item of existing) {
+            if (!shouldIgnore(item.id)) {
+                const displayName = item.displayName ? item.displayName : `Deployment Pipeline ${idx++}`;
+                pipelines.push({
+                    ocid: item.id,
+                    displayName: displayName
+                });
+            }
         }
-        return [ new nodes.NoItemsNode() ];
+    }
+    const choices: dialogs.QuickPickObject[] = [];
+    for (const pipeline of pipelines) {
+        choices.push(new dialogs.QuickPickObject(pipeline.displayName, undefined, undefined, pipeline));
+    }
+    // TODO: display pipelines for the repository and for the project
+    // TODO: provide a possibility to create a new pipeline
+    // TODO: provide a possibility to select pipelines from different projects / compartments
+    if (choices.length === 0) {
+        vscode.window.showWarningMessage('All deployment pipelines already added or no deployment pipelines available.')
+    } else {
+        const selection = await vscode.window.showQuickPick(choices, {
+            placeHolder: 'Select Deployment Pipeline(s) to Add',
+            canPickMany: true
+        })
+        if (selection && selection.length > 0) {
+            const selected: DeploymentPipeline[] = [];
+            for (const sel of selection) {
+                selected.push(sel.object as DeploymentPipeline);
+            }
+            return selected;
+        }
+    }
+    return undefined;
+}
+
+class Service extends ociService.Service {
+
+    constructor(oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged) {
+        super(oci, DATA_NAME, serviceData, dataChanged);
+    }
+
+    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
+        const addContent = async () => {
+            if (this.treeChanged) {
+                const displayed = this.itemsData ? this.itemsData as DeploymentPipeline[] : [];
+                const selected = await selectDeploymentPipelines(this.oci, displayed);
+                if (selected) {
+                    const added: nodes.BaseNode[] = [];
+                    for (const pipeline of selected) {
+                        added.push(new DeploymentPipelineNode(pipeline, this.oci, this.treeChanged));
+                    }
+                    this.addServiceNodes(added);
+                    this.treeChanged();
+                }
+            }
+        }
+        return [
+            new dialogs.QuickPickObject('Add Deployment Pipeline', undefined, 'Add existing deployment pipeline', addContent)
+        ];
+    }
+
+    protected buildNodesImpl(oci: ociContext.Context, itemsData: any[], treeChanged: nodes.TreeChanged): nodes.BaseNode[] {
+        const nodes: nodes.BaseNode[] = [];
+        for (const itemData of itemsData) {
+            const ocid = itemData.ocid;
+            const displayName = itemData.displayName;
+            if (ocid && displayName) {
+                const object: DeploymentPipeline = {
+                    ocid: ocid,
+                    displayName: displayName
+                }
+                nodes.push(new DeploymentPipelineNode(object, oci, treeChanged));
+            }
+        }
+        return nodes;
     }
 
 }
 
-class DeploymentPipelineNode extends nodes.BaseNode {
+class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, dataSupport.DataProducer {
 
-    // private ocid: string;
+    static readonly DATA_NAME = 'deploymentPipelineNode';
+    static readonly CONTEXT = `gcn.oci.${DeploymentPipelineNode.DATA_NAME}`;
+    
+    private object: DeploymentPipeline;
+    private oci: ociContext.Context;
 
-    constructor(_ocid: string, displayName: string) {
-        super(displayName, undefined, 'gcn.oci.deploymentPipelineNode', undefined, undefined);
-        // this.ocid = ocid;
+    constructor(object: DeploymentPipeline, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
+        super(object.displayName, undefined, DeploymentPipelineNode.CONTEXT, undefined, undefined, treeChanged);
+        this.object = object;
+        this.oci = oci;
         this.iconPath = new vscode.ThemeIcon('rocket');
         this.updateAppearance();
+    }
+
+    rename() {
+        const currentName = typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label
+        vscode.window.showInputBox({
+            title: 'Rename Deployment Pipeline',
+            value: currentName
+        }).then(name => {
+            if (name) {
+                this.object.displayName = name;
+                this.label = this.object.displayName;
+                this.updateAppearance();
+                this.treeChanged(this);
+                const service = findByNode(this);
+                service?.serviceNodesChanged(this)
+            }
+        });
+    }
+
+    remove() {
+        const service = findByNode(this);
+        this.removeFromParent(this.treeChanged);
+        service?.serviceNodesRemoved(this)
+    }
+
+    getDataName() {
+        return DeploymentPipelineNode.DATA_NAME;
+    }
+
+    getData(): any {
+        return this.object;
     }
 
 }

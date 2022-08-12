@@ -66,7 +66,7 @@ export async function getBranchName(target: string): Promise<string | undefined>
         return undefined;
     }
     try {
-        const command = `${gitPath} branch --show-current`;
+        const command = `${gitPath} rev-parse --abbrev-ref HEAD`;
         return (await execute(command, target)).trim();
     } catch (err) {
         vscode.window.showErrorMessage('Failed to get branch name.');

@@ -15,6 +15,7 @@ import * as logging from 'oci-logging';
 import * as loggingsearch  from 'oci-loggingsearch';
 import * as genericartifactscontent from 'oci-genericartifactscontent';
 
+
 const DEFAULT_NOTIFICATION_TOPIC = 'NotificationTopic';
 const DEFAULT_LOG_GROUP = 'Default_Group';
 const BUILD_IMAGE = 'OL7_X86_64_STANDARD_10';
@@ -343,7 +344,7 @@ export async function deleteBuildPipelineStage(authenticationDetailsProvider: co
     }
 }
 
-export async function listBuildPipelineStagesByCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, repositoryID: string): Promise<devops.models.BuildPipelineSummary[]> {
+export async function listBuildPipelinesByCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, repositoryID: string): Promise<devops.models.BuildPipelineSummary[]> {
     const buildPipelines = await listBuildPipelines(authenticationDetailsProvider, projectID);
     const buildPipelineSummaries: devops.models.BuildPipelineSummary[] = [];
     if (buildPipelines) {
@@ -375,6 +376,20 @@ export async function listBuildPipelineStagesByCodeRepository(authenticationDeta
         }
     }
     return buildPipelineSummaries;
+}
+
+export async function listDeploymentPipelines(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.responses.ListDeployPipelinesResponse | undefined> {
+    try {
+        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const listDeployPipelinesRequest: devops.requests.ListDeployPipelinesRequest = {
+            projectId: projectID,
+            lifecycleState: devops.models.DeployPipeline.LifecycleState.Active
+        };
+        return client.listDeployPipelines(listDeployPipelinesRequest);
+    } catch (error) {
+        console.log('>>> listDeploymentPipelines ' + error);
+        return undefined;
+    }
 }
 
 export async function listArtifactRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<artifacts.responses.ListRepositoriesResponse | undefined> {

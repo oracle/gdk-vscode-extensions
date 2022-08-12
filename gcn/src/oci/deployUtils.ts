@@ -8,32 +8,27 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as common from 'oci-common';
 import * as gitUtils from '../gitUtils'
+import * as dialogs from '../dialogs';
 import * as projectUtils from '../projectUtils';
 import * as importUtils from './importUtils';
 import * as ociUtils from './ociUtils';
+import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
-import { devops } from 'oci-sdk';
-import * as identity from 'oci-identity';
+
 
 export type SaveConfig = (folder: string, config: any) => boolean;
 
 export async function deployFolders(resourcesPath: string, saveConfig: SaveConfig): Promise<undefined> {
-    let resolvedProvider: common.ConfigFileAuthenticationDetailsProvider | undefined;
-    // TODO: implement support for additional authentication methods (custom file/profile, credentials, etc.)
-    // TODO: should be implemented in ociContext.ts or authenticationUtils.ts
-    try {
-        resolvedProvider = new common.ConfigFileAuthenticationDetailsProvider();
-    } catch (err) {
-        vscode.window.showErrorMessage('Cannot access OCI using the default profile in .oci/config file, or config file not available.');
-    }
-    if (!resolvedProvider) {
+    const authentication = ociAuthentication.createDefault();
+    const configurationProblem = authentication.getConfigurationProblem();
+    if (configurationProblem) {
+        vscode.window.showErrorMessage(configurationProblem);
         return undefined;
     }
-    const provider = resolvedProvider;
+    const provider = authentication.getProvider();
 
-    const compartment = await importUtils.selectCompartment(provider);
+    const compartment = await importUtils.selectCompartment(authentication);
     if (!compartment) {
         return undefined;
     }
@@ -304,11 +299,13 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 const data: any = {
                     version: '1.0'
                 };
-                const oci = new ociContext.Context(folder.uri, provider, compartment, project, codeRepository.id);
-                oci.store(data);
+                data[authentication.getDataName()] = authentication.getData();
+                const oci = new ociContext.Context(authentication, compartment, project, codeRepository.id);
+                data[oci.getDataName()] = oci.getData();
                 data.services = {
+                    // TODO: Might use populated instance of buildServices.Service as dataSupport.DataProducer
                     buildPipelines: {
-                        inline: [
+                        items: [
                             {
                                 'ocid': devbuildPipeline,
                                 'displayName': 'Devbuild (fat JAR)'
@@ -323,6 +320,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                             }
                         ]
                     },
+                    // TODO: Might use populated instance of knowledgeBaseServices.Service as dataSupport.DataProducer
                     knowledgeBases: {
                         settings: {
                             sourceKnowledgeBase: knowledgeBaseOCID
@@ -361,11 +359,11 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
 }
 
 async function selectFolders(): Promise<vscode.WorkspaceFolder[] | undefined> {
-    const choices: importUtils.QuickPickObject[] = [];
+    const choices: dialogs.QuickPickObject[] = [];
     const folders = vscode.workspace.workspaceFolders;
     if (folders) {
         for (const workspaceFolder of folders) {
-            const choice = new importUtils.QuickPickObject(workspaceFolder.name, undefined, undefined, workspaceFolder);
+            const choice = new dialogs.QuickPickObject(workspaceFolder.name, undefined, undefined, workspaceFolder);
             choices.push(choice);
         }
     }
@@ -421,212 +419,4 @@ function expandTemplate(template: string, folder: vscode.WorkspaceFolder, projec
     fs.writeFileSync(templatedest, templateString);
 
     return undefined;
-}
-
-export async function undeployFolder(resource : vscode.Uri) {
-    if ("file" !== resource.scheme) {
-        return;
-    }
-    // PENDING: no real API to get model / list of the attached cloud resource, try regexps
-    const gcnPath = path.join(resource.fsPath, ".vscode", "gcn.json");
-    if (!fs.existsSync(gcnPath)) {
-        return;
-    }
-    const contents = fs.readFileSync(gcnPath).toString();
-    const devops = new RegExp('"devopsProject"\\s*:\\s*{\\s*"ocid"\\s*:\\s*"([^"]+)"\\s*}', 'm');
-    const compartment = new RegExp('"compartment"\\s*:\\s*{\\s*"ocid"\\s*:\\s*"([^"]+)"\\s*}', 'm');
-    const arr = devops.exec(contents);
-    if (!arr) {
-        vscode.window.showErrorMessage(`Could not find a devops project for ${resource.path}`);
-        return;
-    }
-
-    const devopsId =arr[1];
-    const compartmentId = compartment.exec(contents)?.[1];
-
-    let authProvider: common.ConfigFileAuthenticationDetailsProvider;
-
-    try {
-        authProvider = new common.ConfigFileAuthenticationDetailsProvider();
-    } catch (err) {
-        vscode.window.showErrorMessage('Cannot access OCI using the default profile in .oci/config file, or config file not available.');
-        return;
-    }
-
-    const data : [devops.models.Project, identity.models.Compartment | undefined] = await vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: `Validating OCI data`,
-        cancellable : true
-    }, async (_progress, _token) => {
-        const p = await ociUtils.getDevopsProject(authProvider, devopsId);
-        const c = compartmentId ? (await ociUtils.getCompartment(authProvider, compartmentId))?.compartment : undefined;
-        return [p, c];
-    });
-    if (!data[0] || !data[1] || !compartmentId) {
-        return;
-    }
-
-    const ack = await vscode.window.showWarningMessage("Undeploy from OCI", 
-        { 
-            modal : true, 
-            detail: `Undeploy project ${resource.fsPath} from OCI compartment ${data[1].name} ?`
-        }, "Yes", "No");
-    if ("Yes" !== ack) {
-        return;
-    }
-
-    const result: string | devops.responses.DeleteProjectResponse = await vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: `Undeploying ${data[0].name} from OCI `,
-        cancellable: false
-    }, async (_progress, _token) => {
-
-        _progress.report({message : "Listing project repositories"});
-        const repoPromises : Promise<any>[] | undefined = (await ociUtils.listCodeRepositories(authProvider, devopsId))?.repositoryCollection.items.map( repo => {
-            _progress.report({ message: `Deleting code repository: ${repo.name}`})
-            return ociUtils.deleteCodeRepository(authProvider, repo.id);
-        });
-        if (repoPromises) {
-            await Promise.all(repoPromises);
-        }
-        
-        const gitPath = path.join(resource.fsPath, '.git');
-        if (fs.existsSync(gitPath)) {
-            _progress.report({ message: `Deleting local GIT repository at ${gitPath}`})
-            fs.rmdirSync(gitPath, { recursive : true});
-        }
-
-        // console.log(`Process pipelines`);
-        _progress.report({message : "Listing Build Pipelines"});
-
-        const pipeLines : devops.models.BuildPipelineSummary[] = (await ociUtils.listBuildPipelines(authProvider, devopsId))?.buildPipelineCollection?.items || [];
-        for (let pipe of pipeLines) {
-            _progress.report({message : `Processing pipeline ${pipe.displayName}`});
-
-            // console.log(`Inspecting pipeline ${pipe.displayName} = ${pipe.id}`)
-            const stages : Array<devops.models.BuildPipelineStageSummary> = (await ociUtils.listBuildPipelineStages(authProvider, pipe.id))?.buildPipelineStageCollection.items || [];
-            const orderedStages : devops.models.BuildPipelineStageSummary[] = [];
-            const id2Stage : Map<string, devops.models.BuildPipelineStageSummary> = new Map();
-
-            // push leaf stages first.
-            const revDeps : Map<string, number> = new Map();
-            stages.forEach(s => {
-                id2Stage.set(s.id, s);
-                if (!revDeps.has(s.id)) {
-                    revDeps.set(s.id, 0);
-                }
-                //console.log(`Stage ${s.displayName} has predecessors: ${s.buildPipelineStagePredecessorCollection?.items.map(pred => pred.id).join(', ')}`)
-                for (let p of s.buildPipelineStagePredecessorCollection?.items || []) {
-                    if (p.id === s.id || p.id === pipe.id) {
-                        // ??? Who invented reference-to-owner in predecessors ??
-                        continue;
-                    }
-                    let n = (revDeps.get(p.id) || 0);
-                    revDeps.set(p.id, n + 1);
-                }
-            });
-
-            while (revDeps.size > 0) {
-                let found : boolean = false;
-                for (let k of revDeps.keys()) {
-                    if (revDeps.get(k) == 0) {
-                        found = true;
-                        const s = id2Stage.get(k);
-                        revDeps.delete(k);
-                        if (!s) continue;
-    
-                        orderedStages.push(s);
-                        //console.log(`Add stage ${s.displayName} = ${s.id}`)
-                        for (let p of s.buildPipelineStagePredecessorCollection?.items || []) {
-                            if (p.id === s.id || p.id === pipe.id) {
-                                continue;
-                            }
-                            let n = (revDeps.get(p.id) || 1);
-                            revDeps.set(p.id, n - 1);
-                        }
-                    }
-                }
-                if (!found) {
-                    throw "Inconsistent pipeline structure!";
-                }
-            }
-
-            // console.log(`Deleting ${orderedStages.length} stages before deleting ${pipe.displayName}`);
-            for (let stage of orderedStages) {
-                _progress.report({message : `Deleting stage ${stage.displayName}`});
-                // console.log(`Delete stage ${stage.displayName} = ${stage.id} of ${pipe.displayName}`);
-                await ociUtils.deleteBuildPipelineStage(authProvider, stage.id, true);
-            }
-            _progress.report({message : `Deleting pipeline ${pipe.displayName}`});
-            // console.log(`Delete pipeline ${pipe.displayName}`);
-            
-            // in theory, pipelines are independent, but it seems the delete operation overlaps on the project OCID, so they must be deleted
-            // sequentially.
-            await ociUtils.deleteBuildPipeline(authProvider, pipe.id, true)
-        };
-
-        // console.log(`Process logs`);
-        _progress.report({message : "Listing project logs"});
-        const logPromises : Promise<any>[] | undefined = (await ociUtils.listLogsByProject(authProvider, compartmentId, devopsId))?.map(l => {
-            _progress.report({message : `Deleting log ${l.displayName}`});
-            // console.log(`Delete log ${l.displayName}`);
-            return ociUtils.deleteLog(authProvider, l.id, l.logGroupId, true);
-        });
-        if (logPromises) {
-            // console.log(`Waiting for ${logPromises.length} logs before advancing`);
-            await Promise.all(logPromises);
-        }
-        
-        // console.log(`Process artifacts`);
-        _progress.report({message : "Listing deploy artifacts"});
-        let artifacts = (await ociUtils.listProjectDeployArtifacts(authProvider, devopsId))?.deployArtifactCollection.items || [];
-        for (let a of artifacts) {
-            _progress.report({ message: `Deleting artifact ${a.displayName}`});
-            // console.log(`Delete artifact ${a.displayName}`);
-            // seems that deleteArtifact also transaction-conflicts on the project.
-            await ociUtils.deleteProjectDeployArtifact(authProvider, a.id, true);
-        };
-        _progress.report({ message: 'Searching artifact repositories'});
-        const artifactsRepositories = (await ociUtils.listArtifactRepositories(authProvider, compartmentId))?.repositoryCollection.items;
-        if (artifactsRepositories) {
-            for (const repo of artifactsRepositories) {
-                if ((repo.freeformTags?.['gcn_tooling_projectOCID'] == devopsId)) {
-                    _progress.report({message : `Deleting artifact repository ${repo.displayName}`});
-                    await ociUtils.deleteArtifactsRepository(authProvider, compartmentId, repo.id);
-                }
-            }
-        }
-        _progress.report({ message: 'Searching container repositories'});
-        const containerRepositories = (await ociUtils.listContainerRepositories(authProvider, compartmentId))?.containerRepositoryCollection.items;
-        if (containerRepositories) {
-            for (const repo of containerRepositories) {
-                if ((repo.displayName === `${data[0].name.toLowerCase()}_container_repository`)) {
-                    _progress.report({message : `Deleting container repository ${repo.displayName}`});
-                    await ociUtils.deleteContainerRepository(authProvider, repo.id);
-                }
-            }
-        }
-        // PENDING: knowledgebase search + deletion should be done by the Services Plugin; need API to invoke it on the OCI configuration.
-        _progress.report({ message: 'Searching knowledge bases'});
-        let knowledgeBases = (await ociUtils.listKnowledgeBases(authProvider, compartmentId))?.knowledgeBaseCollection.items || [];
-        for (let kb of knowledgeBases) {
-            if ((kb.freeformTags?.['gcn_tooling_usage'] === "gcn-adm-audit") &&
-                (kb.freeformTags?.['gcn_tooling_projectOCID'] == devopsId)) {
-                    _progress.report({message : `Deleting knowledge base ${kb.displayName}`});
-                    await ociUtils.deleteKnowledgeBase(authProvider, kb.id, true);
-            }
-        }
-        _progress.report({message : `Deleting project ${data[0].name}`});
-        let p = ociUtils.deleteDevOpsProject(authProvider, devopsId);
-        _progress.report({message : `Deleting GCN registration ${gcnPath}`});
-        fs.unlinkSync(gcnPath); 
-        const gcnFolderPath = path.join(resource.fsPath, '.gcn');
-        if (fs.existsSync(gcnFolderPath)) {
-            _progress.report({message : 'Deleting local OCI resources'});
-            fs.rmdirSync(gcnFolderPath, { recursive : true});
-        }
-
-        return p;
-    });
-    return result;
 }

@@ -37,36 +37,48 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "extension.gcn.notImplementedYet",
-				"title": "Configure Cloud",
-				"icon": "$(cloud-download)",
+				"command": "gcn.oci.undeployFromCloud",
+				"title": "Undeploy Opened Folders",
 				"category": "GCN"
 			},
 			{
-				"command": "extension.gcn.initializeSshKeys",
-				"title": "Initialize SSH Keys",
+				"command": "gcn.addContent",
+				"title": "Add Content...",
+				"icon": "$(add)",
 				"category": "GCN"
 			},
 			{
-				"command": "extension.gcn.runBuildPipeline",
+				"command": "gcn.renameNode",
+				"title": "Rename",
+				"icon": "$(edit)",
+				"category": "GCN"
+			},
+			{
+				"command": "gcn.removeNode",
+				"title": "Remove",
+				"icon": "$(remove-close)",
+				"category": "GCN"
+			},
+			{
+				"command": "gcn.oci.runBuildPipeline",
 				"title": "Run Build Pipeline",
 				"icon": "$(run)",
 				"category": "GCN"
 			},
 			{
-				"command": "extension.gcn.downloadArtifact",
+				"command": "gcn.oci.downloadArtifact",
 				"title": "Download Artifact",
 				"icon": "$(cloud-download)",
 				"category": "GCN"
 			},
 			{
-				"command": "gcn.undeployProject",
-				"title": "Undeploy project",
+				"command": "gcn.oci.projectAudit.execute",
+				"title": "Run Project Audit",
 				"category": "GCN"
 			},
 			{
-				"command": "gcn.projectAudit.execute",
-				"title": "Run Project Audit",
+				"command": "gcn.oci.initializeSshKeys",
+				"title": "Initialize SSH Keys",
 				"category": "GCN"
 			}
 		],
@@ -74,17 +86,17 @@
 			{
 				"view": "gcn-services",
 				"contents": "Initializing Graal Cloud Native Services...",
-				"when": "!gcn.servicesViewInitialized"
+				"when": "!gcn.servicesInitialized"
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Click the Import DevOps Project button to clone an existing DevOps Project locally:\n[Import DevOps Project](command:extension.gcn.importFromCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
-				"when": "gcn.servicesViewInitialized && gcn.serviceFoldersCount == 0"
+				"contents": "Click the Import DevOps Project button to clone an existing DevOps Project locally:\n[Import DevOps Project](command:gcn.oci.importFromCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
+				"when": "gcn.servicesInitialized && workspaceFolderCount == 0"
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Click the Deploy to Cloud button to deploy the current folder(s) to the cloud:\n[Deploy to Cloud](command:extension.gcn.deployToCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
-				"when": "gcn.servicesViewInitialized && gcn.serviceFoldersCount == 1"
+				"contents": "Click the Deploy to Cloud button to deploy the current folder(s) to the cloud:\n[Deploy to Cloud](command:gcn.oci.deployToCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
+				"when": "gcn.servicesInitialized && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
 			}
 		],
 		"views": {
@@ -97,33 +109,56 @@
 			]
 		},
 		"menus": {
-			"commandPalette": [],
+			"commandPalette": [
+				{
+					"command": "gcn.addContent",
+					"when": "false"
+				},
+				{
+					"command": "gcn.renameNode",
+					"when": "false"
+				},
+				{
+					"command": "gcn.removeNode",
+					"when": "false"
+				}
+			],
 			"editor/context": [],
 			"view/title": [
 				{
-					"command": "extension.gcn.notImplementedYet",
-					"when": "view == gcn-view",
-					"group": "navigation@3"
+					"command": "gcn.addContent",
+					"when": "view == gcn-services && gcn.servicesInitialized && gcn.serviceFoldersCount == 1",
+					"group": "navigation@1"
 				}
 			],
 			"view/item/context": [
 				{
-					"command": "extension.gcn.notImplementedYet",
-					"when": "viewItem == gcn.compartmentNode",
-					"group": "inline@3"
+					"command": "gcn.addContent",
+					"when": "viewItem in gcn.addContentNodes",
+					"group": "inline@1"
 				},
 				{
-					"command": "extension.gcn.runBuildPipeline",
+					"command": "gcn.renameNode",
+					"when": "viewItem in gcn.renameableNodes",
+					"group": "contextMenu@1"
+				},
+				{
+					"command": "gcn.removeNode",
+					"when": "viewItem in gcn.removableNodes",
+					"group": "contextMenu@2"
+				},
+				{
+					"command": "gcn.oci.runBuildPipeline",
 					"when": "viewItem == gcn.oci.buildPipelineNode || viewItem == gcn.oci.buildPipelineNode-artifacts-available",
 					"group": "inline@1"
 				},
 				{
-					"command": "extension.gcn.downloadArtifact",
+					"command": "gcn.oci.downloadArtifact",
 					"when": "viewItem == gcn.oci.buildPipelineNode-artifacts-available",
 					"group": "inline@2"
 				},
 				{
-					"command": "gcn.projectAudit.execute",
+					"command": "gcn.oci.projectAudit.execute",
 					"when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/"
 				}
 			]

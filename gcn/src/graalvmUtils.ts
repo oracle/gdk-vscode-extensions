@@ -10,6 +10,7 @@ import * as path from 'path';
 import * as cp from 'child_process';
 import * as vscode from 'vscode';
 
+
 export async function getActiveGVMVersion(): Promise<string[] | undefined> {
     const gvm = getActiveGVM();
     if (!gvm) {

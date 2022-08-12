@@ -6,100 +6,211 @@
  */
 
 import * as vscode from 'vscode';
+import * as gcnServices from '../gcnServices';
 import * as model from '../model';
 import * as nodes from '../nodes';
-import * as ociSupport from './ociSupport';
+import * as dialogs from '../dialogs';
+import * as servicesView from '../servicesView';
 import * as ociContext from './ociContext';
+import * as dataSupport from './dataSupport';
 
-export class ServicePlugin {
+import * as buildServices from './buildServices';
+import * as ociService from './ociService';
+import * as deploymentServices from './deploymentServices';
+import * as deployArtifactServices from './deployArtifactServices';
+import * as artifactServices from './artifactServices';
+import * as containerServices from './containerServices';
+import * as knowledgeBaseServices from './knowledgeBaseServices';
 
-    private serviceType: string;
 
-    constructor(serviceType: string) {
-        this.serviceType = serviceType;
-    }
+export const DATA_NAME = 'services';
 
-    initialize(_folder: vscode.WorkspaceFolder, _data : any, _dataChanged : ociSupport.DataChanged) : any {
-        return undefined;
-    }
-
-    getServiceType() {
-        return this.serviceType;
-    }
-
-    buildInline(_oci: ociContext.Context, _services: any, _treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
-        return undefined;
-    }
-
-    buildContainers(_oci: ociContext.Context, _services: any, _treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
-        return undefined;
-    }
-
-    importServices(_oci: ociContext.Context): Promise<any | undefined> {
-        return Promise.resolve(undefined);
-    }
-
+export function initialize(context: vscode.ExtensionContext) {
+    buildServices.initialize(context);
+    deploymentServices.initialize(context);
+    deployArtifactServices.initialize(context);
+    artifactServices.initialize(context);
+    containerServices.initialize(context);
+    knowledgeBaseServices.initialize(context);
 }
 
-export class OciServices implements model.CloudServices {
+export function findByNode(node: nodes.BaseNode): OciServices | undefined {
+    const cloudServices = servicesView.findCloudServicesByNode(node);
+    return cloudServices instanceof OciServices ? cloudServices as OciServices : undefined;
+}
+
+export function findByFolder(folder: gcnServices.FolderData): OciServices[] {
+    const ociServices: OciServices[] = [];
+    const cloudServices = folder.services;
+    for (const cloudService of cloudServices) {
+        if (cloudService instanceof OciServices) {
+            ociServices.push(cloudService as OciServices);
+        }
+    }
+    return ociServices;
+}
+
+export function create(oci: ociContext.Context, servicesData: any, dataChanged: dataSupport.DataChanged): model.CloudServices {
+    return new OciServices(oci, servicesData, dataChanged);
+}
+
+export async function importServices(oci: ociContext.Context): Promise<dataSupport.DataProducer> {
+    // TODO: Might return populated instance of OciServices which internally called importServices() on every Service
+    const data: any = {};
+    const buildServicesData = await buildServices.importServices(oci);
+    if (buildServicesData) {
+        data[buildServicesData.getDataName()] = buildServicesData.getData();
+    }
+    const deploymentServicesData = await deploymentServices.importServices(oci);
+    if (deploymentServicesData) {
+        data[deploymentServicesData.getDataName()] = deploymentServicesData.getData();
+    }
+    const deployArtifactServicesData = await deployArtifactServices.importServices(oci);
+    if (deployArtifactServicesData) {
+        data[deployArtifactServicesData.getDataName()] = deployArtifactServicesData.getData();
+    }
+    const artifactServicesData = await artifactServices.importServices(oci);
+    if (artifactServicesData) {
+        data[artifactServicesData.getDataName()] = artifactServicesData.getData();
+    }
+    const containerServicesData = await containerServices.importServices(oci);
+    if (containerServicesData) {
+        data[containerServicesData.getDataName()] = containerServicesData.getData();
+    }
+    const knowledgeBaseServicesData = await knowledgeBaseServices.importServices(oci);
+    if (knowledgeBaseServicesData) {
+        data[knowledgeBaseServicesData.getDataName()] = knowledgeBaseServicesData.getData();
+    }
+    const result: dataSupport.DataProducer = {
+        getDataName: () => DATA_NAME,
+        getData: () => data
+    };
+    return result;
+}
+
+export class OciServices implements model.CloudServices, dataSupport.DataProducer {
 
     private readonly oci: ociContext.Context;
-    private readonly data: any;
-    private readonly dataChanged: ociSupport.DataChanged;
+    private servicesData: any;
+    private readonly services: ociService.Service[];
+    private treeChanged: nodes.TreeChanged | undefined;
 
-    constructor(oci: ociContext.Context, folder : vscode.WorkspaceFolder, data: any, dataChanged: ociSupport.DataChanged) {
+    constructor(oci: ociContext.Context, servicesData: any, dataChanged: dataSupport.DataChanged) {
         this.oci = oci;
-        this.data = data;
-        this.dataChanged = dataChanged;
-
-    
-        let saveData : boolean = false;
-        for (const featurePlugin of ociSupport.SERVICE_PLUGINS) {
-            const featureData = this.data.services?.[featurePlugin.getServiceType()]?.settings || {};
-
-            const createdData : any = featurePlugin.initialize(folder, featureData, () => {
-                this.data.services[featurePlugin.getServiceType()].settings = createdData;
-                this.dataChanged();
-            }) || featureData;
-
-            if (createdData != featureData) {
-                this.data.services[featurePlugin.getServiceType()].settings = createdData;
-                saveData = true;
+        this.servicesData = servicesData ? servicesData : {};
+        const serviceDataChanged: dataSupport.DataChanged = (dataProducer?: dataSupport.DataProducer) => {
+            if (dataProducer) {
+                const dataName = dataProducer.getDataName();
+                const data = dataProducer.getData();
+                if (data) {
+                    this.servicesData[dataName] = data;
+                } else {
+                    delete this.servicesData[dataName];
+                }
+            }
+            dataChanged(this);
+            if (this.treeChanged) {
+                let nodesCount = 0;
+                for (const service of this.services) {
+                    nodesCount += service.getNodes().length;
+                }
+                if (nodesCount === 0) {
+                    this.treeChanged(); // reload nodes to show '<no OCI services defined>'
+                }
             }
         }
-        if (saveData) {
-            dataChanged();
+        this.services = [
+            buildServices.create(oci, this.servicesData[buildServices.DATA_NAME], serviceDataChanged),
+            deploymentServices.create(oci, this.servicesData[deploymentServices.DATA_NAME], serviceDataChanged),
+            deployArtifactServices.create(oci, this.servicesData[deployArtifactServices.DATA_NAME], serviceDataChanged),
+            artifactServices.create(oci, this.servicesData[artifactServices.DATA_NAME], serviceDataChanged),
+            containerServices.create(oci, this.servicesData[containerServices.DATA_NAME], serviceDataChanged),
+            knowledgeBaseServices.create(oci, this.servicesData[knowledgeBaseServices.DATA_NAME], serviceDataChanged)
+        ];
+    
+        // let saveData: boolean = false;
+        // for (const featurePlugin of ociSupport.SERVICE_PLUGINS) {
+        //     const featureData = this.servicesData?.[featurePlugin.getServiceType()]?.settings || {};
+
+        //     const createdData: any = featurePlugin.initialize(folder, featureData, () => {
+        //         this.servicesData[featurePlugin.getServiceType()] = createdData;
+        //         this.dataChanged();
+        //     }) || featureData;
+
+        //     if (createdData != featureData) {
+        //         this.servicesData[featurePlugin.getServiceType()].settings = createdData;
+        //         saveData = true;
+        //     }
+        // }
+        // if (saveData) {
+        //     dataChanged();
+        // }
+    }
+
+    public getContext(): ociContext.Context {
+        return this.oci;
+    }
+
+    public getService(dataName: string): ociService.Service | undefined {
+        for (const service of this.services) {
+            if (service.getDataName() === dataName) {
+                return service;
+            }
+        }
+        return undefined;
+    }
+
+    async addContent() {
+        const choices: dialogs.QuickPickObject[] = [];
+        for (const service of this.services) {
+            const serviceContent = service.getAddContentChoices();
+            if (serviceContent) {
+                choices.push(...serviceContent);
+            }
+        }
+        if (choices.length === 0) {
+            vscode.window.showWarningMessage('No content available.');
+        } else {
+            const selection = await vscode.window.showQuickPick(choices, {
+                placeHolder: 'Select Content to Add'
+            })
+            if (selection?.object) {
+                selection.object();
+            }
         }
     }
 
-    buildNodes(treeChanged: nodes.TreeChanged): nodes.BaseNode[] {
-        const serviceNodes: nodes.BaseNode[] = [];
-
-        const ociConfigProblem = this.oci.getConfigurationProblem();
-        if (ociConfigProblem) {
-            serviceNodes.push(new nodes.TextNode(`<${ociConfigProblem}>`));
-        } else {
-            for (const featurePlugin of ociSupport.SERVICE_PLUGINS) {
-                const featureServices = this.data.services?.[featurePlugin.getServiceType()];
-                if (featureServices) {
-                    const inline = featurePlugin.buildInline(this.oci, featureServices, treeChanged);
-                    if (inline) {
-                        serviceNodes.push(...inline);
-                    }
-                }
-            }
-            for (const featurePlugin of ociSupport.SERVICE_PLUGINS) {
-                const featureServices = this.data.services?.[featurePlugin.getServiceType()];
-                if (featureServices) {
-                    const containers = featurePlugin.buildContainers(this.oci, featureServices, treeChanged);
-                    if (containers) {
-                        serviceNodes.push(...containers);
-                    }
-                }
+    buildNodes(treeChanged: nodes.TreeChanged): void {
+        if (!this.oci.getConfigurationProblem()) {
+            this.treeChanged = treeChanged;
+            for (const service of this.services) {
+                service.buildNodes(treeChanged);
             }
         }
+    }
 
+    getNodes(): nodes.BaseNode[] {
+        const serviceNodes: nodes.BaseNode[] = [];
+        const configurationProblem = this.oci.getConfigurationProblem();
+        if (configurationProblem) {
+            serviceNodes.push(new nodes.TextNode(`<${configurationProblem}>`));
+        } else {
+            for (const service of this.services) {
+                serviceNodes.push(...service.getNodes());
+            }
+            if (serviceNodes.length === 0) {
+                return [ new nodes.TextNode('<no OCI services defined>') ];
+            }
+        }
         return serviceNodes;
+    }
+
+    getDataName(): string {
+        return DATA_NAME;
+    }
+
+    getData(): any {
+        return this.servicesData;
     }
 
 }

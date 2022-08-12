@@ -12,34 +12,35 @@ import * as os from 'os';
 import * as common from 'oci-common';
 import * as model from '../model';
 import * as folderStorage from '../folderStorage';
+import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
+import * as dataSupport from './dataSupport';
 import * as ociServices from './ociServices';
 import * as ociUtils from './ociUtils';
 import * as importUtils from './importUtils';
 import * as deployUtils from './deployUtils';
+import * as undeployUtils from './undeployUtils';
+
 
 const TYPE = 'oci';
-
-export const SERVICE_PLUGINS: ociServices.ServicePlugin[] = [];
 
 let RESOURCES_FOLDER: string;
 
 export function create(context: vscode.ExtensionContext): model.CloudSupport {
-    SERVICE_PLUGINS.push(
-        ...require('./buildServices').createFeaturePlugins(context),
-        ...require('./deploymentServices').createFeaturePlugins(context),
-        ...require('./artifactServices').createFeaturePlugins(context),
-        ...require('./containerServices').createFeaturePlugins(context),
-        ...require('./knowledgeBaseServices').createFeaturePlugins(context)
-    );
-    RESOURCES_FOLDER = path.join(context.extensionPath, 'resources', 'oci');
-    context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.initializeSshKeys', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.initializeSshKeys', () => {
 		initializeSshKeys();
 	}));
+    // TODO: --------------------
+    // !!! NOT TO BE RELEASED !!!
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.undeployFromCloud', () => {
+        undeployUtils.undeployFolders();
+	}));
+    // !!! NOT TO BE RELEASED !!!
+    // --------------------------
+    RESOURCES_FOLDER = path.join(context.extensionPath, 'resources', 'oci');
+    ociServices.initialize(context);
     return new OciSupport();
 }
-
-export type DataChanged = () => void;
 
 const workspaceContexts : Map<vscode.WorkspaceFolder, ociContext.Context> = new Map();
 
@@ -155,16 +156,26 @@ class OciSupport implements model.CloudSupport {
         return deployUtils.deployFolders(RESOURCES_FOLDER, saveConfig);
     }
 
-    getServices(folder : vscode.WorkspaceFolder, configuration: model.ServicesConfiguration): model.CloudServices | undefined {
+    getServices(folder: vscode.WorkspaceFolder, configuration: model.ServicesConfiguration): model.CloudServices | undefined {
         const data = configuration.data;
-        const oci = ociContext.create(folder.uri, data);
+        const dataChanged: dataSupport.DataChanged = (dataProducer?: dataSupport.DataProducer) => {
+            const dataName = dataProducer?.getDataName();
+            if (dataProducer && dataName) {
+                data[dataName] = dataProducer.getData();
+            }
+            configuration.dataChanged();
+        }
+        const authenticationData = data[ociAuthentication.DATA_NAME];
+        const authentication = ociAuthentication.create(authenticationData, dataChanged);
+        const contextData = data[ociContext.DATA_NAME];
+        const oci = ociContext.create(authentication, contextData, dataChanged);
+        //---
+        // TODO: cleanup
         workspaceContexts.set(folder, oci);
-        return new ociServices.OciServices(oci, folder, data, configuration.dataChanged);
-    }
-
-    async undeployFolder(folder: vscode.Uri): Promise<model.DeployResult> {
-        await  deployUtils.undeployFolder(folder);
-        return { folders: [ folder.fsPath ], servicesData: []};
+        //---
+        const servicesData = data[ociServices.DATA_NAME];
+        const services = new ociServices.OciServices(oci, servicesData, dataChanged);
+        return services;
     }
 
 }

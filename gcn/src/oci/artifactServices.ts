@@ -6,187 +6,157 @@
  */
 
 import * as vscode from 'vscode';
-// import * as devops from 'oci-devops';
+import * as artifacts from 'oci-artifacts';
 import * as nodes from '../nodes';
+import * as dialogs from '../dialogs';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
-import * as ociServices from './ociServices';
+import * as ociService from './ociService';
+import * as ociServices from "./ociServices";
+import * as dataSupport from './dataSupport';
 
-export function createFeaturePlugins(_context: vscode.ExtensionContext): ociServices.ServicePlugin[] {
-    // TODO: initialize actions using context
-    return [ new ProjectArtifactsPlugin(), new ArtifactRepositoryPlugin() ];
+
+export const DATA_NAME = 'artifactRepositories';
+
+type ArtifactRepository = {
+    ocid: string,
+    displayName: string
 }
 
-class ProjectArtifactsPlugin extends ociServices.ServicePlugin {
+export function initialize(_context: vscode.ExtensionContext): void {
+    nodes.registerRenameableNode(ArtifactRepositoryNode.CONTEXT);
+    nodes.registerRemovableNode(ArtifactRepositoryNode.CONTEXT);
+}
 
-    constructor() {
-        super('projectArtifacts');
-    }
+export async function importServices(_oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
+    // TODO: Might return populated instance of Service which internally called importServices()
+    return undefined;
+}
 
-    buildInline(_oci: ociContext.Context, projectArtifacts: any, _treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
-        const items = projectArtifacts.inline;
-        if (!items || items.length === 0) {
-            return undefined;
-        }
-        const itemNodes = buildProjectArtifactNodes(items);
-        return itemNodes;
-    }
+export function create(oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged): ociService.Service {
+    return new Service(oci, serviceData, dataChanged);
+}
 
-    buildContainers(oci: ociContext.Context, projectArtifacts: any, treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
-        const containers = projectArtifacts.containers;
-        if (!containers || containers.length === 0) {
-            return undefined;
-        }
-        const containerNodes: nodes.BaseNode[] = [];
-        for (const container of containers) {
-            const type = container.type;
-            if (type === 'project') {
-                const displayName = container.displayName;
-                const containerNode = new ProjectArtifactsNode(displayName, oci, treeChanged);
-                containerNodes.push(containerNode);
-            } else if (type === 'custom') {
-                const displayName = container.displayName;
-                const containerNode = new CustomProjectArtifactsNode(displayName, container.items, treeChanged);
-                containerNodes.push(containerNode);
+export function findByNode(node: nodes.BaseNode): Service | undefined {
+    const services = ociServices.findByNode(node);
+    const service = services?.getService(DATA_NAME);
+    return service instanceof Service ? service as Service : undefined;
+}
+
+async function selectArtifactRepositories(oci: ociContext.Context, ignore: ArtifactRepository[]): Promise<ArtifactRepository[] | undefined> {
+    function shouldIgnore(ocid: string) {
+        for (const item of ignore) {
+            if (item.ocid === ocid) {
+                return true;
             }
         }
-        return containerNodes;
+        return false;
     }
-
-}
-
-export class ArtifactRepositoryPlugin extends ociServices.ServicePlugin {
-
-    constructor() {
-        super('artifactRepository');
+    async function listArtifactRepositories(oci: ociContext.Context): Promise<artifacts.models.RepositorySummary[] | undefined> {
+        // TODO: display the progress in QuickPick
+        return await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Reading compartment artifact repositories...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async (resolve) => {
+                resolve((await ociUtils.listArtifactRepositories(oci.getProvider(), oci.getCompartment()))?.repositoryCollection.items);
+            });
+        })
     }
-
-    buildInline(oci: ociContext.Context, artifactRepository: any, treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
-        const items = artifactRepository.inline;
-        if (!items || items.length === 0) {
-            return undefined;
-        }
-        const itemNodes = buildArtifactRepositoryNodes(items, oci, treeChanged);
-        return itemNodes;
-    }
-
-    buildContainers(oci: ociContext.Context, artifactRepository: any, treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
-        const containers = artifactRepository.containers;
-        if (!containers || containers.length === 0) {
-            return undefined;
-        }
-        const containerNodes: nodes.BaseNode[] = [];
-        for (const container of containers) {
-            const type = container.type;
-            if (type === 'compartment') {
-                const displayName = container.displayName;
-                const containerNode = new CompartmentArtifactRepositoriesNode(displayName, oci, treeChanged);
-                containerNodes.push(containerNode);
-            } else if (type === 'custom') {
-                const displayName = container.displayName;
-                const containerNode = new CustomArtifactRepositoriesNode(displayName, container.items, oci, treeChanged);
-                containerNodes.push(containerNode);
+    const artifactRepositories: ArtifactRepository[] = [];
+    const existing = await listArtifactRepositories(oci);
+    if (existing) {
+        let idx = 1;
+        for (const item of existing) {
+            if (!shouldIgnore(item.id)) {
+                const displayName = item.displayName ? item.displayName : `Artifact Repository ${idx++}`;
+                artifactRepositories.push({
+                    ocid: item.id,
+                    displayName: displayName
+                });
             }
         }
-        return containerNodes;
     }
-
+    const choices: dialogs.QuickPickObject[] = [];
+    for (const artifactRepository of artifactRepositories) {
+        choices.push(new dialogs.QuickPickObject(artifactRepository.displayName, undefined, undefined, artifactRepository));
+    }
+    // TODO: provide a possibility to create a new artifact repository
+    // TODO: provide a possibility to select artifact repositories from different compartments
+    if (choices.length === 0) {
+        vscode.window.showWarningMessage('All container repositories already added or no container repositories available.')
+    } else {
+        const selection = await vscode.window.showQuickPick(choices, {
+            placeHolder: 'Select Artifact Repository(s) to Add',
+            canPickMany: true
+        })
+        if (selection && selection.length > 0) {
+            const selected: ArtifactRepository[] = [];
+            for (const sel of selection) {
+                selected.push(sel.object as ArtifactRepository);
+            }
+            return selected;
+        }
+    }
+    return undefined;
 }
 
-function buildProjectArtifactNodes(items: any): nodes.BaseNode[] {
-    const itemNodes: nodes.BaseNode[] = [];
-    for (const item of items) {
-        const ocid = item.ocid;
-        const displayName = item.displayName;
-        const buildPipelineNode = new ProjectArtifactNode(ocid, displayName);
-        itemNodes.push(buildPipelineNode);
-    }
-    return itemNodes;
-}
+export class Service extends ociService.Service {
 
-function buildArtifactRepositoryNodes(items: any, oci: ociContext.Context, treeChanged: nodes.TreeChanged): nodes.BaseNode[] {
-    const itemNodes: nodes.BaseNode[] = [];
-    for (const item of items) {
-        const ocid = item.ocid;
-        const displayName = item.displayName;
-        const buildPipelineNode = new ArtifactRepositoryNode(ocid, oci, displayName, treeChanged);
-        itemNodes.push(buildPipelineNode);
-    }
-    return itemNodes;
-}
-
-class ProjectArtifactsNode extends nodes.AsyncNode {
-
-    private oci: ociContext.Context;
-
-    constructor(displayName: string | undefined, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
-        super(displayName ? displayName : 'Project Artifacts', undefined, 'gcn.oci.projectArtifactsNode', treeChanged);
-        this.oci = oci;
-        this.iconPath = new vscode.ThemeIcon('file-binary');
-        this.updateAppearance();
+    constructor(oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged) {
+        super(oci, DATA_NAME, serviceData, dataChanged);
     }
 
-    async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
-        const provider = this.oci.getProvider();
-        const project = this.oci.getDevOpsProject();
-        const artifacts = (await ociUtils.listProjectDeployArtifacts(provider, project))?.deployArtifactCollection.items;
-        if (artifacts) {
-            const children: nodes.BaseNode[] = []
-            for (const artifact of artifacts) {
-                const ocid = artifact.id;
-                const displayName = artifact.displayName ? artifact.displayName : 'Unknown Artifact';
-                let description: string | undefined;
-                if (artifact.deployArtifactType === 'GENERIC_FILE') {
-                    description = '(generic file)';
-                } else if (artifact.deployArtifactType === 'DOCKER_IMAGE') {
-                    description = '(docker image)';
+    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
+        const addContent = async () => {
+            if (this.treeChanged) {
+                const displayed = this.itemsData ? this.itemsData as ArtifactRepository[] : [];
+                const selected = await selectArtifactRepositories(this.oci, displayed);
+                if (selected) {
+                    const added: nodes.BaseNode[] = [];
+                    for (const pipeline of selected) {
+                        added.push(new ArtifactRepositoryNode(pipeline, this.oci, this.treeChanged));
+                    }
+                    this.addServiceNodes(added);
+                    this.treeChanged();
                 }
-                children.push(new ProjectArtifactNode(ocid, displayName, description));
-                // const artifactType = artifact.deployArtifactType;
-                // if (artifactType === devops.models.GenericDeployArtifactSource.deployArtifactSourceType) {
-                //     const displayName = (artifact.deployArtifactSource as devops.models.GenericDeployArtifactSource).deployArtifactPath;
-                //     const description = artifact.description;
-                //     children.push(new ProjectArtifactNode(ocid, displayName, description));
-                // } else if (artifactType === devops.models.GenericDeployArtifactSource.deployArtifactSourceType) {
-                //     const displayName = (artifact.deployArtifactSource as devops.models.GenericDeployArtifactSource).deployArtifactPath;
-                //     const description = artifact.description;
-                //     children.push(new ProjectArtifactNode(ocid, displayName, description));
-                // }
             }
-            return children;
         }
-        return [ new nodes.NoItemsNode() ];
+        return [
+            new dialogs.QuickPickObject('Add Artifact Repository', undefined, 'Add existing artifact repository', addContent)
+        ];
+    }
+
+    protected buildNodesImpl(oci: ociContext.Context, itemsData: any[], treeChanged: nodes.TreeChanged): nodes.BaseNode[] {
+        const nodes: nodes.BaseNode[] = [];
+        for (const itemData of itemsData) {
+            const ocid = itemData.ocid;
+            const displayName = itemData.displayName;
+            if (ocid && displayName) {
+                const object: ArtifactRepository = {
+                    ocid: ocid,
+                    displayName: displayName
+                }
+                nodes.push(new ArtifactRepositoryNode(object, oci, treeChanged));
+            }
+        }
+        return nodes;
     }
 
 }
 
-class CustomProjectArtifactsNode extends nodes.AsyncNode {
+class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, dataSupport.DataProducer {
 
-    private items: any;
+    static readonly DATA_NAME = 'artifactRepositoryNode';
+    static readonly CONTEXT = `gcn.oci.${ArtifactRepositoryNode.DATA_NAME}`;
 
-    constructor(displayName: string | undefined, items: any, treeChanged: nodes.TreeChanged) {
-        super(displayName ? displayName : 'Project Artifacts', undefined, 'gcn.oci.customProjectArtifactsNode', treeChanged);
-        this.items = items;
-        this.iconPath = new vscode.ThemeIcon('file-binary');
-        this.updateAppearance();
-    }
-
-    async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
-        if (this.items?.length > 0) {
-            const itemNodes = buildProjectArtifactNodes(this.items);
-            return itemNodes;
-        }
-        return [ new nodes.NoItemsNode() ];
-    }
-
-}
-
-class CompartmentArtifactRepositoriesNode extends nodes.AsyncNode {
-
+    private object: ArtifactRepository;
     private oci: ociContext.Context;
 
-    constructor(displayName: string | undefined, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
-        super(displayName ? displayName : 'Artifact Repositories', undefined, 'gcn.oci.compartmentArtifactRepositoriesNode', treeChanged);
+    constructor(object: ArtifactRepository, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
+        super(object.displayName, undefined, ArtifactRepositoryNode.CONTEXT, treeChanged);
+        this.object = object;
         this.oci = oci;
         this.iconPath = new vscode.ThemeIcon('file-binary');
         this.updateAppearance();
@@ -195,72 +165,20 @@ class CompartmentArtifactRepositoriesNode extends nodes.AsyncNode {
     async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
         const provider = this.oci.getProvider();
         const compartment = this.oci.getCompartment();
-        const repositories = (await ociUtils.listArtifactRepositories(provider, compartment))?.repositoryCollection.items;
-        if (repositories) {
+        const repository = this.object.ocid;
+        const images = (await ociUtils.listGenericArtifacts(provider, compartment, repository))?.genericArtifactCollection.items;
+        if (images) {
             const children: nodes.BaseNode[] = []
-            for (const repository of repositories) {
-                const ocid = repository.id;
-                const displayName = repository.displayName;
-                children.push(new ArtifactRepositoryNode(ocid, this.oci, displayName, this.treeChanged));
-            }
-            return children;
-        }
-        return [ new nodes.NoItemsNode() ];
-    }
-}
-
-class CustomArtifactRepositoriesNode extends nodes.AsyncNode {
-
-    private items: any;
-    private oci: ociContext.Context;
-
-    constructor(displayName: string | undefined, items: any, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
-        super(displayName ? displayName : 'Artifact Repositories (Custom)', undefined, 'gcn.oci.customArtifactRepositoriesNode', treeChanged);
-        this.items = items;
-        this.oci = oci;
-        this.iconPath = new vscode.ThemeIcon('file-binary');
-        this.updateAppearance();
-    }
-
-    async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
-        if (this.items?.length > 0) {
-            const itemNodes = buildArtifactRepositoryNodes(this.items, this.oci, this.treeChanged);
-            return itemNodes;
-        }
-        return [ new nodes.NoItemsNode() ];
-    }
-}
-
-class ArtifactRepositoryNode extends nodes.AsyncNode {
-
-    private ocid: string;
-    private oci: ociContext.Context;
-
-    constructor(ocid: string, oci: ociContext.Context, displayName: string | undefined, treeChanged: nodes.TreeChanged) {
-        super(displayName ? displayName : 'Artifact Repository', undefined, 'gcn.oci.artifactRepositoryNode', treeChanged);
-        this.ocid = ocid;
-        this.oci = oci;
-        this.iconPath = new vscode.ThemeIcon('file-binary');
-        this.updateAppearance();
-    }
-
-    async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
-        const provider = this.oci.getProvider();
-        const compartment = this.oci.getCompartment();
-        const repository = this.ocid;
-        const artifacts = (await ociUtils.listGenericArtifacts(provider, compartment, repository))?.genericArtifactCollection.items;
-        if (artifacts) {
-            const children: nodes.BaseNode[] = []
-            for (const artifact of artifacts) {
-                // const ocid = item.id;
-                // const displayName = (item.deployArtifactSource as devops.models.GenericDeployArtifactSource).deployArtifactPath;
-                // const description = item.description;
-                // itemNodes.push(new ServicesProjectArtifactNode(ocid, displayName, description));
-
-                const ocid = artifact.id;
-                const displayName = artifact.displayName;
-                const artifactNode = new ProjectArtifactNode(ocid, displayName);
-                children.push(artifactNode);
+            for (const image of images) {
+                const ocid = image.id;
+                let displayName = image.displayName;
+                const unknownVersionIdx = displayName.indexOf(':unknown@');
+                if (unknownVersionIdx > -1) {
+                    // displayName = displayName.substring(0, unknownVersionIdx);
+                    continue;
+                }
+                const imageDescription = `(${new Date(image.timeCreated).toLocaleString()})`;
+                children.push(new ArtifactImageNode(ocid, displayName, imageDescription));
             }
             return children;
         }
@@ -277,56 +195,139 @@ class ArtifactRepositoryNode extends nodes.AsyncNode {
         return [ new nodes.NoItemsNode() ];
     }
 
+    rename() {
+        const currentName = typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label
+        vscode.window.showInputBox({
+            title: 'Rename Artifact Repository',
+            value: currentName
+        }).then(name => {
+            if (name) {
+                this.object.displayName = name;
+                this.label = this.object.displayName;
+                this.updateAppearance();
+                this.treeChanged(this);
+                const service = findByNode(this);
+                service?.serviceNodesChanged(this)
+            }
+        });
+    }
+
+    remove() {
+        const service = findByNode(this);
+        this.removeFromParent(this.treeChanged);
+        service?.serviceNodesRemoved(this)
+    }
+
+    getDataName() {
+        return ArtifactRepositoryNode.DATA_NAME;
+    }
+
+    getData(): any {
+        return this.object;
+    }
+
 }
 
-class ProjectArtifactNode extends nodes.BaseNode {
+class ArtifactImageNode extends nodes.BaseNode {
+
+    static readonly CONTEXT = 'gcn.oci.artifactImageNode';
 
     // private ocid: string;
 
-    constructor(_ocid: string, displayName: string, description?: string, tooltip?: string) {
-        super(displayName, undefined, 'gcn.oci.projectArtifactNode', undefined, undefined);
+    constructor(_ocid: string, displayName: string, imageDescription?: string) {
+        super(displayName, imageDescription, ArtifactImageNode.CONTEXT, undefined, undefined);
         // this.ocid = ocid;
         this.iconPath = new vscode.ThemeIcon('file-binary');
-        this.description = description;
-        this.tooltip = tooltip ? `${this.label}: ${tooltip}` : (typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label);
+        this.updateAppearance();
     }
 
-    // download() {
-    //     const source = this.object.deployArtifactSource as devops.models.GenericDeployArtifactSource;
-    //     const artifactPath = source.deployArtifactPath;
-    //     ociUtils.getGenericArtifactContent(source.repositoryId, artifactPath, source.deployArtifactVersion).then(content => {
-    //         if (content) {
-    //             vscode.window.showSaveDialog({
-    //                 defaultUri: vscode.Uri.file(artifactPath),
-    //                 title: 'Save Artifact As'
-    //             }).then(fileUri => {
-    //                 if (fileUri) {
-    //                     vscode.window.withProgress({
-    //                         location: vscode.ProgressLocation.Notification,
-    //                         title: `Downloading artifact ${artifactPath}...`,
-    //                         cancellable: false
-    //                       }, (_progress, _token) => {
-    //                           return new Promise(async (resolve) => {
-    //                             const data = content.value;
-    //                             const file = fs.createWriteStream(fileUri.fsPath);
-    //                             data.pipe(file);
-    //                             data.on('end', () => {
-    //                                 const open = 'Open File Location';
-    //                                 vscode.window.showInformationMessage(`Artifact ${artifactPath} downloaded.`, open).then(choice => {
-    //                                     if (choice === open) {
-    //                                         vscode.commands.executeCommand('revealFileInOS', fileUri);
-    //                                     }
-    //                                 });
-    //                                 resolve(true);
-    //                             });
-    //                           });
-    //                       })
-    //                 }
-    //             });
-    //         } else {
-    //             vscode.window.showErrorMessage('Failed to download artifact.');
-    //         }
-    //     });
-    // }
-
 }
+
+// class ProjectArtifactNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, dataSupport.DataProducer {
+
+//     static readonly DATA_NAME = 'projectArtifactNode';
+//     static readonly CONTEXT = `gcn.oci.${ProjectArtifactNode.DATA_NAME}`;
+
+//     private object: ProjectArtifact;
+//     private oci: ociContext.Context;
+
+//     constructor(object: ProjectArtifact, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
+//         super(object.displayName, undefined, ProjectArtifactNode.CONTEXT, undefined, undefined, treeChanged);
+//         this.object = object;
+//         this.oci = oci;
+//         this.iconPath = new vscode.ThemeIcon('file-binary');
+//         this.updateAppearance();
+//         // this.description = description;
+//         // this.tooltip = tooltip ? `${this.label}: ${tooltip}` : (typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label);
+//     }
+
+//     rename() {
+//         const currentName = typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label
+//         vscode.window.showInputBox({
+//             title: 'Rename Project Artifact',
+//             value: currentName
+//         }).then(name => {
+//             if (name) {
+//                 this.object.displayName = name;
+//                 this.label = this.object.displayName;
+//                 this.updateAppearance();
+//                 this.treeChanged(this);
+//                 const service = findByNode(this);
+//                 service?.serviceNodesChanged(this)
+//             }
+//         });
+//     }
+
+//     remove() {
+//         const service = findProjectArtifactsServiceByNode(this);
+//         this.removeFromParent(this.treeChanged);
+//         service?.serviceNodesRemoved(this)
+//     }
+
+//     getDataName() {
+//         return ProjectArtifactNode.DATA_NAME;
+//     }
+
+//     getData(): any {
+//         return this.object;
+//     }
+
+//     // download() {
+//     //     const source = this.object.deployArtifactSource as devops.models.GenericDeployArtifactSource;
+//     //     const artifactPath = source.deployArtifactPath;
+//     //     ociUtils.getGenericArtifactContent(source.repositoryId, artifactPath, source.deployArtifactVersion).then(content => {
+//     //         if (content) {
+//     //             vscode.window.showSaveDialog({
+//     //                 defaultUri: vscode.Uri.file(artifactPath),
+//     //                 title: 'Save Artifact As'
+//     //             }).then(fileUri => {
+//     //                 if (fileUri) {
+//     //                     vscode.window.withProgress({
+//     //                         location: vscode.ProgressLocation.Notification,
+//     //                         title: `Downloading artifact ${artifactPath}...`,
+//     //                         cancellable: false
+//     //                       }, (_progress, _token) => {
+//     //                           return new Promise(async (resolve) => {
+//     //                             const data = content.value;
+//     //                             const file = fs.createWriteStream(fileUri.fsPath);
+//     //                             data.pipe(file);
+//     //                             data.on('end', () => {
+//     //                                 const open = 'Open File Location';
+//     //                                 vscode.window.showInformationMessage(`Artifact ${artifactPath} downloaded.`, open).then(choice => {
+//     //                                     if (choice === open) {
+//     //                                         vscode.commands.executeCommand('revealFileInOS', fileUri);
+//     //                                     }
+//     //                                 });
+//     //                                 resolve(true);
+//     //                             });
+//     //                           });
+//     //                       })
+//     //                 }
+//     //             });
+//     //         } else {
+//     //             vscode.window.showErrorMessage('Failed to download artifact.');
+//     //         }
+//     //     });
+//     // }
+
+// }

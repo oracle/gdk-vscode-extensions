@@ -6,42 +6,87 @@
  */
 
 import * as vscode from 'vscode';
-import { CLOUD_SUPPORTS } from './extension';
+import * as gcnServices from './gcnServices';
 import * as model from './model';
 import * as nodes from './nodes';
-import * as folderStorage from './folderStorage';
+import * as dialogs from './dialogs';
 
-export function initialize(_extensionContext: vscode.ExtensionContext) {
-    // TODO: initialize actions using context
+
+export function initialize(extensionContext: vscode.ExtensionContext) {
+    nodes.registerAddContentNode(FolderNode.CONTEXT);
+    nodes.registerAddContentNode(FolderServicesNode.CONTEXT);
+    extensionContext.subscriptions.push(vscode.commands.registerCommand('gcn.addContent', (...params: any[]) => {
+        if (params[0]) {
+            (params[0] as nodes.AddContentNode).addContent();
+        } else {
+            addContent(undefined, undefined);
+        }
+	}));
+    extensionContext.subscriptions.push(vscode.commands.registerCommand('gcn.renameNode', (...params: any[]) => {
+        if (params[0]) {
+            (params[0] as nodes.RenameableNode).rename();
+        }
+	}));
+    extensionContext.subscriptions.push(vscode.commands.registerCommand('gcn.removeNode', (...params: any[]) => {
+        if (params[0]) {
+            (params[0] as nodes.RemovableNode).remove();
+        }
+	}));
 }
 
-export async function rebuild() {
-    await vscode.commands.executeCommand('setContext', 'gcn.servicesViewInitialized', false);
-    await vscode.commands.executeCommand('setContext', 'gcn.serviceFoldersCount', -1);
+export function findCloudServicesByNode(node: nodes.BaseNode | undefined): model.CloudServices | undefined {
+    while (node) {
+        if (node instanceof FolderServicesNode) { // Multiple CloudServices defined for a folder
+            return (node as FolderServicesNode).getServices();
+        } else if (node instanceof FolderNode) { // Single CloudServices defined for a folder (FolderServicesNode collapsed)
+            return (node as FolderNode).getFolderData().services[0];
+        } else {
+            node = node.parent;
+        }
+    }
+    return undefined;
+}
 
-    const folders = vscode.workspace.workspaceFolders;
+export function findWorkspaceFolderByNode(node: nodes.BaseNode | undefined): vscode.WorkspaceFolder | undefined {
+    while (node) {
+        if (node instanceof FolderNode) {
+            return (node as FolderNode).getFolderData().folder;
+        } else {
+            node = node.parent;
+        }
+    }
+    return undefined;
+}
+
+async function addContent(folder: gcnServices.FolderData | undefined, services: model.CloudServices | undefined) {
+    if (!services) {
+        if (!folder) {
+            folder = await dialogs.selectFolder();
+            if (!folder) {
+                return;
+            }
+        }
+        services = await dialogs.selectServices(folder);
+        if (!services) {
+            return;
+        }
+    }
+    services.addContent();
+}
+
+export async function build(folders: gcnServices.FolderData[]) {
     const folderNodes: FolderNode[] = [];
-    if (folders) {
-        const treeChanged: nodes.TreeChanged = (tree?: vscode.TreeItem) => {
-            nodeProvider.refresh(tree);
+    if (folders.length > 0) {
+        const treeChanged: nodes.TreeChanged = (treeItem?: vscode.TreeItem) => {
+            nodeProvider.refresh(treeItem);
         }
         for (const folder of folders) {
-            // folderStorage.createSampleConfiguration(folder);
-
-            const services = folderStorage.readStorage(folder);
-            const configurations = services?.getConfigurations();
-            const serviceNodes: nodes.BaseNode[] = [];
-            if (configurations) {
-                for (const configuration of configurations) {
-                    const cloudSupport = getCloudSupport(configuration.getType());
-                    if (cloudSupport) {
-                        const supportServices = cloudSupport.getServices(folder, configuration);
-                        if (supportServices) {
-                            const folderServicesNode = new FolderServicesNode(configuration.getName(), supportServices, treeChanged);
-                            serviceNodes.push(folderServicesNode);
-                        }
-                    }
-                }
+            const serviceNodes: FolderServicesNode[] = [];
+            for (let i = 0; i < folder.configurations.length; i++) {
+                const configuration = folder.configurations[i];
+                const services = folder.services[i];
+                const folderServicesNode = new FolderServicesNode(configuration.getName(), services, treeChanged);
+                serviceNodes.push(folderServicesNode);
             }
             if (serviceNodes.length > 1) {
                 for (const serviceNode of serviceNodes) {
@@ -62,51 +107,76 @@ export async function rebuild() {
         }
     }
     nodeProvider.setRoots(folderNodes);
-
-    await vscode.commands.executeCommand('setContext', 'gcn.serviceFoldersCount', folderNodes.length);
-    await vscode.commands.executeCommand('setContext', 'gcn.servicesViewInitialized', true);
 }
 
-function getCloudSupport(servicesType: string): model.CloudSupport | undefined {
-    for (const cloudSupport of CLOUD_SUPPORTS) {
-        if (cloudSupport.getType() === servicesType) {
-            return cloudSupport;
-        }
-    }
-    return undefined;
-}
+class FolderNode extends nodes.BaseNode implements nodes.AddContentNode {
 
-class FolderNode extends nodes.BaseNode {
+    static readonly CONTEXT = 'gcn.folderNode';
 
-    constructor(folder: vscode.WorkspaceFolder, children: nodes.BaseNode[]) {
-        super(folder.name, undefined, 'gcn.folderNode', children, true);
+    private folder: gcnServices.FolderData;
+
+    constructor(folder: gcnServices.FolderData, children: FolderServicesNode[]) {
+        super(folder.folder.name, undefined, FolderNode.CONTEXT, children, true);
+        this.folder = folder;
         this.collapseOneChildNode();
         this.updateAppearance();
     }
 
     collapseOneChildNode() {
-        // TODO: update parent handles
         if (this.children && this.children.length === 1) {
-            this.children = this.children[0].getChildren();
+            const singleFolderServicesNode = this.children[0] as FolderServicesNode;
+            this.setChildren(singleFolderServicesNode.getChildren());
+            singleFolderServicesNode.parentWhenCollapsed = this; // Notify the collapsed FolderServicesNode to not break treeChanged() notifications
         }
+    }
+
+    getFolderData(): gcnServices.FolderData {
+        return this.folder;
+    }
+
+    addContent() {
+        addContent(this.folder, undefined);
     }
 
 }
 
-class FolderServicesNode extends nodes.BaseNode {
+class FolderServicesNode extends nodes.BaseNode implements nodes.AddContentNode {
+
+    static readonly CONTEXT = 'gcn.folderServicesNode';
+
+    private services: model.CloudServices;
+    parentWhenCollapsed: FolderNode | undefined;
 
     constructor(name: string, services: model.CloudServices, treeChanged: nodes.TreeChanged) {
-        super(name, undefined, 'gcn.folderServicesNode', services.buildNodes(treeChanged), true);
-        // this.collapseOneChildNode();
+        super(name, undefined, FolderServicesNode.CONTEXT, null, true);
+        this.services = services;
         this.updateAppearance();
+        const subtreeChanged: nodes.TreeChanged = (treeItem?: vscode.TreeItem) => {
+            if (treeItem) {
+                treeChanged(treeItem);
+            } else {
+                const servicesRoot = this.parentWhenCollapsed ? this.parentWhenCollapsed : this;
+                servicesRoot.setChildren(this.services.getNodes());
+                treeChanged(servicesRoot);
+            }
+        }
+        services.buildNodes(subtreeChanged);
     }
 
-    // collapseOneChildNode() {
-    //     // TODO: update parent handles
-    //     if (this.children && this.children.length === 1) {
-    //         this.children = this.children[0].getChildren();
-    //     }
-    // }
+    public getChildren(): nodes.BaseNode[] | undefined {
+        if (this.children === null) {
+            this.setChildren(this.services.getNodes());
+        }
+        return super.getChildren();
+    }
+
+    getServices(): model.CloudServices {
+        return this.services;
+    }
+
+    addContent() {
+        addContent(undefined, this.services);
+    }
 
 }
 
@@ -126,6 +196,9 @@ class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private roots: FolderNode[] = [];
 
     refresh(element?: vscode.TreeItem) {
+        if (this.roots.length === 1 && this.roots[0] === element) { // single root node is collapsed
+            element = undefined;
+        }
         this._onDidChangeTreeData.fire(element);
 	}
 
@@ -140,7 +213,7 @@ class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 
 	getChildren(element?: vscode.TreeItem): vscode.ProviderResult<vscode.TreeItem[]> {
         if (!element) {
-            return this.roots.length === 1 ? this.roots[0].getChildren() : this.roots;
+            return this.roots.length === 1 ? this.roots[0].getChildren() : this.roots; // collapse single root node
         } else {
             return (element as nodes.BaseNode).getChildren();
         }

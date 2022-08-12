@@ -7,166 +7,206 @@
 
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as devops from 'oci-devops';
 import * as nodes from '../nodes';
+import * as dialogs from '../dialogs';
 import * as gitUtils from '../gitUtils';
 import * as graalvmUtils from '../graalvmUtils';
+import * as servicesView from '../servicesView';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
-import * as ociServices from './ociServices';
+import * as ociService from './ociService';
+import * as ociServices  from './ociServices';
+import * as dataSupport from './dataSupport';
 
-export function createFeaturePlugins(context: vscode.ExtensionContext): ociServices.ServicePlugin[] {
-    context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.runBuildPipeline', (node: BuildPipelineNode) => {
+
+export const DATA_NAME = 'buildPipelines';
+
+type BuildPipeline = {
+    ocid: string,
+    displayName: string
+}
+
+export function initialize(context: vscode.ExtensionContext) {
+    nodes.registerRenameableNode(BuildPipelineNode.CONTEXTS);
+    nodes.registerRemovableNode(BuildPipelineNode.CONTEXTS);
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runBuildPipeline', (node: BuildPipelineNode) => {
 		node.runPipeline();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.downloadArtifact', (node: BuildPipelineNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.downloadArtifact', (node: BuildPipelineNode) => {
 		node.downloadArtifact();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('extension.gcn.showBuildOutput', (node: BuildPipelineNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.showBuildOutput', (node: BuildPipelineNode) => {
 		node.showBuildOutput();
 	}));
-    return [ new Plugin() ];
 }
 
-class Plugin extends ociServices.ServicePlugin {
-
-    constructor() {
-        super('buildPipelines');
-    }
-
-    buildInline(oci: ociContext.Context, buildPipelines: any, treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
-        const items = buildPipelines.inline;
-        if (!items || items.length === 0) {
-            return undefined;
+export async function importServices(oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
+    // TODO: Might return populated instance of Service which internally called importServices()
+    const provider = oci.getProvider();
+    const project = oci.getDevOpsProject();
+    const repository = oci.getCodeRepository();
+    const pipelines = await ociUtils.listBuildPipelinesByCodeRepository(provider, project, repository);
+    if (pipelines.length > 0) {
+        const items: BuildPipeline[] = [];
+        let idx = 0;
+        for (const pipeline of pipelines) {
+            const displayName = pipeline.displayName ? pipeline.displayName : `Build Pipeline ${idx++}`;
+            items.push({
+                'ocid': pipeline.id,
+                'displayName': displayName
+            });
         }
-        const itemNodes = buildItemNodes(oci, items, treeChanged);
-        return itemNodes;
+        const result: dataSupport.DataProducer = {
+            getDataName: () => DATA_NAME,
+            getData: () => {
+                return {
+                    items: items
+                }
+            }
+        };
+        return result;
+    } else {
+        return undefined;
     }
+}
 
-    buildContainers(oci: ociContext.Context, buildPipelines: any, treeChanged: nodes.TreeChanged): nodes.BaseNode[] | undefined {
-        const containers = buildPipelines.containers;
-        if (!containers || containers.length === 0) {
-            return undefined;
-        }
-        const containerNodes: nodes.BaseNode[] = [];
-        for (const container of containers) {
-            const type = container.type;
-            if (type === 'project') {
-                const displayName = container.displayName;
-                const containerNode = new ProjectBuildPipelinesNode(displayName, oci, treeChanged);
-                containerNodes.push(containerNode);
-            } else if (type === 'custom') {
-                const displayName = container.displayName;
-                const containerNode = new CustomBuildPipelinesNode(displayName, oci, container.items, treeChanged);
-                containerNodes.push(containerNode);
+export function create(oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged): ociService.Service {
+    return new Service(oci, serviceData, dataChanged);
+}
+
+export function findByNode(node: nodes.BaseNode): Service | undefined {
+    const services = ociServices.findByNode(node);
+    const service = services?.getService(DATA_NAME);
+    return service instanceof Service ? service as Service : undefined;
+}
+
+async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeline[]): Promise<BuildPipeline[] | undefined> {
+    function shouldIgnore(ocid: string) {
+        for (const item of ignore) {
+            if (item.ocid === ocid) {
+                return true;
             }
         }
-        return containerNodes;
+        return false;
     }
-
-    async importServices(oci: ociContext.Context): Promise<any | undefined> {
-        const provider = oci.getProvider();
-        const project = oci.getDevOpsProject();
-        const repository = oci.getCodeRepository();
-        const buildPipelines = await ociUtils.listBuildPipelineStagesByCodeRepository(provider, project, repository);
-        if (buildPipelines.length > 0) {
-            const inline: any[] = [];
-            let idx = 0;
-            for (const buildPipeline of buildPipelines) {
-                inline.push({
-                    'ocid': buildPipeline.id,
-                    'displayName': buildPipeline.displayName? buildPipeline.displayName : `Build Pipeline ${idx++}`
+    async function listBuildPipelines(oci: ociContext.Context): Promise<devops.models.BuildPipelineSummary[] | undefined> {
+        // TODO: display the progress in QuickPick
+        return await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Reading project build pipelines...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async (resolve) => {
+                resolve((await ociUtils.listBuildPipelines(oci.getProvider(), oci.getDevOpsProject()))?.buildPipelineCollection?.items);
+            });
+        })
+    }
+    const pipelines: BuildPipeline[] = [];
+    const existing = await listBuildPipelines(oci);
+    if (existing) {
+        let idx = 1;
+        for (const item of existing) {
+            if (!shouldIgnore(item.id)) {
+                const displayName = item.displayName ? item.displayName : `Build Pipeline ${idx++}`;
+                pipelines.push({
+                    ocid: item.id,
+                    displayName: displayName
                 });
             }
-            return {
-                inline: inline
+        }
+    }
+    const choices: dialogs.QuickPickObject[] = [];
+    for (const pipeline of pipelines) {
+        choices.push(new dialogs.QuickPickObject(pipeline.displayName, undefined, undefined, pipeline));
+    }
+    // TODO: display pipelines for the repository and for the project
+    // TODO: provide a possibility to create a new pipeline
+    // TODO: provide a possibility to select pipelines from different projects / compartments
+    if (choices.length === 0) {
+        vscode.window.showWarningMessage('All build pipelines already added or no build pipelines available.')
+    } else {
+        const selection = await vscode.window.showQuickPick(choices, {
+            placeHolder: 'Select Build Pipeline(s) to Add',
+            canPickMany: true
+        })
+        if (selection && selection.length > 0) {
+            const selected: BuildPipeline[] = [];
+            for (const sel of selection) {
+                selected.push(sel.object as BuildPipeline);
             }
-        } else {
-            return undefined;
+            return selected;
         }
     }
-
+    return undefined;
 }
 
-function buildItemNodes(oci: ociContext.Context, items: any, treeChanged: nodes.TreeChanged): nodes.BaseNode[] {
-    const itemNodes: nodes.BaseNode[] = [];
-    for (const item of items) {
-        const ocid = item.ocid;
-        const displayName = item.displayName;
-        const buildPipelineNode = new BuildPipelineNode(displayName, oci, ocid, treeChanged);
-        itemNodes.push(buildPipelineNode);
-    }
-    return itemNodes;
-}
-
-class ProjectBuildPipelinesNode extends nodes.AsyncNode {
-
-    private oci: ociContext.Context;
-
-    constructor(displayName: string | undefined, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
-        super(displayName ? displayName : 'Build', undefined, 'gcn.oci.projectBuildPipelinesNode', treeChanged);
-        this.oci = oci;
-        this.iconPath = new vscode.ThemeIcon('play-circle');
-        this.updateAppearance();
+class Service extends ociService.Service {
+    
+    constructor(oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged) {
+        super(oci, DATA_NAME, serviceData, dataChanged);
     }
 
-    async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
-        const provider = this.oci.getProvider();
-        const project = this.oci.getDevOpsProject();
-        const buildPipelines = (await ociUtils.listBuildPipelines(provider, project))?.buildPipelineCollection.items;
-        if (buildPipelines) {
-            const children: nodes.BaseNode[] = []
-            let idx = 0;
-            for (const buildPipeline of buildPipelines) {
-                const ocid = buildPipeline.id;
-                const displayName = buildPipeline.displayName;
-                children.push(new BuildPipelineNode(displayName ? displayName : `Build Pipeline ${idx++}`, this.oci, ocid, this.treeChanged));
+    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
+        const addContent = async () => {
+            if (this.treeChanged) {
+                const displayed = this.itemsData ? this.itemsData as BuildPipeline[] : [];
+                const selected = await selectBuildPipelines(this.oci, displayed);
+                if (selected) {
+                    const added: nodes.BaseNode[] = [];
+                    for (const pipeline of selected) {
+                        added.push(new BuildPipelineNode(pipeline, this.oci, this.treeChanged));
+                    }
+                    this.addServiceNodes(added);
+                    this.treeChanged();
+                }
             }
-            return children;
         }
-        return [ new nodes.NoItemsNode() ];
+        return [
+            new dialogs.QuickPickObject('Add Build Pipeline', undefined, 'Add existing build pipeline', addContent)
+        ];
+    }
+
+    protected buildNodesImpl(oci: ociContext.Context, itemsData: any[], treeChanged: nodes.TreeChanged): nodes.BaseNode[] {
+        const nodes: nodes.BaseNode[] = [];
+        for (const itemData of itemsData) {
+            const ocid = itemData.ocid;
+            const displayName = itemData.displayName;
+            if (ocid && displayName) {
+                const object: BuildPipeline = {
+                    ocid: ocid,
+                    displayName: displayName
+                }
+                nodes.push(new BuildPipelineNode(object, oci, treeChanged));
+            }
+        }
+        return nodes;
     }
 
 }
 
-class CustomBuildPipelinesNode extends nodes.AsyncNode {
+class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, dataSupport.DataProducer {
 
-    private oci: ociContext.Context;
-    private items: any;
+    static readonly DATA_NAME = 'buildPipelineNode';
+    static readonly CONTEXTS = [
+        `gcn.oci.${BuildPipelineNode.DATA_NAME}`, // default
+        `gcn.oci.${BuildPipelineNode.DATA_NAME}-in-progress`, // in progress
+        `gcn.oci.${BuildPipelineNode.DATA_NAME}-artifacts-available` // artifacts available
+    ];
 
-    constructor(displayName: string | undefined, oci: ociContext.Context, items: any, treeChanged: nodes.TreeChanged) {
-        super(displayName ? displayName : 'Build (Custom)', undefined, 'gcn.oci.customBuildPipelinesNode', treeChanged);
-        this.oci = oci;
-        this.items = items;
-        this.iconPath = new vscode.ThemeIcon('play-circle');
-        this.updateAppearance();
-    }
-
-    async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
-        if (this.items?.length > 0) {
-            const itemNodes = buildItemNodes(this.oci, this.items, this.treeChanged);
-            return itemNodes;
-        }
-        return [ new nodes.NoItemsNode() ];
-    }
-
-}
-
-class BuildPipelineNode extends nodes.ChangeableNode {
-
-    static readonly CONTEXT = 'gcn.oci.buildPipelineNode';
+    private object: BuildPipeline;
     private static readonly GCN_TERMINAL = 'Graal Cloud Native';
     private oci: ociContext.Context;
-    private ocid: string;
     private lastRun?: { ocid: string, state?: string, output?: vscode.OutputChannel, deliveredArtifacts?: { id: string, type: string }[] };
 
-    constructor(displayName: string, oci: ociContext.Context, ocid: string, treeChanged: nodes.TreeChanged) {
-        super(displayName, undefined, BuildPipelineNode.CONTEXT, undefined, undefined, treeChanged);
+    constructor(object: BuildPipeline, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
+        super(object.displayName, undefined, BuildPipelineNode.CONTEXTS[0], undefined, undefined, treeChanged);
+        this.object = object;
         this.oci = oci;
-        this.ocid = ocid;
         this.iconPath = new vscode.ThemeIcon('play-circle');
-        this.command = { command: 'extension.gcn.showBuildOutput', title: 'Show Build Output', arguments: [this] };
+        this.command = { command: 'gcn.oci.showBuildOutput', title: 'Show Build Output', arguments: [this] };
         this.updateAppearance();
-        ociUtils.listBuildRuns(this.oci.getProvider(), this.ocid).then(response => {
+        ociUtils.listBuildRuns(this.oci.getProvider(), this.object.ocid).then(response => {
             if (response?.buildRunSummaryCollection.items.length) {
                 const run = response.buildRunSummaryCollection.items[0];
                 const output = run.displayName ? vscode.window.createOutputChannel(run.displayName) : undefined;
@@ -177,42 +217,76 @@ class BuildPipelineNode extends nodes.ChangeableNode {
         });
     }
 
+    rename() {
+        const currentName = typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label
+        vscode.window.showInputBox({
+            title: 'Rename Build Pipeline',
+            value: currentName
+        }).then(name => {
+            if (name) {
+                this.object.displayName = name;
+                this.label = this.object.displayName;
+                this.updateAppearance();
+                this.treeChanged(this);
+                const service = findByNode(this);
+                service?.serviceNodesChanged(this)
+            }
+        });
+    }
+
+    remove() {
+        const service = findByNode(this);
+        this.removeFromParent(this.treeChanged);
+        service?.serviceNodesRemoved(this)
+    }
+
+    getDataName() {
+        return BuildPipelineNode.DATA_NAME;
+    }
+
+    getData(): any {
+        return this.object;
+    }
+
     runPipeline() {
         if (!ociUtils.isRunning(this.lastRun?.state)) {
-            graalvmUtils.getActiveGVMVersion().then(version => {
-                if (version) {
-                    const params = graalvmUtils.getGVMBuildRunParameters(version);
-                    const buildName = `${this.label}-${this.getTimestamp()} (from VS Code)`;
-                    vscode.window.withProgress({
-                        location: vscode.ProgressLocation.Notification,
-                        title: `Starting build "${buildName}" using GraalVM ${version[1]}, Java ${version[0]}...`,
-                        cancellable: false
-                    }, (_progress, _token) => {
-                        return new Promise(async (resolve) => {
-                            let commitInfo;
-                            const branchName = await gitUtils.getBranchName(this.oci.getFolder().fsPath);
-                            if (branchName) {
-                                const repository = (await ociUtils.getCodeRepository(this.oci.getProvider(), this.oci.getCodeRepository()))?.repository;
-                                if (repository && repository.httpUrl && `refs/heads/${branchName}` !== repository.defaultBranch) {
-                                    const hash = await gitUtils.getLastCommitHash(this.oci.getFolder().fsPath);
-                                    if (hash) {
-                                        commitInfo = { repositoryUrl: repository.httpUrl, repositoryBranch: branchName, commitHash: hash };
+            const folder = servicesView.findWorkspaceFolderByNode(this)?.uri.fsPath;
+            if (folder) {
+                graalvmUtils.getActiveGVMVersion().then(version => {
+                    if (version) {
+                        const params = graalvmUtils.getGVMBuildRunParameters(version);
+                        const buildName = `${this.label}-${this.getTimestamp()} (from VS Code)`;
+                        vscode.window.withProgress({
+                            location: vscode.ProgressLocation.Notification,
+                            title: `Starting build "${buildName}" using GraalVM ${version[1]}, Java ${version[0]}...`,
+                            cancellable: false
+                        }, (_progress, _token) => {
+                            return new Promise(async (resolve) => {
+                                let commitInfo;
+                                const branchName = await gitUtils.getBranchName(folder);
+                                if (branchName) {
+                                    const repository = (await ociUtils.getCodeRepository(this.oci.getProvider(), this.oci.getCodeRepository()))?.repository;
+                                    if (repository && repository.httpUrl && `refs/heads/${branchName}` !== repository.defaultBranch) {
+                                        const hash = await gitUtils.getLastCommitHash(folder);
+                                        if (hash) {
+                                            commitInfo = { repositoryUrl: repository.httpUrl, repositoryBranch: branchName, commitHash: hash };
+                                        }
                                     }
                                 }
-                            }
-                            const buildRun = (await ociUtils.createBuildRun(this.oci.getProvider(), this.ocid, buildName, params, commitInfo))?.buildRun;
-                            resolve(true);
-                            if (buildRun) {
-                                this.updateLastRun(buildRun.id, buildRun.lifecycleState, buildRun.displayName ? vscode.window.createOutputChannel(buildRun.displayName) : undefined);
-                                this.showBuildOutput();
-                                this.updateWhenCompleted(buildRun.id, buildRun.compartmentId, buildRun.timeCreated);
-                            }
-                        });
-                    })
-                } else {
-                    vscode.window.showErrorMessage('No local active GraalVM installation detected.');
-                }
-            });
+                                const buildRun = (await ociUtils.createBuildRun(this.oci.getProvider(), this.object.ocid, buildName, params, commitInfo))?.buildRun;
+                                resolve(true);
+                                if (buildRun) {
+                                    this.updateLastRun(buildRun.id, buildRun.lifecycleState, buildRun.displayName ? vscode.window.createOutputChannel(buildRun.displayName) : undefined);
+                                    this.showBuildOutput();
+                                    this.updateWhenCompleted(buildRun.id, buildRun.compartmentId, buildRun.timeCreated);
+                                }
+                            });
+                        })
+                    } else {
+                        vscode.window.showErrorMessage('No local active GraalVM installation detected.');
+                    }
+                });
+            }
         }
     }
 
@@ -330,19 +404,19 @@ class BuildPipelineNode extends nodes.ChangeableNode {
             case 'IN_PROGRESS':
             case 'CANCELING':
                 this.iconPath = new vscode.ThemeIcon('play-circle', new vscode.ThemeColor('charts.yellow'));
-                this.contextValue = BuildPipelineNode.CONTEXT + "-in-progress";
+                this.contextValue = BuildPipelineNode.CONTEXTS[1];
                 break;
             case 'SUCCEEDED':
                 this.iconPath = new vscode.ThemeIcon('play-circle', new vscode.ThemeColor('charts.green'));
-                this.contextValue = deliveredArtifacts?.length ? BuildPipelineNode.CONTEXT + "-artifacts-available" : BuildPipelineNode.CONTEXT;
+                this.contextValue = deliveredArtifacts?.length ? BuildPipelineNode.CONTEXTS[2] : BuildPipelineNode.CONTEXTS[0];
                 break;
             case 'FAILED':
                 this.iconPath = new vscode.ThemeIcon('play-circle', new vscode.ThemeColor('charts.red'));
-                this.contextValue = BuildPipelineNode.CONTEXT;
+                this.contextValue = BuildPipelineNode.CONTEXTS[0];
                 break;
             default:
                 this.iconPath = new vscode.ThemeIcon('play-circle');
-                this.contextValue = BuildPipelineNode.CONTEXT;
+                this.contextValue = BuildPipelineNode.CONTEXTS[0];
         }
         this.treeChanged(this);
     }
