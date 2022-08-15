@@ -28,7 +28,7 @@ export async function undeployFolders() {
 }
 
 export async function undeployFolder(folder: gcnServices.FolderData) {
-    const services = ociServices.findByFolder(folder);
+    const services = ociServices.findByFolderData(folder);
     if (services.length === 0) {
         return;
     }

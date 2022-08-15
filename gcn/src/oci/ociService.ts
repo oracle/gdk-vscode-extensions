@@ -5,6 +5,7 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
+import * as vscode from 'vscode';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
 import * as ociContext from './ociContext';
@@ -14,6 +15,7 @@ import * as dataSupport from './dataSupport';
 export abstract class Service implements dataSupport.DataProducer {
 
     private readonly dataName: string;
+    protected readonly folder: vscode.WorkspaceFolder;
     protected readonly oci: ociContext.Context;
     protected settingsData: any | undefined;
     protected itemsData: any | undefined;
@@ -21,7 +23,8 @@ export abstract class Service implements dataSupport.DataProducer {
     protected serviceNodes: nodes.BaseNode[] | undefined;
     protected treeChanged: nodes.TreeChanged | undefined;
 
-    constructor(oci: ociContext.Context, dataName: string, serviceData: any | undefined, dataChanged: dataSupport.DataChanged) {
+    constructor(folder: vscode.WorkspaceFolder, oci: ociContext.Context, dataName: string, serviceData: any | undefined, dataChanged: dataSupport.DataChanged) {
+        this.folder = folder;
         this.oci = oci;
         this.dataName = dataName;
         this.settingsData = serviceData?.settings;

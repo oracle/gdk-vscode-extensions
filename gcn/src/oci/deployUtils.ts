@@ -368,7 +368,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                     // TODO: Might use populated instance of knowledgeBaseServices.Service as dataSupport.DataProducer
                     knowledgeBases: {
                         settings: {
-                            sourceKnowledgeBase: knowledgeBaseOCID
+                            folderAuditsKnowledgeBase: knowledgeBaseOCID
                         }
                     },
                 };

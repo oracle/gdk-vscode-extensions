@@ -42,35 +42,6 @@ export function create(context: vscode.ExtensionContext): model.CloudSupport {
     return new OciSupport();
 }
 
-const workspaceContexts : Map<vscode.WorkspaceFolder, ociContext.Context> = new Map();
-
-export function findOciConfiguration(location : vscode.WorkspaceFolder | vscode.Uri | string | undefined) : ociContext.Context | undefined {
-    if (!location) {
-        return undefined;
-    }
-    let wsf = undefined;
-    let u = undefined;
-    if (location instanceof vscode.Uri) {
-        u = location as vscode.Uri;
-    } else {
-        let l = location;
-
-        if ((location as any).uri) {
-            l = (location as any).uri;
-        }
-        if (typeof l === 'string') {
-            u = vscode.Uri.parse(l);
-        } else if (l instanceof vscode.Uri) {
-            u = l as vscode.Uri;
-        }
-    }
-    if (!u) {
-        return undefined;
-    }
-    wsf = vscode.workspace.getWorkspaceFolder(u);
-    return wsf ? workspaceContexts.get(wsf) : undefined;
-}
-
 let sshKeyInitInProgress = false;
 async function initializeSshKeys() {
     if (!sshKeyInitInProgress) {
@@ -169,12 +140,8 @@ class OciSupport implements model.CloudSupport {
         const authentication = ociAuthentication.create(authenticationData, dataChanged);
         const contextData = data[ociContext.DATA_NAME];
         const oci = ociContext.create(authentication, contextData, dataChanged);
-        //---
-        // TODO: cleanup
-        workspaceContexts.set(folder, oci);
-        //---
         const servicesData = data[ociServices.DATA_NAME];
-        const services = new ociServices.OciServices(oci, servicesData, dataChanged);
+        const services = new ociServices.OciServices(folder, oci, servicesData, dataChanged);
         return services;
     }
 

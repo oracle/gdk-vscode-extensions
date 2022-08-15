@@ -74,3 +74,31 @@ function getCloudSupport(configuration: model.ServicesConfiguration): model.Clou
 export function getFolderData(): FolderData[] {
     return folderData;
 }
+
+export function findFolderData(folder: string | vscode.Uri): FolderData | undefined {
+    if (typeof folder === 'string') {
+        folder = vscode.Uri.file(folder);
+    }
+    const path = (folder as vscode.Uri).fsPath;
+    for (const data of folderData) {
+        if (path === data.folder.uri.fsPath) { // TODO: is this the right comparison?
+            return data;
+        }
+    }
+    return undefined;
+}
+
+// export function getCloudServices(type: string, folder: string | vscode.Uri): model.CloudServices[] | undefined {
+//     const folderData = findFolderData(folder);
+//     if (!folderData) {
+//         return undefined;
+//     }
+//     const cloudServices: model.CloudServices[] = [];
+//     for (let idx = 0; idx < folderData.configurations.length; idx++)
+//     for (const configuration of folderData.configurations) {
+//         if (configuration.getType() === type) {
+//             cloudServices.push(folderData.services[idx]);
+//         }
+//     }
+//     return cloudServices;
+// }

@@ -9,7 +9,6 @@ import * as vscode from 'vscode';
 import * as adm from 'oci-adm';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
-import * as ociSupport from './ociSupport';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociService from './ociService';
@@ -24,7 +23,18 @@ type KnowledgeBase = {
     displayName: string
 }
 
-export function initialize(_context: vscode.ExtensionContext) {
+export function initialize(context: vscode.ExtensionContext) {
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.projectAudit.execute', (...params: any[]) => {
+        const uri = params[0]?.uri;
+        if (uri) {
+            getFolderAuditsService(uri).then(service => {
+                if (service) {
+                    service.executeProjectAudit(uri.fsPath);
+                }
+            });
+        }
+    }));
+
     nodes.registerRenameableNode(KnowledgeBaseNode.CONTEXT);
     nodes.registerRemovableNode(KnowledgeBaseNode.CONTEXT);
 }
@@ -34,8 +44,8 @@ export async function importServices(_oci: ociContext.Context): Promise<dataSupp
     return undefined;
 }
 
-export function create(oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged): ociService.Service {
-    return new Service(oci, serviceData, dataChanged);
+export function create(folder: vscode.WorkspaceFolder, oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged): ociService.Service {
+    return new Service(folder, oci, serviceData, dataChanged);
 }
 
 export function findByNode(node: nodes.BaseNode): Service | undefined {
@@ -44,39 +54,43 @@ export function findByNode(node: nodes.BaseNode): Service | undefined {
     return service instanceof Service ? service as Service : undefined;
 }
 
-
-
-const audits : Map<vscode.WorkspaceFolder, ProjectAudit> = new Map();
-
-export let auditService : ProjectAudit | undefined = undefined;
-
-export interface ProjectAudit {
-    
+export function findByFolder(folder: string | vscode.Uri): Service[] | undefined {
+    const services = ociServices.findByFolder(folder);
+    if (!services) {
+        return undefined;
+    }
+    const kbServices: Service[] = [];
+    for (const service of services) {
+        const kbService = service.getService(DATA_NAME);
+        if (kbService instanceof Service) {
+            kbServices.push(kbService as Service);
+        }
+    }
+    return kbServices;
 }
 
-// export function create(): ociServices.Service[] {
-    // const p : Service = new Service();
-
-    // context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.projectAudit.execute', (...args) => {
-    //     let uri = undefined;
-
-    //     if (args.length > 0) {
-    //         uri = args[0]?.uri;
-    //     }
-    //     return uri ? p.executeProjectAudit(uri) : false;
-    // }));
-
-    // return [ p ];
-// }
-
-interface AuditConfiguration {
-    sourceKnowledgeBase? : string;
+async function getFolderAuditsService(folder: string | vscode.Uri): Promise<Service | undefined> {
+    const services = findByFolder(folder);
+    if (!services || services.length === 0) {
+        return undefined;
+    }
+    for (const service of services) {
+        if (service.getAuditsKnowledgeBase()) {
+            return service;
+        }
+    }
+    // TODO: might silently select audits knowledge base from another folder if configured
+    if (await services[0].setupAuditsKnowledgeBase()) {
+        return services[0];
+    }
+    return undefined;
 }
 
-
-
-async function selectKnowledgeBases(oci: ociContext.Context, ignore: KnowledgeBase[]): Promise<KnowledgeBase[] | undefined> {
+async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeBase[]): Promise<KnowledgeBase[] | undefined> {
     function shouldIgnore(ocid: string) {
+        if (!ignore) {
+            return false;
+        }
         for (const item of ignore) {
             if (item.ocid === ocid) {
                 return true;
@@ -134,14 +148,13 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore: KnowledgeBa
     return undefined;
 }
 
-class Service extends ociService.Service implements ProjectAudit {
-    // private _folder : vscode.WorkspaceFolder | undefined;
-    private config : AuditConfiguration = {}
-    private folder : vscode.WorkspaceFolder | undefined;
+class Service extends ociService.Service {
     
-    constructor(oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged) {
-        super(oci, DATA_NAME, serviceData, dataChanged);
-        auditService = this;
+    constructor(folder: vscode.WorkspaceFolder, oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged) {
+        super(folder, oci, DATA_NAME, serviceData, dataChanged);
+        if (this.settingsData?.folderAuditsKnowledgeBase) {
+            this.tryDisplayProjectAudit(0);
+        }
     }
 
     getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
@@ -164,39 +177,42 @@ class Service extends ociService.Service implements ProjectAudit {
         ];
     }
 
-    async executeProjectAudit(uri : string) {
-        if (!(await vscode.commands.getCommands(true)).includes('nbls.gcn.oci.projectAudit.execute')) {
+    public getAuditsKnowledgeBase(): string | undefined {
+        return this.settingsData?.folderAuditsKnowledgeBase;
+    }
+
+    async setupAuditsKnowledgeBase(): Promise<string | undefined> {
+        // TODO: interactively select & store knowledge base for this folder
+        return this.settingsData?.folderAuditsKnowledgeBase;
+    }
+
+    async executeProjectAudit(uri: string) {
+        const auditsKnowledgeBase = this.getAuditsKnowledgeBase();
+
+        if (!auditsKnowledgeBase) {
+            // vscode.window.showErrorMessage(`No KnowledgeBase bound for ${uri}.`);
+            return;
+        }
+
+        if (!(await vscode.commands.getCommands(true)).includes('nbls.gcn.projectAudit.execute')) {
             vscode.window.showErrorMessage('Required Language Server is not ready.');
             return;
         }
 
-        if (!this.config?.sourceKnowledgeBase) {
-            vscode.window.showErrorMessage(`No KnowledgeBase bound for ${uri}.`);
-            return;
-        }
-        
-        const context = ociSupport.findOciConfiguration(vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(uri)))
-        if (!context) {
-            vscode.window.showErrorMessage(`No OCI context configured for ${uri}.`);
-            return;
-        }
-
-        return vscode.commands.executeCommand('nbls.gcn.oci.projectAudit.execute', uri, 
-            this.config.sourceKnowledgeBase, 
-            context.getCompartment(), 
-            context.getDevOpsProject()
+        return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri, 
+            auditsKnowledgeBase, 
+            this.oci.getCompartment(), 
+            this.oci.getDevOpsProject()
         )
     }
 
     displayProjectAudit() {
-        if (!this.config.sourceKnowledgeBase || !this.folder) {
+        const auditsKnowledgeBase = this.getAuditsKnowledgeBase();
+        if (!auditsKnowledgeBase) {
             return;
         }
-        const ctx = ociSupport.findOciConfiguration(this.folder);
-        if (ctx) {
-            vscode.commands.executeCommand('nbls.gcn.projectAudit.display', this.folder.uri, this.config.sourceKnowledgeBase, 
-                ctx.getCompartment(), ctx.getDevOpsProject());
-        }
+        vscode.commands.executeCommand('nbls.gcn.projectAudit.display', this.folder.uri.fsPath, auditsKnowledgeBase, 
+                                        this.oci.getCompartment(), this.oci.getDevOpsProject());
     }
 
     tryDisplayProjectAudit(attempt : number) {
@@ -210,21 +226,6 @@ class Service extends ociService.Service implements ProjectAudit {
             }
         });
     }
-
-    // initialize(folder : vscode.WorkspaceFolder, _data : any, _changed : ociSupport.DataChanged) {
-    //     this.folder = folder;
-    //     try {
-    //         this.config = _data as AuditConfiguration;
-    //     } catch (e) {}
-
-    //     // this._folder = folder;
-    //     audits.set(folder, this);
-
-    //     // schedule fetching of existing data using the LS
-    //     if (folder && this.config.sourceKnowledgeBase) {
-    //         this.tryDisplayProjectAudit(0);
-    //     }
-    // }
 
     protected buildNodesImpl(oci: ociContext.Context, itemsData: any[], treeChanged: nodes.TreeChanged): nodes.BaseNode[] {
         const nodes: nodes.BaseNode[] = [];

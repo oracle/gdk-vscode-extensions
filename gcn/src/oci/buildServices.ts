@@ -71,8 +71,8 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
     }
 }
 
-export function create(oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged): ociService.Service {
-    return new Service(oci, serviceData, dataChanged);
+export function create(folder: vscode.WorkspaceFolder, oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged): ociService.Service {
+    return new Service(folder, oci, serviceData, dataChanged);
 }
 
 export function findByNode(node: nodes.BaseNode): Service | undefined {
@@ -143,8 +143,8 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
 
 class Service extends ociService.Service {
     
-    constructor(oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged) {
-        super(oci, DATA_NAME, serviceData, dataChanged);
+    constructor(folder: vscode.WorkspaceFolder, oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged) {
+        super(folder, oci, DATA_NAME, serviceData, dataChanged);
     }
 
     getAddContentChoices(): dialogs.QuickPickObject[] | undefined {

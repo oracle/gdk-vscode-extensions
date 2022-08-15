@@ -39,7 +39,15 @@ export function findByNode(node: nodes.BaseNode): OciServices | undefined {
     return cloudServices instanceof OciServices ? cloudServices as OciServices : undefined;
 }
 
-export function findByFolder(folder: gcnServices.FolderData): OciServices[] {
+export function findByFolder(folder: string | vscode.Uri): OciServices[] | undefined {
+    const folderData = gcnServices.findFolderData(folder);
+    if (!folderData) {
+        return undefined;
+    }
+    return findByFolderData(folderData);
+}
+
+export function findByFolderData(folder: gcnServices.FolderData): OciServices[] {
     const ociServices: OciServices[] = [];
     const cloudServices = folder.services;
     for (const cloudService of cloudServices) {
@@ -48,10 +56,6 @@ export function findByFolder(folder: gcnServices.FolderData): OciServices[] {
         }
     }
     return ociServices;
-}
-
-export function create(oci: ociContext.Context, servicesData: any, dataChanged: dataSupport.DataChanged): model.CloudServices {
-    return new OciServices(oci, servicesData, dataChanged);
 }
 
 export async function importServices(oci: ociContext.Context): Promise<dataSupport.DataProducer> {
@@ -90,12 +94,14 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
 
 export class OciServices implements model.CloudServices, dataSupport.DataProducer {
 
+    // private readonly folder: vscode.WorkspaceFolder;
     private readonly oci: ociContext.Context;
     private servicesData: any;
     private readonly services: ociService.Service[];
     private treeChanged: nodes.TreeChanged | undefined;
 
-    constructor(oci: ociContext.Context, servicesData: any, dataChanged: dataSupport.DataChanged) {
+    constructor(folder: vscode.WorkspaceFolder, oci: ociContext.Context, servicesData: any, dataChanged: dataSupport.DataChanged) {
+        // this.folder = folder;
         this.oci = oci;
         this.servicesData = servicesData ? servicesData : {};
         const serviceDataChanged: dataSupport.DataChanged = (dataProducer?: dataSupport.DataProducer) => {
@@ -120,31 +126,13 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
             }
         }
         this.services = [
-            buildServices.create(oci, this.servicesData[buildServices.DATA_NAME], serviceDataChanged),
-            deploymentServices.create(oci, this.servicesData[deploymentServices.DATA_NAME], serviceDataChanged),
-            deployArtifactServices.create(oci, this.servicesData[deployArtifactServices.DATA_NAME], serviceDataChanged),
-            artifactServices.create(oci, this.servicesData[artifactServices.DATA_NAME], serviceDataChanged),
-            containerServices.create(oci, this.servicesData[containerServices.DATA_NAME], serviceDataChanged),
-            knowledgeBaseServices.create(oci, this.servicesData[knowledgeBaseServices.DATA_NAME], serviceDataChanged)
+            buildServices.create(folder, oci, this.servicesData[buildServices.DATA_NAME], serviceDataChanged),
+            deploymentServices.create(folder, oci, this.servicesData[deploymentServices.DATA_NAME], serviceDataChanged),
+            deployArtifactServices.create(folder, oci, this.servicesData[deployArtifactServices.DATA_NAME], serviceDataChanged),
+            artifactServices.create(folder, oci, this.servicesData[artifactServices.DATA_NAME], serviceDataChanged),
+            containerServices.create(folder, oci, this.servicesData[containerServices.DATA_NAME], serviceDataChanged),
+            knowledgeBaseServices.create(folder, oci, this.servicesData[knowledgeBaseServices.DATA_NAME], serviceDataChanged)
         ];
-    
-        // let saveData: boolean = false;
-        // for (const featurePlugin of ociSupport.SERVICE_PLUGINS) {
-        //     const featureData = this.servicesData?.[featurePlugin.getServiceType()]?.settings || {};
-
-        //     const createdData: any = featurePlugin.initialize(folder, featureData, () => {
-        //         this.servicesData[featurePlugin.getServiceType()] = createdData;
-        //         this.dataChanged();
-        //     }) || featureData;
-
-        //     if (createdData != featureData) {
-        //         this.servicesData[featurePlugin.getServiceType()].settings = createdData;
-        //         saveData = true;
-        //     }
-        // }
-        // if (saveData) {
-        //     dataChanged();
-        // }
     }
 
     public getContext(): ociContext.Context {
