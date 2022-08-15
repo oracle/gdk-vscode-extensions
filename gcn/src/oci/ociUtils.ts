@@ -18,6 +18,9 @@ import * as genericartifactscontent from 'oci-genericartifactscontent';
 
 const DEFAULT_NOTIFICATION_TOPIC = 'NotificationTopic';
 const DEFAULT_LOG_GROUP = 'Default_Group';
+const DEFAULT_BUILD_PIPELINES_GROUP = 'GCN-BuildPipelinesGroup';
+const DEFAULT_CODE_REPOSITORIES_GROUP = 'GCN-CodeRepositoriesGroup';
+const DEFAULT_COMPARTMENT_ACCESS_POLICY = 'CompartmentAccessPolicy';
 const BUILD_IMAGE = 'OL7_X86_64_STANDARD_10';
 
 // PENDING: the waitForResourceCompletionStatus will be replicated for each API, but the semantic should be consistent;
@@ -212,17 +215,12 @@ export async function listCompartments(authenticationDetailsProvider: common.Con
     }
 }
 
-export async function getCompartment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<identity.responses.GetCompartmentResponse | undefined> {
-    try {
-        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const getCompartmentRequest: identity.requests.GetCompartmentRequest = {
-            compartmentId: compartmentID
-        };
-        return client.getCompartment(getCompartmentRequest);
-    } catch (error) {
-        console.log('>>> getCompartment ' + error);
-        return undefined;
-    }
+export async function getCompartment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<identity.responses.GetCompartmentResponse> {
+    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const getCompartmentRequest: identity.requests.GetCompartmentRequest = {
+        compartmentId: compartmentID
+    };
+    return client.getCompartment(getCompartmentRequest);
 }
 
 export async function listDevOpsProjects(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<devops.responses.ListProjectsResponse | undefined> {
@@ -773,6 +771,143 @@ export async function getDefaultLogGroup(authenticationDetailsProvider: common.C
                     return logGroup.items[0].id;
                 }
             }
+        }
+    }
+    return undefined;
+}
+
+export async function listDynamicGroups(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name?: string): Promise<identity.responses.ListDynamicGroupsResponse | undefined> {
+    try {
+        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const listDynamicGroupsRequest: identity.requests.ListDynamicGroupsRequest = {
+            compartmentId: compartmentID,
+            name
+        };
+        return client.listDynamicGroups(listDynamicGroupsRequest);
+    } catch (error) {
+        console.log('>>> listDynamicGroups ' + error);
+        return undefined;
+    }
+}
+
+export async function createDynamicGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name: string, description: string, matchingRule: string): Promise<identity.responses.CreateDynamicGroupResponse | undefined> {
+    try {
+        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const createDynamicGroupDetails = {
+            compartmentId: compartmentID,
+            name,
+            description,
+            matchingRule
+        };
+        const createTopicRequest: identity.requests.CreateDynamicGroupRequest = {
+            createDynamicGroupDetails: createDynamicGroupDetails
+        };
+        return client.createDynamicGroup(createTopicRequest);
+    } catch (error) {
+        console.log('>>> createDynamicGroup ' + error);
+        return undefined;
+    }
+}
+
+export async function updateDynamicGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, groupID: string, details: identity.models.UpdateDynamicGroupDetails): Promise<identity.responses.UpdateDynamicGroupResponse | undefined> {
+    try {
+        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const updateDynamicGroupRequest: identity.requests.UpdateDynamicGroupRequest = {
+            dynamicGroupId: groupID,
+            updateDynamicGroupDetails: details
+        };
+        return client.updateDynamicGroup(updateDynamicGroupRequest);
+    } catch (error) {
+        console.log('>>> updateDynamicGroup ' + error);
+        return undefined;
+    }
+}
+
+export async function getDefaultBuildPipelinesGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean): Promise<identity.models.DynamicGroup | undefined> {
+    const tenancy = authenticationDetailsProvider.getTenantId();
+    const rule = `ALL {resource.type = 'devopsbuildpipeline', resource.compartment.id = '${compartmentID}'}`;
+    const group = (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_BUILD_PIPELINES_GROUP))?.items.find(g => DEFAULT_BUILD_PIPELINES_GROUP === g.name);
+    if (group) {
+        if (group.matchingRule.indexOf(rule) < 0) {
+            const len = group.matchingRule.length;
+            await updateDynamicGroup(authenticationDetailsProvider, group.id, { matchingRule: `${group.matchingRule.slice(0, len - 1)}, ${rule}${group.matchingRule.slice(len - 1)}`});
+        }
+        return group;
+    }
+    if (create) {
+        const created = await createDynamicGroup(authenticationDetailsProvider, tenancy, DEFAULT_BUILD_PIPELINES_GROUP, 'Default group for build pipelines created from VS Code', `Any {${rule}}`);
+        if (created) {
+            return (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_BUILD_PIPELINES_GROUP))?.items.find(g => DEFAULT_BUILD_PIPELINES_GROUP === g.name);
+        }
+    }
+    return undefined;
+}
+
+export async function getDefaultCodeRepositoriesGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean): Promise<identity.models.DynamicGroup | undefined> {
+    const tenancy = authenticationDetailsProvider.getTenantId();
+    const rule = `ALL {resource.type = 'devopsrepository', resource.compartment.id = '${compartmentID}'}`;
+    const group = (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_CODE_REPOSITORIES_GROUP))?.items.find(g => DEFAULT_CODE_REPOSITORIES_GROUP === g.name);
+    if (group) {
+        if (group.matchingRule.indexOf(rule) < 0) {
+            const len = group.matchingRule.length;
+            await updateDynamicGroup(authenticationDetailsProvider, group.id, { matchingRule: `${group.matchingRule.slice(0, len - 1)}, ${rule}${group.matchingRule.slice(len - 1)}`});
+        }
+        return group;
+    }
+    if (create) {
+        const created = await createDynamicGroup(authenticationDetailsProvider, tenancy, DEFAULT_CODE_REPOSITORIES_GROUP, 'Default group for code repositories created from VS Code', `Any {${rule}}`);
+        if (created) {
+            return (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_CODE_REPOSITORIES_GROUP))?.items.find(g => DEFAULT_CODE_REPOSITORIES_GROUP === g.name);
+        }
+    }
+    return undefined;
+}
+
+export async function listPolicies(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name?: string): Promise<identity.responses.ListPoliciesResponse | undefined> {
+    try {
+        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const listPoliciesRequest: identity.requests.ListPoliciesRequest = {
+            compartmentId: compartmentID,
+            name,
+        };
+        return client.listPolicies(listPoliciesRequest);
+    } catch (error) {
+        console.log('>>> listPolicies ' + error);
+        return undefined;
+    }
+}
+
+export async function createPolicy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description: string, statements: string[]): Promise<identity.responses.CreatePolicyResponse | undefined> {
+    try {
+        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const createPolicyDetails = {
+            compartmentId: compartmentID,
+            name: DEFAULT_COMPARTMENT_ACCESS_POLICY,
+            description,
+            statements
+        };
+        const createPolicyRequest: identity.requests.CreatePolicyRequest = {
+            createPolicyDetails: createPolicyDetails
+        };
+        return client.createPolicy(createPolicyRequest);
+    } catch (error) {
+        console.log('>>> createPolicy ' + error);
+        return undefined;
+    }
+}
+
+export async function getCompartmentAccessPolicy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, buildPipelinesGroupName: string, codeRepositoriesGroupName: string, create?: boolean): Promise<string | undefined> {
+    const policy = (await listPolicies(authenticationDetailsProvider, compartmentID, DEFAULT_COMPARTMENT_ACCESS_POLICY))?.items.find(p => DEFAULT_COMPARTMENT_ACCESS_POLICY === p.name);
+    if (policy) {
+        return policy.id;
+    }
+    if (create) {
+        const created = await createPolicy(authenticationDetailsProvider, compartmentID, 'Default policy for accessing compartment resources created from VS Code', [
+            `Allow dynamic-group ${buildPipelinesGroupName} to manage all-resources in compartment id ${compartmentID}`,
+            `Allow dynamic-group ${codeRepositoriesGroupName} to manage all-resources in compartment id ${compartmentID}`
+        ]);
+        if (created) {
+            return (await listPolicies(authenticationDetailsProvider, compartmentID, DEFAULT_COMPARTMENT_ACCESS_POLICY))?.items.find(g => DEFAULT_COMPARTMENT_ACCESS_POLICY == g.name)?.id;
         }
     }
     return undefined;

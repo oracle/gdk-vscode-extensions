@@ -59,6 +59,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
         return new Promise(async resolve => {
             // -- Create notification topic
             progress.report({
+                increment: 5,
                 message: 'Setting up notifications...'
             });
             const notificationTopic = await ociUtils.getNotificationTopic(provider, compartment, true);
@@ -69,6 +70,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
 
             // --- Create devops project
             progress.report({
+                increment: 5,
                 message: 'Creating devops project...'
             });
             const project = (await ociUtils.createDevOpsProject(provider, projectName, compartment, notificationTopic))?.project.id;
@@ -79,11 +81,12 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
 
             // --- Create project log
             progress.report({
+                increment: 5,
                 message: 'Setting up logging...'
             });
             const logGroup = await ociUtils.getDefaultLogGroup(provider, compartment, true);
             if (!logGroup) {
-                resolve('Failed to resolve default log group.');
+                resolve('Failed to resolve log group.');
                 return;
             }
             const logResp = await ociUtils.createProjectLog(provider, compartment, logGroup, project, projectName);
@@ -92,8 +95,40 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 return;
             }
 
+            // --- Create build pipelines dynamic group
+            progress.report({
+                increment: 5,
+                message: 'Setting up dynamic group for build pipelines...'
+            });
+            const buildPipelinesGroup = await ociUtils.getDefaultBuildPipelinesGroup(provider, compartment, true).catch(err => {
+                vscode.window.showErrorMessage('Failed to resolve group for build pipelines: ' + err.message);
+            });
+
+            // --- Create build pipelines dynamic group
+            progress.report({
+                increment: 5,
+                message: 'Setting up dynamic group for code repositories...'
+            });
+            const codeRepositoriesGroup = await ociUtils.getDefaultCodeRepositoriesGroup(provider, compartment, true).catch(err => {
+                vscode.window.showErrorMessage('Failed to resolve group for code repositories: ' + err.message);
+            });
+
+            if (buildPipelinesGroup && codeRepositoriesGroup) {
+                // --- Setting up policy for accessing resources in compartment
+                progress.report({
+                    increment: 5,
+                    message: 'Setting up policy for accessing resources in compartment...'
+                });
+                const compartmentAccessPolicy = await ociUtils.getCompartmentAccessPolicy(provider, compartment, buildPipelinesGroup.name, codeRepositoriesGroup.name, true);
+                if (!compartmentAccessPolicy) {
+                    resolve('Failed to resolve policy for accessing resources in compartment.');
+                    return;
+                }
+            }
+
             // --- Create artifact repository
             progress.report({
+                increment: 5,
                 message: `Creating artifact repository...`
             });
             const artifactsRepository = (await ociUtils.createArtifactsRepository(provider, compartment, projectName, {
@@ -106,6 +141,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
 
             // --- Create container repository
             progress.report({
+                increment: 5,
                 message: `Creating container repository...`
             });
             const containerRepository = (await ociUtils.createContainerRepository(provider, compartment, projectName))?.containerRepository;
@@ -113,13 +149,13 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 resolve('Failed to create container repository.');
                 return;
             }
-
             for (const folder of folders) {
                 const repositoryDir = folder.uri.fsPath;
                 const repositoryName = folder.name;
 
                 // --- Create code repository
                 progress.report({
+                    increment: 5,
                     message: `Creating source code repository ${repositoryName}...`
                 });
                 const codeRepository = (await ociUtils.createCodeRepository(provider, project, repositoryName, 'master'))?.repository;
@@ -136,6 +172,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
 
                 // --- Create devbuild artifact
                 progress.report({
+                    increment: 5,
                     message: `Creating devbuild artifacts for ${repositoryName}...`
                 });
                 const devbuildArtifactPath = `${projectName}-dev.jar`;
@@ -149,6 +186,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
 
                 // --- Create devbuild pipeline
                 progress.report({
+                    increment: 5,
                     message: `Creating build pipeline for devbuilds of ${repositoryName}...`
                 });
                 const devbuildPipeline = (await ociUtils.createBuildPipeline(provider, project, 'DevbuildPipeline'))?.buildPipeline.id;
@@ -171,6 +209,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
 
                 // --- Create native image artifact
                 progress.report({
+                    increment: 5,
                     message: `Creating native executable artifacts for ${repositoryName}...`
                 });
                 const nibuildArtifactPath = `${projectName}-dev`;
@@ -184,6 +223,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
 
                 // --- Create native image pipeline
                 progress.report({
+                    increment: 5,
                     message: `Creating build pipeline for native executables of ${repositoryName}...`
                 });
                 const nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, 'NativeImagePipeline'))?.buildPipeline.id;
@@ -206,6 +246,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
 
                 // --- Create docker native image artifact
                 progress.report({
+                    increment: 5,
                     message: `Creating docker native executable artifacts for ${repositoryName}...`
                 });
                 const tenancy = (await ociUtils.getTenancy(provider))?.tenancy.name;
@@ -220,6 +261,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
 
                 // --- Create docker native image pipeline
                 progress.report({
+                    increment: 5,
                     message: `Creating build pipeline for docker native executables of ${repositoryName}...`
                 });
                 const docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, 'DockerNativeImagePipeline'))?.buildPipeline.id;
@@ -240,6 +282,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
 
                 // --- Generate build specs
                 progress.report({
+                    increment: 5,
                     message: `Creating build specs for source code repository ${repositoryName}...`
                 });
                 const project_devbuild_command = projectUtils.getProjectBuildCommand(folder);
@@ -285,6 +328,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 // --- Create a default knowledgebase; tie it to a project + mark so it can be recognized later
                 // displayName must match ".*(?:^[a-zA-Z_](-?[a-zA-Z_0-9])*$).*"
                 progress.report({
+                    increment: 5,
                     message: `Creating ADM knowledge base for ${projectName}...`
                 });
                 const knowledgeBaseOCID = await ociUtils.createKnowledgeBase(provider, compartment, `Audits-for-${projectName}`, {
@@ -294,6 +338,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
 
                 // --- Store cloud services configuration (.vscode/gcn.json)
                 progress.report({
+                    increment: 5,
                     message: `Configuring project services for ${repositoryName}...`
                 });
                 const data: any = {
@@ -335,6 +380,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
 
                 // --- Populate code repository
                 progress.report({
+                    increment: 5,
                     message: `Populating source code repository ${repositoryName}...`
                 });
                 const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir); // TODO: codeRepository.httpUrl ?
