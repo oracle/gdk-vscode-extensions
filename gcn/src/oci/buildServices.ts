@@ -250,10 +250,27 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
 
     runPipeline() {
         if (!ociUtils.isRunning(this.lastRun?.state)) {
-            const folder = servicesView.findWorkspaceFolderByNode(this)?.uri.fsPath;
+            const folder = servicesView.findWorkspaceFolderByNode(this)?.uri;
             if (folder) {
-                graalvmUtils.getActiveGVMVersion().then(version => {
+                graalvmUtils.getActiveGVMVersion().then(async version => {
                     if (version) {
+                        if (gitUtils.locallyModified(folder)) {
+                            const cancelOption = 'Cancel build';
+                            const runBuildOption = 'Build anyway';
+                            if (runBuildOption !== await vscode.window.showWarningMessage('Local souces differ from the repository content in cloud.', cancelOption, runBuildOption)) {
+                                return;
+                            }
+                        }
+                        const head = gitUtils.getHEAD(folder);
+                        if (head?.name && !head.upstream) {
+                            const cancelOption = 'Cancel build';
+                            const pushOption = 'Publish branch and continue';
+                            if (pushOption !== await vscode.window.showWarningMessage(`Local branch "${head.name}" has not been published yet.`, cancelOption, pushOption)) {
+                                return;
+                            } else {
+                                await gitUtils.pushLocalBranch(folder);
+                            }
+                        }
                         const params = graalvmUtils.getGVMBuildRunParameters(version);
                         const buildName = `${this.label}-${this.getTimestamp()} (from VS Code)`;
                         vscode.window.withProgress({
@@ -261,16 +278,12 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                             title: `Starting build "${buildName}" using GraalVM ${version[1]}, Java ${version[0]}...`,
                             cancellable: false
                         }, (_progress, _token) => {
-                            return new Promise(async (resolve) => {
+                            return new Promise(async resolve => {
                                 let commitInfo;
-                                const branchName = await gitUtils.getBranchName(folder);
-                                if (branchName) {
+                                if (head?.name && head.commit) {
                                     const repository = (await ociUtils.getCodeRepository(this.oci.getProvider(), this.oci.getCodeRepository()))?.repository;
-                                    if (repository && repository.httpUrl && `refs/heads/${branchName}` !== repository.defaultBranch) {
-                                        const hash = await gitUtils.getLastCommitHash(folder);
-                                        if (hash) {
-                                            commitInfo = { repositoryUrl: repository.httpUrl, repositoryBranch: branchName, commitHash: hash };
-                                        }
+                                    if (repository && repository.httpUrl && `refs/heads/${head.name}` !== repository.defaultBranch) {
+                                        commitInfo = { repositoryUrl: repository.httpUrl, repositoryBranch: head.name, commitHash: head.commit };
                                     }
                                 }
                                 const buildRun = (await ociUtils.createBuildRun(this.oci.getProvider(), this.object.ocid, buildName, params, commitInfo))?.buildRun;

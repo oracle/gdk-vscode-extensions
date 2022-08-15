@@ -13,8 +13,8 @@ function getGitAPI() {
     return vscode.extensions.getExtension('vscode.git')?.exports.getAPI(1);
 }
 
-function getPath(): string {
-    return getGitAPI().git.path;
+function getPath(): string | undefined {
+    return getGitAPI()?.git.path;
 }
 
 export async function cloneSourceRepository(repoPath: string, repoName: string, msg?: string): Promise<vscode.Uri | undefined> {
@@ -59,33 +59,51 @@ export async function cloneRepository(address: string, target: string): Promise<
     return true;
 }
 
-export async function getBranchName(target: string): Promise<string | undefined> {
-    const gitPath = getPath();
-    if (!gitPath) {
+export function getHEAD(target: vscode.Uri): { name?: string, commit?: string, upstream?: object } | undefined {
+    const gitApi = getGitAPI();
+    if (!gitApi) {
         vscode.window.showErrorMessage('Cannot access Git support.');
         return undefined;
     }
-    try {
-        const command = `${gitPath} rev-parse --abbrev-ref HEAD`;
-        return (await execute(command, target)).trim();
-    } catch (err) {
-        vscode.window.showErrorMessage('Failed to get branch name.');
+    const repository = gitApi.getRepository(target);
+    if (!repository) {
+        vscode.window.showErrorMessage(`Cannot find Git repository for ${target}`);
         return undefined;
     }
+    return repository.state.HEAD;
 }
 
-export async function getLastCommitHash(target: string): Promise<string | undefined> {
-    const gitPath = getPath();
-    if (!gitPath) {
+export function locallyModified(target: vscode.Uri): boolean | undefined {
+    const gitApi = getGitAPI();
+    if (!gitApi) {
         vscode.window.showErrorMessage('Cannot access Git support.');
         return undefined;
     }
-    try {
-        const command = `${gitPath} log -n 1 --pretty=format:"%H"`;
-        return (await execute(command, target)).trim();
-    } catch (err) {
-        vscode.window.showErrorMessage('Failed to get the last commit hash.');
+    const repository = gitApi.getRepository(target);
+    if (!repository) {
+        vscode.window.showErrorMessage(`Cannot find Git repository for ${target}`);
         return undefined;
+    }
+    return repository.state.indexChanges.length > 0 || repository.state.mergeChanges.length > 0 || repository.state.workingTreeChanges.length > 0;
+}
+
+export async function pushLocalBranch(target: vscode.Uri): Promise<boolean | undefined> {
+    const gitApi = getGitAPI();
+    if (!gitApi) {
+        vscode.window.showErrorMessage('Cannot access Git support.');
+        return undefined;
+    }
+    const repository = gitApi.getRepository(target);
+    if (!repository) {
+        vscode.window.showErrorMessage(`Cannot find Git repository for ${target}`);
+        return undefined;
+    }
+    try {
+        await vscode.commands.executeCommand('git.publish', [repository]);
+        return true;
+    } catch (err) {
+        vscode.window.showErrorMessage('Error while pushing a branch');
+        return false;
     }
 }
 
