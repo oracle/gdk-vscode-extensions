@@ -78,7 +78,7 @@ async function initializeSshKeys() {
         try {
             await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
-                title: 'Intitializing SSH keys',
+                title: 'Intializing SSH keys',
                 cancellable: false
             }, (progress, _token) => {
                 return new Promise<void>(async resolve => {
