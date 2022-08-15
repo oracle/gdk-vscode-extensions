@@ -25,11 +25,12 @@ type KnowledgeBase = {
 
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.projectAudit.execute', (...params: any[]) => {
-        const uri = params[0]?.uri;
-        if (uri) {
+        const path = params[0]?.uri;
+        if (path) {
+            const uri = vscode.Uri.parse(path);
             getFolderAuditsService(uri).then(service => {
                 if (service) {
-                    service.executeProjectAudit(uri.fsPath);
+                    service.executeProjectAudit(uri);
                 }
             });
         }
@@ -54,7 +55,7 @@ export function findByNode(node: nodes.BaseNode): Service | undefined {
     return service instanceof Service ? service as Service : undefined;
 }
 
-export function findByFolder(folder: string | vscode.Uri): Service[] | undefined {
+export function findByFolder(folder: vscode.Uri): Service[] | undefined {
     const services = ociServices.findByFolder(folder);
     if (!services) {
         return undefined;
@@ -69,7 +70,7 @@ export function findByFolder(folder: string | vscode.Uri): Service[] | undefined
     return kbServices;
 }
 
-async function getFolderAuditsService(folder: string | vscode.Uri): Promise<Service | undefined> {
+async function getFolderAuditsService(folder: vscode.Uri): Promise<Service | undefined> {
     const services = findByFolder(folder);
     if (!services || services.length === 0) {
         return undefined;
@@ -186,7 +187,7 @@ class Service extends ociService.Service {
         return this.settingsData?.folderAuditsKnowledgeBase;
     }
 
-    async executeProjectAudit(uri: string) {
+    async executeProjectAudit(uri: vscode.Uri) {
         const auditsKnowledgeBase = this.getAuditsKnowledgeBase();
 
         if (!auditsKnowledgeBase) {
@@ -199,7 +200,7 @@ class Service extends ociService.Service {
             return;
         }
 
-        return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri, 
+        return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri.fsPath, 
             auditsKnowledgeBase, 
             this.oci.getCompartment(), 
             this.oci.getDevOpsProject()

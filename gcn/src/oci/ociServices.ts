@@ -39,7 +39,7 @@ export function findByNode(node: nodes.BaseNode): OciServices | undefined {
     return cloudServices instanceof OciServices ? cloudServices as OciServices : undefined;
 }
 
-export function findByFolder(folder: string | vscode.Uri): OciServices[] | undefined {
+export function findByFolder(folder: vscode.Uri): OciServices[] | undefined {
     const folderData = gcnServices.findFolderData(folder);
     if (!folderData) {
         return undefined;

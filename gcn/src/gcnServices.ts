@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { CLOUD_SUPPORTS } from './extension';
 import * as model from './model';
 import * as folderStorage from './folderStorage';
@@ -75,17 +76,23 @@ export function getFolderData(): FolderData[] {
     return folderData;
 }
 
-export function findFolderData(folder: string | vscode.Uri): FolderData | undefined {
-    if (typeof folder === 'string') {
-        folder = vscode.Uri.file(folder);
-    }
-    const path = (folder as vscode.Uri).fsPath;
+export function findFolderData(folder: vscode.Uri): FolderData | undefined {
     for (const data of folderData) {
-        if (path === data.folder.uri.fsPath) { // TODO: is this the right comparison?
+        // TODO: is there a more robust normalization in VS Code / Node.js?
+        const f1 = normalize(folder.fsPath);
+        const f2 = normalize(data.folder.uri.fsPath);
+        if (f1 === f2) {
             return data;
         }
     }
     return undefined;
+}
+
+function normalize(fsPath: string): string {
+    if (fsPath.endsWith(path.sep)) {
+        fsPath = fsPath.slice(0, -1);
+    }
+    return fsPath;
 }
 
 // export function getCloudServices(type: string, folder: string | vscode.Uri): model.CloudServices[] | undefined {
