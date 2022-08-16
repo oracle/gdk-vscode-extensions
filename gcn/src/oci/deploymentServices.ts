@@ -153,12 +153,12 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
     static readonly CONTEXT = `gcn.oci.${DeploymentPipelineNode.DATA_NAME}`;
     
     private object: DeploymentPipeline;
-    private oci: ociContext.Context;
+    // private oci: ociContext.Context;
 
-    constructor(object: DeploymentPipeline, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
+    constructor(object: DeploymentPipeline, _oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
         super(object.displayName, undefined, DeploymentPipelineNode.CONTEXT, undefined, undefined, treeChanged);
         this.object = object;
-        this.oci = oci;
+        // this.oci = oci;
         this.iconPath = new vscode.ThemeIcon('rocket');
         this.updateAppearance();
     }

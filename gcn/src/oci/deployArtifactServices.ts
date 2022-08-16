@@ -90,12 +90,12 @@ class DeployArtifactNode extends nodes.ChangeableNode implements nodes.Removable
     static readonly CONTEXT = `gcn.oci.${DeployArtifactNode.DATA_NAME}`;
 
     private object: DeployArtifact;
-    private oci: ociContext.Context;
+    // private oci: ociContext.Context;
 
-    constructor(object: DeployArtifact, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
+    constructor(object: DeployArtifact, _oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
         super(object.displayName, undefined, DeployArtifactNode.CONTEXT, undefined, undefined, treeChanged);
         this.object = object;
-        this.oci = oci;
+        // this.oci = oci;
         this.iconPath = new vscode.ThemeIcon('file-binary');
         this.updateAppearance();
         // this.description = description;
