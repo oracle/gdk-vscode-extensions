@@ -149,9 +149,21 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 resolve('Failed to create container repository.');
                 return;
             }
+
+            // --- Create a default knowledge base; tie it to a project + mark so it can be recognized later
+            // displayName must match ".*(?:^[a-zA-Z_](-?[a-zA-Z_0-9])*$).*"
+            progress.report({
+                increment: 5,
+                message: `Creating ADM knowledge base for ${projectName}...`
+            });
+            const knowledgeBaseOCID = await ociUtils.createKnowledgeBase(provider, compartment, `Audits-for-${projectName}`, {
+                "gcn_tooling_projectOCID" : project,
+                "gcn_tooling_usage" : "gcn-adm-audit"
+            });
+
             for (const folder of folders) {
                 const repositoryDir = folder.uri.fsPath;
-                const repositoryName = folder.name;
+                const repositoryName = folder.name; // TODO: repositoryName should be unique within the devops project
 
                 // --- Create code repository
                 progress.report({
@@ -175,8 +187,8 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                     increment: 5,
                     message: `Creating devbuild artifacts for ${repositoryName}...`
                 });
-                const devbuildArtifactPath = `${projectName}-dev.jar`;
-                const devbuildArtifactName = `${projectName}_dev_fatjar`;
+                const devbuildArtifactPath = `${repositoryName}-dev.jar`;
+                const devbuildArtifactName = `${repositoryName}_dev_fatjar`;
                 const devbuildArtifactDescription = `Devbuild artifact for project ${projectName} & repository ${repositoryName}`;
                 const devbuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactsRepository, project, devbuildArtifactPath, devbuildArtifactName, devbuildArtifactDescription))?.deployArtifact.id;
                 if (!devbuildArtifact) {
@@ -212,8 +224,8 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                     increment: 5,
                     message: `Creating native executable artifacts for ${repositoryName}...`
                 });
-                const nibuildArtifactPath = `${projectName}-dev`;
-                const nibuildArtifactName = `${projectName}_dev_executable`;
+                const nibuildArtifactPath = `${repositoryName}-dev`;
+                const nibuildArtifactName = `${repositoryName}_dev_executable`;
                 const nibuildArtifactDescription = `Native executable artifact for project ${projectName} & repository ${repositoryName}`;
                 const nibuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactsRepository, project, nibuildArtifactPath, nibuildArtifactName, nibuildArtifactDescription))?.deployArtifact.id;
                 if (!nibuildArtifact) {
@@ -251,7 +263,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 });
                 const tenancy = (await ociUtils.getTenancy(provider))?.tenancy.name;
                 const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${tenancy}/${containerRepository.displayName}:dev`;
-                const docker_nibuildArtifactName = `${projectName}_dev_docker_image`;
+                const docker_nibuildArtifactName = `${repositoryName}_dev_docker_image`;
                 const docker_nibuildArtifactDescription = `Docker native executable artifact for project ${projectName} & repository ${repositoryName}`;
                 const docker_nibuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, project, docker_nibuildImage, docker_nibuildArtifactName, docker_nibuildArtifactDescription))?.deployArtifact.id;
                 if (!docker_nibuildArtifact) {
@@ -319,22 +331,9 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 const docker_ni_file = 'Dockerfile.native';
                 const docker_niFileError = expandTemplate(docker_ni_file, folder, '', '', '', resourcesPath);
                 if (docker_niFileError) {
-                    resolve(`Failed to configure docker naive file for ${repositoryName}: ${docker_niFileError}`);
+                    resolve(`Failed to configure docker native file for ${repositoryName}: ${docker_niFileError}`);
                     return;
                 }
-
-                // PENDING: must delegate to a service plugin to initialize the project.
-
-                // --- Create a default knowledgebase; tie it to a project + mark so it can be recognized later
-                // displayName must match ".*(?:^[a-zA-Z_](-?[a-zA-Z_0-9])*$).*"
-                progress.report({
-                    increment: 5,
-                    message: `Creating ADM knowledge base for ${projectName}...`
-                });
-                const knowledgeBaseOCID = await ociUtils.createKnowledgeBase(provider, compartment, `Audits-for-${projectName}`, {
-                    "gcn_tooling_projectOCID" : project,
-                    "gcn_tooling_usage" : "gcn-adm-audit"
-                });
 
                 // --- Store cloud services configuration (.vscode/gcn.json)
                 progress.report({
@@ -383,7 +382,7 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                     increment: 5,
                     message: `Populating source code repository ${repositoryName}...`
                 });
-                const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir); // TODO: codeRepository.httpUrl ?
+                const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir);
                 if (pushErr) {
                     resolve(`Failed to push ${repositoryName}: ${pushErr}`);
                     return;
