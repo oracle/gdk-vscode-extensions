@@ -80,6 +80,7 @@ async function getFolderAuditsService(folder: vscode.Uri): Promise<Service | und
             return service;
         }
     }
+    // TODO: might silently select audits knowledge tagged for the project during Deploy
     // TODO: might silently select audits knowledge base from another folder if configured
     if (await services[0].setupAuditsKnowledgeBase()) {
         return services[0];
