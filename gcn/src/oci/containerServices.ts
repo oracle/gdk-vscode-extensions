@@ -18,6 +18,8 @@ import * as dataSupport from './dataSupport';
 
 export const DATA_NAME = 'containerRepositories';
 
+const ICON = 'extensions';
+
 type ContainerRepository = {
     ocid: string,
     displayName: string
@@ -81,7 +83,7 @@ async function selectContainerRepositories(oci: ociContext.Context, ignore: Cont
     }
     const choices: dialogs.QuickPickObject[] = [];
     for (const containerRepository of containerRepositories) {
-        choices.push(new dialogs.QuickPickObject(containerRepository.displayName, undefined, undefined, containerRepository));
+        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${containerRepository.displayName}`, undefined, undefined, containerRepository));
     }
     // TODO: provide a possibility to create a new container repository
     // TODO: provide a possibility to select container repositories from different compartments
@@ -125,7 +127,7 @@ class Service extends ociService.Service {
             }
         }
         return [
-            new dialogs.QuickPickObject('Add Container Repository', undefined, 'Add existing container repository', addContent)
+            new dialogs.QuickPickObject(`$(${ICON}) Add Container Repository`, undefined, 'Add existing container repository', addContent)
         ];
     }
 
@@ -159,7 +161,7 @@ class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.Removable
         super(object.displayName, undefined, ContainerRepositoryNode.CONTEXT, treeChanged);
         this.object = object;
         this.oci = oci;
-        this.iconPath = new vscode.ThemeIcon('extensions');
+        this.iconPath = new vscode.ThemeIcon(ICON);
         this.updateAppearance();
     }
 

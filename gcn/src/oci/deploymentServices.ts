@@ -18,6 +18,8 @@ import * as dataSupport from './dataSupport';
 
 export const DATA_NAME = 'deploymentPipelines';
 
+const ICON = 'rocket';
+
 type DeploymentPipeline = {
     ocid: string,
     displayName: string
@@ -80,7 +82,7 @@ async function selectDeploymentPipelines(oci: ociContext.Context, ignore: Deploy
     }
     const choices: dialogs.QuickPickObject[] = [];
     for (const pipeline of pipelines) {
-        choices.push(new dialogs.QuickPickObject(pipeline.displayName, undefined, undefined, pipeline));
+        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${pipeline.displayName}`, undefined, undefined, pipeline));
     }
     // TODO: display pipelines for the repository and for the project
     // TODO: provide a possibility to create a new pipeline
@@ -125,7 +127,7 @@ class Service extends ociService.Service {
             }
         }
         return [
-            new dialogs.QuickPickObject('Add Deployment Pipeline', undefined, 'Add existing deployment pipeline', addContent)
+            new dialogs.QuickPickObject(`$(${ICON}) Add Deployment Pipeline`, undefined, 'Add existing deployment pipeline', addContent)
         ];
     }
 
@@ -159,7 +161,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
         super(object.displayName, undefined, DeploymentPipelineNode.CONTEXT, undefined, undefined, treeChanged);
         this.object = object;
         // this.oci = oci;
-        this.iconPath = new vscode.ThemeIcon('rocket');
+        this.iconPath = new vscode.ThemeIcon(ICON);
         this.updateAppearance();
     }
 

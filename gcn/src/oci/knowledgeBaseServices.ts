@@ -18,6 +18,8 @@ import * as dataSupport from './dataSupport';
 
 export const DATA_NAME = 'knowledgeBases';
 
+const ICON = 'book';
+
 type KnowledgeBase = {
     ocid: string,
     displayName: string
@@ -129,7 +131,7 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
     }
     const choices: dialogs.QuickPickObject[] = [];
     for (const knowledgeBase of knowledgeBases) {
-        choices.push(new dialogs.QuickPickObject(knowledgeBase.displayName, undefined, undefined, knowledgeBase));
+        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${knowledgeBase.displayName}`, undefined, undefined, knowledgeBase));
     }
     // TODO: provide a possibility to create a new knowledge base
     // TODO: provide a possibility to select knowledge bases from different compartments
@@ -176,7 +178,7 @@ class Service extends ociService.Service {
             }
         }
         return [
-            new dialogs.QuickPickObject('Add Knowledge Base', undefined, 'Add existing knowledge base', addContent)
+            new dialogs.QuickPickObject(`$(${ICON}) Add Knowledge Base`, undefined, 'Add existing knowledge base', addContent)
         ];
     }
 
@@ -260,7 +262,7 @@ class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, 
         super(object.displayName, undefined, KnowledgeBaseNode.CONTEXT, treeChanged);
         this.object = object;
         this.oci = oci;
-        this.iconPath = new vscode.ThemeIcon('book');
+        this.iconPath = new vscode.ThemeIcon(ICON);
         this.updateAppearance();
     }
 

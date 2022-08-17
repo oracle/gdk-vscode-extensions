@@ -22,6 +22,8 @@ import * as dataSupport from './dataSupport';
 
 export const DATA_NAME = 'buildPipelines';
 
+const ICON = 'play-circle';
+
 type BuildPipeline = {
     ocid: string,
     displayName: string
@@ -118,7 +120,7 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
     }
     const choices: dialogs.QuickPickObject[] = [];
     for (const pipeline of pipelines) {
-        choices.push(new dialogs.QuickPickObject(pipeline.displayName, undefined, undefined, pipeline));
+        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${pipeline.displayName}`, undefined, undefined, pipeline));
     }
     // TODO: display pipelines for the repository and for the project
     // TODO: provide a possibility to create a new pipeline
@@ -163,7 +165,7 @@ class Service extends ociService.Service {
             }
         }
         return [
-            new dialogs.QuickPickObject('Add Build Pipeline', undefined, 'Add existing build pipeline', addContent)
+            new dialogs.QuickPickObject(`$(${ICON}) Add Build Pipeline`, undefined, 'Add existing build pipeline', addContent)
         ];
     }
 
@@ -203,7 +205,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         super(object.displayName, undefined, BuildPipelineNode.CONTEXTS[0], undefined, undefined, treeChanged);
         this.object = object;
         this.oci = oci;
-        this.iconPath = new vscode.ThemeIcon('play-circle');
+        this.iconPath = new vscode.ThemeIcon(ICON);
         this.command = { command: 'gcn.oci.showBuildOutput', title: 'Show Build Output', arguments: [this] };
         this.updateAppearance();
         ociUtils.listBuildRuns(this.oci.getProvider(), this.object.ocid).then(response => {
@@ -416,19 +418,19 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
             case 'ACCEPTED':
             case 'IN_PROGRESS':
             case 'CANCELING':
-                this.iconPath = new vscode.ThemeIcon('play-circle', new vscode.ThemeColor('charts.yellow'));
+                this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.yellow'));
                 this.contextValue = BuildPipelineNode.CONTEXTS[1];
                 break;
             case 'SUCCEEDED':
-                this.iconPath = new vscode.ThemeIcon('play-circle', new vscode.ThemeColor('charts.green'));
+                this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.green'));
                 this.contextValue = deliveredArtifacts?.length ? BuildPipelineNode.CONTEXTS[2] : BuildPipelineNode.CONTEXTS[0];
                 break;
             case 'FAILED':
-                this.iconPath = new vscode.ThemeIcon('play-circle', new vscode.ThemeColor('charts.red'));
+                this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.red'));
                 this.contextValue = BuildPipelineNode.CONTEXTS[0];
                 break;
             default:
-                this.iconPath = new vscode.ThemeIcon('play-circle');
+                this.iconPath = new vscode.ThemeIcon(ICON);
                 this.contextValue = BuildPipelineNode.CONTEXTS[0];
         }
         this.treeChanged(this);

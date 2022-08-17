@@ -18,6 +18,8 @@ import * as dataSupport from './dataSupport';
 
 export const DATA_NAME = 'artifactRepositories';
 
+const ICON = 'file-binary';
+
 type ArtifactRepository = {
     ocid: string,
     displayName: string
@@ -81,7 +83,7 @@ async function selectArtifactRepositories(oci: ociContext.Context, ignore: Artif
     }
     const choices: dialogs.QuickPickObject[] = [];
     for (const artifactRepository of artifactRepositories) {
-        choices.push(new dialogs.QuickPickObject(artifactRepository.displayName, undefined, undefined, artifactRepository));
+        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${artifactRepository.displayName}`, undefined, undefined, artifactRepository));
     }
     // TODO: provide a possibility to create a new artifact repository
     // TODO: provide a possibility to select artifact repositories from different compartments
@@ -125,7 +127,7 @@ export class Service extends ociService.Service {
             }
         }
         return [
-            new dialogs.QuickPickObject('Add Artifact Repository', undefined, 'Add existing artifact repository', addContent)
+            new dialogs.QuickPickObject(`$(${ICON}) Add Artifact Repository`, undefined, 'Add existing artifact repository', addContent)
         ];
     }
 
@@ -238,7 +240,7 @@ class ArtifactImageNode extends nodes.BaseNode {
     constructor(_ocid: string, displayName: string, imageDescription?: string) {
         super(displayName, imageDescription, ArtifactImageNode.CONTEXT, undefined, undefined);
         // this.ocid = ocid;
-        this.iconPath = new vscode.ThemeIcon('file-binary');
+        this.iconPath = new vscode.ThemeIcon(ICON);
         this.updateAppearance();
     }
 
