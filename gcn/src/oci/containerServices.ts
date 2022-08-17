@@ -26,6 +26,7 @@ type ContainerRepository = {
 export function initialize(_context: vscode.ExtensionContext) {
     nodes.registerRenameableNode(ContainerRepositoryNode.CONTEXT);
     nodes.registerRemovableNode(ContainerRepositoryNode.CONTEXT);
+    nodes.registerReloadableNode(ContainerRepositoryNode.CONTEXT);
 }
 
 export async function importServices(_oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
@@ -146,7 +147,7 @@ class Service extends ociService.Service {
 
 }
 
-class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, dataSupport.DataProducer {
+class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ReloadableNode, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'containerRepositoryNode';
     static readonly CONTEXT = `gcn.oci.${ContainerRepositoryNode.DATA_NAME}`;

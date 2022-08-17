@@ -60,6 +60,12 @@
 				"category": "GCN"
 			},
 			{
+				"command": "gcn.reloadNode",
+				"title": "Reload",
+				"icon": "$(refresh)",
+				"category": "GCN"
+			},
+			{
 				"command": "gcn.oci.runBuildPipeline",
 				"title": "Run Build Pipeline",
 				"icon": "$(run)",
@@ -121,6 +127,10 @@
 				{
 					"command": "gcn.removeNode",
 					"when": "false"
+				},
+				{
+					"command": "gcn.reloadNode",
+					"when": "false"
 				}
 			],
 			"editor/context": [],
@@ -146,6 +156,11 @@
 					"command": "gcn.removeNode",
 					"when": "viewItem in gcn.removableNodes",
 					"group": "contextMenu@2"
+				},
+				{
+					"command": "gcn.reloadNode",
+					"when": "viewItem in gcn.reloadableNodes",
+					"group": "inline@3"
 				},
 				{
 					"command": "gcn.oci.runBuildPipeline",

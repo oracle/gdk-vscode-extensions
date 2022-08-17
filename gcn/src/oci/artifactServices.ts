@@ -26,6 +26,7 @@ type ArtifactRepository = {
 export function initialize(_context: vscode.ExtensionContext): void {
     nodes.registerRenameableNode(ArtifactRepositoryNode.CONTEXT);
     nodes.registerRemovableNode(ArtifactRepositoryNode.CONTEXT);
+    nodes.registerReloadableNode(ArtifactRepositoryNode.CONTEXT);
 }
 
 export async function importServices(_oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
@@ -146,7 +147,7 @@ export class Service extends ociService.Service {
 
 }
 
-class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, dataSupport.DataProducer {
+class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ReloadableNode, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'artifactRepositoryNode';
     static readonly CONTEXT = `gcn.oci.${ArtifactRepositoryNode.DATA_NAME}`;

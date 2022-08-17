@@ -38,6 +38,7 @@ export function initialize(context: vscode.ExtensionContext) {
 
     nodes.registerRenameableNode(KnowledgeBaseNode.CONTEXT);
     nodes.registerRemovableNode(KnowledgeBaseNode.CONTEXT);
+    nodes.registerReloadableNode(KnowledgeBaseNode.CONTEXT);
 }
 
 export async function importServices(_oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
@@ -247,7 +248,7 @@ class Service extends ociService.Service {
 
 }
 
-class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, dataSupport.DataProducer {
+class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ReloadableNode, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'knowledgeBaseNode';
     static readonly CONTEXT = `gcn.oci.${KnowledgeBaseNode.DATA_NAME}`;

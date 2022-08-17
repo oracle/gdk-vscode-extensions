@@ -55,6 +55,21 @@ export async function registerRemovableNode(context: string | string[]) {
     await vscode.commands.executeCommand('setContext', 'gcn.removableNodes', REMOVABLE_NODES);
 }
 
+export interface ReloadableNode {
+    reload(): void;
+}
+
+const RELOADABLE_NODES: string[] = [];
+
+export async function registerReloadableNode(context: string | string[]) {
+    if (typeof context === 'string' || context instanceof String) {
+        RELOADABLE_NODES.push(context as string);
+    } else {
+        RELOADABLE_NODES.push(...context);
+    }
+    await vscode.commands.executeCommand('setContext', 'gcn.reloadableNodes', RELOADABLE_NODES);
+}
+
 export class BaseNode extends vscode.TreeItem {
 
     parent: BaseNode | undefined;
@@ -145,12 +160,12 @@ export class AsyncNode extends ChangeableNode {
         } else {
             this.computeChildren().then(children => {
                 this.setChildren(children);
-                this.treeChanged();
+                this.treeChanged(this);
             }).catch(err => {
                 console.log('>>> Error in async computeChildren()');
                 console.log(err);
                 this.setChildren([ new NoItemsNode() ]);
-                this.treeChanged();
+                this.treeChanged(this);
             });
             return [ new LoadingNode() ];
         }
@@ -158,6 +173,13 @@ export class AsyncNode extends ChangeableNode {
 
     async computeChildren(): Promise<BaseNode[] | undefined> {
         return [ new NoItemsNode() ];
+    }
+
+    public reload() {
+        if (this.children !== null) {
+            this.setChildren(null);
+            this.treeChanged(this);
+        }
     }
 
 }
