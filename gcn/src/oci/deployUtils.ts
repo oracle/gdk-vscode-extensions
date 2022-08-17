@@ -38,22 +38,15 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
         return undefined;
     }
 
-    // TODO: project name must be unique in the compartment!
-    //       (read existing project names in advance & check)
-    let projectName: string;
-    if (folders.length === 1) {
-        projectName = folders[0].name;
-    } else {
-        const selectedName = await selectProjectName();
-        if (!selectedName) {
-            return;
-        }
-        projectName = selectedName;
+    const selectedName = await selectProjectName(folders.length === 1 ? folders[0].name : undefined);
+    if (!selectedName) {
+        return;
     }
+    let projectName = selectedName;
 
     const error: string | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: `Creating devops project ${projectName}`,
+        title: 'Creating devops project',
         cancellable: false
     }, (progress, _token) => {
         return new Promise(async resolve => {
@@ -73,11 +66,28 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                 increment: 5,
                 message: 'Creating devops project...'
             });
-            const project = (await ociUtils.createDevOpsProject(provider, projectName, compartment, notificationTopic))?.project.id;
-            if (!project) {
-                resolve('Failed to create devops project.');
-                return;
+            
+            let createdProject: string | undefined;
+            while (createdProject === undefined) {
+                try {
+                    createdProject = (await ociUtils.createDevOpsProject(provider, projectName, compartment, notificationTopic)).project.id;
+                } catch (err: any) {
+                    const message: string | undefined = err.message;
+                    if (message && message.indexOf('project name already exists') !== -1) {
+                        vscode.window.showWarningMessage(`Project name '${projectName}' already exists in the tenancy.`);
+                        const newName = await selectProjectName(projectName);
+                        if (!newName) {
+                            resolve(undefined);
+                            return;
+                        }
+                        projectName = newName;
+                    } else {
+                        resolve('Failed to create devops project.');
+                        return;
+                    }
+                }
             }
+            const project = createdProject;
 
             // --- Create project log
             progress.report({
@@ -437,15 +447,26 @@ async function selectFolders(): Promise<vscode.WorkspaceFolder[] | undefined> {
     return undefined;
 }
 
-async function selectProjectName(): Promise<string | undefined> {
+async function selectProjectName(suggestedName?: string): Promise<string | undefined> {
+    function validateProjectName(name: string): string | undefined {
+        if (!name || name.length === 0) {
+            return 'Project name cannot be empty.'
+        }
+        if (name.indexOf(' ') !== -1) {
+            return 'Project name may not contain spaces.'
+        }
+        // TODO: check for other devops project name constraints
+        return undefined;
+    }
     let projectName = await vscode.window.showInputBox({
-        placeHolder: 'Define DevOps Project Name'
-        // validateInput: input => (input && Number.parseInt(input) >= 0) ? undefined : 'PID must be positive integer',
+        title: 'Provide Unique DevOps Project Name',
+        value: suggestedName,
+        validateInput: input => validateProjectName(input),
     });
     if (projectName) {
         projectName = projectName.replace(/\s+/g, '');
     }
-    return projectName
+    return projectName;
 }
 
 function expandTemplate(template: string, folder: vscode.WorkspaceFolder, projectBuildCommand: string, projectArtifactLocation: string, deployArtifactName: string, templatesStorage: string): string | undefined {

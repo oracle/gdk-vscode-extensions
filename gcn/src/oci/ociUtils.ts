@@ -644,25 +644,20 @@ export async function getNotificationTopic(authenticationDetailsProvider: common
     }
 }
 
-export async function createDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectName: string, compartmentID: string, notificationTopicID: string): Promise<devops.responses.CreateProjectResponse | undefined> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const createProjectDetails = {
-            name: projectName,
-            description: "Imported from local VS Code workspace",
-            notificationConfig: {
-                topicId: notificationTopicID
-            },
-            compartmentId: compartmentID
-        };
-        const createProjectRequest: devops.requests.CreateProjectRequest = {
-            createProjectDetails: createProjectDetails
-        };
-        return client.createProject(createProjectRequest);
-    } catch (error) {
-        console.log('>>> createDevOpsProject ' + error);
-        return undefined;
-    }
+export async function createDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectName: string, compartmentID: string, notificationTopicID: string): Promise<devops.responses.CreateProjectResponse> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const createProjectDetails = {
+        name: projectName,
+        description: "Imported from local VS Code workspace",
+        notificationConfig: {
+            topicId: notificationTopicID
+        },
+        compartmentId: compartmentID
+    };
+    const createProjectRequest: devops.requests.CreateProjectRequest = {
+        createProjectDetails: createProjectDetails
+    };
+    return client.createProject(createProjectRequest);
 }
 
 export async function listLogGroups(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name?: string): Promise<logging.responses.ListLogGroupsResponse | undefined> {
