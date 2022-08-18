@@ -287,6 +287,14 @@ export async function deleteCodeRepository(authenticationDetailsProvider: common
     return client.deleteRepository({ repositoryId: repo });
 }
 
+export async function getBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string): Promise<devops.responses.GetBuildPipelineResponse> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const getBuildPipelineRequest: devops.requests.GetBuildPipelineRequest = {
+        buildPipelineId: pipelineID
+    };
+    return client.getBuildPipeline(getBuildPipelineRequest);
+}
+
 export async function listBuildPipelines(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.responses.ListBuildPipelinesResponse | undefined> {
     try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });

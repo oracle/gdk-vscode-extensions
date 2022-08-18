@@ -13,6 +13,7 @@ import * as dialogs from '../dialogs';
 import * as servicesView from '../servicesView';
 import * as ociContext from './ociContext';
 import * as dataSupport from './dataSupport';
+import * as ociNodes from './ociNodes';
 
 import * as buildServices from './buildServices';
 import * as ociService from './ociService';
@@ -26,6 +27,12 @@ import * as knowledgeBaseServices from './knowledgeBaseServices';
 export const DATA_NAME = 'services';
 
 export function initialize(context: vscode.ExtensionContext) {
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openInConsole', (...params: any[]) => {
+        if (params[0]) {
+            ociNodes.openInConsole(params[0] as ociNodes.CloudConsoleItem);
+        }
+	}));
+
     buildServices.initialize(context);
     deploymentServices.initialize(context);
     deployArtifactServices.initialize(context);

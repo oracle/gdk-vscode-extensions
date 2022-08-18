@@ -18,6 +18,7 @@ import * as ociContext from './ociContext';
 import * as ociService from './ociService';
 import * as ociServices  from './ociServices';
 import * as dataSupport from './dataSupport';
+import * as ociNodes from './ociNodes';
 
 
 export const DATA_NAME = 'buildPipelines';
@@ -32,6 +33,8 @@ type BuildPipeline = {
 export function initialize(context: vscode.ExtensionContext) {
     nodes.registerRenameableNode(BuildPipelineNode.CONTEXTS);
     nodes.registerRemovableNode(BuildPipelineNode.CONTEXTS);
+    ociNodes.registerOpenInConsoleNode(BuildPipelineNode.CONTEXTS);
+
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runBuildPipeline', (node: BuildPipelineNode) => {
 		node.runPipeline();
 	}));
@@ -187,7 +190,7 @@ class Service extends ociService.Service {
 
 }
 
-class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, dataSupport.DataProducer {
+class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, ociNodes.CloudConsoleItem, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'buildPipelineNode';
     static readonly CONTEXTS = [
@@ -248,6 +251,11 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
 
     getData(): any {
         return this.object;
+    }
+
+    async getAddress(): Promise<string> {
+        const pipeline = (await ociUtils.getBuildPipeline(this.oci.getProvider(), this.object.ocid)).buildPipeline;
+        return `https://cloud.oracle.com/devops-build/projects/${pipeline.projectId}/build-pipelines/${pipeline.id}`;
     }
 
     runPipeline() {

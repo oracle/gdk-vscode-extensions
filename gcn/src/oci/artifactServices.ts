@@ -14,6 +14,7 @@ import * as ociContext from './ociContext';
 import * as ociService from './ociService';
 import * as ociServices from "./ociServices";
 import * as dataSupport from './dataSupport';
+import * as ociNodes from './ociNodes';
 
 
 export const DATA_NAME = 'artifactRepositories';
@@ -29,6 +30,7 @@ export function initialize(_context: vscode.ExtensionContext): void {
     nodes.registerRenameableNode(ArtifactRepositoryNode.CONTEXT);
     nodes.registerRemovableNode(ArtifactRepositoryNode.CONTEXT);
     nodes.registerReloadableNode(ArtifactRepositoryNode.CONTEXT);
+    ociNodes.registerOpenInConsoleNode(ArtifactRepositoryNode.CONTEXT);
 }
 
 export async function importServices(_oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
@@ -149,7 +151,7 @@ export class Service extends ociService.Service {
 
 }
 
-class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ReloadableNode, dataSupport.DataProducer {
+class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ReloadableNode, ociNodes.CloudConsoleItem, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'artifactRepositoryNode';
     static readonly CONTEXT = `gcn.oci.${ArtifactRepositoryNode.DATA_NAME}`;
@@ -219,6 +221,10 @@ class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableN
         const service = findByNode(this);
         this.removeFromParent(this.treeChanged);
         service?.serviceNodesRemoved(this)
+    }
+
+    getAddress(): string {
+        return `https://cloud.oracle.com/registry/artifacts/${this.object.ocid}`;
     }
 
     getDataName() {

@@ -48,6 +48,12 @@
 				"category": "GCN"
 			},
 			{
+				"command": "gcn.oci.openInConsole",
+				"title": "Open in Cloud Console",
+				"icon": "$(globe)",
+				"category": "GCN"
+			},
+			{
 				"command": "gcn.renameNode",
 				"title": "Rename",
 				"icon": "$(edit)",
@@ -121,6 +127,10 @@
 					"when": "false"
 				},
 				{
+					"command": "gcn.oci.openInConsole",
+					"when": "false"
+				},
+				{
 					"command": "gcn.renameNode",
 					"when": "false"
 				},
@@ -146,6 +156,11 @@
 					"command": "gcn.addContent",
 					"when": "viewItem in gcn.addContentNodes",
 					"group": "inline@1"
+				},
+				{
+					"command": "gcn.oci.openInConsole",
+					"when": "viewItem in gcn.openInConsoleNodes",
+					"group": "a_ociContextMenu@1"
 				},
 				{
 					"command": "gcn.renameNode",
