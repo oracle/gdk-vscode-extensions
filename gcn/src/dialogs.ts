@@ -11,6 +11,27 @@ import * as model from './model';
 import { CLOUD_SUPPORTS } from './extension';
 
 
+export async function selectName(title: string, currentName: string | undefined, forbiddenNames?: string[]): Promise<string | undefined> {
+    if (!forbiddenNames) {
+        forbiddenNames = [];
+    }
+    function validateName(name: string): string | undefined {
+        if (!name || name.length === 0) {
+            return 'Name cannot be empty.'
+        }
+        if (forbiddenNames?.indexOf(name) !== -1) {
+            return 'Name already used.'
+        }
+        return undefined;
+    }
+    const selected = await vscode.window.showInputBox({
+        title: title,
+        value: currentName,
+        validateInput: input => validateName(input)
+    });
+    return selected;
+}
+
 export async function selectFolder(): Promise<gcnServices.FolderData | undefined> {
     const folderData = gcnServices.getFolderData();
     if (folderData.length === 0) {

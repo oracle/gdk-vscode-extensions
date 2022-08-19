@@ -123,4 +123,27 @@ export abstract class Service implements dataSupport.DataProducer {
         return this.serviceNodes ? this.serviceNodes : [];
     }
 
+    // NOTE: intended to be used for node operations (rename)
+    //       needs to be computed from itemsData if used before nodes are built
+    getItemNames(skip?: nodes.BaseNode | nodes.BaseNode[]): string[] | undefined {
+        if (skip instanceof nodes.BaseNode) {
+            skip = [ skip ];
+        }
+        let names: string[] | undefined;
+        if (this.serviceNodes) {
+            for (const node of this.serviceNodes) {
+                if (!skip || skip.indexOf(node) === -1) {
+                    const label = nodes.getLabel(node);
+                    if (label) {
+                        if (!names) {
+                            names = [];
+                        }
+                        names.push(label);
+                    }
+                }
+            }
+        }
+        return names;
+    }
+
 }

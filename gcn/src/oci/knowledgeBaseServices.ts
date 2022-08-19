@@ -287,17 +287,18 @@ class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, 
     }
 
     rename() {
-        const currentName = typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label
-        vscode.window.showInputBox({
-            title: 'Rename Knowledge Base',
-            value: currentName
-        }).then(name => {
+        const currentName = nodes.getLabel(this);
+        let existingNames: string[] | undefined;
+        const service = findByNode(this);
+        if (service) {
+            existingNames = service.getItemNames(this);
+        }
+        dialogs.selectName('Rename Knowledge Base', currentName, existingNames).then(name => {
             if (name) {
                 this.object.displayName = name;
                 this.label = this.object.displayName;
                 this.updateAppearance();
                 this.treeChanged(this);
-                const service = findByNode(this);
                 service?.serviceNodesChanged(this)
             }
         });

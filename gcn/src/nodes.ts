@@ -70,6 +70,10 @@ export async function registerReloadableNode(context: string | string[]) {
     await vscode.commands.executeCommand('setContext', 'gcn.reloadableNodes', RELOADABLE_NODES);
 }
 
+export function getLabel(node: BaseNode): string | undefined {
+    return typeof node.label === 'string' ? node.label as string : (node.label as vscode.TreeItemLabel).label;
+}
+
 export class BaseNode extends vscode.TreeItem {
 
     parent: BaseNode | undefined;
@@ -133,7 +137,7 @@ export class BaseNode extends vscode.TreeItem {
     }
 
     public updateAppearance() {
-        this.tooltip = this.description ? `${this.label}: ${this.description}` : (typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label);
+        this.tooltip = this.description ? `${this.label}: ${this.description}` : getLabel(this);
     }
 
 }

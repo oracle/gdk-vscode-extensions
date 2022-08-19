@@ -7,6 +7,7 @@
 
 import * as vscode from 'vscode';
 import * as nodes from '../nodes';
+import * as dialogs from '../dialogs';
 import * as ociContext from './ociContext';
 import * as ociService from './ociService';
 import * as ociServices from "./ociServices";
@@ -99,21 +100,22 @@ class DeployArtifactNode extends nodes.ChangeableNode implements nodes.Removable
         this.iconPath = new vscode.ThemeIcon('file-binary');
         this.updateAppearance();
         // this.description = description;
-        // this.tooltip = tooltip ? `${this.label}: ${tooltip}` : (typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label);
+        // this.tooltip = tooltip ? `${this.label}: ${tooltip}` : nodes.getLabel(this);
     }
 
     rename() {
-        const currentName = typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label
-        vscode.window.showInputBox({
-            title: 'Rename Project Artifact',
-            value: currentName
-        }).then(name => {
+        const currentName = nodes.getLabel(this);
+        let existingNames: string[] | undefined;
+        const service = findByNode(this);
+        if (service) {
+            existingNames = service.getItemNames(this);
+        }
+        dialogs.selectName('Rename Build Artifact', currentName, existingNames).then(name => {
             if (name) {
                 this.object.displayName = name;
                 this.label = this.object.displayName;
                 this.updateAppearance();
                 this.treeChanged(this);
-                const service = findByNode(this);
                 service?.serviceNodesChanged(this)
             }
         });

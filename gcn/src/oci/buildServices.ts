@@ -223,17 +223,18 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
     }
 
     rename() {
-        const currentName = typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label
-        vscode.window.showInputBox({
-            title: 'Rename Build Pipeline',
-            value: currentName
-        }).then(name => {
+        const currentName = nodes.getLabel(this);
+        let existingNames: string[] | undefined;
+        const service = findByNode(this);
+        if (service) {
+            existingNames = service.getItemNames(this);
+        }
+        dialogs.selectName('Rename Build Pipeline', currentName, existingNames).then(name => {
             if (name) {
                 this.object.displayName = name;
                 this.label = this.object.displayName;
                 this.updateAppearance();
                 this.treeChanged(this);
-                const service = findByNode(this);
                 service?.serviceNodesChanged(this)
             }
         });

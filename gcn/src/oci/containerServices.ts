@@ -191,17 +191,18 @@ class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.Removable
     }
 
     rename() {
-        const currentName = typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label
-        vscode.window.showInputBox({
-            title: 'Rename Container Repository',
-            value: currentName
-        }).then(name => {
+        const currentName = nodes.getLabel(this);
+        let existingNames: string[] | undefined;
+        const service = findByNode(this);
+        if (service) {
+            existingNames = service.getItemNames(this);
+        }
+        dialogs.selectName('Rename Container Repository', currentName, existingNames).then(name => {
             if (name) {
                 this.object.displayName = name;
                 this.label = this.object.displayName;
                 this.updateAppearance();
                 this.treeChanged(this);
-                const service = findByNode(this);
                 service?.serviceNodesChanged(this)
             }
         });

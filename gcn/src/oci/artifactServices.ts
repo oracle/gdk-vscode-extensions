@@ -201,17 +201,18 @@ class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableN
     }
 
     rename() {
-        const currentName = typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label
-        vscode.window.showInputBox({
-            title: 'Rename Artifact Repository',
-            value: currentName
-        }).then(name => {
+        const currentName = nodes.getLabel(this);
+        let existingNames: string[] | undefined;
+        const service = findByNode(this);
+        if (service) {
+            existingNames = service.getItemNames(this);
+        }
+        dialogs.selectName('Rename Artifact Repository', currentName, existingNames).then(name => {
             if (name) {
                 this.object.displayName = name;
                 this.label = this.object.displayName;
                 this.updateAppearance();
                 this.treeChanged(this);
-                const service = findByNode(this);
                 service?.serviceNodesChanged(this)
             }
         });
@@ -267,11 +268,11 @@ class ArtifactImageNode extends nodes.BaseNode {
 //         this.iconPath = new vscode.ThemeIcon('file-binary');
 //         this.updateAppearance();
 //         // this.description = description;
-//         // this.tooltip = tooltip ? `${this.label}: ${tooltip}` : (typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label);
+//         // this.tooltip = tooltip ? `${this.label}: ${tooltip}` : nodes.getLabel(this);
 //     }
 
 //     rename() {
-//         const currentName = typeof this.label === 'string' ? this.label as string : (this.label as vscode.TreeItemLabel).label
+//         const currentName = nodes.getLabel(this);
 //         vscode.window.showInputBox({
 //             title: 'Rename Project Artifact',
 //             value: currentName
