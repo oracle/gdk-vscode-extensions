@@ -30,7 +30,7 @@ export class FolderStorage {
             const name = cloudService.name;
             if (type && name) {
                 const storeData = () => {
-                    this.store();
+                    setTimeout(() => this.store(), 0);
                 }
                 const serviceConfiguration = new model.ServicesConfiguration(type, name, cloudService.data, storeData);
                 this.serviceConfigurations.push(serviceConfiguration);
