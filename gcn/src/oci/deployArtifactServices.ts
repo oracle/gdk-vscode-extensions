@@ -139,7 +139,7 @@ function getIconKey(object: DeployArtifact): string | undefined {
             return artifactServices.ICON;
         }
         case devops.models.OcirDeployArtifactSource.deployArtifactSourceType: {
-            return containerServices.ICON;
+            return containerServices.ITEM_ICON;
         }
         default: {
             // TODO: missing support for devops.models.InlineDeployArtifactSource and devops.models.HelmRepositoryDeployArtifactSource
