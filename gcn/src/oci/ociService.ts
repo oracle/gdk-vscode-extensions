@@ -21,6 +21,7 @@ export abstract class Service implements dataSupport.DataProducer {
     protected itemsData: any | undefined;
     protected dataChanged: dataSupport.DataChanged | undefined;
     protected serviceNodes: nodes.BaseNode[] | undefined;
+    protected containerNode: nodes.BaseNode | undefined;
     protected treeChanged: nodes.TreeChanged | undefined;
 
     constructor(folder: vscode.WorkspaceFolder, oci: ociContext.Context, dataName: string, serviceData: any | undefined, dataChanged: dataSupport.DataChanged) {
@@ -72,9 +73,13 @@ export abstract class Service implements dataSupport.DataProducer {
     buildNodes(treeChanged: nodes.TreeChanged): void {
         this.treeChanged = treeChanged;
         this.serviceNodes = [];
+        this.containerNode = this.createContainerNode();
         const items = this.itemsData;
         if (items?.length > 0 && this.dataChanged) {
             this.serviceNodes.push(...this.buildNodesImpl(this.oci, items, this.treeChanged));
+        }
+        if (this.containerNode) {
+            this.containerNode.setChildren(this.serviceNodes);
         }
     }
 
@@ -88,44 +93,97 @@ export abstract class Service implements dataSupport.DataProducer {
         }
         if (!this.serviceNodes) {
             this.serviceNodes = [];
+            this.containerNode = this.createContainerNode();
         }
+        const initiallyEmpty = this.serviceNodes.length === 0;
         this.serviceNodes.push(...added);
+        if (this.containerNode) {
+            this.containerNode.setChildren(this.serviceNodes);
+        }
         this.updateItemsData();
         if (this.dataChanged) {
             this.dataChanged(this);
         }
-    }
-
-    serviceNodesChanged(_changed: nodes.BaseNode | nodes.BaseNode[]) {
-        this.updateItemsData();
-        if (this.dataChanged) {
-            this.dataChanged(this);
+        if (this.treeChanged) {
+            if (this.containerNode && !initiallyEmpty) {
+                this.treeChanged(this.containerNode);
+            } else {
+                this.treeChanged();
+            }
         }
     }
 
-    serviceNodesRemoved(removed: nodes.BaseNode | nodes.BaseNode[]) {
+    // serviceNodesChanged(_changed: nodes.BaseNode | nodes.BaseNode[]) {
+    //     this.updateItemsData();
+    //     if (this.dataChanged) {
+    //         this.dataChanged(this);
+    //     }
+    // }
+
+    renameServiceNode(node: nodes.BaseNode, caption: string, renameCallback?: (newName: string) => void) {
+        const currentName = nodes.getLabel(node);
+        const existingNames = this.getItemNames(node);
+        dialogs.selectName(caption, currentName, existingNames).then(name => {
+            if (name) {
+                if (renameCallback) {
+                    renameCallback(name);
+                }
+                node.label = name;
+                node.updateAppearance();
+                if (this.treeChanged) {
+                    this.treeChanged(node);
+                }
+                this.updateItemsData();
+                if (this.dataChanged) {
+                    this.dataChanged(this);
+                }
+            }
+        });
+    }
+
+    removeServiceNodes(removed: nodes.BaseNode | nodes.BaseNode[]) {
+        if (!this.serviceNodes) {
+            return;
+        }
         if (removed instanceof nodes.BaseNode) {
             removed = [ removed ];
         }
         for (const node of removed) {
-            const idx = this.serviceNodes?.indexOf(node);
-            if (idx !== undefined && idx >= 0) {
-                this.serviceNodes?.splice(idx, 1);
+            if (this.serviceNodes.length > 1) {
+                node.removeFromParent(this.treeChanged);
+            }
+            const idx = this.serviceNodes.indexOf(node);
+            if (idx >= 0) {
+                this.serviceNodes.splice(idx, 1);
             }
         }
         this.updateItemsData();
         if (this.dataChanged) {
-            this.dataChanged(this);
+            this.dataChanged(this); // will trigger treeChanged() in ociServices if last node was removed
+        }
+    }
+
+    removeAllServiceNodes() {
+        this.serviceNodes = [];
+        this.containerNode = this.createContainerNode();
+        this.updateItemsData();
+        if (this.dataChanged) {
+            this.dataChanged(this); // will trigger treeChanged() in ociServices
         }
     }
 
     getNodes(): nodes.BaseNode[] {
-        return this.serviceNodes ? this.serviceNodes : [];
+        if (!this.serviceNodes || this.serviceNodes.length === 0) return [];
+        return this.containerNode ? [ this.containerNode ] : this.serviceNodes;
+    }
+
+    protected createContainerNode(): nodes.BaseNode | undefined {
+        return undefined;
     }
 
     // NOTE: intended to be used for node operations (rename)
     //       needs to be computed from itemsData if used before nodes are built
-    getItemNames(skip?: nodes.BaseNode | nodes.BaseNode[]): string[] | undefined {
+    private getItemNames(skip?: nodes.BaseNode | nodes.BaseNode[]): string[] | undefined {
         if (skip instanceof nodes.BaseNode) {
             skip = [ skip ];
         }

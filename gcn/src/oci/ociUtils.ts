@@ -494,6 +494,23 @@ export async function listProjectDeployArtifacts(authenticationDetailsProvider: 
     }
 }
 
+export async function listDeployArtifacts(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.responses.ListDeployArtifactsResponse> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const listDeployArtifactsRequest: devops.requests.ListDeployArtifactsRequest = {
+        projectId: projectID,
+        lifecycleState: devops.models.DeployArtifact.LifecycleState.Active
+    };
+    return await client.listDeployArtifacts(listDeployArtifactsRequest);
+}
+
+export async function getDeployArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactID: string): Promise<devops.responses.GetDeployArtifactResponse> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const getDeployArtifactRequest: devops.requests.GetDeployArtifactRequest = {
+        deployArtifactId: artifactID
+    };
+    return await client.getDeployArtifact(getDeployArtifactRequest);
+}
+
 export async function listContainerRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<artifacts.responses.ListContainerRepositoriesResponse | undefined> {
     try {
         const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });

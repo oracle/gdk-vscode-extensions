@@ -122,14 +122,8 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
                 }
             }
             dataChanged(this);
-            if (this.treeChanged) {
-                let nodesCount = 0;
-                for (const service of this.services) {
-                    nodesCount += service.getNodes().length;
-                }
-                if (nodesCount === 0) {
-                    this.treeChanged(); // reload nodes to show '<no OCI services defined>'
-                }
+            if (this.treeChanged && (dataProducer as ociService.Service).getNodes().length === 0) {
+                this.treeChanged(); // reload nodes to remove service container if displayed, and eventually show '<no OCI services defined>'
             }
         }
         this.services = [

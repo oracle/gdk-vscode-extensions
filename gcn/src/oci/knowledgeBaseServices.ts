@@ -164,23 +164,23 @@ class Service extends ociService.Service {
         }
     }
 
-    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
-        const addContent = async () => {
-            if (this.treeChanged) {
-                const displayed = this.itemsData ? this.itemsData as KnowledgeBase[] : [];
-                const selected = await selectKnowledgeBases(this.oci, displayed);
-                if (selected) {
-                    const added: nodes.BaseNode[] = [];
-                    for (const pipeline of selected) {
-                        added.push(new KnowledgeBaseNode(pipeline, this.oci, this.treeChanged));
-                    }
-                    this.addServiceNodes(added);
-                    this.treeChanged();
+    async addContent() {
+        if (this.treeChanged) {
+            const displayed = this.itemsData ? this.itemsData as KnowledgeBase[] : [];
+            const selected = await selectKnowledgeBases(this.oci, displayed);
+            if (selected) {
+                const added: nodes.BaseNode[] = [];
+                for (const pipeline of selected) {
+                    added.push(new KnowledgeBaseNode(pipeline, this.oci, this.treeChanged));
                 }
+                this.addServiceNodes(added);
             }
         }
+    }
+
+    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
         return [
-            new dialogs.QuickPickObject(`$(${ICON}) Add Knowledge Base`, undefined, 'Add existing knowledge base', addContent)
+            new dialogs.QuickPickObject(`$(${ICON}) Add Knowledge Base`, undefined, 'Add existing knowledge base', () => this.addContent())
         ];
     }
 
@@ -287,27 +287,13 @@ class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, 
     }
 
     rename() {
-        const currentName = nodes.getLabel(this);
-        let existingNames: string[] | undefined;
         const service = findByNode(this);
-        if (service) {
-            existingNames = service.getItemNames(this);
-        }
-        dialogs.selectName('Rename Knowledge Base', currentName, existingNames).then(name => {
-            if (name) {
-                this.object.displayName = name;
-                this.label = this.object.displayName;
-                this.updateAppearance();
-                this.treeChanged(this);
-                service?.serviceNodesChanged(this)
-            }
-        });
+        service?.renameServiceNode(this, 'Rename Knowledge Base', name => this.object.displayName = name);
     }
 
     remove() {
         const service = findByNode(this);
-        this.removeFromParent(this.treeChanged);
-        service?.serviceNodesRemoved(this)
+        service?.removeServiceNodes(this);
     }
 
     getAddress(): string {

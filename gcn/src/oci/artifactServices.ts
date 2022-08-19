@@ -12,14 +12,14 @@ import * as dialogs from '../dialogs';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociService from './ociService';
-import * as ociServices from "./ociServices";
+import * as ociServices from './ociServices';
 import * as dataSupport from './dataSupport';
 import * as ociNodes from './ociNodes';
 
 
 export const DATA_NAME = 'artifactRepositories';
 
-const ICON = 'file-binary';
+export const ICON = 'file-binary';
 
 type ArtifactRepository = {
     ocid: string,
@@ -113,23 +113,23 @@ export class Service extends ociService.Service {
         super(folder, oci, DATA_NAME, serviceData, dataChanged);
     }
 
-    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
-        const addContent = async () => {
-            if (this.treeChanged) {
-                const displayed = this.itemsData ? this.itemsData as ArtifactRepository[] : [];
-                const selected = await selectArtifactRepositories(this.oci, displayed);
-                if (selected) {
-                    const added: nodes.BaseNode[] = [];
-                    for (const pipeline of selected) {
-                        added.push(new ArtifactRepositoryNode(pipeline, this.oci, this.treeChanged));
-                    }
-                    this.addServiceNodes(added);
-                    this.treeChanged();
+    async addContent() {
+        if (this.treeChanged) {
+            const displayed = this.itemsData ? this.itemsData as ArtifactRepository[] : [];
+            const selected = await selectArtifactRepositories(this.oci, displayed);
+            if (selected) {
+                const added: nodes.BaseNode[] = [];
+                for (const object of selected) {
+                    added.push(new ArtifactRepositoryNode(object, this.oci, this.treeChanged));
                 }
+                this.addServiceNodes(added);
             }
         }
+    }
+
+    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
         return [
-            new dialogs.QuickPickObject(`$(${ICON}) Add Artifact Repository`, undefined, 'Add existing artifact repository', addContent)
+            new dialogs.QuickPickObject(`$(${ICON}) Add Artifact Repository`, undefined, 'Add existing artifact repository', () => this.addContent())
         ];
     }
 
@@ -187,41 +187,17 @@ class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableN
             }
             return children;
         }
-        // const repositories = (await ociUtils.listArtifactRepositories(this.settings.compartment.ocid))?.repositoryCollection.items;
-        // if (repositories) {
-        //     const children: nodes.BaseNode[] = []
-        //     for (const repository of repositories) {
-        //         const ocid = repository.id;
-        //         const displayName = repository.displayName;
-        //         children.push(new ServicesProjectArtifactNode(ocid, displayName));
-        //     }
-        //     return children;
-        // }
         return [ new nodes.NoItemsNode() ];
     }
 
     rename() {
-        const currentName = nodes.getLabel(this);
-        let existingNames: string[] | undefined;
         const service = findByNode(this);
-        if (service) {
-            existingNames = service.getItemNames(this);
-        }
-        dialogs.selectName('Rename Artifact Repository', currentName, existingNames).then(name => {
-            if (name) {
-                this.object.displayName = name;
-                this.label = this.object.displayName;
-                this.updateAppearance();
-                this.treeChanged(this);
-                service?.serviceNodesChanged(this)
-            }
-        });
+        service?.renameServiceNode(this, 'Rename Artifact Repository', name => this.object.displayName = name);
     }
 
     remove() {
         const service = findByNode(this);
-        this.removeFromParent(this.treeChanged);
-        service?.serviceNodesRemoved(this)
+        service?.removeServiceNodes(this);
     }
 
     getAddress(): string {

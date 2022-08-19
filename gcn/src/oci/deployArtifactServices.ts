@@ -6,24 +6,38 @@
  */
 
 import * as vscode from 'vscode';
+import * as devops from 'oci-devops';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
+import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociService from './ociService';
-import * as ociServices from "./ociServices";
+import * as ociServices from './ociServices';
 import * as dataSupport from './dataSupport';
+import * as artifactServices from './artifactServices';
+import * as containerServices from './containerServices';
+import * as ociNodes from './ociNodes';
 
 
 export const DATA_NAME = 'deployArtifacts';
 
+const ICON = 'layout';
+
 type DeployArtifact = {
     ocid: string,
-    displayName: string
+    displayName: string,
+    type: string
 }
 
 export function initialize(_context: vscode.ExtensionContext): void {
-    nodes.registerRenameableNode(DeployArtifactNode.CONTEXT);
-    nodes.registerRemovableNode(DeployArtifactNode.CONTEXT);
+    nodes.registerAddContentNode(DeployArtifactsNode.CONTEXT);
+    nodes.registerRemovableNode(DeployArtifactsNode.CONTEXT);
+    nodes.registerRenameableNode(GenericDeployArtifactNode.CONTEXT);
+    nodes.registerRemovableNode(GenericDeployArtifactNode.CONTEXT);
+    ociNodes.registerOpenInConsoleNode(GenericDeployArtifactNode.CONTEXT);
+    nodes.registerRenameableNode(OcirDeployArtifactNode.CONTEXT);
+    nodes.registerRemovableNode(OcirDeployArtifactNode.CONTEXT);
+    ociNodes.registerOpenInConsoleNode(OcirDeployArtifactNode.CONTEXT);
 }
 
 export async function importServices(_oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
@@ -41,98 +55,237 @@ export function findByNode(node: nodes.BaseNode): Service | undefined {
     return service instanceof Service ? service as Service : undefined;
 }
 
+async function selectDeployArtifacts(oci: ociContext.Context, ignore: DeployArtifact[]): Promise<DeployArtifact[] | undefined> {
+    function shouldIgnore(ocid: string) {
+        for (const item of ignore) {
+            if (item.ocid === ocid) {
+                return true;
+            }
+        }
+        return false;
+    }
+    async function listDeployArtifacts(oci: ociContext.Context): Promise<devops.models.DeployArtifactSummary[] | undefined> {
+        // TODO: display the progress in QuickPick
+        return await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Reading build artifacts...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async(resolve) => {
+                try {
+                    // TODO: should list deploy artifacts per source repository
+                    const artifacts = (await ociUtils.listDeployArtifacts(oci.getProvider(), oci.getDevOpsProject()))?.deployArtifactCollection.items;
+                    resolve(artifacts);
+                    return;
+                } catch (err: any) {
+                    resolve(undefined);
+                    let msg = 'Failed to read build artifacts';
+                    if (err.message) {
+                        msg += `: ${err.message}`;
+                    } else {
+                        msg += '.';
+                    }
+                    vscode.window.showErrorMessage(msg);
+                    return;
+                }
+            });
+        })
+    }
+    const deployArtifacts: DeployArtifact[] = [];
+    const existing = await listDeployArtifacts(oci);
+    if (!existing) {
+        return;
+    }
+    let idx = 1;
+    for (const item of existing) {
+        if (!shouldIgnore(item.id)) {
+            const displayName = item.displayName ? item.displayName : `Build Artifact ${idx++}`;
+            deployArtifacts.push({
+                ocid: item.id,
+                displayName: displayName,
+                type: item.deployArtifactSource.deployArtifactSourceType
+            });
+        }
+    }
+    const choices: dialogs.QuickPickObject[] = [];
+    for (const deployArtifact of deployArtifacts) {
+        const icon = getIconKey(deployArtifact);
+        if (icon) {
+            choices.push(new dialogs.QuickPickObject(`$(${icon}) ${deployArtifact.displayName}`, undefined, undefined, deployArtifact));
+        }
+    }
+    // TODO: provide a possibility to select build artifacts for different code repository / devops project / compartment
+    if (choices.length === 0) {
+        vscode.window.showWarningMessage('All build artifacts already added or no build artifacts available.')
+    } else {
+        const selection = await vscode.window.showQuickPick(choices, {
+            placeHolder: 'Select Build Artifact(s) to Add',
+            canPickMany: true
+        })
+        if (selection && selection.length > 0) {
+            const selected: DeployArtifact[] = [];
+            for (const sel of selection) {
+                selected.push(sel.object as DeployArtifact);
+            }
+            return selected;
+        }
+    }
+    return undefined;
+}
+
+function getIconKey(object: DeployArtifact): string | undefined {
+    switch (object.type) {
+        case devops.models.GenericDeployArtifactSource.deployArtifactSourceType: {
+            return artifactServices.ICON;
+        }
+        case devops.models.OcirDeployArtifactSource.deployArtifactSourceType: {
+            return containerServices.ICON;
+        }
+        default: {
+            // TODO: missing support for devops.models.InlineDeployArtifactSource and devops.models.HelmRepositoryDeployArtifactSource
+            return undefined
+        }
+    }
+}
+
+function createNode(object: DeployArtifact, oci: ociContext.Context, treeChanged: nodes.TreeChanged): nodes.BaseNode | undefined {
+    switch (object.type) {
+        case devops.models.GenericDeployArtifactSource.deployArtifactSourceType: {
+            return new GenericDeployArtifactNode(object, oci, treeChanged);
+        }
+        case devops.models.OcirDeployArtifactSource.deployArtifactSourceType: {
+            return new OcirDeployArtifactNode(object, oci, treeChanged);
+        }
+        default: {
+            // TODO: missing support for devops.models.InlineDeployArtifactSource and devops.models.HelmRepositoryDeployArtifactSource
+            return undefined
+        }
+    }
+}
+
 class Service extends ociService.Service {
 
     constructor(folder: vscode.WorkspaceFolder, oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged) {
         super(folder, oci, DATA_NAME, serviceData, dataChanged);
     }
+    
+    async addContent() {
+        if (this.treeChanged) {
+            const displayed = this.itemsData ? this.itemsData as DeployArtifact[] : [];
+            const selected = await selectDeployArtifacts(this.oci, displayed);
+            if (selected) {
+                const added: nodes.BaseNode[] = [];
+                for (const object of selected) {
+                    const node = createNode(object, this.oci, this.treeChanged);
+                    if (node) {
+                        added.push(node);
+                    }
+                }
+                this.addServiceNodes(added);
+            }
+        }
+    }
 
-    // getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
-    //     const addContent = async () => {
-    //         const choices: dialogs.QuickPickObject[] = [
-    //             new dialogs.QuickPickObject('Add Project Build Artifact', undefined, 'Add a single project build artifact defined for the devops project'),
-    //             new dialogs.QuickPickObject('Add Project Artifacts Container (All)', undefined, 'Add a container displaying all build artifacts defined for the devops project'),
-    //             new dialogs.QuickPickObject('Add Project Artifacts Container (Custom)', undefined, 'Add a container displaying selected build artifacts defined for the devops project')
-    //         ];
-    //         const selection = await vscode.window.showQuickPick(choices, {
-    //             placeHolder: 'Select Build Artifact(s) to Add'
-    //         })
-    //         if (selection?.object) {
-    //             selection.object();
-    //         }
-    //     }
-    //     return [
-    //         new dialogs.QuickPickObject('Add Project Build Artifact(s)', undefined, 'Add a single project build artifact or a container displaying multiple project build artifacts', addContent)
-    //     ];
-    // }
+    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
+        return [
+            new dialogs.QuickPickObject(`$(${ICON}) Add Build Artifact`, undefined, 'Add existing build artifact', () => this.addContent())
+        ];
+    }
 
     protected buildNodesImpl(oci: ociContext.Context, itemsData: any[], treeChanged: nodes.TreeChanged): nodes.BaseNode[] {
         const nodes: nodes.BaseNode[] = [];
         for (const itemData of itemsData) {
             const ocid = itemData.ocid;
             const displayName = itemData.displayName;
-            if (ocid && displayName) {
+            const type = itemData.type;
+            if (ocid && displayName && type) {
                 const object: DeployArtifact = {
                     ocid: ocid,
-                    displayName: displayName
+                    displayName: displayName,
+                    type: type
                 }
-                nodes.push(new DeployArtifactNode(object, oci, treeChanged));
+                const node = createNode(object, oci, treeChanged);
+                if (node) {
+                    nodes.push(node);
+                }
             }
         }
         return nodes;
     }
 
-}
-
-// TODO: needs to be replaced by artifactServices.ArtifactImageNode and containerServices.ContainerImageNode
-class DeployArtifactNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, dataSupport.DataProducer {
-
-    static readonly DATA_NAME = 'deployArtifactNode';
-    static readonly CONTEXT = `gcn.oci.${DeployArtifactNode.DATA_NAME}`;
-
-    private object: DeployArtifact;
-    // private oci: ociContext.Context;
-
-    constructor(object: DeployArtifact, _oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
-        super(object.displayName, undefined, DeployArtifactNode.CONTEXT, undefined, undefined, treeChanged);
-        this.object = object;
-        // this.oci = oci;
-        this.iconPath = new vscode.ThemeIcon('file-binary');
-        this.updateAppearance();
-        // this.description = description;
-        // this.tooltip = tooltip ? `${this.label}: ${tooltip}` : nodes.getLabel(this);
+    protected createContainerNode(): nodes.BaseNode | undefined {
+        return new DeployArtifactsNode();
     }
 
-    rename() {
-        const currentName = nodes.getLabel(this);
-        let existingNames: string[] | undefined;
+}
+
+class DeployArtifactsNode extends nodes.BaseNode implements nodes.AddContentNode, nodes.RemovableNode {
+
+    static readonly CONTEXT = 'gcn.oci.DeployArtifactsNode';
+
+    constructor() {
+        super('Build Artifacts', undefined, DeployArtifactsNode.CONTEXT, [], false);
+        this.iconPath = new vscode.ThemeIcon(ICON);
+        this.updateAppearance();
+    }
+
+    addContent() {
         const service = findByNode(this);
-        if (service) {
-            existingNames = service.getItemNames(this);
-        }
-        dialogs.selectName('Rename Build Artifact', currentName, existingNames).then(name => {
-            if (name) {
-                this.object.displayName = name;
-                this.label = this.object.displayName;
-                this.updateAppearance();
-                this.treeChanged(this);
-                service?.serviceNodesChanged(this)
-            }
-        });
+        service?.addContent();
     }
 
     remove() {
         const service = findByNode(this);
-        this.removeFromParent(this.treeChanged);
-        service?.serviceNodesRemoved(this)
+        service?.removeAllServiceNodes();
+    }
+
+}
+
+abstract class DeployArtifactNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, ociNodes.CloudConsoleItem, dataSupport.DataProducer {
+
+    protected object: DeployArtifact;
+    private oci: ociContext.Context;
+
+    constructor(object: DeployArtifact, oci: ociContext.Context, context: string, icon: string, treeChanged: nodes.TreeChanged) {
+        super(object.displayName, undefined, context, undefined, undefined, treeChanged);
+        this.object = object;
+        this.oci = oci;
+        this.iconPath = new vscode.ThemeIcon(icon);
+        this.updateAppearance();
+    }
+
+    rename() {
+        const service = findByNode(this);
+        service?.renameServiceNode(this, 'Rename Build Artifact', name => this.object.displayName = name);
+    }
+
+    remove() {
+        const service = findByNode(this);
+        service?.removeServiceNodes(this);
+    }
+
+    async getAddress(): Promise<string> {
+        const project = (await ociUtils.getDeployArtifact(this.oci.getProvider(), this.object.ocid)).deployArtifact.id;
+        return `https://cloud.oracle.com/devops-deployment/projects/${project}/artifacts/${this.object.ocid}`;
     }
 
     getDataName() {
-        return DeployArtifactNode.DATA_NAME;
+        return GenericDeployArtifactNode.DATA_NAME;
     }
 
     getData(): any {
         return this.object;
+    }
+
+}
+
+class GenericDeployArtifactNode extends DeployArtifactNode {
+
+    static readonly DATA_NAME = 'genericDeployArtifactNode';
+    static readonly CONTEXT = `gcn.oci.${GenericDeployArtifactNode.DATA_NAME}`;
+
+    constructor(object: DeployArtifact, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
+        super(object, oci, GenericDeployArtifactNode.CONTEXT, artifactServices.ICON, treeChanged);
     }
 
     // download() {
@@ -172,5 +325,16 @@ class DeployArtifactNode extends nodes.ChangeableNode implements nodes.Removable
     //         }
     //     });
     // }
+
+}
+
+class OcirDeployArtifactNode extends DeployArtifactNode {
+
+    static readonly DATA_NAME = 'ocirDeployArtifactNode';
+    static readonly CONTEXT = `gcn.oci.${OcirDeployArtifactNode.DATA_NAME}`;
+
+    constructor(object: DeployArtifact, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
+        super(object, oci, GenericDeployArtifactNode.CONTEXT, containerServices.ITEM_ICON, treeChanged);
+    }
 
 }

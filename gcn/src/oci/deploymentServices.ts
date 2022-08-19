@@ -111,23 +111,23 @@ class Service extends ociService.Service {
         super(folder, oci, DATA_NAME, serviceData, dataChanged);
     }
 
-    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
-        const addContent = async () => {
-            if (this.treeChanged) {
-                const displayed = this.itemsData ? this.itemsData as DeploymentPipeline[] : [];
-                const selected = await selectDeploymentPipelines(this.oci, displayed);
-                if (selected) {
-                    const added: nodes.BaseNode[] = [];
-                    for (const pipeline of selected) {
-                        added.push(new DeploymentPipelineNode(pipeline, this.oci, this.treeChanged));
-                    }
-                    this.addServiceNodes(added);
-                    this.treeChanged();
+    async addContent() {
+        if (this.treeChanged) {
+            const displayed = this.itemsData ? this.itemsData as DeploymentPipeline[] : [];
+            const selected = await selectDeploymentPipelines(this.oci, displayed);
+            if (selected) {
+                const added: nodes.BaseNode[] = [];
+                for (const pipeline of selected) {
+                    added.push(new DeploymentPipelineNode(pipeline, this.oci, this.treeChanged));
                 }
+                this.addServiceNodes(added);
             }
         }
+    }
+
+    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
         return [
-            new dialogs.QuickPickObject(`$(${ICON}) Add Deployment Pipeline`, undefined, 'Add existing deployment pipeline', addContent)
+            new dialogs.QuickPickObject(`$(${ICON}) Add Deployment Pipeline`, undefined, 'Add existing deployment pipeline', () => this.addContent())
         ];
     }
 
@@ -166,27 +166,13 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
     }
 
     rename() {
-        const currentName = nodes.getLabel(this);
-        let existingNames: string[] | undefined;
         const service = findByNode(this);
-        if (service) {
-            existingNames = service.getItemNames(this);
-        }
-        dialogs.selectName('Rename Deployment Pipeline', currentName, existingNames).then(name => {
-            if (name) {
-                this.object.displayName = name;
-                this.label = this.object.displayName;
-                this.updateAppearance();
-                this.treeChanged(this);
-                service?.serviceNodesChanged(this)
-            }
-        });
+        service?.renameServiceNode(this, 'Rename Deployment Pipeline', name => this.object.displayName = name);
     }
 
     remove() {
         const service = findByNode(this);
-        this.removeFromParent(this.treeChanged);
-        service?.serviceNodesRemoved(this)
+        service?.removeServiceNodes(this);
     }
 
     getDataName() {

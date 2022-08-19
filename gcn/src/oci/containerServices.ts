@@ -19,7 +19,8 @@ import * as ociNodes from './ociNodes';
 
 export const DATA_NAME = 'containerRepositories';
 
-const ICON = 'extensions';
+export const ICON = 'extensions';
+export const ITEM_ICON = 'primitive-square';
 
 type ContainerRepository = {
     ocid: string,
@@ -113,23 +114,23 @@ class Service extends ociService.Service {
         super(folder, oci, DATA_NAME, serviceData, dataChanged);
     }
 
-    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
-        const addContent = async () => {
-            if (this.treeChanged) {
-                const displayed = this.itemsData ? this.itemsData as ContainerRepository[] : [];
-                const selected = await selectContainerRepositories(this.oci, displayed);
-                if (selected) {
-                    const added: nodes.BaseNode[] = [];
-                    for (const pipeline of selected) {
-                        added.push(new ContainerRepositoryNode(pipeline, this.oci, this.treeChanged));
-                    }
-                    this.addServiceNodes(added);
-                    this.treeChanged();
+    async addContent() {
+        if (this.treeChanged) {
+            const displayed = this.itemsData ? this.itemsData as ContainerRepository[] : [];
+            const selected = await selectContainerRepositories(this.oci, displayed);
+            if (selected) {
+                const added: nodes.BaseNode[] = [];
+                for (const pipeline of selected) {
+                    added.push(new ContainerRepositoryNode(pipeline, this.oci, this.treeChanged));
                 }
+                this.addServiceNodes(added);
             }
         }
+    }
+
+    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
         return [
-            new dialogs.QuickPickObject(`$(${ICON}) Add Container Repository`, undefined, 'Add existing container repository', addContent)
+            new dialogs.QuickPickObject(`$(${ICON}) Add Container Repository`, undefined, 'Add existing container repository', () => this.addContent())
         ];
     }
 
@@ -191,27 +192,13 @@ class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.Removable
     }
 
     rename() {
-        const currentName = nodes.getLabel(this);
-        let existingNames: string[] | undefined;
         const service = findByNode(this);
-        if (service) {
-            existingNames = service.getItemNames(this);
-        }
-        dialogs.selectName('Rename Container Repository', currentName, existingNames).then(name => {
-            if (name) {
-                this.object.displayName = name;
-                this.label = this.object.displayName;
-                this.updateAppearance();
-                this.treeChanged(this);
-                service?.serviceNodesChanged(this)
-            }
-        });
+        service?.renameServiceNode(this, 'Rename Container Repository', name => this.object.displayName = name);
     }
 
     remove() {
         const service = findByNode(this);
-        this.removeFromParent(this.treeChanged);
-        service?.serviceNodesRemoved(this)
+        service?.removeServiceNodes(this);
     }
 
     getAddress(): string {
@@ -237,7 +224,7 @@ class ContainerImageNode extends nodes.BaseNode {
     constructor(_ocid: string, displayName: string, imageDescription?: string) {
         super(displayName, imageDescription, ContainerImageNode.CONTEXT, undefined, undefined);
         // this.ocid = ocid;
-        this.iconPath = new vscode.ThemeIcon('primitive-square');
+        this.iconPath = new vscode.ThemeIcon(ITEM_ICON);
         this.updateAppearance();
     }
 
