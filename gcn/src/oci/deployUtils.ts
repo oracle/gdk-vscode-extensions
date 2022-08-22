@@ -71,8 +71,8 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
             while (createdProject === undefined) {
                 try {
                     createdProject = (await ociUtils.createDevOpsProject(provider, projectName, compartment, notificationTopic)).project.id;
-                } catch (err: any) {
-                    const message: string | undefined = err.message;
+                } catch (err) {
+                    const message: string | undefined = (err as any).message;
                     if (message && message.indexOf('project name already exists') !== -1) {
                         vscode.window.showWarningMessage(`Project name '${projectName}' already exists in the tenancy.`);
                         const newName = await selectProjectName(projectName);

@@ -77,11 +77,11 @@ async function selectDeployArtifacts(oci: ociContext.Context, ignore: DeployArti
                     const artifacts = (await ociUtils.listDeployArtifacts(oci.getProvider(), oci.getDevOpsProject()))?.deployArtifactCollection.items;
                     resolve(artifacts);
                     return;
-                } catch (err: any) {
+                } catch (err) {
                     resolve(undefined);
                     let msg = 'Failed to read build artifacts';
-                    if (err.message) {
-                        msg += `: ${err.message}`;
+                    if ((err as any).message) {
+                        msg += `: ${(err as any).message}`;
                     } else {
                         msg += '.';
                     }

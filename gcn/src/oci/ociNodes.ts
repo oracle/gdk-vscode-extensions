@@ -40,9 +40,9 @@ export function openInConsole(item: CloudConsoleItem) {
         }, async (_progress, _token) => {
             try {
                 return await address;
-            } catch (err: any) {
-                if (err.message) {
-                    return new Error(`Failed to resolve item address: ${err.message}`);
+            } catch (err) {
+                if ((err as any).message) {
+                    return new Error(`Failed to resolve item address: ${(err as any).message}`);
                 } else {
                     return new Error('Failed to resolve item address');
                 }
