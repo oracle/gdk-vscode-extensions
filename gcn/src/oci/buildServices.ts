@@ -11,6 +11,7 @@ import * as devops from 'oci-devops';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
 import * as gitUtils from '../gitUtils';
+import * as dockerUtils from '../dockerUtils';
 import * as graalvmUtils from '../graalvmUtils';
 import * as servicesView from '../servicesView';
 import * as ociUtils from './ociUtils';
@@ -200,7 +201,6 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
     ];
 
     private object: BuildPipeline;
-    private static readonly GCN_TERMINAL = 'Graal Cloud Native';
     private oci: ociContext.Context;
     private lastRun?: { ocid: string, state?: string, output?: vscode.OutputChannel, deliveredArtifacts?: { id: string, type: string }[] };
 
@@ -384,12 +384,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                     });
                     break;
                 case 'OCIR':
-                    let terminal = vscode.window.terminals.find(t => t.name === BuildPipelineNode.GCN_TERMINAL);
-                    if (!terminal) {
-                        terminal = vscode.window.createTerminal({ name: BuildPipelineNode.GCN_TERMINAL });
-                    }
-                    terminal.show();
-                    terminal.sendText(`docker pull ${choice.id}`);
+                    dockerUtils.pullImage(choice.id);
                     break;
             }
         } else {

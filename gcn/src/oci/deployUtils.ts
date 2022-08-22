@@ -271,7 +271,14 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
                     increment: 5,
                     message: `Creating docker native executable artifacts for ${repositoryName}...`
                 });
-                const tenancy = (await ociUtils.getTenancy(provider))?.tenancy.name;
+                let tenancy: string | undefined;
+                try {
+                    tenancy = (await ociUtils.getTenancy(provider)).tenancy.name;
+                } catch (err) {}
+                if (!tenancy) {
+                    resolve(`Failed to create docker native executables pipeline for ${repositoryName} - cannot resolve tenancy name.`);
+                    return;
+                }
                 const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${tenancy}/${containerRepository.displayName}:dev`;
                 const docker_nibuildArtifactName = `${repositoryName}_dev_docker_image`;
                 const docker_nibuildArtifactDescription = `Docker native executable artifact for project ${projectName} & repository ${repositoryName}`;

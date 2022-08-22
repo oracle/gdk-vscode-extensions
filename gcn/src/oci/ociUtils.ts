@@ -186,17 +186,12 @@ export async function getUser(authenticationDetailsProvider: common.ConfigFileAu
     }
 }
 
-export async function getTenancy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.responses.GetTenancyResponse | undefined> {
-    try {
-        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const getTenancyRequest: identity.requests.GetTenancyRequest = {
-            tenancyId: authenticationDetailsProvider.getTenantId()
-        };
-        return client.getTenancy(getTenancyRequest);
-    } catch (error) {
-        console.log('>>> getTenancy ' + error);
-        return undefined;
-    }
+export async function getTenancy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.responses.GetTenancyResponse> {
+    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const getTenancyRequest: identity.requests.GetTenancyRequest = {
+        tenancyId: authenticationDetailsProvider.getTenantId()
+    };
+    return client.getTenancy(getTenancyRequest);
 }
 
 export async function listCompartments(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.responses.ListCompartmentsResponse | undefined> {

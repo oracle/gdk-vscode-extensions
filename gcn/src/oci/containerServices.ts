@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import * as artifacts from 'oci-artifacts';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
+import * as dockerUtils from '../dockerUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociService from './ociService';
@@ -32,7 +33,13 @@ type ContainerImage = {
     displayName: string
 }
 
-export function initialize(_context: vscode.ExtensionContext) {
+export function initialize(context: vscode.ExtensionContext) {
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.pullDockerImage', (...params: any[]) => {
+        if (params[0]) {
+            (params[0] as ContainerImageNode).pull();
+        }
+    }));
+
     nodes.registerRenameableNode(ContainerRepositoryNode.CONTEXT);
     nodes.registerRemovableNode(ContainerRepositoryNode.CONTEXT);
     nodes.registerReloadableNode(ContainerRepositoryNode.CONTEXT);
@@ -192,8 +199,7 @@ class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.Removable
                     ocid: ocid,
                     displayName: displayName
                 }
-                const imageDescription = `(${new Date(image.timeCreated).toLocaleString()})`;
-                children.push(new ContainerImageNode(imageObject, this.oci, imageDescription));
+                children.push(new ContainerImageNode(imageObject, this.oci, image));
             }
             return children;
         }
@@ -239,12 +245,19 @@ class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource 
     private object: ContainerImage;
     private oci: ociContext.Context;
 
-    constructor(object: ContainerImage, oci: ociContext.Context, description?: string) {
-        super(object.displayName, description, ContainerImageNode.CONTEXT, undefined, undefined);
+    constructor(object: ContainerImage, oci: ociContext.Context, image?: artifacts.models.ContainerImageSummary) {
+        super(object.displayName, undefined, ContainerImageNode.CONTEXT, undefined, undefined);
         this.object = object;
         this.oci = oci;
         this.iconPath = new vscode.ThemeIcon(ITEM_ICON);
-        this.updateAppearance();
+        this.updateAppearance(image);
+    }
+    
+    updateAppearance(image?: artifacts.models.ContainerImageSummary) {
+        if (image) {
+            this.description = `(${new Date(image.timeCreated).toLocaleString()})`;
+        }
+        super.updateAppearance();
     }
 
     getId() {
@@ -253,6 +266,50 @@ class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource 
 
     async getResource(): Promise<artifacts.models.ContainerImage> {
         return (await ociUtils.getContainerImage(this.oci.getProvider(), this.object.ocid)).containerImage;
+    }
+
+    // NOTE: Doesn't work reliably in the Cloud Console, mostly opens just the Container Registry overview
+    // async getAddress(): Promise<string> {
+    //     const image = await this.getResource();
+    //     return `https://cloud.oracle.com/registry/containers/repos/${image.repositoryId}/images/${this.object.ocid}`;
+    // }
+
+    pull() {
+        vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Reading docker image...',
+            cancellable: false
+        }, async () => {
+            try {
+                const regionKey = this.oci.getProvider().getRegion().regionCode;
+                const tenancyNamespace = (await ociUtils.getTenancy(this.oci.getProvider())).tenancy.name;
+                if (tenancyNamespace) {
+                    const resource = await this.getResource();
+                    const repositoryName = resource.repositoryName;
+                    const version = resource.version;
+                    if (version) {
+                        const target = `${regionKey}.ocir.io/${tenancyNamespace}/${repositoryName}:${version}`; // https://docs.oracle.com/en-us/iaas/Content/Registry/Tasks/registrypullingimagesusingthedockercli.htm
+                        return target;
+                    } else {
+                        return new Error('Failed to resolve docker pull command - unknown image version.');
+                    }
+                } else {
+                    return new Error('Failed to resolve docker pull command - unknown tenancy name.');
+                }
+            } catch (err) {
+                if ((err as any).message) {
+                    return new Error(`Failed to resolve docker pull command: ${(err as any).message}`);
+                } else {
+                    return new Error('Failed to resolve docker pull command.');
+                }
+            }
+        }).then(result => {
+            if (typeof result === 'string') {
+                dockerUtils.pullImage(result as string);
+            } else if (result instanceof Error) {
+                vscode.window.showErrorMessage((result as Error).message);
+            }
+        });
     }
 
 }

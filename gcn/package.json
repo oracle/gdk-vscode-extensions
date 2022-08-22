@@ -90,6 +90,12 @@
 				"category": "GCN"
 			},
 			{
+				"command": "gcn.oci.pullDockerImage",
+				"title": "Pull Image",
+				"icon": "$(cloud-download)",
+				"category": "GCN"
+			},
+			{
 				"command": "gcn.oci.projectAudit.execute",
 				"title": "Run Project Audit",
 				"category": "GCN"
@@ -151,6 +157,18 @@
 				{
 					"command": "gcn.reloadNode",
 					"when": "false"
+				},
+				{
+					"command": "gcn.oci.pullDockerImage",
+					"when": "false"
+				},
+				{
+					"command": "gcn.oci.runBuildPipeline",
+					"when": "false"
+				},
+				{
+					"command": "gcn.oci.downloadArtifact",
+					"when": "false"
 				}
 			],
 			"editor/context": [],
@@ -200,6 +218,11 @@
 				{
 					"command": "gcn.oci.downloadArtifact",
 					"when": "viewItem == gcn.oci.buildPipelineNode-artifacts-available",
+					"group": "inline@2"
+				},
+				{
+					"command": "gcn.oci.pullDockerImage",
+					"when": "viewItem == gcn.oci.containerImageNode",
 					"group": "inline@2"
 				},
 				{

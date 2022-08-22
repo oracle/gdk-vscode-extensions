@@ -40,9 +40,11 @@ export async function initializeSshKeys() {
                     try {
                         const provider = new common.ConfigFileAuthenticationDetailsProvider();
                         userName = (await ociUtils.getUser(provider))?.user.name;
-                        tenancyName = (await ociUtils.getTenancy(provider))?.tenancy.name;
+                        tenancyName = (await ociUtils.getTenancy(provider)).tenancy.name;
                         identityFile = common.ConfigFileReader.parseDefault(null).get('key_file');
-                    } catch (err) {}
+                    } catch (err) {
+                        // TODO: handle errors
+                    }
                     const uri = fileExists ? vscode.Uri.file(defaultConfigLocation) : vscode.Uri.parse('untitled:' + defaultConfigLocation);
                     const editor = await vscode.window.showTextDocument(uri);
                     if (userName && tenancyName && identityFile) {
