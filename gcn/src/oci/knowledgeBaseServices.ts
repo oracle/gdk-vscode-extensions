@@ -48,6 +48,8 @@ export function initialize(context: vscode.ExtensionContext) {
     nodes.registerRemovableNode(KnowledgeBaseNode.CONTEXT);
     nodes.registerReloadableNode(KnowledgeBaseNode.CONTEXT);
     ociNodes.registerOpenInConsoleNode(KnowledgeBaseNode.CONTEXT);
+    nodes.registerShowReportNode(VulnerabilityAuditNode.CONTEXT);
+    ociNodes.registerOpenInConsoleNode(VulnerabilityAuditNode.CONTEXT);
 }
 
 export async function importServices(_oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
@@ -286,8 +288,7 @@ class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, 
                     ocid: audit.id,
                     displayName: audit.displayName ? audit.displayName : `Audit ${idx++}`
                 }
-                const vulnerableArtifactsCount = audit.vulnerableArtifactsCount;
-                children.push(new VulnerabilityAuditNode(auditObject, this.oci, vulnerableArtifactsCount));
+                children.push(new VulnerabilityAuditNode(auditObject, this.oci, audit));
             }
             return children;
         }
@@ -326,19 +327,60 @@ class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, 
 
 }
 
-class VulnerabilityAuditNode extends nodes.BaseNode implements ociNodes.OciResource {
+class VulnerabilityAuditNode extends nodes.BaseNode implements nodes.ShowReportNode, ociNodes.CloudConsoleItem, ociNodes.OciResource {
 
     static readonly CONTEXT = 'gcn.oci.vulnerabilityAuditNode';
+
+    private static readonly ICON = 'circle-filled';
+    private static readonly ICON_UNKNOWN = 'circle-outline';
+
+    private static readonly V2_SCORE_RED = 6;
+    private static readonly V3_SCORE_RED = 6;
 
     private object: VulnerabilityAudit;
     private oci: ociContext.Context;
 
-    constructor(object: VulnerabilityAudit, oci: ociContext.Context, vulnerableArtifactsCount: number) {
-        super(object.displayName, vulnerableArtifactsCount === 0 ? undefined : `(${vulnerableArtifactsCount} ${vulnerableArtifactsCount === 1 ? 'problem' : 'problems'})`, VulnerabilityAuditNode.CONTEXT, undefined, undefined);
+    constructor(object: VulnerabilityAudit, oci: ociContext.Context, audit?: adm.models.VulnerabilityAuditSummary) {
+        super(object.displayName, undefined, VulnerabilityAuditNode.CONTEXT, undefined, undefined);
         this.object = object;
         this.oci = oci;
-        this.iconPath = new vscode.ThemeIcon('primitive-dot', new vscode.ThemeColor(vulnerableArtifactsCount === 0 ? 'charts.green' : 'charts.red'));
-        this.updateAppearance();
+        this.updateAppearance(audit);
+    }
+
+    updateAppearance(audit?: adm.models.VulnerabilityAuditSummary) {
+        if (audit) {
+            this.description = `(${new Date(audit.timeCreated).toLocaleString()})`;
+            switch (audit.lifecycleState) {
+                case adm.models.VulnerabilityAudit.LifecycleState.Active: {
+                    const vulnerableArtifactsCount = audit.vulnerableArtifactsCount;
+                    if (vulnerableArtifactsCount === 0) {
+                        this.iconPath = new vscode.ThemeIcon(VulnerabilityAuditNode.ICON, new vscode.ThemeColor('charts.green'));
+                        this.tooltip = 'No vulnerabilities found'
+                    } else {
+                        const maxV2Score = audit.maxObservedCvssV2Score;
+                        const maxV3Score = audit.maxObservedCvssV3Score;
+                        if (audit.isSuccess) {
+                            this.iconPath = new vscode.ThemeIcon(VulnerabilityAuditNode.ICON, new vscode.ThemeColor('charts.green'));
+                        } else if (maxV2Score >= VulnerabilityAuditNode.V2_SCORE_RED || maxV3Score >= VulnerabilityAuditNode.V3_SCORE_RED) {
+                            this.iconPath = new vscode.ThemeIcon(VulnerabilityAuditNode.ICON, new vscode.ThemeColor('charts.red'));
+                        } else {
+                            this.iconPath = new vscode.ThemeIcon(VulnerabilityAuditNode.ICON, new vscode.ThemeColor('charts.orange'));
+                        }
+                        this.tooltip = `${vulnerableArtifactsCount} ${vulnerableArtifactsCount === 1 ? 'vulnerability' : 'vulnerabilities'} found, maximum observed CVSS v2 score: ${maxV2Score}, maximum observed CVSS v3 score: ${maxV3Score}`;
+                    }
+                    break;
+                }
+                default: {
+                    this.iconPath = new vscode.ThemeIcon(VulnerabilityAuditNode.ICON_UNKNOWN);
+                    super.updateAppearance();
+                    break;
+                }
+                
+            }
+        } else {
+            this.iconPath = new vscode.ThemeIcon(VulnerabilityAuditNode.ICON_UNKNOWN);
+            super.updateAppearance();
+        }
     }
 
     getId() {
@@ -347,6 +389,15 @@ class VulnerabilityAuditNode extends nodes.BaseNode implements ociNodes.OciResou
 
     async getResource(): Promise<adm.models.VulnerabilityAudit> {
         return (await ociUtils.getVulnerabilityAudit(this.oci.getProvider(), this.object.ocid)).vulnerabilityAudit;
+    }
+
+    async getAddress(): Promise<string> {
+        const knowledgeBase = await this.getResource();
+        return `https://cloud.oracle.com/adm/knowledgeBases/${knowledgeBase.knowledgeBaseId}/vulnerabilityAudits/${this.object.ocid}`;
+    }
+
+    showReport() {
+        ociNodes.openInConsole(this);
     }
 
 }

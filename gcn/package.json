@@ -66,6 +66,12 @@
 				"category": "GCN"
 			},
 			{
+				"command": "gcn.showReport",
+				"title": "Show Report",
+				"icon": "$(output)",
+				"category": "GCN"
+			},
+			{
 				"command": "gcn.reloadNode",
 				"title": "Reload",
 				"icon": "$(refresh)",
@@ -139,6 +145,10 @@
 					"when": "false"
 				},
 				{
+					"command": "gcn.showReport",
+					"when": "false"
+				},
+				{
 					"command": "gcn.reloadNode",
 					"when": "false"
 				}
@@ -159,7 +169,7 @@
 				},
 				{
 					"command": "gcn.oci.openInConsole",
-					"when": "viewItem in gcn.openInConsoleNodes",
+					"when": "viewItem in gcn.oci.openInConsoleNodes",
 					"group": "a_ociContextMenu@1"
 				},
 				{
@@ -171,6 +181,11 @@
 					"command": "gcn.removeNode",
 					"when": "viewItem in gcn.removableNodes",
 					"group": "contextMenu@2"
+				},
+				{
+					"command": "gcn.showReport",
+					"when": "viewItem in gcn.showReportNodes",
+					"group": "inline@2"
 				},
 				{
 					"command": "gcn.reloadNode",

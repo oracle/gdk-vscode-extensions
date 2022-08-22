@@ -37,6 +37,11 @@ export function initialize(extensionContext: vscode.ExtensionContext) {
             (params[0] as nodes.ReloadableNode).reload();
         }
 	}));
+    extensionContext.subscriptions.push(vscode.commands.registerCommand('gcn.showReport', (...params: any[]) => {
+        if (params[0]) {
+            (params[0] as nodes.ShowReportNode).showReport();
+        }
+	}));
 }
 
 export function findCloudServicesByNode(node: nodes.BaseNode | undefined): model.CloudServices | undefined {

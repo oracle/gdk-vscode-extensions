@@ -70,6 +70,21 @@ export async function registerReloadableNode(context: string | string[]) {
     await vscode.commands.executeCommand('setContext', 'gcn.reloadableNodes', RELOADABLE_NODES);
 }
 
+export interface ShowReportNode {
+    showReport(): void;
+}
+
+const SHOW_REPORT_NODES: string[] = [];
+
+export async function registerShowReportNode(context: string | string[]) {
+    if (typeof context === 'string' || context instanceof String) {
+        SHOW_REPORT_NODES.push(context as string);
+    } else {
+        SHOW_REPORT_NODES.push(...context);
+    }
+    await vscode.commands.executeCommand('setContext', 'gcn.showReportNodes', SHOW_REPORT_NODES);
+}
+
 export function getLabel(node: BaseNode): string | undefined {
     return typeof node.label === 'string' ? node.label as string : (node.label as vscode.TreeItemLabel).label;
 }
