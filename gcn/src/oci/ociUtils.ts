@@ -398,6 +398,14 @@ export async function listDeploymentPipelines(authenticationDetailsProvider: com
     }
 }
 
+export async function getDeployPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string): Promise<devops.responses.GetDeployPipelineResponse> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const getDeploymentPipelineRequest: devops.requests.GetDeployPipelineRequest = {
+        deployPipelineId: pipelineID
+    };
+    return client.getDeployPipeline(getDeploymentPipelineRequest);
+}
+
 export async function listArtifactRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<artifacts.responses.ListRepositoriesResponse | undefined> {
     try {
         const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
@@ -410,6 +418,14 @@ export async function listArtifactRepositories(authenticationDetailsProvider: co
         console.log('>>> listArtifactRepositories ' + error);
         return undefined;
     }
+}
+
+export async function getArtifactRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string): Promise<artifacts.responses.GetRepositoryResponse> {
+    const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const getRepositoryRequest: artifacts.requests.GetRepositoryRequest = {
+            repositoryId: repositoryID
+        };
+        return client.getRepository(getRepositoryRequest);
 }
 
 export async function deleteArtifactsRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string): Promise<artifacts.responses.DeleteRepositoryResponse> {
@@ -442,17 +458,12 @@ export async function listGenericArtifacts(authenticationDetailsProvider: common
     }
 }
 
-export async function getGenericArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactID: string): Promise<artifacts.responses.GetGenericArtifactResponse | undefined> {
-    try {
-        const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const getGenericArtifactRequest: artifacts.requests.GetGenericArtifactRequest = {
-            artifactId: artifactID
-        };
-        return client.getGenericArtifact(getGenericArtifactRequest);
-    } catch (error) {
-        console.log('>>> getGenericArtifact ' + error);
-        return undefined;
-    }
+export async function getGenericArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactID: string): Promise<artifacts.responses.GetGenericArtifactResponse> {
+    const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const getGenericArtifactRequest: artifacts.requests.GetGenericArtifactRequest = {
+        artifactId: artifactID
+    };
+    return client.getGenericArtifact(getGenericArtifactRequest);
 }
 
 export async function getGenericArtifactContent(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactID: string): Promise<genericartifactscontent.responses.GetGenericArtifactContentByPathResponse | undefined> {
@@ -525,6 +536,14 @@ export async function listContainerRepositories(authenticationDetailsProvider: c
     }
 }
 
+export async function getContainerRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string): Promise<artifacts.responses.GetContainerRepositoryResponse> {
+    const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const getContainerRepositoryRequest: artifacts.requests.GetContainerRepositoryRequest = {
+        repositoryId: repositoryID
+    };
+    return client.getContainerRepository(getContainerRepositoryRequest);
+}
+
 export async function deleteContainerRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string): Promise<artifacts.responses.DeleteContainerRepositoryResponse> {
     const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     return client.deleteContainerRepository({ repositoryId : repositoryID});
@@ -546,6 +565,14 @@ export async function listContainerImages(authenticationDetailsProvider: common.
     }
 }
 
+export async function getContainerImage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, imageID: string): Promise<artifacts.responses.GetContainerImageResponse> {
+    const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const getContainerImageRequest: artifacts.requests.GetContainerImageRequest = {
+        imageId: imageID
+    };
+    return client.getContainerImage(getContainerImageRequest);
+}
+
 export async function listKnowledgeBases(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<adm.responses.ListKnowledgeBasesResponse | undefined> {
     try {
         const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
@@ -558,6 +585,14 @@ export async function listKnowledgeBases(authenticationDetailsProvider: common.C
         console.log('>>> listKnowledgeBases ' + error);
         return undefined;
     }
+}
+
+export async function getKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, knowledgeBaseID: string): Promise<adm.responses.GetKnowledgeBaseResponse> {
+    const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const getKnowledgeBaseRequest: adm.requests.GetKnowledgeBaseRequest = {
+        knowledgeBaseId: knowledgeBaseID
+    };
+    return client.getKnowledgeBase(getKnowledgeBaseRequest);
 }
 
 export async function deleteKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, knowledgeId : string, wait : boolean = false): Promise<adm.responses.DeleteKnowledgeBaseResponse> {
@@ -583,6 +618,14 @@ export async function listVulnerabilityAudits(authenticationDetailsProvider: com
         console.log('>>> listVulnerabilityAudits ' + error);
         return undefined;
     }
+}
+
+export async function getVulnerabilityAudit(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, vulnerabilityAuditID: string): Promise<adm.responses.GetVulnerabilityAuditResponse> {
+    const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const getVulnerabilityAuditRequest: adm.requests.GetVulnerabilityAuditRequest = {
+        vulnerabilityAuditId: vulnerabilityAuditID
+    };
+    return client.getVulnerabilityAudit(getVulnerabilityAuditRequest);
 }
 
 export async function listNotificationTopics(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<ons.responses.ListTopicsResponse | undefined> {

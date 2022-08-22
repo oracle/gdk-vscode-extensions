@@ -241,7 +241,7 @@ class DeployArtifactsNode extends nodes.BaseNode implements nodes.AddContentNode
 
 }
 
-abstract class DeployArtifactNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, ociNodes.CloudConsoleItem, dataSupport.DataProducer {
+abstract class DeployArtifactNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
 
     protected object: DeployArtifact;
     private oci: ociContext.Context;
@@ -252,6 +252,14 @@ abstract class DeployArtifactNode extends nodes.ChangeableNode implements nodes.
         this.oci = oci;
         this.iconPath = new vscode.ThemeIcon(icon);
         this.updateAppearance();
+    }
+
+    getId() {
+        return this.object.ocid;
+    }
+
+    async getResource(): Promise<devops.models.DeployArtifact> {
+        return (await ociUtils.getDeployArtifact(this.oci.getProvider(), this.object.ocid)).deployArtifact;
     }
 
     rename() {
@@ -265,7 +273,7 @@ abstract class DeployArtifactNode extends nodes.ChangeableNode implements nodes.
     }
 
     async getAddress(): Promise<string> {
-        const project = (await ociUtils.getDeployArtifact(this.oci.getProvider(), this.object.ocid)).deployArtifact.id;
+        const project = (await this.getResource()).projectId;
         return `https://cloud.oracle.com/devops-deployment/projects/${project}/artifacts/${this.object.ocid}`;
     }
 

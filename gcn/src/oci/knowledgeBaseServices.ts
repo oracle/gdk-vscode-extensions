@@ -26,6 +26,11 @@ type KnowledgeBase = {
     displayName: string
 }
 
+type VulnerabilityAudit = {
+    ocid: string,
+    displayName: string
+}
+
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.projectAudit.execute', (...params: any[]) => {
         const path = params[0]?.uri;
@@ -252,7 +257,7 @@ class Service extends ociService.Service {
 
 }
 
-class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ReloadableNode, ociNodes.CloudConsoleItem, dataSupport.DataProducer {
+class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ReloadableNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'knowledgeBaseNode';
     static readonly CONTEXT = `gcn.oci.${KnowledgeBaseNode.DATA_NAME}`;
@@ -275,15 +280,26 @@ class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, 
         const audits = (await ociUtils.listVulnerabilityAudits(provider, compartment, knowledgeBase))?.vulnerabilityAuditCollection.items;
         if (audits !== undefined && audits.length > 0) {
             const children: nodes.BaseNode[] = []
+            let idx = 0;
             for (const audit of audits) {
-                const ocid = audit.id;
-                const displayName = audit.displayName;
+                const auditObject = {
+                    ocid: audit.id,
+                    displayName: audit.displayName ? audit.displayName : `Audit ${idx++}`
+                }
                 const vulnerableArtifactsCount = audit.vulnerableArtifactsCount;
-                children.push(new AuditReportNode(ocid, displayName ? displayName : 'Audit', vulnerableArtifactsCount));
+                children.push(new VulnerabilityAuditNode(auditObject, this.oci, vulnerableArtifactsCount));
             }
             return children;
         }
         return [ new nodes.NoItemsNode() ];
+    }
+
+    getId() {
+        return this.object.ocid;
+    }
+
+    async getResource(): Promise<adm.models.KnowledgeBase> {
+        return (await ociUtils.getKnowledgeBase(this.oci.getProvider(), this.object.ocid)).knowledgeBase;
     }
 
     rename() {
@@ -310,17 +326,27 @@ class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, 
 
 }
 
-class AuditReportNode extends nodes.BaseNode {
+class VulnerabilityAuditNode extends nodes.BaseNode implements ociNodes.OciResource {
 
-    static readonly CONTEXT = 'gcn.oci.auditReportNode';
+    static readonly CONTEXT = 'gcn.oci.vulnerabilityAuditNode';
 
-    // private ocid: string;
+    private object: VulnerabilityAudit;
+    private oci: ociContext.Context;
 
-    constructor(_ocid: string, displayName: string, vulnerableArtifactsCount: number) {
-        super(displayName, vulnerableArtifactsCount === 0 ? undefined : `(${vulnerableArtifactsCount} ${vulnerableArtifactsCount === 1 ? 'problem' : 'problems'})`, AuditReportNode.CONTEXT, undefined, undefined);
-        // this.ocid = ocid;
+    constructor(object: VulnerabilityAudit, oci: ociContext.Context, vulnerableArtifactsCount: number) {
+        super(object.displayName, vulnerableArtifactsCount === 0 ? undefined : `(${vulnerableArtifactsCount} ${vulnerableArtifactsCount === 1 ? 'problem' : 'problems'})`, VulnerabilityAuditNode.CONTEXT, undefined, undefined);
+        this.object = object;
+        this.oci = oci;
         this.iconPath = new vscode.ThemeIcon('primitive-dot', new vscode.ThemeColor(vulnerableArtifactsCount === 0 ? 'charts.green' : 'charts.red'));
         this.updateAppearance();
+    }
+
+    getId() {
+        return this.object.ocid;
+    }
+
+    async getResource(): Promise<adm.models.VulnerabilityAudit> {
+        return (await ociUtils.getVulnerabilityAudit(this.oci.getProvider(), this.object.ocid)).vulnerabilityAudit;
     }
 
 }

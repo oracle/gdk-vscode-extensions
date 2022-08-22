@@ -27,6 +27,11 @@ type ContainerRepository = {
     displayName: string
 }
 
+type ContainerImage = {
+    ocid: string,
+    displayName: string
+}
+
 export function initialize(_context: vscode.ExtensionContext) {
     nodes.registerRenameableNode(ContainerRepositoryNode.CONTEXT);
     nodes.registerRemovableNode(ContainerRepositoryNode.CONTEXT);
@@ -152,7 +157,7 @@ class Service extends ociService.Service {
 
 }
 
-class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ReloadableNode, ociNodes.CloudConsoleItem, dataSupport.DataProducer {
+class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ReloadableNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'containerRepositoryNode';
     static readonly CONTEXT = `gcn.oci.${ContainerRepositoryNode.DATA_NAME}`;
@@ -183,12 +188,24 @@ class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.Removable
                     // displayName = displayName.substring(0, unknownVersionIdx);
                     continue;
                 }
+                const imageObject = {
+                    ocid: ocid,
+                    displayName: displayName
+                }
                 const imageDescription = `(${new Date(image.timeCreated).toLocaleString()})`;
-                children.push(new ContainerImageNode(ocid, displayName, imageDescription));
+                children.push(new ContainerImageNode(imageObject, this.oci, imageDescription));
             }
             return children;
         }
         return [ new nodes.NoItemsNode() ];
+    }
+
+    getId() {
+        return this.object.ocid;
+    }
+
+    async getResource(): Promise<artifacts.models.ContainerRepository> {
+        return (await ociUtils.getContainerRepository(this.oci.getProvider(), this.object.ocid)).containerRepository;
     }
 
     rename() {
@@ -215,17 +232,27 @@ class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.Removable
 
 }
 
-class ContainerImageNode extends nodes.BaseNode {
+class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource {
 
     static readonly CONTEXT = 'gcn.oci.containerImageNode';
 
-    // private ocid: string;
+    private object: ContainerImage;
+    private oci: ociContext.Context;
 
-    constructor(_ocid: string, displayName: string, imageDescription?: string) {
-        super(displayName, imageDescription, ContainerImageNode.CONTEXT, undefined, undefined);
-        // this.ocid = ocid;
+    constructor(object: ContainerImage, oci: ociContext.Context, description?: string) {
+        super(object.displayName, description, ContainerImageNode.CONTEXT, undefined, undefined);
+        this.object = object;
+        this.oci = oci;
         this.iconPath = new vscode.ThemeIcon(ITEM_ICON);
         this.updateAppearance();
+    }
+
+    getId() {
+        return this.object.ocid;
+    }
+
+    async getResource(): Promise<artifacts.models.ContainerImage> {
+        return (await ociUtils.getContainerImage(this.oci.getProvider(), this.object.ocid)).containerImage;
     }
 
 }

@@ -14,6 +14,7 @@ import * as ociContext from './ociContext';
 import * as ociService from './ociService';
 import * as ociServices  from './ociServices';
 import * as dataSupport from './dataSupport';
+import * as ociNodes from './ociNodes';
 
 
 export const DATA_NAME = 'deploymentPipelines';
@@ -28,6 +29,7 @@ type DeploymentPipeline = {
 export function initialize(_context: vscode.ExtensionContext) {
     nodes.registerRenameableNode(DeploymentPipelineNode.CONTEXT);
     nodes.registerRemovableNode(DeploymentPipelineNode.CONTEXT);
+    ociNodes.registerOpenInConsoleNode(DeploymentPipelineNode.CONTEXT);
 }
 
 export async function importServices(_oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
@@ -149,20 +151,28 @@ class Service extends ociService.Service {
 
 }
 
-class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, dataSupport.DataProducer {
+class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'deploymentPipelineNode';
     static readonly CONTEXT = `gcn.oci.${DeploymentPipelineNode.DATA_NAME}`;
     
     private object: DeploymentPipeline;
-    // private oci: ociContext.Context;
+    private oci: ociContext.Context;
 
-    constructor(object: DeploymentPipeline, _oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
+    constructor(object: DeploymentPipeline, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
         super(object.displayName, undefined, DeploymentPipelineNode.CONTEXT, undefined, undefined, treeChanged);
         this.object = object;
-        // this.oci = oci;
+        this.oci = oci;
         this.iconPath = new vscode.ThemeIcon(ICON);
         this.updateAppearance();
+    }
+
+    getId() {
+        return this.object.ocid;
+    }
+
+    async getResource(): Promise<devops.models.DeployPipeline> {
+        return (await ociUtils.getDeployPipeline(this.oci.getProvider(), this.object.ocid)).deployPipeline;
     }
 
     rename() {
@@ -181,6 +191,11 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
 
     getData(): any {
         return this.object;
+    }
+
+    async getAddress(): Promise<string> {
+        const pipeline = await this.getResource();
+        return `https://cloud.oracle.com/devops-deployment/projects/${pipeline.projectId}/pipelines/${pipeline.id}`;
     }
 
 }

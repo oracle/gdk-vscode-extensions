@@ -8,6 +8,11 @@
 import * as vscode from 'vscode';
 
 
+export interface OciResource {
+    getId(): string;
+    getResource(): Promise<any>; // OCI resource represented by the node, like devops.models.BuildPipeline instance, may throw Error
+}
+
 export interface CloudConsoleItem {
     getAddress(): string | Promise<string>;
 }

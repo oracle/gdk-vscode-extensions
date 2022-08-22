@@ -190,7 +190,7 @@ class Service extends ociService.Service {
 
 }
 
-class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, ociNodes.CloudConsoleItem, dataSupport.DataProducer {
+class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'buildPipelineNode';
     static readonly CONTEXTS = [
@@ -222,6 +222,14 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         });
     }
 
+    getId() {
+        return this.object.ocid;
+    }
+
+    async getResource(): Promise<devops.models.BuildPipeline> {
+        return (await ociUtils.getBuildPipeline(this.oci.getProvider(), this.object.ocid)).buildPipeline;
+    }
+
     rename() {
         const service = findByNode(this);
         service?.renameServiceNode(this, 'Rename Build Pipeline', name => this.object.displayName = name);
@@ -241,7 +249,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
     }
 
     async getAddress(): Promise<string> {
-        const pipeline = (await ociUtils.getBuildPipeline(this.oci.getProvider(), this.object.ocid)).buildPipeline;
+        const pipeline = await this.getResource();
         return `https://cloud.oracle.com/devops-build/projects/${pipeline.projectId}/build-pipelines/${pipeline.id}`;
     }
 
@@ -312,9 +320,13 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                     for (const artifact of this.lastRun.deliveredArtifacts) {
                         switch (artifact.type) {
                             case 'GENERIC_ARTIFACT':
-                                const genericArtifact = (await ociUtils.getGenericArtifact(this.oci.getProvider(), artifact.id))?.genericArtifact;
-                                if (genericArtifact?.displayName && genericArtifact.artifactPath) {
-                                    choices.push({ label: genericArtifact.displayName, type: artifact.type, id: genericArtifact.id, path: genericArtifact.artifactPath });
+                                try {
+                                    const genericArtifact = (await ociUtils.getGenericArtifact(this.oci.getProvider(), artifact.id)).genericArtifact;
+                                    if (genericArtifact.displayName && genericArtifact.artifactPath) {
+                                        choices.push({ label: genericArtifact.displayName, type: artifact.type, id: genericArtifact.id, path: genericArtifact.artifactPath });
+                                    }
+                                } catch (err) {
+                                    // TODO: handle
                                 }
                                 break;
                             case 'OCIR':

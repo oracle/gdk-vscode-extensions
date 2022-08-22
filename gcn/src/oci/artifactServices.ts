@@ -26,6 +26,11 @@ type ArtifactRepository = {
     displayName: string
 }
 
+type GenericArtifact = {
+    ocid: string,
+    displayName: string
+}
+
 export function initialize(_context: vscode.ExtensionContext): void {
     nodes.registerRenameableNode(ArtifactRepositoryNode.CONTEXT);
     nodes.registerRemovableNode(ArtifactRepositoryNode.CONTEXT);
@@ -151,7 +156,7 @@ export class Service extends ociService.Service {
 
 }
 
-class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ReloadableNode, ociNodes.CloudConsoleItem, dataSupport.DataProducer {
+class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ReloadableNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'artifactRepositoryNode';
     static readonly CONTEXT = `gcn.oci.${ArtifactRepositoryNode.DATA_NAME}`;
@@ -171,23 +176,35 @@ class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableN
         const provider = this.oci.getProvider();
         const compartment = this.oci.getCompartment();
         const repository = this.object.ocid;
-        const images = (await ociUtils.listGenericArtifacts(provider, compartment, repository))?.genericArtifactCollection.items;
-        if (images) {
+        const artifacts = (await ociUtils.listGenericArtifacts(provider, compartment, repository))?.genericArtifactCollection.items;
+        if (artifacts) {
             const children: nodes.BaseNode[] = []
-            for (const image of images) {
-                const ocid = image.id;
-                let displayName = image.displayName;
+            for (const artifact of artifacts) {
+                const ocid = artifact.id;
+                let displayName = artifact.displayName;
                 const unknownVersionIdx = displayName.indexOf(':unknown@');
                 if (unknownVersionIdx > -1) {
                     // displayName = displayName.substring(0, unknownVersionIdx);
                     continue;
                 }
-                const imageDescription = `(${new Date(image.timeCreated).toLocaleString()})`;
-                children.push(new ArtifactImageNode(ocid, displayName, imageDescription));
+                const artifactObject = {
+                    ocid: ocid,
+                    displayName: displayName
+                }
+                const artifactDescription = `(${new Date(artifact.timeCreated).toLocaleString()})`;
+                children.push(new GenericArtifactNode(artifactObject, this.oci, artifactDescription));
             }
             return children;
         }
         return [ new nodes.NoItemsNode() ];
+    }
+
+    getId() {
+        return this.object.ocid;
+    }
+
+    async getResource(): Promise<artifacts.models.Repository> {
+        return (await ociUtils.getArtifactRepository(this.oci.getProvider(), this.object.ocid)).repository;
     }
 
     rename() {
@@ -214,17 +231,27 @@ class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableN
 
 }
 
-class ArtifactImageNode extends nodes.BaseNode {
+class GenericArtifactNode extends nodes.BaseNode implements ociNodes.OciResource {
 
-    static readonly CONTEXT = 'gcn.oci.artifactImageNode';
+    static readonly CONTEXT = 'gcn.oci.genericArtifactNode';
 
-    // private ocid: string;
+    private object: ArtifactRepository;
+    private oci: ociContext.Context;
 
-    constructor(_ocid: string, displayName: string, imageDescription?: string) {
-        super(displayName, imageDescription, ArtifactImageNode.CONTEXT, undefined, undefined);
-        // this.ocid = ocid;
+    constructor(object: GenericArtifact, oci: ociContext.Context, description?: string) {
+        super(object.displayName, description, GenericArtifactNode.CONTEXT, undefined, undefined);
+        this.object = object;
+        this.oci = oci;
         this.iconPath = new vscode.ThemeIcon(ICON);
         this.updateAppearance();
+    }
+
+    getId() {
+        return this.object.ocid;
+    }
+
+    async getResource(): Promise<artifacts.models.GenericArtifact> {
+        return (await ociUtils.getGenericArtifact(this.oci.getProvider(), this.object.ocid)).genericArtifact;
     }
 
 }
