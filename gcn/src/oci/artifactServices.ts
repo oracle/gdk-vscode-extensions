@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import * as artifacts from 'oci-artifacts';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
@@ -31,7 +32,13 @@ type GenericArtifact = {
     displayName: string
 }
 
-export function initialize(_context: vscode.ExtensionContext): void {
+export function initialize(context: vscode.ExtensionContext): void {
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.downloadGenericArtifact', (...params: any[]) => {
+        if (params[0]) {
+            (params[0] as GenericArtifactNode).download();
+        }
+    }));
+
     nodes.registerRenameableNode(ArtifactRepositoryNode.CONTEXT);
     nodes.registerRemovableNode(ArtifactRepositoryNode.CONTEXT);
     nodes.registerReloadableNode(ArtifactRepositoryNode.CONTEXT);
@@ -191,8 +198,7 @@ class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableN
                     ocid: ocid,
                     displayName: displayName
                 }
-                const artifactDescription = `(${new Date(artifact.timeCreated).toLocaleString()})`;
-                children.push(new GenericArtifactNode(artifactObject, this.oci, artifactDescription));
+                children.push(new GenericArtifactNode(artifactObject, this.oci, artifact));
             }
             return children;
         }
@@ -238,12 +244,21 @@ class GenericArtifactNode extends nodes.BaseNode implements ociNodes.OciResource
     private object: ArtifactRepository;
     private oci: ociContext.Context;
 
-    constructor(object: GenericArtifact, oci: ociContext.Context, description?: string) {
-        super(object.displayName, description, GenericArtifactNode.CONTEXT, undefined, undefined);
+    constructor(object: GenericArtifact, oci: ociContext.Context, artifact?: artifacts.models.GenericArtifactSummary) {
+        super(object.displayName, undefined, GenericArtifactNode.CONTEXT, undefined, undefined);
         this.object = object;
         this.oci = oci;
         this.iconPath = new vscode.ThemeIcon(ICON);
-        this.updateAppearance();
+        this.updateAppearance(artifact);
+    }
+
+    updateAppearance(artifact?: artifacts.models.GenericArtifactSummary) {
+        if (artifact) {
+            this.description = `(${new Date(artifact.timeCreated).toLocaleString()})`;
+            this.tooltip = `Size: ${artifact.sizeInBytes.toLocaleString()} B`;
+        } else {
+            super.updateAppearance();
+        }
     }
 
     getId() {
@@ -254,93 +269,55 @@ class GenericArtifactNode extends nodes.BaseNode implements ociNodes.OciResource
         return (await ociUtils.getGenericArtifact(this.oci.getProvider(), this.object.ocid)).genericArtifact;
     }
 
+    download() {
+        // TODO: display progress while ociUtils.getGenericArtifactContent
+        try {
+            ociUtils.getGenericArtifactContent(this.oci.getProvider(), this.object.ocid).then(content => {
+                let artifactName = this.object.displayName;
+                // TODO: separate artifact name and version
+                const versionSeparatorIdx = artifactName.indexOf(':');
+                if (versionSeparatorIdx > 0) {
+                    artifactName = artifactName.substring(0, versionSeparatorIdx);
+                }
+                vscode.window.showSaveDialog({
+                    defaultUri: vscode.Uri.file(artifactName),
+                    title: 'Save Artifact As'
+                }).then(fileUri => {
+                    if (fileUri) {
+                        vscode.window.withProgress({
+                            location: vscode.ProgressLocation.Notification,
+                            title: `Downloading artifact ${this.object.displayName}...`,
+                            cancellable: false
+                        }, (_progress, _token) => {
+                            return new Promise(async (resolve) => {
+                                const data = content.value;
+                                const file = fs.createWriteStream(fileUri.fsPath);
+                                data.pipe(file);
+                                data.on('error', (err: Error) => {
+                                    vscode.window.showErrorMessage(err.message);
+                                    file.destroy();
+                                    resolve(false);
+                                });
+                                data.on('end', () => {
+                                    const open = 'Open File Location';
+                                    vscode.window.showInformationMessage(`Artifact ${this.object.displayName} downloaded.`, open).then(choice => {
+                                        if (choice === open) {
+                                            vscode.commands.executeCommand('revealFileInOS', fileUri);
+                                        }
+                                    });
+                                    resolve(true);
+                                });
+                            });
+                        })
+                    }
+                });
+            });
+        } catch (err) {
+            if ((err as any).message) {
+                vscode.window.showErrorMessage(`Failed to download artifact: ${(err as any).message}`);
+            } else {
+                vscode.window.showErrorMessage('Failed to download artifact.');
+            }
+        }
+    }
 }
-
-// class ProjectArtifactNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, dataSupport.DataProducer {
-
-//     static readonly DATA_NAME = 'projectArtifactNode';
-//     static readonly CONTEXT = `gcn.oci.${ProjectArtifactNode.DATA_NAME}`;
-
-//     private object: ProjectArtifact;
-//     private oci: ociContext.Context;
-
-//     constructor(object: ProjectArtifact, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
-//         super(object.displayName, undefined, ProjectArtifactNode.CONTEXT, undefined, undefined, treeChanged);
-//         this.object = object;
-//         this.oci = oci;
-//         this.iconPath = new vscode.ThemeIcon('file-binary');
-//         this.updateAppearance();
-//         // this.description = description;
-//         // this.tooltip = tooltip ? `${this.label}: ${tooltip}` : nodes.getLabel(this);
-//     }
-
-//     rename() {
-//         const currentName = nodes.getLabel(this);
-//         vscode.window.showInputBox({
-//             title: 'Rename Project Artifact',
-//             value: currentName
-//         }).then(name => {
-//             if (name) {
-//                 this.object.displayName = name;
-//                 this.label = this.object.displayName;
-//                 this.updateAppearance();
-//                 this.treeChanged(this);
-//                 const service = findByNode(this);
-//                 service?.serviceNodesChanged(this)
-//             }
-//         });
-//     }
-
-//     remove() {
-//         const service = findProjectArtifactsServiceByNode(this);
-//         this.removeFromParent(this.treeChanged);
-//         service?.serviceNodesRemoved(this)
-//     }
-
-//     getDataName() {
-//         return ProjectArtifactNode.DATA_NAME;
-//     }
-
-//     getData(): any {
-//         return this.object;
-//     }
-
-//     // download() {
-//     //     const source = this.object.deployArtifactSource as devops.models.GenericDeployArtifactSource;
-//     //     const artifactPath = source.deployArtifactPath;
-//     //     ociUtils.getGenericArtifactContent(source.repositoryId, artifactPath, source.deployArtifactVersion).then(content => {
-//     //         if (content) {
-//     //             vscode.window.showSaveDialog({
-//     //                 defaultUri: vscode.Uri.file(artifactPath),
-//     //                 title: 'Save Artifact As'
-//     //             }).then(fileUri => {
-//     //                 if (fileUri) {
-//     //                     vscode.window.withProgress({
-//     //                         location: vscode.ProgressLocation.Notification,
-//     //                         title: `Downloading artifact ${artifactPath}...`,
-//     //                         cancellable: false
-//     //                       }, (_progress, _token) => {
-//     //                           return new Promise(async (resolve) => {
-//     //                             const data = content.value;
-//     //                             const file = fs.createWriteStream(fileUri.fsPath);
-//     //                             data.pipe(file);
-//     //                             data.on('end', () => {
-//     //                                 const open = 'Open File Location';
-//     //                                 vscode.window.showInformationMessage(`Artifact ${artifactPath} downloaded.`, open).then(choice => {
-//     //                                     if (choice === open) {
-//     //                                         vscode.commands.executeCommand('revealFileInOS', fileUri);
-//     //                                     }
-//     //                                 });
-//     //                                 resolve(true);
-//     //                             });
-//     //                           });
-//     //                       })
-//     //                 }
-//     //             });
-//     //         } else {
-//     //             vscode.window.showErrorMessage('Failed to download artifact.');
-//     //         }
-//     //     });
-//     // }
-
-// }

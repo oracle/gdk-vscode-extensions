@@ -90,6 +90,12 @@
 				"category": "GCN"
 			},
 			{
+				"command": "gcn.oci.downloadGenericArtifact",
+				"title": "Download Artifact",
+				"icon": "$(cloud-download)",
+				"category": "GCN"
+			},
+			{
 				"command": "gcn.oci.pullDockerImage",
 				"title": "Pull Image",
 				"icon": "$(cloud-download)",
@@ -169,6 +175,10 @@
 				{
 					"command": "gcn.oci.downloadArtifact",
 					"when": "false"
+				},
+				{
+					"command": "gcn.oci.downloadGenericArtifact",
+					"when": "false"
 				}
 			],
 			"editor/context": [],
@@ -218,6 +228,11 @@
 				{
 					"command": "gcn.oci.downloadArtifact",
 					"when": "viewItem == gcn.oci.buildPipelineNode-artifacts-available",
+					"group": "inline@2"
+				},
+				{
+					"command": "gcn.oci.downloadGenericArtifact",
+					"when": "viewItem == gcn.oci.genericArtifactNode",
 					"group": "inline@2"
 				},
 				{

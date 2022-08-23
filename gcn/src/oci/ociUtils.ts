@@ -461,17 +461,12 @@ export async function getGenericArtifact(authenticationDetailsProvider: common.C
     return client.getGenericArtifact(getGenericArtifactRequest);
 }
 
-export async function getGenericArtifactContent(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactID: string): Promise<genericartifactscontent.responses.GetGenericArtifactContentByPathResponse | undefined> {
-    try {
-        const client = new genericartifactscontent.GenericArtifactsContentClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const getGenericArtifactContentRequest: genericartifactscontent.requests.GetGenericArtifactContentRequest = {
-            artifactId: artifactID
-        };
-        return client.getGenericArtifactContent(getGenericArtifactContentRequest);
-    } catch (error) {
-        console.log('>>> getGenericArtifactContent ' + error);
-        return undefined;
-    }
+export async function getGenericArtifactContent(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactID: string): Promise<genericartifactscontent.responses.GetGenericArtifactContentByPathResponse> {
+    const client = new genericartifactscontent.GenericArtifactsContentClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const getGenericArtifactContentRequest: genericartifactscontent.requests.GetGenericArtifactContentRequest = {
+        artifactId: artifactID
+    };
+    return client.getGenericArtifactContent(getGenericArtifactContentRequest);
 }
 
 export async function deleteProjectDeployArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactId : string, wait : boolean = false) {
