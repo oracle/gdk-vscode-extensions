@@ -97,7 +97,7 @@
 			},
 			{
 				"command": "gcn.oci.pullDockerImage",
-				"title": "Pull Image",
+				"title": "Pull Docker Image",
 				"icon": "$(cloud-download)",
 				"category": "GCN"
 			},
