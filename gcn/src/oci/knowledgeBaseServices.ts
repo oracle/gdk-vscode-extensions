@@ -276,12 +276,12 @@ class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, 
     }
 
     async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
+        const children: nodes.BaseNode[] = []
         const provider = this.oci.getProvider();
         const compartment = this.oci.getCompartment();
         const knowledgeBase = this.object.ocid;
         const audits = (await ociUtils.listVulnerabilityAudits(provider, compartment, knowledgeBase))?.vulnerabilityAuditCollection.items;
         if (audits !== undefined && audits.length > 0) {
-            const children: nodes.BaseNode[] = []
             let idx = 0;
             for (const audit of audits) {
                 const auditObject = {
@@ -290,9 +290,11 @@ class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, 
                 }
                 children.push(new VulnerabilityAuditNode(auditObject, this.oci, audit));
             }
-            return children;
         }
-        return [ new nodes.NoItemsNode() ];
+        if (children.length === 0) {
+            children.push(new nodes.NoItemsNode());
+        }
+        return children;
     }
 
     getId() {

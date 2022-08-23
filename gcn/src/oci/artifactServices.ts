@@ -180,12 +180,12 @@ class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableN
     }
 
     async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
+        const children: nodes.BaseNode[] = []
         const provider = this.oci.getProvider();
         const compartment = this.oci.getCompartment();
         const repository = this.object.ocid;
         const artifacts = (await ociUtils.listGenericArtifacts(provider, compartment, repository))?.genericArtifactCollection.items;
         if (artifacts) {
-            const children: nodes.BaseNode[] = []
             for (const artifact of artifacts) {
                 const ocid = artifact.id;
                 let displayName = artifact.displayName;
@@ -200,9 +200,11 @@ class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableN
                 }
                 children.push(new GenericArtifactNode(artifactObject, this.oci, artifact));
             }
-            return children;
         }
-        return [ new nodes.NoItemsNode() ];
+        if (children.length === 0) {
+            children.push(new nodes.NoItemsNode());
+        }
+        return children;
     }
 
     getId() {

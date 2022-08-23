@@ -181,12 +181,12 @@ class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.Removable
     }
 
     async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
+        const children: nodes.BaseNode[] = []
         const provider = this.oci.getProvider();
         const compartment = this.oci.getCompartment();
         const repository = this.object.ocid;
         const images = (await ociUtils.listContainerImages(provider, compartment, repository))?.containerImageCollection.items;
         if (images) {
-            const children: nodes.BaseNode[] = []
             for (const image of images) {
                 const ocid = image.id;
                 let displayName = image.displayName;
@@ -201,9 +201,11 @@ class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.Removable
                 }
                 children.push(new ContainerImageNode(imageObject, this.oci, image));
             }
-            return children;
         }
-        return [ new nodes.NoItemsNode() ];
+        if (children.length === 0) {
+            children.push(new nodes.NoItemsNode());
+        }
+        return children;
     }
 
     getId() {
