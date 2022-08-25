@@ -7,8 +7,10 @@
 
 import * as vscode from 'vscode';
 import * as devops from 'oci-devops';
+import * as artifacts from 'oci-artifacts';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
+import * as dockerUtils from '../dockerUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociService from './ociService';
@@ -29,7 +31,18 @@ type DeployArtifact = {
     type: string
 }
 
-export function initialize(_context: vscode.ExtensionContext): void {
+export function initialize(context: vscode.ExtensionContext): void {
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.downloadLatestGenericArtifact', (...params: any[]) => {
+        if (params[0]) {
+            (params[0] as GenericDeployArtifactNode).download();
+        }
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.pullLatestDockerImage', (...params: any[]) => {
+        if (params[0]) {
+            (params[0] as OcirDeployArtifactNode).pull();
+        }
+    }));
+
     nodes.registerAddContentNode(DeployArtifactsNode.CONTEXT);
     nodes.registerRemovableNode(DeployArtifactsNode.CONTEXT);
     nodes.registerRenameableNode(GenericDeployArtifactNode.CONTEXT);
@@ -244,7 +257,7 @@ class DeployArtifactsNode extends nodes.BaseNode implements nodes.AddContentNode
 abstract class DeployArtifactNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
 
     protected object: DeployArtifact;
-    private oci: ociContext.Context;
+    protected oci: ociContext.Context;
 
     constructor(object: DeployArtifact, oci: ociContext.Context, context: string, icon: string, treeChanged: nodes.TreeChanged) {
         super(object.displayName, undefined, context, undefined, undefined, treeChanged);
@@ -296,43 +309,44 @@ class GenericDeployArtifactNode extends DeployArtifactNode {
         super(object, oci, GenericDeployArtifactNode.CONTEXT, artifactServices.ICON, treeChanged);
     }
 
-    // download() {
-    //     const source = this.object.deployArtifactSource as devops.models.GenericDeployArtifactSource;
-    //     const artifactPath = source.deployArtifactPath;
-    //     ociUtils.getGenericArtifactContent(source.repositoryId, artifactPath, source.deployArtifactVersion).then(content => {
-    //         if (content) {
-    //             vscode.window.showSaveDialog({
-    //                 defaultUri: vscode.Uri.file(artifactPath),
-    //                 title: 'Save Artifact As'
-    //             }).then(fileUri => {
-    //                 if (fileUri) {
-    //                     vscode.window.withProgress({
-    //                         location: vscode.ProgressLocation.Notification,
-    //                         title: `Downloading artifact ${artifactPath}...`,
-    //                         cancellable: false
-    //                       }, (_progress, _token) => {
-    //                           return new Promise(async (resolve) => {
-    //                             const data = content.value;
-    //                             const file = fs.createWriteStream(fileUri.fsPath);
-    //                             data.pipe(file);
-    //                             data.on('end', () => {
-    //                                 const open = 'Open File Location';
-    //                                 vscode.window.showInformationMessage(`Artifact ${artifactPath} downloaded.`, open).then(choice => {
-    //                                     if (choice === open) {
-    //                                         vscode.commands.executeCommand('revealFileInOS', fileUri);
-    //                                     }
-    //                                 });
-    //                                 resolve(true);
-    //                             });
-    //                           });
-    //                       })
-    //                 }
-    //             });
-    //         } else {
-    //             vscode.window.showErrorMessage('Failed to download artifact.');
-    //         }
-    //     });
-    // }
+    download() {
+        vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Reading build artifact...',
+            cancellable: false
+        }, async (_progress, _token) => {
+            try {
+                const deployArtifact = await this.getResource();
+                const deployArtifactSource = deployArtifact.deployArtifactSource as devops.models.GenericDeployArtifactSource;
+                const deployArtifactPath = deployArtifactSource.deployArtifactPath;
+                const genericArtifacts = (await ociUtils.listGenericArtifacts(this.oci.getProvider(), deployArtifact.compartmentId, deployArtifactSource.repositoryId, deployArtifactPath)).genericArtifactCollection.items;
+                const artifacts: artifacts.models.GenericArtifactSummary[] = [];
+                for (const genericArtifact of genericArtifacts) {
+                    if (genericArtifact.artifactPath === deployArtifactPath) {
+                        artifacts.push(genericArtifact);
+                    }
+                }
+                if (artifacts.length > 0) {
+                    return artifacts[0];
+                } else {
+                    vscode.window.showWarningMessage('No build artifact available yet.');
+                    return undefined;
+                }
+            } catch (err) {
+                if ((err as any).message) {
+                    return new Error(`Failed to resolve build artifact: ${(err as any).message}`);
+                } else {
+                    return new Error('Failed to resolve build artifact');
+                }
+            }
+        }).then(result => {
+            if (result instanceof Error) {
+                vscode.window.showErrorMessage(result.message);
+            } else if (result) {
+                artifactServices.downloadGenericArtifactContent(this.oci, result.id, this.object.displayName, result.artifactPath);
+            }
+        });
+    }
 
 }
 
@@ -342,7 +356,33 @@ class OcirDeployArtifactNode extends DeployArtifactNode {
     static readonly CONTEXT = `gcn.oci.${OcirDeployArtifactNode.DATA_NAME}`;
 
     constructor(object: DeployArtifact, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
-        super(object, oci, GenericDeployArtifactNode.CONTEXT, containerServices.ITEM_ICON, treeChanged);
+        super(object, oci, OcirDeployArtifactNode.CONTEXT, containerServices.ITEM_ICON, treeChanged);
+    }
+
+    pull() {
+        vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Reading build artifact...',
+            cancellable: false
+        }, async (_progress, _token) => {
+            try {
+                const deployArtifact = await this.getResource();
+                const deployArtifactSource = deployArtifact.deployArtifactSource as devops.models.OcirDeployArtifactSource;
+                return deployArtifactSource.imageUri;
+            } catch (err) {
+                if ((err as any).message) {
+                    return new Error(`Failed to resolve build artifact: ${(err as any).message}`);
+                } else {
+                    return new Error('Failed to resolve build artifact');
+                }
+            }
+        }).then(result => {
+            if (typeof result === 'string') {
+                dockerUtils.pullImage(result);
+            } else if (result instanceof Error) {
+                vscode.window.showErrorMessage(result.message);
+            }
+        });
     }
 
 }

@@ -184,8 +184,8 @@ class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableN
         const provider = this.oci.getProvider();
         const compartment = this.oci.getCompartment();
         const repository = this.object.ocid;
-        const artifacts = (await ociUtils.listGenericArtifacts(provider, compartment, repository))?.genericArtifactCollection.items;
-        if (artifacts) {
+        try {
+            const artifacts = (await ociUtils.listGenericArtifacts(provider, compartment, repository)).genericArtifactCollection.items;
             for (const artifact of artifacts) {
                 const ocid = artifact.id;
                 let displayName = artifact.displayName;
@@ -200,6 +200,8 @@ class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableN
                 }
                 children.push(new GenericArtifactNode(artifactObject, this.oci, artifact));
             }
+        } catch (err) {
+            // TODO: notify error (add a nodes.TextNode with error message?)
         }
         if (children.length === 0) {
             children.push(new nodes.NoItemsNode());
@@ -272,54 +274,67 @@ class GenericArtifactNode extends nodes.BaseNode implements ociNodes.OciResource
     }
 
     download() {
-        // TODO: display progress while ociUtils.getGenericArtifactContent
+        let filename = this.object.displayName;
+        // TODO: separate artifact name and version
+        const versionSeparatorIdx = filename.indexOf(':');
+        if (versionSeparatorIdx > 0) {
+            filename = filename.substring(0, versionSeparatorIdx);
+        }
+        downloadGenericArtifactContent(this.oci, this.object.ocid, this.object.displayName, filename);
+    }
+}
+
+export function downloadGenericArtifactContent(oci: ociContext.Context, artifactID: string, displayName: string, filename: string) {
+    vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: 'Reading build artifact content...',
+        cancellable: false
+    }, async (_progress, _token) => {
         try {
-            ociUtils.getGenericArtifactContent(this.oci.getProvider(), this.object.ocid).then(content => {
-                let artifactName = this.object.displayName;
-                // TODO: separate artifact name and version
-                const versionSeparatorIdx = artifactName.indexOf(':');
-                if (versionSeparatorIdx > 0) {
-                    artifactName = artifactName.substring(0, versionSeparatorIdx);
-                }
-                vscode.window.showSaveDialog({
-                    defaultUri: vscode.Uri.file(artifactName),
-                    title: 'Save Artifact As'
-                }).then(fileUri => {
-                    if (fileUri) {
-                        vscode.window.withProgress({
-                            location: vscode.ProgressLocation.Notification,
-                            title: `Downloading artifact ${this.object.displayName}...`,
-                            cancellable: false
-                        }, (_progress, _token) => {
-                            return new Promise(async (resolve) => {
-                                const data = content.value;
-                                const file = fs.createWriteStream(fileUri.fsPath);
-                                data.pipe(file);
-                                data.on('error', (err: Error) => {
-                                    vscode.window.showErrorMessage(err.message);
-                                    file.destroy();
-                                    resolve(false);
-                                });
-                                data.on('end', () => {
-                                    const open = 'Open File Location';
-                                    vscode.window.showInformationMessage(`Artifact ${this.object.displayName} downloaded.`, open).then(choice => {
-                                        if (choice === open) {
-                                            vscode.commands.executeCommand('revealFileInOS', fileUri);
-                                        }
-                                    });
-                                    resolve(true);
-                                });
-                            });
-                        })
-                    }
-                });
-            });
+            return await ociUtils.getGenericArtifactContent(oci.getProvider(), artifactID);
         } catch (err) {
             if ((err as any).message) {
-                vscode.window.showErrorMessage(`Failed to download artifact: ${(err as any).message}`);
+                return new Error(`Failed to resolve build artifact content: ${(err as any).message}`);
             } else {
-                vscode.window.showErrorMessage('Failed to download artifact.');
+                return new Error('Failed to resolve build artifact content');
             }
         }
-    }
+    }).then(result => {
+        if (result instanceof Error) {
+            vscode.window.showErrorMessage(result.message);
+        } else {
+            vscode.window.showSaveDialog({
+                defaultUri: vscode.Uri.file(filename),
+                title: 'Save Artifact As'
+            }).then(fileUri => {
+                if (fileUri) {
+                    vscode.window.withProgress({
+                        location: vscode.ProgressLocation.Notification,
+                        title: `Downloading artifact ${displayName}...`,
+                        cancellable: false
+                    }, (_progress, _token) => {
+                        return new Promise(async (resolve) => {
+                            const data = result.value;
+                            const file = fs.createWriteStream(fileUri.fsPath);
+                            data.pipe(file);
+                            data.on('error', (err: Error) => {
+                                vscode.window.showErrorMessage(err.message);
+                                file.destroy();
+                                resolve(false);
+                            });
+                            data.on('end', () => {
+                                const open = 'Open File Location';
+                                vscode.window.showInformationMessage(`Artifact ${displayName} downloaded.`, open).then(choice => {
+                                    if (choice === open) {
+                                        vscode.commands.executeCommand('revealFileInOS', fileUri);
+                                    }
+                                });
+                                resolve(true);
+                            });
+                        });
+                    })
+                }
+            });
+        }
+    })
 }

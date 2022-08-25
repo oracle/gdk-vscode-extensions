@@ -438,19 +438,16 @@ export async function deleteArtifactsRepository(authenticationDetailsProvider: c
     return resp;
 }
 
-export async function listGenericArtifacts(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string): Promise<artifacts.responses.ListGenericArtifactsResponse | undefined> {
-    try {
-        const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const listGenericArtifactsRequest: artifacts.requests.ListGenericArtifactsRequest = {
-            compartmentId: compartmentID,
-            repositoryId: repositoryID,
-            lifecycleState: artifacts.models.GenericArtifact.LifecycleState.Available
-        };
-        return client.listGenericArtifacts(listGenericArtifactsRequest);
-    } catch (error) {
-        console.log('>>> listGenericArtifacts ' + error);
-        return undefined;
-    }
+export async function listGenericArtifacts(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string, artifactPath?: string): Promise<artifacts.responses.ListGenericArtifactsResponse> {
+    const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const listGenericArtifactsRequest: artifacts.requests.ListGenericArtifactsRequest = {
+        compartmentId: compartmentID,
+        repositoryId: repositoryID,
+        artifactPath: artifactPath, // NOTE: artifactPath filtering uses startsWith, not exact match!
+        lifecycleState: artifactPath ? undefined : artifacts.models.GenericArtifact.LifecycleState.Available,
+        sortBy: artifactPath ? artifacts.requests.ListGenericArtifactsRequest.SortBy.Timecreated : artifacts.requests.ListGenericArtifactsRequest.SortBy.Displayname,
+    };
+    return client.listGenericArtifacts(listGenericArtifactsRequest);
 }
 
 export async function getGenericArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactID: string): Promise<artifacts.responses.GetGenericArtifactResponse> {

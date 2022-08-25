@@ -96,8 +96,20 @@
 				"category": "GCN"
 			},
 			{
+				"command": "gcn.oci.downloadLatestGenericArtifact",
+				"title": "Download Latest Artifact",
+				"icon": "$(cloud-download)",
+				"category": "GCN"
+			},
+			{
 				"command": "gcn.oci.pullDockerImage",
 				"title": "Pull Docker Image",
+				"icon": "$(cloud-download)",
+				"category": "GCN"
+			},
+			{
+				"command": "gcn.oci.pullLatestDockerImage",
+				"title": "Pull Latest Docker Image",
 				"icon": "$(cloud-download)",
 				"category": "GCN"
 			},
@@ -169,6 +181,10 @@
 					"when": "false"
 				},
 				{
+					"command": "gcn.oci.pullLatestDockerImage",
+					"when": "false"
+				},
+				{
 					"command": "gcn.oci.runBuildPipeline",
 					"when": "false"
 				},
@@ -178,6 +194,10 @@
 				},
 				{
 					"command": "gcn.oci.downloadGenericArtifact",
+					"when": "false"
+				},
+				{
+					"command": "gcn.oci.downloadLatestGenericArtifact",
 					"when": "false"
 				}
 			],
@@ -236,8 +256,18 @@
 					"group": "inline@2"
 				},
 				{
+					"command": "gcn.oci.downloadLatestGenericArtifact",
+					"when": "viewItem == gcn.oci.genericDeployArtifactNode",
+					"group": "inline@2"
+				},
+				{
 					"command": "gcn.oci.pullDockerImage",
 					"when": "viewItem == gcn.oci.containerImageNode",
+					"group": "inline@2"
+				},
+				{
+					"command": "gcn.oci.pullLatestDockerImage",
+					"when": "viewItem == gcn.oci.ocirDeployArtifactNode",
 					"group": "inline@2"
 				},
 				{
