@@ -84,8 +84,8 @@
 				"category": "GCN"
 			},
 			{
-				"command": "gcn.oci.downloadArtifact",
-				"title": "Download Artifact",
+				"command": "gcn.oci.getBuildArtifact",
+				"title": "Get Build Artifact(s)",
 				"icon": "$(cloud-download)",
 				"category": "GCN"
 			},
@@ -189,7 +189,7 @@
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.downloadArtifact",
+					"command": "gcn.oci.getBuildArtifact",
 					"when": "false"
 				},
 				{
@@ -246,7 +246,7 @@
 					"group": "inline@1"
 				},
 				{
-					"command": "gcn.oci.downloadArtifact",
+					"command": "gcn.oci.getBuildArtifact",
 					"when": "viewItem == gcn.oci.buildPipelineNode-artifacts-available",
 					"group": "inline@2"
 				},

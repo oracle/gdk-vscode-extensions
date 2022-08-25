@@ -39,7 +39,7 @@ export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runBuildPipeline', (node: BuildPipelineNode) => {
 		node.runPipeline();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.downloadArtifact', (node: BuildPipelineNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.getBuildArtifact', (node: BuildPipelineNode) => {
 		node.downloadArtifact();
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.showBuildOutput', (node: BuildPipelineNode) => {
@@ -211,15 +211,15 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         this.iconPath = new vscode.ThemeIcon(ICON);
         this.command = { command: 'gcn.oci.showBuildOutput', title: 'Show Build Output', arguments: [this] };
         this.updateAppearance();
-        ociUtils.listBuildRuns(this.oci.getProvider(), this.object.ocid).then(response => {
-            if (response?.buildRunSummaryCollection.items.length) {
-                const run = response.buildRunSummaryCollection.items[0];
-                const output = run.displayName ? vscode.window.createOutputChannel(run.displayName) : undefined;
-                output?.hide();
-                this.updateLastRun(run.id, run.lifecycleState, output);
-                this.updateWhenCompleted(run.id, run.compartmentId, run.timeCreated);
-            }
-        });
+        // ociUtils.listBuildRuns(this.oci.getProvider(), this.object.ocid).then(response => {
+        //     if (response?.buildRunSummaryCollection.items.length) {
+        //         const run = response.buildRunSummaryCollection.items[0];
+        //         const output = run.displayName ? vscode.window.createOutputChannel(run.displayName) : undefined;
+        //         output?.hide();
+        //         this.updateLastRun(run.id, run.lifecycleState, output);
+        //         this.updateWhenCompleted(run.id, run.compartmentId, run.timeCreated);
+        //     }
+        // });
     }
 
     getId() {
