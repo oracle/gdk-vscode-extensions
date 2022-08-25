@@ -64,7 +64,7 @@ async function selectDeploymentPipelines(oci: ociContext.Context, ignore: Deploy
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
-                resolve((await ociUtils.listDeploymentPipelines(oci.getProvider(), oci.getDevOpsProject()))?.deployPipelineCollection?.items);
+                resolve((await ociUtils.listDeployPipelines(oci.getProvider(), oci.getDevOpsProject()))?.deployPipelineCollection?.items);
             });
         })
     }

@@ -14,11 +14,13 @@ import * as ons from 'oci-ons';
 import * as logging from 'oci-logging';
 import * as loggingsearch  from 'oci-loggingsearch';
 import * as genericartifactscontent from 'oci-genericartifactscontent';
+import { containerengine } from 'oci-sdk';
 
 
 const DEFAULT_NOTIFICATION_TOPIC = 'NotificationTopic';
 const DEFAULT_LOG_GROUP = 'Default_Group';
 const DEFAULT_BUILD_PIPELINES_GROUP = 'GCN-BuildPipelinesGroup';
+const DEFAULT_DEPLOY_PIPELINES_GROUP = 'GCN-DeployPipelinesGroup';
 const DEFAULT_CODE_REPOSITORIES_GROUP = 'GCN-CodeRepositoriesGroup';
 const DEFAULT_COMPARTMENT_ACCESS_POLICY = 'CompartmentAccessPolicy';
 const BUILD_IMAGE = 'OL7_X86_64_STANDARD_10';
@@ -173,17 +175,12 @@ export async function devopsWaitForResourceCompletionStatus(
     return requestState.resources[0].identifier;
 }
 
-export async function getUser(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.responses.GetUserResponse | undefined> {
-    try {
-        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const getUserRequest: identity.requests.GetUserRequest = {
-            userId: authenticationDetailsProvider.getUser()
-        };
-        return client.getUser(getUserRequest);
-    } catch (error) {
-        console.log('>>> getUser ' + error);
-        return undefined;
-    }
+export async function getUser(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.responses.GetUserResponse> {
+    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const getUserRequest: identity.requests.GetUserRequest = {
+        userId: authenticationDetailsProvider.getUser()
+    };
+    return client.getUser(getUserRequest);
 }
 
 export async function getTenancy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.responses.GetTenancyResponse> {
@@ -331,8 +328,7 @@ export async function listBuildPipelineStages(authenticationDetailsProvider: com
     }
 }
 
-
-export async function deleteBuildPipelineStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, stage : string, wait : boolean = false) : Promise<devops.responses.DeleteBuildPipelineStageResponse>{
+export async function deleteBuildPipelineStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, stage : string, wait: boolean = false) : Promise<devops.responses.DeleteBuildPipelineStageResponse>{
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     if (!wait) {
         return client.deleteBuildPipelineStage({ buildPipelineStageId : stage });
@@ -379,7 +375,7 @@ export async function listBuildPipelinesByCodeRepository(authenticationDetailsPr
     return buildPipelineSummaries;
 }
 
-export async function listDeploymentPipelines(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.responses.ListDeployPipelinesResponse | undefined> {
+export async function listDeployPipelines(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.responses.ListDeployPipelinesResponse | undefined> {
     try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const listDeployPipelinesRequest: devops.requests.ListDeployPipelinesRequest = {
@@ -399,6 +395,46 @@ export async function getDeployPipeline(authenticationDetailsProvider: common.Co
         deployPipelineId: pipelineID
     };
     return client.getDeployPipeline(getDeploymentPipelineRequest);
+}
+
+export async function deleteDeployPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipeId: string, wait: boolean = false) : Promise<devops.responses.DeleteDeployPipelineResponse>{
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    if (!wait) {
+        return client.deleteDeployPipeline({ deployPipelineId : pipeId });
+    } else {
+        // console.log(`> deletePipeline ${pipeId}`);
+        const resp = await client.deleteDeployPipeline({ deployPipelineId : pipeId });
+        // console.log(`> deletePipeline ${pipeId}will wait for ${resp.opcWorkRequestId}`);
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy pipeline", resp.opcWorkRequestId);
+        return resp;
+    }
+}
+
+export async function listDeployStages(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string): Promise<devops.responses.ListDeployStagesResponse | undefined> {
+    try {
+        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const listDeployStagesRequest: devops.requests.ListDeployStagesRequest = {
+            deployPipelineId: pipelineID,
+            lifecycleState: devops.models.DeployStage.LifecycleState.Active
+        };
+        return await client.listDeployStages(listDeployStagesRequest);
+    } catch (error) {
+        console.log('>>> listDeployStages ' + error);
+        return undefined;
+    }
+}
+
+export async function deleteDeployStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, stage: string, wait: boolean = false) : Promise<devops.responses.DeleteDeployStageResponse>{
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    if (!wait) {
+        return client.deleteDeployStage({ deployStageId: stage });
+    } else {
+        // console.log(`> deleteBuildPipelineStage${stage}`);
+        const resp = await client.deleteDeployStage({ deployStageId: stage });
+        // console.log(`> deleteBuildPipelineStage${stage} will wait for ${resp.opcWorkRequestId}`);
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy stage", resp.opcWorkRequestId);
+        return resp;
+    }
 }
 
 export async function listArtifactRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<artifacts.responses.ListRepositoriesResponse | undefined> {
@@ -560,6 +596,33 @@ export async function getContainerImage(authenticationDetailsProvider: common.Co
     return client.getContainerImage(getContainerImageRequest);
 }
 
+export async function listDeployEnvironments(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.responses.ListDeployEnvironmentsResponse | undefined> {
+    try {
+        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const listDeployEnvironmentsRequest: devops.requests.ListDeployEnvironmentsRequest = {
+            projectId: projectID,
+            lifecycleState: devops.models.DeployEnvironment.LifecycleState.Active
+        };
+        return client.listDeployEnvironments(listDeployEnvironmentsRequest);
+    } catch (error) {
+        console.log('>>> listDeployEnvironments ' + error);
+        return undefined;
+    }
+}
+
+export async function deleteDeployEnvironment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, envID: string): Promise<devops.responses.DeleteDeployEnvironmentResponse | undefined> {
+    try {
+        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const deleteDeployEnvironmentRequest: devops.requests.DeleteDeployEnvironmentRequest = {
+            deployEnvironmentId: envID
+        };
+        return client.deleteDeployEnvironment(deleteDeployEnvironmentRequest);
+    } catch (error) {
+        console.log('>>> deleteDeployEnvironment ' + error);
+        return undefined;
+    }
+}
+
 export async function listKnowledgeBases(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<adm.responses.ListKnowledgeBasesResponse | undefined> {
     try {
         const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
@@ -695,6 +758,21 @@ export async function getNotificationTopic(authenticationDetailsProvider: common
         return undefined;
     } catch (error) {
         console.log('>>> getNotificationTopic ' + error);
+        return undefined;
+    }
+}
+
+export async function listClusters(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<containerengine.responses.ListClustersResponse | undefined> {
+    try {
+        const client = new containerengine.ContainerEngineClient({
+            authenticationDetailsProvider: authenticationDetailsProvider
+        });
+        const listClustersRequest: containerengine.requests.ListClustersRequest = {
+            compartmentId: compartmentID
+        };
+        return client.listClusters(listClustersRequest);
+    } catch (error) {
+        console.log('>>> listClusters ' + error);
         return undefined;
     }
 }
@@ -893,6 +971,26 @@ export async function getDefaultBuildPipelinesGroup(authenticationDetailsProvide
     return undefined;
 }
 
+export async function getDefaultDeployPipelinesGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean): Promise<identity.models.DynamicGroup | undefined> {
+    const tenancy = authenticationDetailsProvider.getTenantId();
+    const rule = `ALL {resource.type = 'devopsdeploypipeline', resource.compartment.id = '${compartmentID}'}`;
+    const group = (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_DEPLOY_PIPELINES_GROUP))?.items.find(g => DEFAULT_DEPLOY_PIPELINES_GROUP === g.name);
+    if (group) {
+        if (group.matchingRule.indexOf(rule) < 0) {
+            const len = group.matchingRule.length;
+            await updateDynamicGroup(authenticationDetailsProvider, group.id, { matchingRule: `${group.matchingRule.slice(0, len - 1)}, ${rule}${group.matchingRule.slice(len - 1)}`});
+        }
+        return group;
+    }
+    if (create) {
+        const created = await createDynamicGroup(authenticationDetailsProvider, tenancy, DEFAULT_DEPLOY_PIPELINES_GROUP, 'Default group for deployment pipelines created from VS Code', `Any {${rule}}`);
+        if (created) {
+            return (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_DEPLOY_PIPELINES_GROUP))?.items.find(g => DEFAULT_DEPLOY_PIPELINES_GROUP === g.name);
+        }
+    }
+    return undefined;
+}
+
 export async function getDefaultCodeRepositoriesGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean): Promise<identity.models.DynamicGroup | undefined> {
     const tenancy = authenticationDetailsProvider.getTenantId();
     const rule = `ALL {resource.type = 'devopsrepository', resource.compartment.id = '${compartmentID}'}`;
@@ -946,15 +1044,46 @@ export async function createPolicy(authenticationDetailsProvider: common.ConfigF
     }
 }
 
-export async function getCompartmentAccessPolicy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, buildPipelinesGroupName: string, codeRepositoriesGroupName: string, create?: boolean): Promise<string | undefined> {
+export async function updatePolicy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, policyID: string, details: identity.models.UpdatePolicyDetails): Promise<identity.responses.UpdatePolicyResponse | undefined> {
+    try {
+        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const updatePolicyRequest: identity.requests.UpdatePolicyRequest = {
+            policyId: policyID,
+            updatePolicyDetails: details
+        };
+        return client.updatePolicy(updatePolicyRequest);
+    } catch (error) {
+        console.log('>>> updatePolicy ' + error);
+        return undefined;
+    }
+}
+
+export async function getCompartmentAccessPolicy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, buildPipelinesGroupName: string, deployPipelinesGroupName: string, codeRepositoriesGroupName: string, create?: boolean): Promise<string | undefined> {
+    const buildPipelinesGroupRule = `Allow dynamic-group ${buildPipelinesGroupName} to manage all-resources in compartment id ${compartmentID}`;
+    const deployPipelinesGroupRule = `Allow dynamic-group ${deployPipelinesGroupName} to manage all-resources in compartment id ${compartmentID}`;
+    const codeRepositoriesGroupRule = `Allow dynamic-group ${codeRepositoriesGroupName} to manage all-resources in compartment id ${compartmentID}`;
     const policy = (await listPolicies(authenticationDetailsProvider, compartmentID, DEFAULT_COMPARTMENT_ACCESS_POLICY))?.items.find(p => DEFAULT_COMPARTMENT_ACCESS_POLICY === p.name);
     if (policy) {
+        let statements = [...policy.statements];
+        if (!policy.statements.includes(buildPipelinesGroupRule)) {
+            statements.push(buildPipelinesGroupRule);
+        }
+        if (!policy.statements.includes(deployPipelinesGroupRule)) {
+            statements.push(deployPipelinesGroupRule);
+        }
+        if (!policy.statements.includes(codeRepositoriesGroupRule)) {
+            statements.push(codeRepositoriesGroupRule);
+        }
+        if (statements.length != policy.statements.length) {
+            await updatePolicy(authenticationDetailsProvider, policy.id, { statements });
+        }
         return policy.id;
     }
     if (create) {
         const created = await createPolicy(authenticationDetailsProvider, compartmentID, 'Default policy for accessing compartment resources created from VS Code', [
-            `Allow dynamic-group ${buildPipelinesGroupName} to manage all-resources in compartment id ${compartmentID}`,
-            `Allow dynamic-group ${codeRepositoriesGroupName} to manage all-resources in compartment id ${compartmentID}`
+            buildPipelinesGroupRule,
+            deployPipelinesGroupRule,
+            codeRepositoriesGroupRule
         ]);
         if (created) {
             return (await listPolicies(authenticationDetailsProvider, compartmentID, DEFAULT_COMPARTMENT_ACCESS_POLICY))?.items.find(g => DEFAULT_COMPARTMENT_ACCESS_POLICY == g.name)?.id;
@@ -1076,6 +1205,7 @@ export async function createContainerRepository(authenticationDetailsProvider: c
         const createContainerRepositoryDetails = {
             compartmentId: compartmentID,
             displayName: `${projectName.toLowerCase()}_container_repository`,
+            description: `Mutable container repository for devops project ${projectName}`,
             isImmutable: false,
             isPublic: true
         };
@@ -1084,7 +1214,27 @@ export async function createContainerRepository(authenticationDetailsProvider: c
         };
         return await client.createContainerRepository(createContainerRepositoryRequest);
     } catch (error) {
-        console.log('>>> createContainerRepository  ' + error);
+        console.log('>>> createContainerRepository ' + error);
+        return undefined;
+    }
+}
+
+export async function createOkeDeployEnvironment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, projectName: string, clusterID: string): Promise<devops.responses.CreateDeployEnvironmentResponse | undefined> {
+    try {
+        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const createDeployEnvironmentDetails = {
+            deployEnvironmentType: devops.models.CreateOkeClusterDeployEnvironmentDetails.deployEnvironmentType,
+            displayName: `${projectName.toLowerCase()}OkeDeployEnvironment`,
+            description: `OKE cluster environment for devops project ${projectName}`,
+            projectId: projectID,
+            clusterId: clusterID
+        };
+        const createDeployEnvironmentRequest: devops.requests.CreateDeployEnvironmentRequest = {
+            createDeployEnvironmentDetails: createDeployEnvironmentDetails
+        };
+        return await client.createDeployEnvironment(createDeployEnvironmentRequest);
+    } catch (error) {
+        console.log('>>> createOkeDeployEnvironment ' + error);
         return undefined;
     }
 }
@@ -1207,6 +1357,52 @@ export async function createBuildPipelineArtifactsStage(authenticationDetailsPro
     }
 }
 
+export async function createDeployPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, name: string): Promise<devops.responses.CreateDeployPipelineResponse | undefined> {
+    try {
+        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const createDeployPipelineDetails = {
+            description: 'Created from local VS Code workspace',
+            displayName: name,
+            projectId: projectID
+        };
+        const createDeployPipelineRequest: devops.requests.CreateDeployPipelineRequest = {
+            createDeployPipelineDetails: createDeployPipelineDetails
+        };
+        return client.createDeployPipeline(createDeployPipelineRequest);
+    } catch (error) {
+        console.log('>>> createDeployPipeline ' + error);
+        return undefined;
+    }
+}
+
+export async function createDeployToOkeStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, environmentID: string, deployArtifactID: string): Promise<devops.responses.CreateDeployStageResponse | undefined> {
+    try {
+        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const createDeployStageDetails = {
+            displayName: 'Deploy to OKE',
+            description: 'Deployment stage generated by VS Code',
+            deployPipelineId: pipelineID,
+            deployStagePredecessorCollection: {
+                items: [
+                    { id: pipelineID }
+                ]
+            },
+            kubernetesManifestDeployArtifactIds: [
+                deployArtifactID
+            ],
+            okeClusterDeployEnvironmentId: environmentID,
+            deployStageType: devops.models.CreateOkeDeployStageDetails.deployStageType
+        };
+        const createDeployStageRequest: devops.requests.CreateDeployStageRequest = {
+            createDeployStageDetails: createDeployStageDetails
+        };
+        return await client.createDeployStage(createDeployStageRequest);
+    } catch (error) {
+        console.log('>>> createDeployToOkeStage ' + error);
+        return undefined;
+    }
+}
+
 export async function listBuildRuns(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, buildPipelineID: string): Promise<devops.responses.ListBuildRunsResponse | undefined> {
     try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
@@ -1271,7 +1467,14 @@ export async function createProjectDockerArtifact(authenticationDetailsProvider:
     });
 }
 
-async function createDeployArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, displayName: string, description: string, deployArtifactType: string, deployArtifactSource: devops.models.GenericDeployArtifactSource | devops.models.OcirDeployArtifactSource): Promise<devops.responses.CreateDeployArtifactResponse | undefined> {    try {
+export async function createOkeDeployConfigurationArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, artifactInlineContent: string, artifactName: string, artifactDescription: string): Promise<devops.responses.CreateDeployArtifactResponse | undefined> {
+    return createDeployArtifact(authenticationDetailsProvider, projectID, artifactName, artifactDescription, devops.models.DeployArtifact.DeployArtifactType.KubernetesManifest, {
+        base64EncodedContent: Buffer.from(artifactInlineContent, 'binary').toString('base64'),
+        deployArtifactSourceType: devops.models.InlineDeployArtifactSource.deployArtifactSourceType
+    });
+}
+
+async function createDeployArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, displayName: string, description: string, deployArtifactType: string, deployArtifactSource: devops.models.GenericDeployArtifactSource | devops.models.OcirDeployArtifactSource | devops.models.InlineDeployArtifactSource): Promise<devops.responses.CreateDeployArtifactResponse | undefined> {    try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createDeployArtifactDetails = {
             displayName,

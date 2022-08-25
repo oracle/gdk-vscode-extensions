@@ -86,8 +86,8 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         // console.log(`Process pipelines`);
         _progress.report({message : "Listing Build Pipelines"});
 
-        const pipeLines : devops.models.BuildPipelineSummary[] = (await ociUtils.listBuildPipelines(authProvider, devopsId))?.buildPipelineCollection?.items || [];
-        for (let pipe of pipeLines) {
+        const buildPipelines : devops.models.BuildPipelineSummary[] = (await ociUtils.listBuildPipelines(authProvider, devopsId))?.buildPipelineCollection?.items || [];
+        for (let pipe of buildPipelines) {
             _progress.report({message : `Processing pipeline ${pipe.displayName}`});
 
             // console.log(`Inspecting pipeline ${pipe.displayName} = ${pipe.id}`)
@@ -121,7 +121,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
                         const s = id2Stage.get(k);
                         revDeps.delete(k);
                         if (!s) continue;
-    
+
                         orderedStages.push(s);
                         //console.log(`Add stage ${s.displayName} = ${s.id}`)
                         for (let p of s.buildPipelineStagePredecessorCollection?.items || []) {
@@ -146,10 +146,79 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             }
             _progress.report({message : `Deleting pipeline ${pipe.displayName}`});
             // console.log(`Delete pipeline ${pipe.displayName}`);
-            
+
             // in theory, pipelines are independent, but it seems the delete operation overlaps on the project OCID, so they must be deleted
             // sequentially.
             await ociUtils.deleteBuildPipeline(authProvider, pipe.id, true)
+        };
+
+        // console.log(`Process pipelines`);
+        _progress.report({message : "Listing Build Pipelines"});
+
+        const deployPipelines : devops.models.DeployPipelineSummary[] = (await ociUtils.listDeployPipelines(authProvider, devopsId))?.deployPipelineCollection?.items || [];
+        for (let pipe of deployPipelines) {
+            _progress.report({message : `Processing pipeline ${pipe.displayName}`});
+
+            // console.log(`Inspecting pipeline ${pipe.displayName} = ${pipe.id}`)
+            const stages : Array<devops.models.DeployStageSummary> = (await ociUtils.listDeployStages(authProvider, pipe.id))?.deployStageCollection.items || [];
+            const orderedStages : devops.models.DeployStageSummary[] = [];
+            const id2Stage : Map<string, devops.models.DeployStageSummary> = new Map();
+
+            // push leaf stages first.
+            const revDeps : Map<string, number> = new Map();
+            stages.forEach(s => {
+                id2Stage.set(s.id, s);
+                if (!revDeps.has(s.id)) {
+                    revDeps.set(s.id, 0);
+                }
+                // console.log(`Stage ${s.displayName} has predecessors: ${s.deployStagePredecessorCollection?.items.map(pred => pred.id).join(', ')}`)
+                for (let p of s.deployStagePredecessorCollection?.items || []) {
+                    if (p.id === s.id || p.id === pipe.id) {
+                        // ??? Who invented reference-to-owner in predecessors ??
+                        continue;
+                    }
+                    let n = (revDeps.get(p.id) || 0);
+                    revDeps.set(p.id, n + 1);
+                }
+            });
+
+            while (revDeps.size > 0) {
+                let found : boolean = false;
+                for (let k of revDeps.keys()) {
+                    if (revDeps.get(k) == 0) {
+                        found = true;
+                        const s = id2Stage.get(k);
+                        revDeps.delete(k);
+                        if (!s) continue;
+
+                        orderedStages.push(s);
+                        //console.log(`Add stage ${s.displayName} = ${s.id}`)
+                        for (let p of s.deployStagePredecessorCollection?.items || []) {
+                            if (p.id === s.id || p.id === pipe.id) {
+                                continue;
+                            }
+                            let n = (revDeps.get(p.id) || 1);
+                            revDeps.set(p.id, n - 1);
+                        }
+                    }
+                }
+                if (!found) {
+                    throw "Inconsistent pipeline structure!";
+                }
+            }
+
+            // console.log(`Deleting ${orderedStages.length} stages before deleting ${pipe.displayName}`);
+            for (let stage of orderedStages) {
+                _progress.report({message : `Deleting stage ${stage.displayName}`});
+                // console.log(`Delete stage ${stage.displayName} = ${stage.id} of ${pipe.displayName}`);
+                await ociUtils.deleteDeployStage(authProvider, stage.id, true);
+            }
+            _progress.report({message : `Deleting pipeline ${pipe.displayName}`});
+            // console.log(`Delete pipeline ${pipe.displayName}`);
+
+            // in theory, pipelines are independent, but it seems the delete operation overlaps on the project OCID, so they must be deleted
+            // sequentially.
+            await ociUtils.deleteDeployPipeline(authProvider, pipe.id, true)
         };
 
         // console.log(`Process logs`);
@@ -192,6 +261,12 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
                     await ociUtils.deleteContainerRepository(authProvider, repo.id);
                 }
             }
+        }
+        _progress.report({ message: 'Searching OKE cluster environments'});
+        const okeClusterEnvironments = (await ociUtils.listDeployEnvironments(authProvider, devopsId))?.deployEnvironmentCollection.items || [];
+        for (const env of okeClusterEnvironments) {
+            _progress.report({message : `Deleting OKE cluster environment ${env.displayName}`});
+            await ociUtils.deleteDeployEnvironment(authProvider, env.id);
         }
         // PENDING: knowledgebase search + deletion should be done by the Services Plugin; need API to invoke it on the OCI configuration.
         _progress.report({ message: 'Searching knowledge bases'});

@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${{deploy_artifact_name}}
+  labels:
+    app: ${{deploy_artifact_name}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${{deploy_artifact_name}}
+  template:
+    metadata:
+      labels:
+        app: ${{deploy_artifact_name}}
+    spec:
+      containers:
+      - name: ${{deploy_artifact_name}}
+        image: ${{project_artifact_location}}
+        ports:
+          - containerPort: 8080
