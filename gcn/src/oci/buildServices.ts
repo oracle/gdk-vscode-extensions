@@ -217,7 +217,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         //         const output = run.displayName ? vscode.window.createOutputChannel(run.displayName) : undefined;
         //         output?.hide();
         //         this.updateLastRun(run.id, run.lifecycleState, output);
-        //         this.updateWhenCompleted(run.id, run.compartmentId, run.timeCreated);
+        //         this.updateWhenCompleted(run.id, run.compartmentId);
         //     }
         // });
     }
@@ -277,7 +277,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                             }
                         }
                         const params = graalvmUtils.getGVMBuildRunParameters(version);
-                        const buildName = `${this.label}-${this.getTimestamp()} (from VS Code)`;
+                        const buildName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
                         vscode.window.withProgress({
                             location: vscode.ProgressLocation.Notification,
                             title: `Starting build "${buildName}" using GraalVM ${version[1]}, Java ${version[0]}...`,
@@ -296,7 +296,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                                 if (buildRun) {
                                     this.updateLastRun(buildRun.id, buildRun.lifecycleState, buildRun.displayName ? vscode.window.createOutputChannel(buildRun.displayName) : undefined);
                                     this.showBuildOutput();
-                                    this.updateWhenCompleted(buildRun.id, buildRun.compartmentId, buildRun.timeCreated);
+                                    this.updateWhenCompleted(buildRun.id, buildRun.compartmentId);
                                 }
                             });
                         })
@@ -404,20 +404,6 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         this.lastRun?.output?.show();
     }
 
-    private getTimestamp(): string {
-        const date = new Date();
-        const year = date.getFullYear();
-        let month = (date.getMonth() + 1).toString();
-        if (month.length === 1) month = `0${month}`;
-        let day = date.getDate().toString();
-        if (day.length === 1) day = `0${day}`;
-        let hours = date.getHours().toString();
-        if (hours.length === 1) hours = `0${hours}`;
-        let minutes = date.getMinutes().toString();
-        if (minutes.length === 1) minutes = `0${minutes}`;
-        return `${year}${month}${day}-${hours}${minutes}`;
-    }
-
     private updateLastRun(ocid: string, state?: string, output?: vscode.OutputChannel, deliveredArtifacts?: { id: string, type: string }[] ) {
         if (this.lastRun?.output !== output) {
             this.lastRun?.output?.hide();
@@ -446,7 +432,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         this.treeChanged(this);
     }
 
-    private async updateWhenCompleted(buildRunId: string, compartmentId?: string, timeStart?: Date) {
+    private async updateWhenCompleted(buildRunId: string, compartmentId?: string) {
         const groupId = compartmentId ? await ociUtils.getDefaultLogGroup(this.oci.getProvider(), compartmentId) : undefined;
         const logId = groupId ? (await ociUtils.listLogs(this.oci.getProvider(), groupId))?.items.find(item => item.configuration?.source.resource === this.oci.getDevOpsProject())?.id : undefined;
         let deliveredArtifacts: { id: string, type: string }[] | undefined;
@@ -471,11 +457,12 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                     }).filter(value => value.type);
                     this.updateLastRun(buildRunId, state, this.lastRun?.output, deliveredArtifacts);
                 }
-                if (this.lastRun?.output && compartmentId && groupId && logId && timeStart) {
-                    const timeEnd = ociUtils.isRunning(buildRun.lifecycleState) ? new Date() : buildRun.timeUpdated;
-                    if (timeEnd) {
+                if (this.lastRun?.output && compartmentId && groupId && logId) {
+                    const timeStart = buildRun.buildRunProgress?.timeStarted;
+                    const timeEnd = ociUtils.isRunning(buildRun.lifecycleState) ? new Date() : buildRun.buildRunProgress?.timeFinished;
+                    if (timeStart && timeEnd) {
                         // While the build run is in progress, messages in the log cloud appear out of order.
-                        const results = await ociUtils.searchLogs(this.oci.getProvider(), compartmentId, groupId, logId, buildRun.id, timeStart, timeEnd);
+                        const results = await ociUtils.searchLogs(this.oci.getProvider(), compartmentId, groupId, logId, 'buildRun', buildRun.id, timeStart, timeEnd);
                         if (this.lastRun?.output && this.lastRun?.ocid === buildRunId && results?.length && results.length > lastResults.length) {
                             if (lastResults.find((result: any, idx: number) => result.data.logContent.time !== results[idx].data.logContent.time || result.data.logContent.data.message !== results[idx].data.logContent.data.message)) {
                                 this.lastRun.output.clear();

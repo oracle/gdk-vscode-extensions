@@ -90,6 +90,12 @@
 				"category": "GCN"
 			},
 			{
+				"command": "gcn.oci.runDeployPipeline",
+				"title": "Run Deployment Pipeline",
+				"icon": "$(run)",
+				"category": "GCN"
+			},
+			{
 				"command": "gcn.oci.getBuildArtifact",
 				"title": "Get Build Artifact(s)",
 				"icon": "$(cloud-download)",
@@ -198,6 +204,10 @@
 					"when": "false"
 				},
 				{
+					"command": "gcn.oci.runDeployPipeline",
+					"when": "false"
+				},
+				{
 					"command": "gcn.oci.getBuildArtifact",
 					"when": "false"
 				},
@@ -262,6 +272,11 @@
 				{
 					"command": "gcn.oci.runBuildPipeline",
 					"when": "viewItem == gcn.oci.buildPipelineNode || viewItem == gcn.oci.buildPipelineNode-artifacts-available",
+					"group": "inline@1"
+				},
+				{
+					"command": "gcn.oci.runDeployPipeline",
+					"when": "viewItem == gcn.oci.deploymentPipelineNode",
 					"group": "inline@1"
 				},
 				{

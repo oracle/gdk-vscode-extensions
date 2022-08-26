@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
+const GET_PROJECT_ARTIFACTS = 'nbls.gcn.project.artifacts';
 
 // TODO: implement correctly for Maven/Gradle projects
 
@@ -32,7 +33,17 @@ export function getProjectBuildNativeExecutableCommand(folder: vscode.WorkspaceF
     return undefined;
 }
 
-export function getProjectBuildArtifactLocation(folder: vscode.WorkspaceFolder): string | undefined {
+export async function getProjectBuildArtifactLocation(folder: vscode.WorkspaceFolder): Promise<string | undefined> {
+    if ((await vscode.commands.getCommands()).find(cmd => GET_PROJECT_ARTIFACTS === cmd)) {
+        const projectUri: string = folder.uri.toString();
+        const artifacts: any[] = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, projectUri);
+        if (artifacts && artifacts.length === 1) {
+            const loc: string = artifacts[0].location;
+            if (loc.startsWith(projectUri + '/')) {
+                return loc.slice(projectUri.length + 1);
+            }
+        }
+    }
     if (isMaven(folder)) {
         return `target/${folder.name}-0.1.jar`;
     }

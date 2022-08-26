@@ -26,10 +26,17 @@ type DeploymentPipeline = {
     displayName: string
 }
 
-export function initialize(_context: vscode.ExtensionContext) {
-    nodes.registerRenameableNode(DeploymentPipelineNode.CONTEXT);
-    nodes.registerRemovableNode(DeploymentPipelineNode.CONTEXT);
-    ociNodes.registerOpenInConsoleNode(DeploymentPipelineNode.CONTEXT);
+export function initialize(context: vscode.ExtensionContext) {
+    nodes.registerRenameableNode(DeploymentPipelineNode.CONTEXTS);
+    nodes.registerRemovableNode(DeploymentPipelineNode.CONTEXTS);
+    ociNodes.registerOpenInConsoleNode(DeploymentPipelineNode.CONTEXTS);
+
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runDeployPipeline', (node: DeploymentPipelineNode) => {
+		node.runPipeline();
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.showDeployOutput', (node: DeploymentPipelineNode) => {
+		node.showDeploymentOutput();
+	}));
 }
 
 export async function importServices(_oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
@@ -154,17 +161,31 @@ class Service extends ociService.Service {
 class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'deploymentPipelineNode';
-    static readonly CONTEXT = `gcn.oci.${DeploymentPipelineNode.DATA_NAME}`;
+    static readonly CONTEXTS = [
+        `gcn.oci.${DeploymentPipelineNode.DATA_NAME}`, // default
+        `gcn.oci.${DeploymentPipelineNode.DATA_NAME}-in-progress` // in progress
+    ];
     
     private object: DeploymentPipeline;
     private oci: ociContext.Context;
+    private lastDeployment?: { ocid: string, state?: string, output?: vscode.OutputChannel };
 
     constructor(object: DeploymentPipeline, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
-        super(object.displayName, undefined, DeploymentPipelineNode.CONTEXT, undefined, undefined, treeChanged);
+        super(object.displayName, undefined, DeploymentPipelineNode.CONTEXTS[0], undefined, undefined, treeChanged);
         this.object = object;
         this.oci = oci;
         this.iconPath = new vscode.ThemeIcon(ICON);
+        this.command = { command: 'gcn.oci.showDeployOutput', title: 'Show Deployment Output', arguments: [this] };
         this.updateAppearance();
+        // ociUtils.listDeployments(this.oci.getProvider(), this.object.ocid).then(response => {
+        //     if (response?.deploymentCollection.items.length) {
+        //         const deployment = response.deploymentCollection.items[0];
+        //         const output = deployment.displayName ? vscode.window.createOutputChannel(deployment.displayName) : undefined;
+        //         output?.hide();
+        //         this.updateLastDeployment(deployment.id, deployment.lifecycleState, output);
+        //         this.updateWhenCompleted(deployment.id, deployment.compartmentId);
+        //     }
+        // });
     }
 
     getId() {
@@ -198,4 +219,124 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
         return `https://cloud.oracle.com/devops-deployment/projects/${pipeline.projectId}/pipelines/${pipeline.id}`;
     }
 
+    runPipeline() {
+        if (!ociUtils.isRunning(this.lastDeployment?.state)) {
+            const deploymentName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
+            vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: `Starting deployment "${deploymentName}"...`,
+                cancellable: false
+            }, (_progress, _token) => {
+                return new Promise(async resolve => {
+                    try {
+                        const buildPipelineID = (await this.getResource()).freeformTags?.gcn_tooling_buildPipelineOCID;
+                        if (buildPipelineID) {
+                            const lastBuilds = (await ociUtils.listBuildRuns(this.oci.getProvider(), buildPipelineID))?.buildRunSummaryCollection.items;
+                            const buildRunId = lastBuilds?.find(build => ociUtils.isSuccess(build.lifecycleState))?.id;
+                            if (!buildRunId || !(await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId))?.buildRun.buildOutputs?.deliveredArtifacts?.items.length) {
+                                vscode.window.showErrorMessage('Cannot find build artifact to deploy. Make sure you run the appropriate build pipeline first...');
+                                resolve(false);
+                                return;
+                            }
+                        }
+                        const deployment = (await ociUtils.createDeployment(this.oci.getProvider(), this.object.ocid, deploymentName))?.deployment;
+                        resolve(true);
+                        if (deployment) {
+                            this.updateLastDeployment(deployment.id, deployment.lifecycleState, deployment.displayName ? vscode.window.createOutputChannel(deployment.displayName) : undefined);
+                            this.showDeploymentOutput();
+                            this.updateWhenCompleted(deployment.id, deployment.compartmentId);
+                        }
+                    } catch (err: any) {
+                        vscode.window.showErrorMessage(err.message);
+                        resolve(false)
+                    }
+                });
+            })
+        }
+    }
+
+    showDeploymentOutput() {
+        this.lastDeployment?.output?.show();
+    }
+
+    private updateLastDeployment(ocid: string, state?: string, output?: vscode.OutputChannel) {
+        if (this.lastDeployment?.output !== output) {
+            this.lastDeployment?.output?.hide();
+            this.lastDeployment?.output?.dispose();
+        }
+        this.lastDeployment = { ocid, state, output };
+        switch (state) {
+            case 'ACCEPTED':
+            case 'IN_PROGRESS':
+            case 'CANCELING':
+                this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.yellow'));
+                this.contextValue = DeploymentPipelineNode.CONTEXTS[1];
+                break;
+            case 'SUCCEEDED':
+                this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.green'));
+                this.contextValue = DeploymentPipelineNode.CONTEXTS[0];
+                break;
+            case 'FAILED':
+                this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.red'));
+                this.contextValue = DeploymentPipelineNode.CONTEXTS[0];
+                break;
+            default:
+                this.iconPath = new vscode.ThemeIcon(ICON);
+                this.contextValue = DeploymentPipelineNode.CONTEXTS[0];
+        }
+        this.treeChanged(this);
+    }
+
+    private async updateWhenCompleted(deploymentId: string, compartmentId?: string) {
+        const groupId = compartmentId ? await ociUtils.getDefaultLogGroup(this.oci.getProvider(), compartmentId) : undefined;
+        const logId = groupId ? (await ociUtils.listLogs(this.oci.getProvider(), groupId))?.items.find(item => item.configuration?.source.resource === this.oci.getDevOpsProject())?.id : undefined;
+        let lastResults: any[] = [];
+        const update = async () => {
+            if (this.lastDeployment?.ocid !== deploymentId) {
+                return undefined;
+            }
+            const deployment = (await ociUtils.getDeployment(this.oci.getProvider(), deploymentId))?.deployment;
+            const state = deployment?.lifecycleState;
+            if (this.lastDeployment?.ocid === deploymentId && deployment) {
+                if (ociUtils.isSuccess(state)) {
+                    this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output);
+                }
+                if (this.lastDeployment?.output && compartmentId && groupId && logId) {
+                    const timeStart = deployment.deploymentExecutionProgress?.timeStarted;
+                    const timeEnd = ociUtils.isRunning(deployment.lifecycleState) ? new Date() : deployment.deploymentExecutionProgress?.timeFinished;
+                    if (timeStart && timeEnd) {
+                        // While the build run is in progress, messages in the log cloud appear out of order.
+                        const results = await ociUtils.searchLogs(this.oci.getProvider(), compartmentId, groupId, logId, 'deployment', deployment.id, timeStart, timeEnd);
+                        if (this.lastDeployment?.output && this.lastDeployment?.ocid === deploymentId && results?.length && results.length > lastResults.length) {
+                            if (lastResults.find((result: any, idx: number) => result.data.logContent.time !== results[idx].data.logContent.time || result.data.logContent.data.message !== results[idx].data.logContent.data.message)) {
+                                this.lastDeployment.output.clear();
+                                for (let result of results) {
+                                    this.lastDeployment.output.appendLine(`${result.data.logContent.time}  ${result.data.logContent.data.message}`);
+                                }
+                            } else {
+                                for (let result of results.slice(lastResults.length)) {
+                                    this.lastDeployment.output.appendLine(`${result.data.logContent.time}  ${result.data.logContent.data.message}`);
+                                }
+                            }
+                            lastResults = results;
+                        }
+                    }
+                }
+            }
+            return state;
+        };
+        const state = await ociUtils.completion(5000, update);
+        if (this.lastDeployment?.ocid === deploymentId) {
+            this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output);
+            // Some messages can appear in the log minutes after the deployment finished.
+            // Wating for 10 minutes periodiccaly polling for them.
+            for (let i = 0; i < 60; i++) {
+                if (this.lastDeployment?.ocid !== deploymentId) {
+                    return;
+                }
+                await ociUtils.delay(10000);
+                await update();
+            }
+        }
+    }
 }

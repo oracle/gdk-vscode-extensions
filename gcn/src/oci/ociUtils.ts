@@ -822,14 +822,14 @@ export async function listLogs(authenticationDetailsProvider: common.ConfigFileA
     }
 }
 
-export async function searchLogs(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, logGroupID: string, logID: string, buildRunID: string, timeStart: Date, timeEnd: Date): Promise<loggingsearch.models.SearchResult[] | undefined> {
+export async function searchLogs(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, logGroupID: string, logID: string, operation: 'buildRun' | 'deployment', operationID: string, timeStart: Date, timeEnd: Date): Promise<loggingsearch.models.SearchResult[] | undefined> {
     try {
         const client = new loggingsearch.LogSearchClient({ authenticationDetailsProvider: authenticationDetailsProvider });
 
         const searchLogsDetails = {
             timeStart: timeStart,
             timeEnd: timeEnd,
-            searchQuery: `search "${compartmentID}/${logGroupID}/${logID}" | where data.buildRunId = '${buildRunID}'`,
+            searchQuery: `search "${compartmentID}/${logGroupID}/${logID}" | where data.${operation}Id = '${operationID}'`,
             isReturnFieldInfo: false
         };
 
@@ -1357,14 +1357,17 @@ export async function createBuildPipelineArtifactsStage(authenticationDetailsPro
     }
 }
 
-export async function createDeployPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, name: string): Promise<devops.responses.CreateDeployPipelineResponse | undefined> {
+export async function createDeployPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, name: string, tags?: { [key:string]: string }): Promise<devops.responses.CreateDeployPipelineResponse | undefined> {
     try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const createDeployPipelineDetails = {
+        const createDeployPipelineDetails: devops.models.CreateDeployPipelineDetails = {
             description: 'Created from local VS Code workspace',
             displayName: name,
             projectId: projectID
         };
+        if (tags) {
+            createDeployPipelineDetails.freeformTags = tags;
+        }
         const createDeployPipelineRequest: devops.requests.CreateDeployPipelineRequest = {
             createDeployPipelineDetails: createDeployPipelineDetails
         };
@@ -1451,6 +1454,51 @@ export async function createBuildRun(authenticationDetailsProvider: common.Confi
     }
 }
 
+export async function listDeployments(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string): Promise<devops.responses.ListDeploymentsResponse | undefined> {
+    try {
+        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const listDeploymentsRequest: devops.requests.ListDeploymentsRequest = {
+            deployPipelineId: pipelineID,
+            limit: 10
+        };
+        return client.listDeployments(listDeploymentsRequest);
+    } catch (error) {
+        console.log('>>> listDeployments ' + error);
+        return undefined;
+    }
+}
+
+export async function getDeployment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, deploymentID: string): Promise<devops.responses.GetDeploymentResponse | undefined> {
+    try {
+        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const getDeploymentRequest: devops.requests.GetDeploymentRequest = {
+            deploymentId: deploymentID
+        };
+        return client.getDeployment(getDeploymentRequest);
+    } catch (error) {
+        console.log('>>> getDeployment ' + error);
+        return undefined;
+    }
+}
+
+export async function createDeployment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, name: string): Promise<devops.responses.CreateDeploymentResponse | undefined> {
+    try {
+        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const createDeploymentDetails: devops.models.CreateDeployPipelineDeploymentDetails = {
+            displayName: name,
+            deploymentType: devops.models.CreateDeployPipelineDeploymentDetails.deploymentType,
+            deployPipelineId: pipelineID
+        };
+        const createDeploymentRequest: devops.requests.CreateDeploymentRequest = {
+            createDeploymentDetails: createDeploymentDetails
+        };
+        return client.createDeployment(createDeploymentRequest);
+    } catch (error) {
+        console.log('>>> createDeployment ' + error);
+        return undefined;
+    }
+}
+
 export async function createProjectDevArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string, projectID: string, artifactPath: string, artifactName: string, artifactDescription: string): Promise<devops.responses.CreateDeployArtifactResponse | undefined> {
     return createDeployArtifact(authenticationDetailsProvider, projectID, artifactName, artifactDescription, devops.models.DeployArtifact.DeployArtifactType.GenericFile, {
         repositoryId: repositoryID,
@@ -1516,6 +1564,20 @@ export function isRunning(state?: string) {
 
 export function isSuccess(state?: string) {
     return state === 'SUCCEEDED';
+}
+
+export function getTimestamp(): string {
+    const date = new Date();
+    const year = date.getFullYear();
+    let month = (date.getMonth() + 1).toString();
+    if (month.length === 1) month = `0${month}`;
+    let day = date.getDate().toString();
+    if (day.length === 1) day = `0${day}`;
+    let hours = date.getHours().toString();
+    if (hours.length === 1) hours = `0${hours}`;
+    let minutes = date.getMinutes().toString();
+    if (minutes.length === 1) minutes = `0${minutes}`;
+    return `${year}${month}${day}-${hours}${minutes}`;
 }
 
 export function delay(ms: number) {

@@ -355,7 +355,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     increment,
                     message: `Creating deployment to OKE pipeline for docker native executables of ${repositoryName}...`
                 });
-                const oke_deployPipeline = (await ociUtils.createDeployPipeline(provider, project, 'DeployDockerImageToOkePipeline'))?.deployPipeline.id;
+                const oke_deployPipeline = (await ociUtils.createDeployPipeline(provider, project, 'DeployDockerImageToOkePipeline', { 'gcn_tooling_buildPipelineOCID': docker_nibuildPipeline}))?.deployPipeline.id;
                 if (!oke_deployPipeline) {
                     resolve(`Failed to create docker native executables deployment to OKE pipeline for ${repositoryName}.`);
                     return;
@@ -538,7 +538,7 @@ async function selectCluster(authentication: ociAuthentication.Authentication, c
 
     if (choices.length === 0) {
         const createOption = 'Quick create cluster';
-        if (createOption === await vscode.window.showErrorMessage('No OKE cluster available.', createOption)) {
+        if (createOption === await vscode.window.showWarningMessage('No OKE cluster available.', createOption)) {
             ociNodes.openInConsole({ getAddress: () => `https://cloud.oracle.com/containers/clusters/quick?region=${region}` });
         }
         return undefined;
