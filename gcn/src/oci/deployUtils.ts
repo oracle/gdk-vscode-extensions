@@ -19,7 +19,7 @@ import * as ociNodes from './ociNodes';
 
 export type SaveConfig = (folder: string, config: any) => boolean;
 
-export async function deployFolders(resourcesPath: string, saveConfig: SaveConfig): Promise<undefined> {
+export async function deployFolders(folders: vscode.WorkspaceFolder[], resourcesPath: string, saveConfig: SaveConfig): Promise<undefined> {
     const authentication = ociAuthentication.createDefault();
     const configurationProblem = authentication.getConfigurationProblem();
     if (configurationProblem) {
@@ -30,11 +30,6 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
 
     const compartment = await importUtils.selectCompartment(authentication);
     if (!compartment) {
-        return undefined;
-    }
-
-    const folders = await selectFolders();
-    if (!folders || folders.length === 0) {
         return undefined;
     }
 
@@ -486,40 +481,6 @@ export async function deployFolders(resourcesPath: string, saveConfig: SaveConfi
     if (error) {
         vscode.window.showErrorMessage(error);
         return undefined;
-    }
-
-    return undefined;
-}
-
-async function selectFolders(): Promise<vscode.WorkspaceFolder[] | undefined> {
-    const choices: dialogs.QuickPickObject[] = [];
-    const folders = vscode.workspace.workspaceFolders;
-    if (folders) {
-        for (const workspaceFolder of folders) {
-            const choice = new dialogs.QuickPickObject(workspaceFolder.name, undefined, undefined, workspaceFolder);
-            choices.push(choice);
-        }
-    }
-    if (choices.length === 0) {
-        vscode.window.showErrorMessage('No folders to deploy.');
-        return undefined;
-    }
-
-    if (choices.length === 1) {
-        return [ choices[0].object ];
-    }
-
-    const choice = await vscode.window.showQuickPick(choices, {
-        placeHolder: 'Select Folders to Deploy',
-        canPickMany: true
-    });
-
-    if (choice && choice.length > 0) {
-        const folders: vscode.WorkspaceFolder[] = [];
-        for (const folder of choice) {
-            folders.push(folder.object);
-        }
-        return folders;
     }
 
     return undefined;

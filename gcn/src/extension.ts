@@ -9,7 +9,6 @@ import * as vscode from 'vscode';
 import * as model from './model';
 import * as gcnServices from './gcnServices';
 import * as servicesView from './servicesView';
-import * as importExportUtils from './importExportUtils';
 
 
 export const CLOUD_SUPPORTS: model.CloudSupport[] = [];
@@ -20,13 +19,6 @@ export function activate(context: vscode.ExtensionContext) {
 		require('./oci/ociSupport').create(context)
 		// TODO: add another cloud implementations here
 	);
-
-	context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.importFromCloud', () => {
-		importExportUtils.importDevopsProject();
-	}));
-	context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.deployToCloud', () => {
-		importExportUtils.deployOpenedFolders();
-	}));
 
 	servicesView.initialize(context);
 	context.subscriptions.push(vscode.window.registerTreeDataProvider('gcn-services', servicesView.nodeProvider));

@@ -42,6 +42,12 @@
 				"category": "GCN"
 			},
 			{
+				"command": "gcn.deployToCloud",
+				"title": "Deploy to Cloud",
+				"icon": "$(cloud-upload)",
+				"category": "GCN"
+			},
+			{
 				"command": "gcn.addContent",
 				"title": "Add Content...",
 				"icon": "$(add)",
@@ -132,12 +138,12 @@
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Click the Import DevOps Project button to clone an existing DevOps Project locally:\n[Import DevOps Project](command:gcn.oci.importFromCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
+				"contents": "Click the Import From Cloud button to clone an existing cloud folder locally:\n[Import From Cloud](command:gcn.importFromCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
 				"when": "gcn.servicesInitialized && workspaceFolderCount == 0"
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Click the Deploy to Cloud button to deploy the current folder(s) to the cloud:\n[Deploy to Cloud](command:gcn.oci.deployToCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
+				"contents": "Click the Deploy to Cloud button to deploy the current folder(s) to cloud:\n[Deploy to Cloud](command:gcn.deployToCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
 				"when": "gcn.servicesInitialized && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
 			}
 		],
@@ -153,6 +159,9 @@
 		"menus": {
 			"commandPalette": [
 				{
+					"command": "gcn.deployToCloud",
+					"when": "false"
+				},{
 					"command": "gcn.addContent",
 					"when": "false"
 				},
@@ -204,12 +213,22 @@
 			"editor/context": [],
 			"view/title": [
 				{
+					"command": "gcn.deployToCloud",
+					"when": "view == gcn-services && gcn.servicesInitialized && gcn.globalDeployAction",
+					"group": "navigation@1"
+				},
+				{
 					"command": "gcn.addContent",
-					"when": "view == gcn-services && gcn.servicesInitialized && gcn.serviceFoldersCount == 1",
+					"when": "view == gcn-services && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1",
 					"group": "navigation@1"
 				}
 			],
 			"view/item/context": [
+				{
+					"command": "gcn.deployToCloud",
+					"when": "viewItem in gcn.deployToCloudNodes",
+					"group": "inline@1"
+				},
 				{
 					"command": "gcn.addContent",
 					"when": "viewItem in gcn.addContentNodes",

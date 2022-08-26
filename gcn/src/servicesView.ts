@@ -10,34 +10,47 @@ import * as gcnServices from './gcnServices';
 import * as model from './model';
 import * as nodes from './nodes';
 import * as dialogs from './dialogs';
+import * as importExportUtils from './importExportUtils';
 
 
-export function initialize(extensionContext: vscode.ExtensionContext) {
-    nodes.registerAddContentNode(FolderNode.CONTEXT);
+export function initialize(context: vscode.ExtensionContext) {
+    nodes.registerDeployNode(FolderNode.CONTEXTS[1]);
+    nodes.registerAddContentNode(FolderNode.CONTEXTS[0]);
     nodes.registerAddContentNode(FolderServicesNode.CONTEXT);
-    extensionContext.subscriptions.push(vscode.commands.registerCommand('gcn.addContent', (...params: any[]) => {
+
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.importFromCloud', () => {
+		importExportUtils.importDevopsProject();
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('gcn.deployToCloud', (...params: any[]) => {
+        if (params[0]) {
+            (params[0] as nodes.DeployNode).deploy();
+        } else {
+            importExportUtils.deployFolders();
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.addContent', (...params: any[]) => {
         if (params[0]) {
             (params[0] as nodes.AddContentNode).addContent();
         } else {
             addContent(undefined, undefined);
         }
 	}));
-    extensionContext.subscriptions.push(vscode.commands.registerCommand('gcn.renameNode', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.renameNode', (...params: any[]) => {
         if (params[0]) {
             (params[0] as nodes.RenameableNode).rename();
         }
 	}));
-    extensionContext.subscriptions.push(vscode.commands.registerCommand('gcn.removeNode', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.removeNode', (...params: any[]) => {
         if (params[0]) {
             (params[0] as nodes.RemovableNode).remove();
         }
 	}));
-    extensionContext.subscriptions.push(vscode.commands.registerCommand('gcn.reloadNode', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.reloadNode', (...params: any[]) => {
         if (params[0]) {
             (params[0] as nodes.ReloadableNode).reload();
         }
 	}));
-    extensionContext.subscriptions.push(vscode.commands.registerCommand('gcn.showReport', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.showReport', (...params: any[]) => {
         if (params[0]) {
             (params[0] as nodes.ShowReportNode).showReport();
         }
@@ -68,7 +81,7 @@ export function findWorkspaceFolderByNode(node: nodes.BaseNode | undefined): vsc
     return undefined;
 }
 
-async function addContent(folder: gcnServices.FolderData | undefined, services: model.CloudServices | undefined) {
+async function addContent(folder: gcnServices.FolderData | null | undefined, services: model.CloudServices | undefined) {
     if (!services) {
         if (!folder) {
             folder = await dialogs.selectFolder();
@@ -110,7 +123,7 @@ export async function build(folders: gcnServices.FolderData[]) {
             if (folders.length > 1) {
                 const children = folderNode.getChildren();
                 if (children && children.length === 0) {
-                    folderNode.setChildren([ new NoServicesNode() ]);
+                    folderNode.setChildren([ new NotDeployedNode() ]);
                 }
             }
             folderNodes.push(folderNode);
@@ -119,14 +132,18 @@ export async function build(folders: gcnServices.FolderData[]) {
     nodeProvider.setRoots(folderNodes);
 }
 
-class FolderNode extends nodes.BaseNode implements nodes.AddContentNode {
+class FolderNode extends nodes.BaseNode implements nodes.DeployNode, nodes.AddContentNode {
 
-    static readonly CONTEXT = 'gcn.folderNode';
+    private static readonly DATA_NAME = 'folderNode';
+    static readonly CONTEXTS = [
+        `gcn.oci.${FolderNode.DATA_NAME}`, // default
+        `gcn.oci.${FolderNode.DATA_NAME}-empty`
+    ];
 
     private folder: gcnServices.FolderData;
 
     constructor(folder: gcnServices.FolderData, children: FolderServicesNode[]) {
-        super(folder.folder.name, undefined, FolderNode.CONTEXT, children, true);
+        super(folder.folder.name, undefined, folder.services.length > 0 ? FolderNode.CONTEXTS[0] : FolderNode.CONTEXTS[1], children, true);
         this.folder = folder;
         this.collapseOneChildNode();
         this.updateAppearance();
@@ -142,6 +159,10 @@ class FolderNode extends nodes.BaseNode implements nodes.AddContentNode {
 
     getFolderData(): gcnServices.FolderData {
         return this.folder;
+    }
+
+    deploy() {
+        importExportUtils.deployFolders(this.folder);
     }
 
     addContent() {
@@ -193,7 +214,15 @@ class FolderServicesNode extends nodes.BaseNode implements nodes.AddContentNode 
 class NoServicesNode extends nodes.TextNode {
 
     constructor() {
-        super('<no cloud services defined>');
+        super('<no cloud services>');
+    }
+
+}
+
+class NotDeployedNode extends nodes.TextNode {
+
+    constructor() {
+        super('<not deployed to cloud>');
     }
 
 }

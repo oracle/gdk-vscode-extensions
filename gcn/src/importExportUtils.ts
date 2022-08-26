@@ -37,11 +37,27 @@ export async function importDevopsProject() {
     }
 }
 
-export async function deployOpenedFolders() {
+export async function deployFolders(folders?: gcnServices.FolderData | gcnServices.FolderData[]) {
+    if (folders === undefined) {
+        const selected = await dialogs.selectFolders('Select Folders to Deploy', false);
+        if (!selected) {
+            if (selected === null) {
+                vscode.window.showErrorMessage('No folders to deploy.');
+            }
+            return;
+        }
+        folders = selected;
+    } else if (!Array.isArray(folders)) {
+        folders = [ folders ];
+    } else if (folders.length === 0) {
+        vscode.window.showErrorMessage('No folders to deploy.');
+        return;
+    }
     const cloudSupport = await dialogs.selectCloudSupport();
     if (!cloudSupport) {
         return;
     }
-    await cloudSupport.deployFolders();
+    const workspaceFolders = gcnServices.folderDataToWorkspaceFolders(folders) as vscode.WorkspaceFolder[];
+    await cloudSupport.deployFolders(workspaceFolders);
     await gcnServices.build();
 }

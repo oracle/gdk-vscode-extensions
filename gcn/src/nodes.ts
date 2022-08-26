@@ -10,6 +10,25 @@ import * as vscode from 'vscode';
 
 export type TreeChanged = (treeItem?: vscode.TreeItem) => void;
 
+export interface DeployNode {
+    deploy(): void;
+}
+
+const DEPLOY_NODES: string[] = [];
+
+export async function registerDeployNode(context: string | string[]) {
+    if (typeof context === 'string' || context instanceof String) {
+        DEPLOY_NODES.push(context as string);
+    } else {
+        DEPLOY_NODES.push(...context);
+    }
+    await vscode.commands.executeCommand('setContext', 'gcn.deployToCloudNodes', DEPLOY_NODES);
+}
+
+export interface RenameableNode {
+    rename(): void;
+}
+
 export interface AddContentNode {
     addContent(): void;
 }

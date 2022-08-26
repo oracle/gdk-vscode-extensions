@@ -17,14 +17,17 @@ import * as ociServices from './ociServices';
 
 
 export async function undeployFolders() {
-    const folders: gcnServices.FolderData[] = gcnServices.getFolderData();
-    const selected: gcnServices.FolderData[] | undefined = await selectFolders(folders);
-    if (selected && selected.length > 0) {
-        for (const folder of selected) {
-            await undeployFolder(folder);
+    const selected = await dialogs.selectFolders('Select Folders to Undeploy', true, false);
+    if (!selected) {
+        if (selected === null) {
+            vscode.window.showErrorMessage('No folders to undeploy.');
         }
-        await gcnServices.build();
+        return;
     }
+    for (const folder of selected) {
+        await undeployFolder(folder);
+    }
+    await gcnServices.build();
 }
 
 export async function undeployFolder(folder: gcnServices.FolderData) {
@@ -292,33 +295,4 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         return p;
     });
     return result;
-}
-
-async function selectFolders(folders: gcnServices.FolderData[]): Promise<gcnServices.FolderData[] | undefined> {
-    if (folders.length === 0) {
-        vscode.window.showErrorMessage('No folders to undeploy.');
-        return undefined;
-    }
-
-    const choices: dialogs.QuickPickObject[] = [];
-    for (const folder of folders) {
-        const choice = new dialogs.QuickPickObject(folder.folder.name, undefined, undefined, folder);
-        (choice as vscode.QuickPickItem).picked = true;
-        choices.push(choice);
-    }
-
-    const selected = await vscode.window.showQuickPick(choices, {
-        placeHolder: 'Confirm Folders to Undeploy',
-        canPickMany: true
-    });
-
-    if (selected) {
-        const ret: gcnServices.FolderData[] = [];
-        for (const folder of selected) {
-            ret.push(folder.object);
-        }
-        return ret;
-    }
-
-    return undefined;
 }

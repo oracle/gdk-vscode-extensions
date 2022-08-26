@@ -25,13 +25,21 @@ export async function build() {
     await vscode.commands.executeCommand('setContext', 'gcn.servicesInitialized', false);
     await vscode.commands.executeCommand('setContext', 'gcn.serviceFoldersCount', -1);
 
+    await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', false);
+
     folderData = [];
     await servicesView.build(folderData);
+
+    let serviceFoldersCount = 0;
 
     const folders = vscode.workspace.workspaceFolders;
     if (folders) {
         for (const folder of folders) {
-            let data: FolderData | undefined = undefined;
+            const data: FolderData = {
+                folder: folder,
+                configurations: [],
+                services: []
+            };
             const services = folderStorage.readStorage(folder);
             const configurations = services?.getConfigurations();
             if (configurations) {
@@ -40,13 +48,8 @@ export async function build() {
                     if (cloudSupport) {
                         const supportServices = cloudSupport.getServices(folder, configuration);
                         if (supportServices) {
-                            if (data === undefined) {
-                                data = {
-                                    folder: folder,
-                                    configurations: [],
-                                    services: []
-                                };
-                                folderData.push(data);
+                            if (data.configurations.length === 0) {
+                                serviceFoldersCount++;
                             }
                             data.configurations.push(configuration);
                             data.services.push(supportServices);
@@ -54,12 +57,15 @@ export async function build() {
                     }
                 }
             }
+            folderData.push(data);
         }
     }
 
     await servicesView.build(folderData);
 
-    await vscode.commands.executeCommand('setContext', 'gcn.serviceFoldersCount', folderData.length);
+    await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', folders && folders.length - serviceFoldersCount > 1);
+
+    await vscode.commands.executeCommand('setContext', 'gcn.serviceFoldersCount', serviceFoldersCount);
     await vscode.commands.executeCommand('setContext', 'gcn.servicesInitialized', true);
 }
 
@@ -93,6 +99,18 @@ function normalize(fsPath: string): string {
         fsPath = fsPath.slice(0, -1);
     }
     return fsPath;
+}
+
+export function folderDataToWorkspaceFolders(folderData: FolderData | FolderData[]): vscode.WorkspaceFolder | vscode.WorkspaceFolder[] {
+    if (Array.isArray(folderData)) {
+        const folders: vscode.WorkspaceFolder[] = [];
+        for (const folder of folderData) {
+            folders.push(folder.folder);
+        }
+        return folders;
+    } else {
+        return folderData.folder;
+    }
 }
 
 // export function getCloudServices(type: string, folder: string | vscode.Uri): model.CloudServices[] | undefined {

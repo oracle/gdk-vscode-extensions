@@ -57,12 +57,12 @@ class OciSupport implements model.CloudSupport {
         return importUtils.importFolders();
     }
 
-    deployFolders(): Promise<undefined> {
+    deployFolders(folders: vscode.WorkspaceFolder[]): Promise<undefined> {
         const saveConfig: deployUtils.SaveConfig = (folder: string, config: any) => {
             folderStorage.storeCloudSupportData(this, [ folder ], [ config ]);
             return true;
         }
-        return deployUtils.deployFolders(RESOURCES_FOLDER, saveConfig);
+        return deployUtils.deployFolders(folders, RESOURCES_FOLDER, saveConfig);
     }
 
     getServices(folder: vscode.WorkspaceFolder, configuration: model.ServicesConfiguration): model.CloudServices | undefined {
