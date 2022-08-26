@@ -28,7 +28,8 @@ const ICON = 'play-circle';
 
 type BuildPipeline = {
     ocid: string,
-    displayName: string
+    displayName: string,
+    lastBuildRun?: string
 }
 
 export function initialize(context: vscode.ExtensionContext) {
@@ -178,10 +179,12 @@ class Service extends ociService.Service {
         for (const itemData of itemsData) {
             const ocid = itemData.ocid;
             const displayName = itemData.displayName;
+            const lastBuildRun = itemData.lastBuildRun;
             if (ocid && displayName) {
                 const object: BuildPipeline = {
                     ocid: ocid,
-                    displayName: displayName
+                    displayName: displayName,
+                    lastBuildRun: lastBuildRun
                 }
                 nodes.push(new BuildPipelineNode(object, oci, treeChanged));
             }
@@ -211,15 +214,19 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         this.iconPath = new vscode.ThemeIcon(ICON);
         this.command = { command: 'gcn.oci.showBuildOutput', title: 'Show Build Output', arguments: [this] };
         this.updateAppearance();
-        // ociUtils.listBuildRuns(this.oci.getProvider(), this.object.ocid).then(response => {
-        //     if (response?.buildRunSummaryCollection.items.length) {
-        //         const run = response.buildRunSummaryCollection.items[0];
-        //         const output = run.displayName ? vscode.window.createOutputChannel(run.displayName) : undefined;
-        //         output?.hide();
-        //         this.updateLastRun(run.id, run.lifecycleState, output);
-        //         this.updateWhenCompleted(run.id, run.compartmentId);
-        //     }
-        // });
+        if (this.object.lastBuildRun) {
+            try {
+                ociUtils.getBuildRun(this.oci.getProvider(), this.object.lastBuildRun).then(buildRun => {
+                    const run = buildRun.buildRun;
+                    const output = run.displayName ? vscode.window.createOutputChannel(run.displayName) : undefined;
+                    output?.hide();
+                    this.updateLastRun(run.id, run.lifecycleState, output);
+                    this.updateWhenCompleted(run.id, run.compartmentId);
+                });
+            } catch (err) {
+                // TODO: handle?
+            }
+        }
     }
 
     getId() {
@@ -294,6 +301,9 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                                 const buildRun = (await ociUtils.createBuildRun(this.oci.getProvider(), this.object.ocid, buildName, params, commitInfo))?.buildRun;
                                 resolve(true);
                                 if (buildRun) {
+                                    this.object.lastBuildRun = buildRun.id;
+                                    const service = findByNode(this);
+                                    service?.serviceNodesChanged(this);
                                     this.updateLastRun(buildRun.id, buildRun.lifecycleState, buildRun.displayName ? vscode.window.createOutputChannel(buildRun.displayName) : undefined);
                                     this.showBuildOutput();
                                     this.updateWhenCompleted(buildRun.id, buildRun.compartmentId);
@@ -441,8 +451,13 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
             if (this.lastRun?.ocid !== buildRunId) {
                 return undefined;
             }
-            const buildRun = (await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId))?.buildRun;
-            const state = buildRun?.lifecycleState;
+            let buildRun: devops.models.BuildRun;
+            try {
+                buildRun = (await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId)).buildRun;
+            } catch (err) {
+                return undefined;
+            }
+            const state = buildRun.lifecycleState;
             if (this.lastRun?.ocid === buildRunId && buildRun) {
                 if (ociUtils.isSuccess(state)) {
                     deliveredArtifacts = buildRun?.buildOutputs?.deliveredArtifacts?.items.map((artifact: any) => {

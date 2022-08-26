@@ -1420,17 +1420,12 @@ export async function listBuildRuns(authenticationDetailsProvider: common.Config
     }
 }
 
-export async function getBuildRun(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, buildRunID: string): Promise<devops.responses.GetBuildRunResponse | undefined> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const getBuildRunRequest: devops.requests.GetBuildRunRequest = {
-            buildRunId: buildRunID
-        };
-        return client.getBuildRun(getBuildRunRequest);
-    } catch (error) {
-        console.log('>>> getBuildRun ' + error);
-        return undefined;
-    }
+export async function getBuildRun(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, buildRunID: string): Promise<devops.responses.GetBuildRunResponse> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const getBuildRunRequest: devops.requests.GetBuildRunRequest = {
+        buildRunId: buildRunID
+    };
+    return client.getBuildRun(getBuildRunRequest);
 }
 
 export async function createBuildRun(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, name: string, params: { name: string, value: string }[] = [], commitInfo?: devops.models.CommitInfo): Promise<devops.responses.CreateBuildRunResponse | undefined> {
@@ -1468,17 +1463,12 @@ export async function listDeployments(authenticationDetailsProvider: common.Conf
     }
 }
 
-export async function getDeployment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, deploymentID: string): Promise<devops.responses.GetDeploymentResponse | undefined> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+export async function getDeployment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, deploymentID: string): Promise<devops.responses.GetDeploymentResponse> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const getDeploymentRequest: devops.requests.GetDeploymentRequest = {
-            deploymentId: deploymentID
-        };
-        return client.getDeployment(getDeploymentRequest);
-    } catch (error) {
-        console.log('>>> getDeployment ' + error);
-        return undefined;
-    }
+        deploymentId: deploymentID
+    };
+    return client.getDeployment(getDeploymentRequest);
 }
 
 export async function createDeployment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, name: string): Promise<devops.responses.CreateDeploymentResponse | undefined> {

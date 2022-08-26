@@ -113,12 +113,12 @@ export abstract class Service implements dataSupport.DataProducer {
         }
     }
 
-    // serviceNodesChanged(_changed: nodes.BaseNode | nodes.BaseNode[]) {
-    //     this.updateItemsData();
-    //     if (this.dataChanged) {
-    //         this.dataChanged(this);
-    //     }
-    // }
+    serviceNodesChanged(_changed: nodes.BaseNode | nodes.BaseNode[]) {
+        this.updateItemsData();
+        if (this.dataChanged) {
+            this.dataChanged(this);
+        }
+    }
 
     renameServiceNode(node: nodes.BaseNode, caption: string, renameCallback?: (newName: string) => void) {
         const currentName = nodes.getLabel(node);
@@ -133,10 +133,7 @@ export abstract class Service implements dataSupport.DataProducer {
                 if (this.treeChanged) {
                     this.treeChanged(node);
                 }
-                this.updateItemsData();
-                if (this.dataChanged) {
-                    this.dataChanged(this);
-                }
+                this.serviceNodesChanged(node);
             }
         });
     }

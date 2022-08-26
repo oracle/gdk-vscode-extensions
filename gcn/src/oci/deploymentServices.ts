@@ -23,7 +23,8 @@ const ICON = 'rocket';
 
 type DeploymentPipeline = {
     ocid: string,
-    displayName: string
+    displayName: string,
+    lastDeployment?: string
 }
 
 export function initialize(context: vscode.ExtensionContext) {
@@ -145,10 +146,12 @@ class Service extends ociService.Service {
         for (const itemData of itemsData) {
             const ocid = itemData.ocid;
             const displayName = itemData.displayName;
+            const lastDeployment = itemData.lastDeployment;
             if (ocid && displayName) {
                 const object: DeploymentPipeline = {
                     ocid: ocid,
-                    displayName: displayName
+                    displayName: displayName,
+                    lastDeployment: lastDeployment
                 }
                 nodes.push(new DeploymentPipelineNode(object, oci, treeChanged));
             }
@@ -177,15 +180,19 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
         this.iconPath = new vscode.ThemeIcon(ICON);
         this.command = { command: 'gcn.oci.showDeployOutput', title: 'Show Deployment Output', arguments: [this] };
         this.updateAppearance();
-        // ociUtils.listDeployments(this.oci.getProvider(), this.object.ocid).then(response => {
-        //     if (response?.deploymentCollection.items.length) {
-        //         const deployment = response.deploymentCollection.items[0];
-        //         const output = deployment.displayName ? vscode.window.createOutputChannel(deployment.displayName) : undefined;
-        //         output?.hide();
-        //         this.updateLastDeployment(deployment.id, deployment.lifecycleState, output);
-        //         this.updateWhenCompleted(deployment.id, deployment.compartmentId);
-        //     }
-        // });
+        if (this.object.lastDeployment) {
+            try {
+                ociUtils.getDeployment(this.oci.getProvider(), this.object.lastDeployment).then(deploymentResp => {
+                    const deployment = deploymentResp.deployment;
+                    const output = deployment.displayName ? vscode.window.createOutputChannel(deployment.displayName) : undefined;
+                    output?.hide();
+                    this.updateLastDeployment(deployment.id, deployment.lifecycleState, output);
+                    this.updateWhenCompleted(deployment.id, deployment.compartmentId);
+                });
+            } catch (err) {
+                // TODO: handle?
+            }
+        }
     }
 
     getId() {
@@ -233,8 +240,16 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                         if (buildPipelineID) {
                             const lastBuilds = (await ociUtils.listBuildRuns(this.oci.getProvider(), buildPipelineID))?.buildRunSummaryCollection.items;
                             const buildRunId = lastBuilds?.find(build => ociUtils.isSuccess(build.lifecycleState))?.id;
-                            if (!buildRunId || !(await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId))?.buildRun.buildOutputs?.deliveredArtifacts?.items.length) {
-                                vscode.window.showErrorMessage('Cannot find build artifact to deploy. Make sure you run the appropriate build pipeline first...');
+                            let artifactsCount: number | undefined;
+                            if (buildRunId) {
+                                try {
+                                    artifactsCount = (await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId)).buildRun.buildOutputs?.deliveredArtifacts?.items.length;
+                                } catch (err) {
+                                    // TODO: handle?
+                                }
+                            }
+                            if (!artifactsCount) {
+                                vscode.window.showErrorMessage('No build artifact to deploy. Make sure you run the appropriate build pipeline first.');
                                 resolve(false);
                                 return;
                             }
@@ -242,6 +257,9 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                         const deployment = (await ociUtils.createDeployment(this.oci.getProvider(), this.object.ocid, deploymentName))?.deployment;
                         resolve(true);
                         if (deployment) {
+                            this.object.lastDeployment = deployment.id;
+                            const service = findByNode(this);
+                            service?.serviceNodesChanged(this);
                             this.updateLastDeployment(deployment.id, deployment.lifecycleState, deployment.displayName ? vscode.window.createOutputChannel(deployment.displayName) : undefined);
                             this.showDeploymentOutput();
                             this.updateWhenCompleted(deployment.id, deployment.compartmentId);
@@ -295,8 +313,13 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
             if (this.lastDeployment?.ocid !== deploymentId) {
                 return undefined;
             }
-            const deployment = (await ociUtils.getDeployment(this.oci.getProvider(), deploymentId))?.deployment;
-            const state = deployment?.lifecycleState;
+            let deployment: devops.models.Deployment;
+            try {
+                deployment = (await ociUtils.getDeployment(this.oci.getProvider(), deploymentId)).deployment;
+            } catch (err) {
+                return undefined;
+            }
+            const state = deployment.lifecycleState;
             if (this.lastDeployment?.ocid === deploymentId && deployment) {
                 if (ociUtils.isSuccess(state)) {
                     this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output);
