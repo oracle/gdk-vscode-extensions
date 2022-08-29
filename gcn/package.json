@@ -31,6 +31,7 @@
 		"native image"
 	],
 	"activationEvents": [
+		"onCommand:gcn.oci.projectAudit.execute",
 		"onView:gcn-services"
 	],
 	"main": "./dist/extension",
