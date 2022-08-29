@@ -118,6 +118,40 @@ async function getFolderAuditsService(folder: vscode.Uri): Promise<Service | und
     return undefined;
 }
 
+async function selectAuditKnowledgeBase(oci: ociContext.Context): Promise<string | undefined> {
+    async function listKnowledgeBases(oci: ociContext.Context): Promise<adm.models.KnowledgeBaseSummary[] | undefined> {
+        // TODO: display the progress in QuickPick
+        return await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Reading compartment knowledge bases...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async (resolve) => {
+                resolve((await ociUtils.listKnowledgeBases(oci.getProvider(), oci.getCompartment()))?.knowledgeBaseCollection.items);
+            });
+        })
+    }
+    const existing = await listKnowledgeBases(oci);
+    if (!existing) {
+        vscode.window.showErrorMessage('No knowledge bases available to run the project audit.');
+        return undefined;
+    } else {
+        if (existing.length === 1) {
+            return existing[0].id;
+        }
+        const choices: dialogs.QuickPickObject[] = [];
+        for (const knowledgeBase of existing) {
+            choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${knowledgeBase.displayName}`, undefined, undefined, knowledgeBase));
+        }
+        // TODO: provide a possibility to create a new knowledge base
+        // TODO: provide a possibility to select knowledge bases from different compartments
+        const selection = await vscode.window.showQuickPick(choices, {
+            placeHolder: 'Select the Knowledge Base to Perform Project Audits'
+        })
+        return selection?.object.id;
+    }
+}
+
 async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeBase[]): Promise<KnowledgeBase[] | undefined> {
     function shouldIgnore(ocid: string) {
         if (!ignore) {
@@ -214,8 +248,17 @@ class Service extends ociService.Service {
     }
 
     async setupAuditsKnowledgeBase(): Promise<string | undefined> {
-        // TODO: interactively select & store knowledge base for this folder
-        return this.settingsData?.folderAuditsKnowledgeBase;
+        const knowledgeBase = await selectAuditKnowledgeBase(this.oci);
+        if (knowledgeBase) {
+            if (!this.settingsData) {
+                this.settingsData = {};
+            }
+            this.settingsData.folderAuditsKnowledgeBase = knowledgeBase;
+            if (this.dataChanged) {
+                this.dataChanged(this);
+            }
+        }
+        return knowledgeBase;
     }
 
     async executeProjectAudit(uri: vscode.Uri) {
