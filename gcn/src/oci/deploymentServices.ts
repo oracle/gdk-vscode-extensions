@@ -264,8 +264,10 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                             this.showDeploymentOutput();
                             this.updateWhenCompleted(deployment.id, deployment.compartmentId);
                         }
-                    } catch (err: any) {
-                        vscode.window.showErrorMessage(err.message);
+                    } catch (err) {
+                        if ((err as any).message) {
+                            vscode.window.showErrorMessage((err as any).message);
+                        }
                         resolve(false)
                     }
                 });
