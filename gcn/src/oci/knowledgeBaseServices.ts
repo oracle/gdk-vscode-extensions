@@ -213,7 +213,7 @@ class Service extends ociService.Service {
             return;
         }
 
-        return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri.fsPath, 
+        return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri.toString(), 
             auditsKnowledgeBase, 
             this.oci.getCompartment(), 
             this.oci.getDevOpsProject()
@@ -225,7 +225,7 @@ class Service extends ociService.Service {
         if (!auditsKnowledgeBase) {
             return;
         }
-        vscode.commands.executeCommand('nbls.gcn.projectAudit.display', this.folder.uri.fsPath, auditsKnowledgeBase, 
+        vscode.commands.executeCommand('nbls.gcn.projectAudit.display', this.folder.uri.toString(), auditsKnowledgeBase, 
                                         this.oci.getCompartment(), this.oci.getDevOpsProject());
     }
 
