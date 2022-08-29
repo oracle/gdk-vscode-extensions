@@ -10,6 +10,7 @@ import * as path from 'path';
 import * as model from '../model';
 import * as dialogs from '../dialogs';
 import * as gitUtils from '../gitUtils';
+import * as folderStorage from '../folderStorage';
 import * as ociUtils from './ociUtils';
 import * as ociServices from './ociServices';
 import * as ociAuthentication from './ociAuthentication';
@@ -74,14 +75,20 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
             }
 
             for (const repository of repositories) {
-                progress.report({
-                    message: `Importing services for code repository ${repository.name}...`
-                });
                 const folder = path.join(targetDirectory.fsPath, repository.name); // TODO: name and toplevel dir might differ!
                 folders.push(folder);
 
-                const services = await importServices(authentication, compartment, devopsProject.ocid, repository.ocid);
-                servicesData.push(services);
+                if (folderStorage.storageExists(folder)) {
+                    // GCN configuration already exists in the cloud repository
+                    servicesData.push(undefined);
+                } else {
+                    // GCN configuration does not exist in the cloud repository
+                    progress.report({
+                        message: `Importing services for code repository ${repository.name}...`
+                    });
+                    const services = await importServices(authentication, compartment, devopsProject.ocid, repository.ocid);
+                    servicesData.push(services);
+                }
             }
 
             resolve(undefined);

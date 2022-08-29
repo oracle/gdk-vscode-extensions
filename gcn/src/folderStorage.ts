@@ -60,6 +60,15 @@ export class FolderStorage {
 
 }
 
+export function storageExists(folder: string): boolean {
+    const configurationFile = getConfigurationFile(folder);
+    return fs.existsSync(configurationFile);
+}
+
+function getConfigurationFile(folder: string): string {
+    return path.join(folder, VSCODE_METADATA_FOLDER, CONFIG_FILE);
+}
+
 export function readStorage(folder: vscode.WorkspaceFolder): FolderStorage | undefined {
     const folderConfiguration = read(folder.uri.fsPath);
     if (folderConfiguration) {
@@ -74,7 +83,7 @@ export function readStorage(folder: vscode.WorkspaceFolder): FolderStorage | und
 }
 
 function read(folder: string): any | undefined {
-    const configurationFile = path.join(folder, VSCODE_METADATA_FOLDER, CONFIG_FILE);
+    const configurationFile = getConfigurationFile(folder);
     if (!fs.existsSync(configurationFile)) {
         return undefined;
     }
@@ -165,14 +174,16 @@ export function createSampleConfiguration(folder: vscode.WorkspaceFolder) {
 
 export function storeCloudSupportData(cloudSupport: model.CloudSupport, folders: string[], servicesData: any[]) {
     for (let idx = 0; idx < folders.length; idx++) {
-        const cloudServices = [
-            {
-                type: cloudSupport.getType(),
-                name: cloudSupport.getName(),
-                data: servicesData[idx]
-            }
-        ]
-        storeCloudServices(folders[idx], cloudServices, false);
+        if (servicesData[idx]) {
+            const cloudServices = [
+                {
+                    type: cloudSupport.getType(),
+                    name: cloudSupport.getName(),
+                    data: servicesData[idx]
+                }
+            ]
+            storeCloudServices(folders[idx], cloudServices, false);
+        }
     }
 }
 
