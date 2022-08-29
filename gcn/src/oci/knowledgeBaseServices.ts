@@ -52,9 +52,27 @@ export function initialize(context: vscode.ExtensionContext) {
     ociNodes.registerOpenInConsoleNode(VulnerabilityAuditNode.CONTEXT);
 }
 
-export async function importServices(_oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
+export async function importServices(oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
     // TODO: Might return populated instance of Service which internally called importServices()
-    return undefined;
+    const provider = oci.getProvider();
+    const compartment = oci.getCompartment();
+    const knowledgeBases = (await ociUtils.listKnowledgeBases(provider, compartment))?.knowledgeBaseCollection.items;
+    if (knowledgeBases && knowledgeBases.length > 0) {
+        const knowledgeBase = knowledgeBases[0].id;
+        const result: dataSupport.DataProducer = {
+            getDataName: () => DATA_NAME,
+            getData: () => {
+                return {
+                    settings: {
+                        folderAuditsKnowledgeBase: knowledgeBase
+                    }
+                }
+            }
+        };
+        return result;
+    } else {
+        return undefined;
+    }
 }
 
 export function create(folder: vscode.WorkspaceFolder, oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged): ociService.Service {
