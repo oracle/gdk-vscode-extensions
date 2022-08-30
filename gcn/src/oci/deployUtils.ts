@@ -388,7 +388,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 if (!project_build_native_executable_command) {
                     return `Failed to resolve project build native executable command for folder ${folder.uri.fsPath}`;
                 }
-                const project_native_executable_artifact_location = projectUtils.getProjectNativeExecutableArtifactLocation(folder);
+                const project_native_executable_artifact_location = await projectUtils.getProjectNativeExecutableArtifactLocation(folder);
                 if (!project_native_executable_artifact_location) {
                     return `Failed to resolve project native executable artifact for folder ${folder.uri.fsPath}`;
                 }
