@@ -88,6 +88,10 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                     });
                     const services = await importServices(authentication, compartment, devopsProject.ocid, repository.ocid);
                     servicesData.push(services);
+
+                    // Add .vscode/gcn.json to .gitignore
+                    const gcnConfig = folderStorage.getDefaultLocation();
+                    gitUtils.addGitIgnoreEntry(folder, gcnConfig);
                 }
             }
 

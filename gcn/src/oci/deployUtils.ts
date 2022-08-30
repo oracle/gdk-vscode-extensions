@@ -10,6 +10,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as gitUtils from '../gitUtils'
 import * as dialogs from '../dialogs';
+import * as folderStorage from '../folderStorage';
 import * as projectUtils from '../projectUtils';
 import * as importUtils from './importUtils';
 import * as ociUtils from './ociUtils';
@@ -460,12 +461,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     return;
                 }
 
+                // Add .vscode/gcn.json to .gitignore
+                const storage = folderStorage.getDefaultLocation();
+                gitUtils.addGitIgnoreEntry(repositoryDir, storage);
+
                 // --- Populate code repository
                 progress.report({
                     increment,
                     message: `Populating source code repository ${repositoryName}...`
                 });
-                const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir);
+                const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir, storage);
                 if (pushErr) {
                     resolve(`Failed to push ${repositoryName}: ${pushErr}`);
                     return;

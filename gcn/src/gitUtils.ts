@@ -7,6 +7,8 @@
 
 import * as vscode from 'vscode';
 import * as cp from 'child_process';
+import * as path from 'path';
+import * as fs from 'fs';
 
 
 function getGitAPI() {
@@ -107,7 +109,7 @@ export async function pushLocalBranch(target: vscode.Uri): Promise<boolean | und
     }
 }
 
-export async function populateNewRepository(address: string, source: string): Promise<string | undefined> {
+export async function populateNewRepository(address: string, source: string, ...forced: string[]): Promise<string | undefined> {
     const gitPath = getPath();
     if (!gitPath) {
         return 'Cannot access Git support.';
@@ -147,6 +149,16 @@ export async function populateNewRepository(address: string, source: string): Pr
     } catch (err) {
         return `git add: ${err}`;
     }
+    if (forced && forced.length > 0) {
+        try {
+            const files = forced.join(' ');
+            const command = `${gitPath} add -f ${files}`;
+            // console.log('>>> ' + command + ' in ' + source);
+            await execute(command, source);
+        } catch (err) {
+            return `git add -f: ${err}`;
+        }
+    }
     try {
         const command = `${gitPath} commit -m "Initial commit from VS Code"`;
         // console.log('>>> ' + command + ' in ' + source);
@@ -182,4 +194,32 @@ async function execute(command: string, cwd: string): Promise<string> {
             }
         })
     });
+}
+
+export function addGitIgnoreEntry(folder: string, entry: string) {
+    entry = entry.replace(/\\/g, '/');
+    const gitIgnore = path.join(folder, '.gitignore');
+    if (fs.existsSync(gitIgnore)) {
+        const content = fs.readFileSync(gitIgnore).toString();
+        const lineEndRegExp = new RegExp('.*(\r?\n)');
+        const match = lineEndRegExp.exec(content);
+        const lineEnd = match && match[1] ? match[1] : getSystemLineEnd();
+        const lines = content.length === 0 ? [] : content.split(lineEnd);
+        for (const line of lines) {
+            if (line.trim() === entry) {
+                return;
+            }
+        }
+        const trailingNewline = lines[lines.length - 1].length === 0;
+        fs.writeFileSync(gitIgnore, (trailingNewline ? '' : lineEnd) + entry + (trailingNewline ? lineEnd : ''), { flag: 'a' });
+    } else {
+        fs.writeFileSync(gitIgnore, entry, { flag: 'w' });
+    }
+}
+
+function getSystemLineEnd(): string {
+    switch (process.platform) {
+        case 'win32': return '\r\n';
+        default: return '\n';
+    }
 }

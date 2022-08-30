@@ -60,13 +60,17 @@ export class FolderStorage {
 
 }
 
+export function getDefaultLocation(): string {
+    return path.join(VSCODE_METADATA_FOLDER, CONFIG_FILE);
+}
+
 export function storageExists(folder: string): boolean {
     const configurationFile = getConfigurationFile(folder);
     return fs.existsSync(configurationFile);
 }
 
 function getConfigurationFile(folder: string): string {
-    return path.join(folder, VSCODE_METADATA_FOLDER, CONFIG_FILE);
+    return path.join(folder, getDefaultLocation());
 }
 
 export function readStorage(folder: vscode.WorkspaceFolder): FolderStorage | undefined {
