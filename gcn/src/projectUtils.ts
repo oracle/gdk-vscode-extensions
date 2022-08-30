@@ -10,6 +10,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const GET_PROJECT_ARTIFACTS = 'nbls.gcn.project.artifacts';
+const NATIVE_BUILD = 'native-build';
 
 // TODO: implement correctly for Maven/Gradle projects
 
@@ -53,7 +54,17 @@ export async function getProjectBuildArtifactLocation(folder: vscode.WorkspaceFo
     return undefined;
 }
 
-export function getProjectNativeExecutableArtifactLocation(folder: vscode.WorkspaceFolder): string | undefined {
+export async function getProjectNativeExecutableArtifactLocation(folder: vscode.WorkspaceFolder): Promise<string | undefined> {
+    if ((await vscode.commands.getCommands()).find(cmd => GET_PROJECT_ARTIFACTS === cmd)) {
+        const projectUri: string = folder.uri.toString();
+        const artifacts: any[] = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, projectUri, NATIVE_BUILD);
+        if (artifacts && artifacts.length === 1) {
+            const loc: string = artifacts[0].location;
+            if (loc.startsWith(projectUri + '/')) {
+                return loc.slice(projectUri.length + 1);
+            }
+        }
+    }
     if (isMaven(folder)) {
         return `target/${folder.name}`;
     }
