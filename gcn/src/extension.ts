@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import * as model from './model';
 import * as gcnServices from './gcnServices';
 import * as servicesView from './servicesView';
+import * as welcome from './welcome';
 
 
 export const CLOUD_SUPPORTS: model.CloudSupport[] = [];
@@ -19,6 +20,13 @@ export function activate(context: vscode.ExtensionContext) {
 		require('./oci/ociSupport').create(context)
 		// TODO: add another cloud implementations here
 	);
+	
+	if (vscode.workspace.getConfiguration().get<boolean>('gcn.showWelcomePage')) {
+		welcome.WelcomePanel.createOrShow(context);
+	}
+	context.subscriptions.push(vscode.commands.registerCommand('gcn.showWelcomePage', () => {
+		welcome.WelcomePanel.createOrShow(context);
+	}));
 
 	servicesView.initialize(context);
 	context.subscriptions.push(vscode.window.registerTreeDataProvider('gcn-services', servicesView.nodeProvider));

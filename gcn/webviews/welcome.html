@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src {{cspSource}} 'self' 'unsafe-inline'; img-src {{cspSource}}; script-src {{cspSource}}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{cssUri}}">
+    <title>Micronaut Tools</title>
+</head>
+
+<body>
+	<div class="welcomePageContainer">
+		<div class="welcomePage" role="document">
+
+			<div class="banner" style="background-image: url('{{imgsUri}}/gcnBanner.png')"> <!-- NOTE: Expanding {{imgsUri}} doesn't work in .css, defined inline in .html -->
+				<h1 class="caption">Graal Cloud Native</h1>
+				<p class="banner-section">
+					Graal Cloud Native (GCN) is a full stack framework for building portable cloud-native</br>
+					applications using the Java ecosystem on top of managed services in the public cloud.
+				</p>
+				<p class="banner-section">
+					<a href='https://developer.oracle.com/java/graalvm/cloud-native/'><button class="banner-button vscode-font" id="showGCNPage">Learn More</button></a>
+				</p>
+			</div>
+
+			<div class="content">
+				<div class="links">
+					<div class="section">
+						<h2 class="caption">Setup</h2>
+						<ul class="list">
+							<li><a href="https://www.oracle.com/cloud/free/" title="Create Oracle Cloud account">1. Create Oracle Cloud account</a></li>
+							<li><a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm" title="Configure cloud access">2. Create .oci/config cloud access configuration</a></li>
+							<li><a href="command:gcn.oci.initializeSshKeys" title="Initialize SSH keys">3. Initialize SSH keys</a></li>
+						</ul>
+					</div>
+					<div class="section">
+						<h2 class="caption">Project</h2>
+						<ul>
+							<li><a href="command:gcn.createGcnProject" title="Create a new Graal Cloud Native project">Create new GCN project...</a></li>
+							<li><a href="command:vscode.openFolder" title="Open existing Graal Cloud Native project">Open existing GCN project...</a></li>
+						</ul>
+					</div>
+				</div>
+
+				<div class="docs">
+					<div class="section">
+						<h2 class="caption">Help</h2>
+						<div class="list">
+							<div class="item">
+								<a class="button" href="https://developer.oracle.com/java/graalvm/cloud-native/?ytid=p-t5nTLEwO8" title="Introduction to GraalVM & Micronaut® for Oracle Cloud">
+									<h3 class="caption">Get Started with Graal Cloud Native</h3>
+									<span class="detail">Introduction to GraalVM & Micronaut® for Oracle Cloud</span>
+								</a>
+							</div>
+							<div class="item">
+								<div class="panel">
+									<!--h3 class="caption">Extension</h3-->
+									<a href="vscode:extension/oracle-labs-graalvm.graalvm-gcn" title="Open extension documentation">Extension documentation</a>
+									<a href="https://github.com/graalvm/vscode-extensions/issues/new?labels=enhancement" title="File a new feature request">Request a feature</a>
+									<a href="https://github.com/graalvm/vscode-extensions/issues/new?labels=bug" title="File a new bug report">File a bug</a>
+									<a href="https://github.com/oracle/graal/discussions" title="Provide us with a feedback">Send feedback</a>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+			</div>
+
+			<div class="footer">
+				<p class="showOnStartup">
+					<input type="checkbox" id="showWelcomePage" class="checkbox" {{showWelcomePage}}>
+					<label class="caption" for="showWelcomePage">Show this page when using Graal Cloud Native</label>
+				</p>
+			</div>
+
+		</div>
+	</div>
+
+	<script src="{{jsUri}}"></script>
+
+</body>
