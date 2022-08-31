@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import * as devops from 'oci-devops';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
+import * as kubernetesUtils from "../kubernetesUtils";
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociService from './ociService';
@@ -34,6 +35,9 @@ export function initialize(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runDeployPipeline', (node: DeploymentPipelineNode) => {
 		node.runPipeline();
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openInBrowser', (node: DeploymentPipelineNode) => {
+		node.openDeploymentInBrowser();
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.showDeployOutput', (node: DeploymentPipelineNode) => {
 		node.showDeploymentOutput();
@@ -166,12 +170,13 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
     static readonly DATA_NAME = 'deploymentPipelineNode';
     static readonly CONTEXTS = [
         `gcn.oci.${DeploymentPipelineNode.DATA_NAME}`, // default
-        `gcn.oci.${DeploymentPipelineNode.DATA_NAME}-in-progress` // in progress
+        `gcn.oci.${DeploymentPipelineNode.DATA_NAME}-in-progress`, // in progress
+        `gcn.oci.${DeploymentPipelineNode.DATA_NAME}-deployments-available` // artifacts available
     ];
     
     private object: DeploymentPipeline;
     private oci: ociContext.Context;
-    private lastDeployment?: { ocid: string, state?: string, output?: vscode.OutputChannel };
+    private lastDeployment?: { ocid: string, state?: string, output?: vscode.OutputChannel, deploymentName?: string };
 
     constructor(object: DeploymentPipeline, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
         super(object.displayName, undefined, DeploymentPipelineNode.CONTEXTS[0], undefined, undefined, treeChanged);
@@ -271,20 +276,60 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                         resolve(false)
                     }
                 });
-            })
+            });
         }
+    }
+
+    openDeploymentInBrowser() {
+        vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Resolving deployment...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async resolve => {
+                try {
+                    const kubectl = await kubernetesUtils.getKubectlAPI();
+                    if (!kubectl) {
+                        resolve(false);
+                        return;
+                    }
+                    const deploymentName = this.lastDeployment?.deploymentName;
+                    if (!deploymentName) {
+                        vscode.window.showErrorMessage('Cannot resolve the latest deployment.');
+                        resolve(false);
+                        return;
+                    }
+                    // TODO: get remote port number from deployment ?
+                    const remotePort = 8080;
+                    const localPort = this.random(3000, 50000);
+                    const result = await kubectl.portForward(`deployments/${deploymentName}`, undefined, localPort, remotePort, { showInUI: { location: 'status-bar' } }); 
+                    if (!result) {
+                        vscode.window.showErrorMessage(`Cannot forward port for the latest deployment of ${deploymentName}.`);
+                        resolve(false);
+                        return;
+                    }
+                    vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${localPort}`));
+                    resolve(true);
+                } catch (err) {
+                    if ((err as any).message) {
+                        vscode.window.showErrorMessage((err as any).message);
+                    }
+                    resolve(false)
+                }
+            });
+        });
     }
 
     showDeploymentOutput() {
         this.lastDeployment?.output?.show();
     }
 
-    private updateLastDeployment(ocid: string, state?: string, output?: vscode.OutputChannel) {
+    private updateLastDeployment(ocid: string, state?: string, output?: vscode.OutputChannel, deploymentName?: string) {
         if (this.lastDeployment?.output !== output) {
             this.lastDeployment?.output?.hide();
             this.lastDeployment?.output?.dispose();
         }
-        this.lastDeployment = { ocid, state, output };
+        this.lastDeployment = { ocid, state, output, deploymentName };
         switch (state) {
             case 'ACCEPTED':
             case 'IN_PROGRESS':
@@ -294,7 +339,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                 break;
             case 'SUCCEEDED':
                 this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.green'));
-                this.contextValue = DeploymentPipelineNode.CONTEXTS[0];
+                this.contextValue = deploymentName ? DeploymentPipelineNode.CONTEXTS[2] : DeploymentPipelineNode.CONTEXTS[0];
                 break;
             case 'FAILED':
                 this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.red'));
@@ -324,7 +369,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
             const state = deployment.lifecycleState;
             if (this.lastDeployment?.ocid === deploymentId && deployment) {
                 if (ociUtils.isSuccess(state)) {
-                    this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output);
+                    this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output, (await this.getResource()).freeformTags?.gcn_tooling_okeDeploymentName);
                 }
                 if (this.lastDeployment?.output && compartmentId && groupId && logId) {
                     const timeStart = deployment.deploymentExecutionProgress?.timeStarted;
@@ -352,7 +397,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
         };
         const state = await ociUtils.completion(5000, update);
         if (this.lastDeployment?.ocid === deploymentId) {
-            this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output);
+            this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output, this.lastDeployment?.deploymentName);
             // Some messages can appear in the log minutes after the deployment finished.
             // Wating for 10 minutes periodiccaly polling for them.
             for (let i = 0; i < 60; i++) {
@@ -363,5 +408,9 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                 await update();
             }
         }
+    }
+
+    private random(low: number, high: number): number {
+        return Math.floor(Math.random() * (high - low) + low);
     }
 }

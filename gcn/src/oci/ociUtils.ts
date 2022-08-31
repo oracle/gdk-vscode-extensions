@@ -1471,13 +1471,14 @@ export async function getDeployment(authenticationDetailsProvider: common.Config
     return client.getDeployment(getDeploymentRequest);
 }
 
-export async function createDeployment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, name: string): Promise<devops.responses.CreateDeploymentResponse | undefined> {
+export async function createDeployment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, name: string, tags?: { [key:string]: string }): Promise<devops.responses.CreateDeploymentResponse | undefined> {
     try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createDeploymentDetails: devops.models.CreateDeployPipelineDeploymentDetails = {
             displayName: name,
             deploymentType: devops.models.CreateDeployPipelineDeploymentDetails.deploymentType,
-            deployPipelineId: pipelineID
+            deployPipelineId: pipelineID,
+            freeformTags: tags
         };
         const createDeploymentRequest: devops.requests.CreateDeploymentRequest = {
             createDeploymentDetails: createDeploymentDetails

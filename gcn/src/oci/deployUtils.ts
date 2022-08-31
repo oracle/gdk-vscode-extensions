@@ -338,7 +338,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     message: `Creating OKE deployment configuration artifact for ${repositoryName}...`
                 });
                 const oke_deploy_config_template = 'oke_deploy_config.yaml';
-                const oke_deployConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_config_template, '', docker_nibuildImage, projectName.toLowerCase());
+                const oke_deployConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_config_template, '', docker_nibuildImage, repositoryName.toLowerCase());
                 if (!oke_deployConfigInlineContent) {
                     resolve(`Failed to configure OKE deployment configuration for ${repositoryName}`);
                     return;
@@ -356,7 +356,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     increment,
                     message: `Creating deployment to OKE pipeline for docker native executables of ${repositoryName}...`
                 });
-                const oke_deployPipeline = (await ociUtils.createDeployPipeline(provider, project, 'DeployDockerImageToOkePipeline', { 'gcn_tooling_buildPipelineOCID': docker_nibuildPipeline}))?.deployPipeline.id;
+                const oke_deployPipeline = (await ociUtils.createDeployPipeline(provider, project, 'DeployDockerImageToOkePipeline', {
+                    'gcn_tooling_buildPipelineOCID': docker_nibuildPipeline,
+                    'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()
+                }))?.deployPipeline.id;
                 if (!oke_deployPipeline) {
                     resolve(`Failed to create docker native executables deployment to OKE pipeline for ${repositoryName}.`);
                     return;
