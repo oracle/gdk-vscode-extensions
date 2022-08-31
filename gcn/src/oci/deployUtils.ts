@@ -51,7 +51,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
         cancellable: false
     }, (progress, _token) => {
         return new Promise(async resolve => {
-            const increment = 100 / (folders.length * 12 + 11);
+            const increment = 100 / (folders.length * 13 + 10);
 
             // -- Create notification topic
             progress.report({
@@ -161,17 +161,6 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 return;
             }
 
-            // --- Create container repository
-            progress.report({
-                increment,
-                message: `Creating container repository...`
-            });
-            const containerRepository = (await ociUtils.createContainerRepository(provider, compartment, projectName))?.containerRepository;
-            if (!containerRepository) {
-                resolve('Failed to create container repository.');
-                return;
-            }
-
             // --- Create cluster environment
             progress.report({
                 increment,
@@ -210,6 +199,18 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 }
                 if (!codeRepository.sshUrl || !codeRepository.httpUrl) {
                     resolve(`Failed to resolve URL of source code repository ${repositoryName}.`);
+                    return;
+                }
+
+                // --- Create container repository
+                progress.report({
+                    increment,
+                    message: `Creating container repository...`
+                });
+                const containerRepositoryName = folders.length > 1 ? `${projectName}-${repositoryName}` : projectName;
+                const containerRepository = (await ociUtils.createContainerRepository(provider, compartment, containerRepositoryName))?.containerRepository;
+                if (!containerRepository) {
+                    resolve(`Failed to create container repository ${containerRepositoryName}.`);
                     return;
                 }
 

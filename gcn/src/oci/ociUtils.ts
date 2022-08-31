@@ -1199,13 +1199,13 @@ export async function createArtifactsRepository(authenticationDetailsProvider: c
     }
 }
 
-export async function createContainerRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, projectName: string): Promise<artifacts.responses.CreateContainerRepositoryResponse | undefined> {
+export async function createContainerRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryName: string): Promise<artifacts.responses.CreateContainerRepositoryResponse | undefined> {
     try {
         const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createContainerRepositoryDetails = {
             compartmentId: compartmentID,
-            displayName: `${projectName.toLowerCase()}_container_repository`,
-            description: `Mutable container repository for devops project ${projectName}`,
+            displayName: repositoryName.toLowerCase(),
+            description: `Mutable container repository for ${repositoryName}`,
             isImmutable: false,
             isPublic: true
         };

@@ -72,7 +72,11 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         cancellable: false
     }, async (_progress, _token) => {
         _progress.report({message : "Listing project repositories"});
+        const repoNames: string[] = [];
         const repoPromises : Promise<any>[] | undefined = (await ociUtils.listCodeRepositories(authProvider, devopsId))?.repositoryCollection.items.map( repo => {
+            if (repo.name) {
+                repoNames.push(repo.name);
+            }
             _progress.report({ message: `Deleting code repository: ${repo.name}`})
             return ociUtils.deleteCodeRepository(authProvider, repo.id);
         });
@@ -258,8 +262,9 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         _progress.report({ message: 'Searching container repositories'});
         const containerRepositories = (await ociUtils.listContainerRepositories(authProvider, compartmentId))?.containerRepositoryCollection.items;
         if (containerRepositories) {
+            const containerRepositoryNames = repoNames.length > 1 ? repoNames.map(name => `${data[0].name}-${name}`.toLowerCase()) : [ data[0].name.toLowerCase() ];
             for (const repo of containerRepositories) {
-                if ((repo.displayName === `${data[0].name.toLowerCase()}_container_repository`)) {
+                if (containerRepositoryNames.includes(repo.displayName)) {
                     _progress.report({message : `Deleting container repository ${repo.displayName}`});
                     await ociUtils.deleteContainerRepository(authProvider, repo.id);
                 }
