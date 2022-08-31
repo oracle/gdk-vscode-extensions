@@ -120,3 +120,38 @@ async function getGraalVMVersions(homeFolder: string): Promise<string[] | undefi
         }
     });
 }
+
+export function getJavaHome(): string {
+	let javaHome: string = vscode.workspace.getConfiguration('graalvm').get('home') as string;
+	if (javaHome) {
+		return javaHome;
+	}
+	javaHome = process.env['GRAALVM_HOME'] as string;
+	if (javaHome) {
+		return javaHome;
+	}
+	javaHome = vscode.workspace.getConfiguration('java').get('home') as string;
+	if (javaHome) {
+		return javaHome;
+	}
+	javaHome = process.env['JAVA_HOME'] as string;
+	return javaHome;
+}
+
+export function normalizeJavaVersion(version: string | undefined, supportedVersions: string[]): string {
+    if (!version) {
+        return '8';
+    }
+    if (!supportedVersions || supportedVersions.length == 0) {
+        return version;
+    }
+    let versionN = parseInt(version);
+    for (let supportedVersion of supportedVersions.reverse()) {
+        const supportedN = parseInt(supportedVersion);
+        if (versionN >= supportedN) {
+            return supportedVersion;
+        }
+    }
+    return '8';
+}
+

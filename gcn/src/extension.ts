@@ -10,7 +10,7 @@ import * as model from './model';
 import * as gcnServices from './gcnServices';
 import * as servicesView from './servicesView';
 import * as welcome from './welcome';
-
+import * as gcnProjectCreate from './gcnProjectCreate';
 
 export const CLOUD_SUPPORTS: model.CloudSupport[] = [];
 
@@ -34,6 +34,8 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(async () => {
 		await gcnServices.build();
 	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand("gcn.createGcnProject", () => gcnProjectCreate.createProject(context)));
 
 	gcnServices.build();
 

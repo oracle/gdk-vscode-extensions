@@ -45,6 +45,12 @@
 					"type": "boolean",
 					"default": true,
 					"description": "Show Graal Cloud Native page on extension activation"
+				},
+				"gcn.home": {
+						"type": "string",
+						"default": "",
+						"description": "Optional path to Graal Cloud CLI installation",
+						"scope": "machine"
 				}
 			}
 		},
@@ -158,6 +164,11 @@
 				"command": "gcn.oci.initializeSshKeys",
 				"title": "Initialize SSH Keys",
 				"category": "GCN"
+			},
+			{
+				"command": "gcn.createGcnProject",
+				"title": "Create Project",
+				"category": "GCN"
 			}
 		],
 		"viewsWelcome": [
@@ -191,7 +202,8 @@
 				{
 					"command": "gcn.deployToCloud",
 					"when": "false"
-				},{
+				},
+				{
 					"command": "gcn.addContent",
 					"when": "false"
 				},
