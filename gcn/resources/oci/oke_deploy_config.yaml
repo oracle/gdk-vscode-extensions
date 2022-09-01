@@ -16,6 +16,7 @@ spec:
     spec:
       containers:
       - name: ${{deploy_artifact_name}}
+        imagePullPolicy: Always
         image: ${{project_artifact_location}}
         ports:
           - containerPort: 8080
