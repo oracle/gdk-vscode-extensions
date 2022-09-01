@@ -167,7 +167,7 @@
 			},
 			{
 				"command": "gcn.createGcnProject",
-				"title": "Create Project",
+				"title": "Create GCN Project",
 				"category": "GCN"
 			}
 		],

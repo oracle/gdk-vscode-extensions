@@ -3,15 +3,15 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { /* getMicronautHome, getMicronautLaunchURL, getJavaHome, */ MultiStepInput } from "./dialogs";
-import { /*getJavaHome, */normalizeJavaVersion } from './graalvmUtils';
+import { MultiStepInput } from "./dialogs";
+import { normalizeJavaVersion } from './graalvmUtils';
 
 require('../lib/gcn.ui.api');
 
 /**
  * Title for the whole Wizard
  */
- const title = 'Create new GCN Project';
+ const title = 'Create New GCN Project';
 
  /**
   * Number of fixed steps. Update whenever steps in selectCreateOptions change
@@ -87,7 +87,7 @@ var gcnApi : any = undefined;
 
 async function initialize() : Promise<any> {
     if (gcnApi) {
-        return new Promise((resolve, reject) => { resolve(gcnApi); });
+        return new Promise((resolve, _reject) => { resolve(gcnApi); });
     } else {
         AotjsVM.run([]).then((vm : any) => {
             return gcnApi = vm.exports.gcn.ui.API;
@@ -103,10 +103,12 @@ export async function createProject(context : vscode.ExtensionContext) : Promise
     var options : CreateOptions | undefined;
     await initialize();
     options = await initialize().then(() => {
-        return selectCreateOptions(context);
+        return selectCreateOptions();
     });
 
     /*
+    for debugging
+
     options = {
         applicationType : 'APPLICATION',
         language: 'JAVA',
@@ -378,7 +380,7 @@ function getFeaturesFromCategory(category : string) : ValuePickItem[] {
         const community : boolean = f.isCommunity().$as('boolean');
 
         if (preview) {
-            label = '$(feedback) ' + label;
+            label = '$(eye) ' + label;
         }
         if (community) {
             label = '$(github) ' + label;
@@ -422,7 +424,7 @@ function findSelectedItems(from: ValueAndLabel[], selected : ValueAndLabel[] | V
     return ret;
 }
 
-async function selectCreateOptions(context: vscode.ExtensionContext): Promise<CreateOptions | undefined> {
+async function selectCreateOptions(): Promise<CreateOptions | undefined> {
     const commands: string[] = await vscode.commands.getCommands();
     const graalVMs: {name: string, path: string, active: boolean}[] = commands.includes('extension.graalvm.findGraalVMs') ? await vscode.commands.executeCommand('extension.graalvm.findGraalVMs') || [] : [];
 
@@ -685,30 +687,5 @@ export function getGCNHome() : string {
         return gcnHome;
     }
     return process.env['OCI_HOME'] as string;
-}
-
-export function getMicronautHome(): string {
-	let micronautHome: string = vscode.workspace.getConfiguration('micronaut').get('home') as string;
-	if (micronautHome) {
-		return micronautHome;
-	}
-	micronautHome = process.env['MICRONAUT_HOME'] as string;
-	return micronautHome;
-}
-
-export function getMicronautLaunchURL(): string {
-	let micronautLaunchURL: string = vscode.workspace.getConfiguration('micronaut').get('launchUrl') as string;
-	if (!micronautLaunchURL) {
-		micronautLaunchURL = process.env['MICRONAUT_LAUNCH_URL'] as string;
-	}
-	if (micronautLaunchURL) {
-		if (!micronautLaunchURL.startsWith('https://') && !micronautLaunchURL.startsWith('http://')) {
-			micronautLaunchURL = 'https://' + micronautLaunchURL;
-		}
-		if (micronautLaunchURL.endsWith('/')) {
-			return micronautLaunchURL.slice(0, micronautLaunchURL.length - 1);
-		}
-	}
-	return micronautLaunchURL;
 }
 
