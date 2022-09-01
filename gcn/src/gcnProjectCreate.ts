@@ -428,10 +428,9 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
     const commands: string[] = await vscode.commands.getCommands();
     const graalVMs: {name: string, path: string, active: boolean}[] = commands.includes('extension.graalvm.findGraalVMs') ? await vscode.commands.executeCommand('extension.graalvm.findGraalVMs') || [] : [];
 
-	async function collectInputs(): Promise<State> {
+	async function collectInputs(): Promise<State | undefined> {
 		const state = {} as Partial<State>;
-        await MultiStepInput.run(input => pickMicronautVersion(input, state));
-		return state as State;
+        return await MultiStepInput.run(input => pickMicronautVersion(input, state)) ? state as State : undefined;
 	}
 
 	async function pickMicronautVersion(input: MultiStepInput, state: Partial<State>) {
@@ -605,7 +604,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			totalSteps: totalSteps(state),
             placeholder: 'Choose categories to include features from',
             items: choices,
-            activeItems: findSelectedItems(choices, state.featureCategories),
+            activeItems: findSelectedItems(choices, state.featureCategories || []),
             canSelectMany: true,
 			shouldResume: () => Promise.resolve(false)
         });
@@ -654,7 +653,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
     }
     
     const featureList: string[] = [];
-    for (const cat of s.featureCategories) {
+    for (const cat of s.featureCategories || []) {
         const list = values(s.features?.get(cat.value));
         if (list) {
             featureList.push(...list);

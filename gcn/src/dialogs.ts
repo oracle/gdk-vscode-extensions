@@ -178,9 +178,11 @@ export class MultiStepInput {
 	private current?: vscode.QuickInput;
 	private steps: InputStep[] = [];
 
-	private async stepThrough(start: InputStep) {
+	private async stepThrough(start: InputStep) : Promise<boolean> {
 		let step: InputStep | void = start;
+		let ok : boolean = false;
 		while (step) {
+			ok = false;
 			this.steps.push(step);
 			if (this.current) {
 				this.current.enabled = false;
@@ -188,6 +190,7 @@ export class MultiStepInput {
 			}
 			try {
 				step = await step(this);
+				ok = true;
 			} catch (err) {
 				if (err === InputFlowAction.back) {
 					this.steps.pop();
@@ -204,6 +207,7 @@ export class MultiStepInput {
 		if (this.current) {
 			this.current.dispose();
 		}
+		return ok;
 	}
 
 	async showQuickPick<T extends vscode.QuickPickItem, P extends QuickPickParameters<T>>({ title, step, totalSteps, items, activeItems, placeholder, canSelectMany, buttons, shouldResume }: P) {
