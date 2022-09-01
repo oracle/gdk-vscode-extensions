@@ -1,5 +1,5 @@
 {
-	"name": "graalvm-gcn",
+	"name": "gcn",
 	"displayName": "Graal Cloud Native Tools",
 	"description": "Graal Cloud Native tools for the VS Code",
 	"version": "0.0.1",
