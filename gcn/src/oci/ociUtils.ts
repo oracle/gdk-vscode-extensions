@@ -261,6 +261,26 @@ export async function listCodeRepositories(authenticationDetailsProvider: common
     }
 }
 
+export async function getDeployEnvironment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, envID: string): Promise<devops.responses.GetDeployEnvironmentResponse | undefined> {
+    try {
+        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+        const createDeployEnvironmentRequest: devops.requests.GetDeployEnvironmentRequest = {
+            deployEnvironmentId: envID
+        };
+        return await client.getDeployEnvironment(createDeployEnvironmentRequest);
+    } catch (error) {
+        console.log('>>> getDeployEnvironment ' + error);
+        return undefined;
+    }
+}
+
+export function asOkeDeployEnvironemnt(env?: devops.models.DeployEnvironment): devops.models.OkeClusterDeployEnvironment | undefined {
+    if (env?.deployEnvironmentType === devops.models.OkeClusterDeployEnvironment.deployEnvironmentType) {
+        return env as devops.models.OkeClusterDeployEnvironment;
+    }
+    return undefined;
+}
+
 export async function getCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string): Promise<devops.responses.GetRepositoryResponse | undefined> {
     try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
