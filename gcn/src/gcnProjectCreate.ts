@@ -640,7 +640,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
             return undefined;
         }
     }
-    const s : State = await collectInputs();
+    const s : State | undefined = await collectInputs();
     if (!s) {
         return undefined;
     }
