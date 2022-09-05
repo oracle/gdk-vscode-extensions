@@ -110,22 +110,25 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
         })
     }
     const pipelines: BuildPipeline[] = [];
+    const descriptions: string[] = [];
     const existing = await listBuildPipelines(oci);
     if (existing) {
         let idx = 1;
         for (const item of existing) {
             if (!shouldIgnore(item.id)) {
                 const displayName = item.displayName ? item.displayName : `Build Pipeline ${idx++}`;
+                const description = item.description ? item.description : 'Build pipeline';
                 pipelines.push({
                     ocid: item.id,
                     displayName: displayName
                 });
+                descriptions.push(description);
             }
         }
     }
     const choices: dialogs.QuickPickObject[] = [];
-    for (const pipeline of pipelines) {
-        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${pipeline.displayName}`, undefined, undefined, pipeline));
+    for (let i = 0; i < pipelines.length; i++) {
+        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${pipelines[i].displayName}`, undefined, descriptions[i], pipelines[i]));
     }
     // TODO: display pipelines for the repository and for the project
     // TODO: provide a possibility to create a new pipeline
@@ -267,16 +270,16 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                 graalvmUtils.getActiveGVMVersion().then(async version => {
                     if (version) {
                         if (gitUtils.locallyModified(folder)) {
-                            const cancelOption = 'Cancel build';
-                            const runBuildOption = 'Build anyway';
+                            const cancelOption = 'Cancel Build';
+                            const runBuildOption = 'Build Anyway';
                             if (runBuildOption !== await vscode.window.showWarningMessage('Local souces differ from the repository content in cloud.', cancelOption, runBuildOption)) {
                                 return;
                             }
                         }
                         const head = gitUtils.getHEAD(folder);
                         if (head?.name && !head.upstream) {
-                            const cancelOption = 'Cancel build';
-                            const pushOption = 'Publish branch and continue';
+                            const cancelOption = 'Cancel Build';
+                            const pushOption = 'Publish Branch And Continue';
                             if (pushOption !== await vscode.window.showWarningMessage(`Local branch "${head.name}" has not been published yet.`, cancelOption, pushOption)) {
                                 return;
                             } else {

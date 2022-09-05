@@ -105,27 +105,31 @@ async function selectDeployArtifacts(oci: ociContext.Context, ignore: DeployArti
         })
     }
     const deployArtifacts: DeployArtifact[] = [];
+    const descriptions: string[] = [];
     const existing = await listDeployArtifacts(oci);
     if (!existing) {
         return;
     }
     let idx = 1;
     for (const item of existing) {
-        if (!shouldIgnore(item.id)) {
-            const displayName = item.displayName ? item.displayName : `Build Artifact ${idx++}`;
-            deployArtifacts.push({
-                ocid: item.id,
-                displayName: displayName,
-                type: item.deployArtifactSource.deployArtifactSourceType
-            });
+        const type = item.deployArtifactSource.deployArtifactSourceType;
+        if (type == devops.models.GenericDeployArtifactSource.deployArtifactSourceType || type === devops.models.OcirDeployArtifactSource.deployArtifactSourceType) {
+            if (!shouldIgnore(item.id)) {
+                const displayName = item.displayName ? item.displayName : `Build Artifact ${idx++}`;
+                const description = item.description ? item.description : 'Build artifact';
+                deployArtifacts.push({
+                    ocid: item.id,
+                    displayName: displayName,
+                    type: item.deployArtifactSource.deployArtifactSourceType
+                });
+                descriptions.push(description);
+            }
         }
     }
     const choices: dialogs.QuickPickObject[] = [];
-    for (const deployArtifact of deployArtifacts) {
-        const icon = getIconKey(deployArtifact);
-        if (icon) {
-            choices.push(new dialogs.QuickPickObject(`$(${icon}) ${deployArtifact.displayName}`, undefined, undefined, deployArtifact));
-        }
+    for (let i = 0; i < deployArtifacts.length; i++) {
+        const icon = getIconKey(deployArtifacts[i]);
+        choices.push(new dialogs.QuickPickObject(`$(${icon}) ${deployArtifacts[i].displayName}`, undefined, descriptions[i], deployArtifacts[i]));
     }
     // TODO: provide a possibility to select build artifacts for different code repository / devops project / compartment
     if (choices.length === 0) {

@@ -177,22 +177,28 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
         })
     }
     const knowledgeBases: KnowledgeBase[] = [];
+    const descriptions: string[] = [];
+    let descriptionExists = false;
     const existing = await listKnowledgeBases(oci);
     if (existing) {
         let idx = 1;
         for (const item of existing) {
             if (!shouldIgnore(item.id)) {
                 const displayName = item.displayName ? item.displayName : `Knowledge Base ${idx++}`;
+                const descriptionTag = item.freeformTags?.['gcn_tooling_description'];
+                if (descriptionTag) descriptionExists = true;
+                const description = descriptionTag ? descriptionTag : 'Knowledge base';
                 knowledgeBases.push({
                     ocid: item.id,
                     displayName: displayName
                 });
+                descriptions.push(description);
             }
         }
     }
     const choices: dialogs.QuickPickObject[] = [];
-    for (const knowledgeBase of knowledgeBases) {
-        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${knowledgeBase.displayName}`, undefined, undefined, knowledgeBase));
+    for (let i = 0; i < knowledgeBases.length; i++) {
+        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${knowledgeBases[i].displayName}`, undefined, descriptionExists ? descriptions[i] : undefined, knowledgeBases[i]));
     }
     // TODO: provide a possibility to create a new knowledge base
     // TODO: provide a possibility to select knowledge bases from different compartments

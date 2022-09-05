@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as dialogs from '../dialogs';
 
 
 export interface OciResource {
@@ -31,7 +32,7 @@ export async function registerOpenInConsoleNode(context: string | string[]) {
 export function openInConsole(item: CloudConsoleItem) {
     const address = item.getAddress();
     if (typeof address === 'string') {
-        vscode.env.openExternal(vscode.Uri.parse(address));
+        dialogs.openInBrowser(address);
     } else if (address instanceof Promise) {
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
@@ -51,7 +52,7 @@ export function openInConsole(item: CloudConsoleItem) {
             if (result instanceof Error) {
                 vscode.window.showErrorMessage(result.message);
             } else {
-                vscode.env.openExternal(vscode.Uri.parse(result));
+                dialogs.openInBrowser(result);
             }
         })
     }

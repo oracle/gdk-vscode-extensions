@@ -21,6 +21,10 @@ export function getGCNTerminal(): vscode.Terminal {
     return terminal;
 }
 
+export async function openInBrowser(address: string): Promise<boolean> {
+	return vscode.env.openExternal(vscode.Uri.parse(address));
+}
+
 export async function selectName(title: string, currentName: string | undefined, forbiddenNames?: string[]): Promise<string | undefined> {
     if (!forbiddenNames) {
         forbiddenNames = [];

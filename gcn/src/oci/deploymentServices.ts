@@ -81,22 +81,25 @@ async function selectDeploymentPipelines(oci: ociContext.Context, ignore: Deploy
         })
     }
     const pipelines: DeploymentPipeline[] = [];
+    const descriptions: string[] = [];
     const existing = await listDeploymentPipelines(oci);
     if (existing) {
         let idx = 1;
         for (const item of existing) {
             if (!shouldIgnore(item.id)) {
                 const displayName = item.displayName ? item.displayName : `Deployment Pipeline ${idx++}`;
+                const description = item.description ? item.description : 'Deployment pipeline';
                 pipelines.push({
                     ocid: item.id,
                     displayName: displayName
                 });
+                descriptions.push(description);
             }
         }
     }
     const choices: dialogs.QuickPickObject[] = [];
-    for (const pipeline of pipelines) {
-        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${pipeline.displayName}`, undefined, undefined, pipeline));
+    for (let i = 0; i < pipelines.length; i++) {
+        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${pipelines[i].displayName}`, undefined, descriptions[i], pipelines[i]));
     }
     // TODO: display pipelines for the repository and for the project
     // TODO: provide a possibility to create a new pipeline

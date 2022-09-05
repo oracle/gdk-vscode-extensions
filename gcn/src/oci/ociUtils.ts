@@ -713,10 +713,11 @@ export async function listNotificationTopics(authenticationDetailsProvider: comm
 }
 
 export async function createKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, 
-    compartmentID: string, displayName : string, flags? : { [key:string] : string } | undefined) :Promise<string | undefined> {
+    compartmentID: string, projectName: string, flags?: { [key: string]: string } | undefined): Promise<string | undefined> {
     const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     
     // PENDING: displayName must match ".*(?:^[a-zA-Z_](-?[a-zA-Z_0-9])*$).*" -- transliterate invalid characters in name
+    const displayName = `${projectName}Audits`;
     const request : adm.requests.CreateKnowledgeBaseRequest = {
         createKnowledgeBaseDetails : {
             "compartmentId" : compartmentID,
@@ -734,11 +735,11 @@ export async function createKnowledgeBase(authenticationDetailsProvider: common.
     return admWaitForResourceCompletionStatus(authenticationDetailsProvider, `Create knowledge base ${displayName}`, resp.opcWorkRequestId);
 }
 
-export async function createDefaultNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<ons.responses.CreateTopicResponse | undefined> {
+export async function createDefaultNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<ons.responses.CreateTopicResponse | undefined> {
     try {
         const idClient = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const getCompartmentsRequest: identity.requests.GetCompartmentRequest = {
-            compartmentId: compartmentID,
+            compartmentId: compartmentID
         };
 
         // PENDING: Creating a notification with a name already used within the tenancy (although in a different compartment) fails - whether it is a feature or a bug is not known.
@@ -749,7 +750,7 @@ export async function createDefaultNotificationTopic(authenticationDetailsProvid
         const createTopicDetails = {
             name: resp.compartment.name.replace(/\W+/g,'') + DEFAULT_NOTIFICATION_TOPIC,
             compartmentId: compartmentID,
-            description: "Default notification topic created from VS Code"
+            description: description
         };
         const createTopicRequest: ons.requests.CreateTopicRequest = {
             createTopicDetails: createTopicDetails
@@ -761,7 +762,7 @@ export async function createDefaultNotificationTopic(authenticationDetailsProvid
     }
 }
 
-export async function getNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean): Promise<string | undefined> {
+export async function getOrCreateNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<string | undefined> {
     try {
         const notificationTopics = await listNotificationTopics(authenticationDetailsProvider, compartmentID);
         if (notificationTopics) {
@@ -769,15 +770,10 @@ export async function getNotificationTopic(authenticationDetailsProvider: common
                 return notificationTopics.items[0].topicId;
             }
         }
-        if (create) {
-            const created = await createDefaultNotificationTopic(authenticationDetailsProvider, compartmentID);
-            if (created) {
-                return created.notificationTopic.topicId;
-            }
-        }
-        return undefined;
+        const created = await createDefaultNotificationTopic(authenticationDetailsProvider, compartmentID, description);
+        return created?.notificationTopic.topicId;
     } catch (error) {
-        console.log('>>> getNotificationTopic ' + error);
+        console.log('>>> getOrCreateNotificationTopic ' + error);
         return undefined;
     }
 }
@@ -797,11 +793,11 @@ export async function listClusters(authenticationDetailsProvider: common.ConfigF
     }
 }
 
-export async function createDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectName: string, compartmentID: string, notificationTopicID: string): Promise<devops.responses.CreateProjectResponse> {
+export async function createDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectName: string, compartmentID: string, notificationTopicID: string, description?: string): Promise<devops.responses.CreateProjectResponse> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const createProjectDetails = {
         name: projectName,
-        description: "Imported from local VS Code workspace",
+        description: description,
         notificationConfig: {
             topicId: notificationTopicID
         },
@@ -878,13 +874,13 @@ export async function searchLogs(authenticationDetailsProvider: common.ConfigFil
     }
 }
 
-export async function createDefaultLogGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<logging.responses.CreateLogGroupResponse | undefined> {
+export async function createDefaultLogGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<logging.responses.CreateLogGroupResponse | undefined> {
     try {
         const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createLogGroupDetails = {
             compartmentId: compartmentID,
             displayName: DEFAULT_LOG_GROUP,
-            description: 'Default log group created by VS Code'
+            description: description
         };
         const createLogGroupRequest: logging.requests.CreateLogGroupRequest = {
             createLogGroupDetails: createLogGroupDetails
@@ -903,7 +899,7 @@ export async function createDefaultLogGroup(authenticationDetailsProvider: commo
     }
 }
 
-export async function getDefaultLogGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean): Promise<string | undefined> {
+export async function getDefaultLogGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean, description?: string): Promise<string | undefined> {
     const logGroup = await listLogGroups(authenticationDetailsProvider, compartmentID, DEFAULT_LOG_GROUP);
     if (logGroup) {
         if (logGroup.items.length > 0) {
@@ -911,7 +907,7 @@ export async function getDefaultLogGroup(authenticationDetailsProvider: common.C
         }
     }
     if (create) {
-        const created = await createDefaultLogGroup(authenticationDetailsProvider, compartmentID);
+        const created = await createDefaultLogGroup(authenticationDetailsProvider, compartmentID, description);
         if (created) {
             const logGroup = await listLogGroups(authenticationDetailsProvider, compartmentID, DEFAULT_LOG_GROUP);
             if (logGroup) {
@@ -1205,7 +1201,7 @@ export async function createArtifactsRepository(authenticationDetailsProvider: c
             repositoryType: artifacts.models.CreateGenericRepositoryDetails.repositoryType,
             displayName: `${projectName}ArtifactRepository`,
             compartmentId: compartmentID,
-            description: `Mutable artifact repository for devops project ${projectName}`,
+            description: `Artifact repository for devops project ${projectName}`,
             isImmutable: false,
             freeformTags: flags
         };
@@ -1219,13 +1215,13 @@ export async function createArtifactsRepository(authenticationDetailsProvider: c
     }
 }
 
-export async function createContainerRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryName: string): Promise<artifacts.responses.CreateContainerRepositoryResponse | undefined> {
+export async function createContainerRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, projectName: string, codeRepositoryName: string, repositoryName: string): Promise<artifacts.responses.CreateContainerRepositoryResponse | undefined> {
     try {
         const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createContainerRepositoryDetails = {
             compartmentId: compartmentID,
             displayName: repositoryName.toLowerCase(),
-            description: `Mutable container repository for ${repositoryName}`,
+            description: `Container repository for devops project ${projectName} & code repository ${codeRepositoryName}`,
             isImmutable: false,
             isPublic: true
         };
@@ -1244,7 +1240,7 @@ export async function createOkeDeployEnvironment(authenticationDetailsProvider: 
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createDeployEnvironmentDetails = {
             deployEnvironmentType: devops.models.CreateOkeClusterDeployEnvironmentDetails.deployEnvironmentType,
-            displayName: `${projectName.toLowerCase()}OkeDeployEnvironment`,
+            displayName: `${projectName}OkeDeployEnvironment`,
             description: `OKE cluster environment for devops project ${projectName}`,
             projectId: projectID,
             clusterId: clusterID
@@ -1259,12 +1255,12 @@ export async function createOkeDeployEnvironment(authenticationDetailsProvider: 
     }
 }
 
-export async function createCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, repositoryName: string, defaultBranchName: string): Promise<devops.responses.CreateRepositoryResponse | undefined> {
+export async function createCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, repositoryName: string, defaultBranchName: string, description?: string): Promise<devops.responses.CreateRepositoryResponse | undefined> {
     try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createRepositoryDetails = {
             name: repositoryName,
-            description: 'Created from local VS Code workspace',
+            description: description,
             projectId: projectID,
             defaultBranch: defaultBranchName,
             repositoryType: devops.models.Repository.RepositoryType.Hosted
@@ -1286,12 +1282,12 @@ export async function createCodeRepository(authenticationDetailsProvider: common
     }
 }
 
-export async function createBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, name: string): Promise<devops.responses.CreateBuildPipelineResponse | undefined> {
+export async function createBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, displayName: string, description?: string): Promise<devops.responses.CreateBuildPipelineResponse | undefined> {
     try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createBuildPipelineDetails = {
-            description: 'Created from local VS Code workspace',
-            displayName: name,
+            displayName: displayName,
+            description: description,
             projectId: projectID
         };
         const createBuildPipelineRequest: devops.requests.CreateBuildPipelineRequest = {
@@ -1377,12 +1373,12 @@ export async function createBuildPipelineArtifactsStage(authenticationDetailsPro
     }
 }
 
-export async function createDeployPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, name: string, params?: devops.models.DeployPipelineParameter[], tags?: { [key:string]: string }): Promise<devops.responses.CreateDeployPipelineResponse | undefined> {
+export async function createDeployPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, name: string, description?: string, params?: devops.models.DeployPipelineParameter[], tags?: { [key:string]: string }): Promise<devops.responses.CreateDeployPipelineResponse | undefined> {
     try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createDeployPipelineDetails: devops.models.CreateDeployPipelineDetails = {
-            description: 'Created from local VS Code workspace',
             displayName: name,
+            description: description,
             projectId: projectID
         };
         if (params) {

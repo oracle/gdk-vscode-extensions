@@ -12,11 +12,11 @@ import * as gitUtils from '../gitUtils'
 import * as dialogs from '../dialogs';
 import * as folderStorage from '../folderStorage';
 import * as projectUtils from '../projectUtils';
-import * as importUtils from './importUtils';
 import * as ociUtils from './ociUtils';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
-import * as ociNodes from './ociNodes';
+import * as ociDialogs from './ociDialogs';
+
 
 export type SaveConfig = (folder: string, config: any) => boolean;
 
@@ -29,7 +29,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
     }
     const provider = authentication.getProvider();
 
-    const compartment = await importUtils.selectCompartment(authentication);
+    const compartment = await ociDialogs.selectCompartment(authentication);
     if (!compartment) {
         return undefined;
     }
@@ -40,7 +40,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
     }
     let projectName = selectedName;
 
-    const okeCluster = await selectCluster(authentication, compartment, provider.getRegion().regionId);
+    const okeCluster = await selectOkeCluster(authentication, compartment.ocid, provider.getRegion().regionId);
     if (!okeCluster) {
         return undefined;
     }
@@ -58,7 +58,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 increment,
                 message: 'Setting up notifications...'
             });
-            const notificationTopic = await ociUtils.getNotificationTopic(provider, compartment, true);
+            const notificationTopicDescription = `Shared notification topic for devops projects in compartment ${compartment.name}`;
+            const notificationTopic = await ociUtils.getOrCreateNotificationTopic(provider, compartment.ocid, notificationTopicDescription);
             if (!notificationTopic) {
                 resolve('Failed to prepare notification topic.');
                 return;
@@ -71,9 +72,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
             });
             
             let createdProject: string | undefined;
+            const projectDescription = 'Graal Cloud Native project deployed from the VS Code';
             while (createdProject === undefined) {
                 try {
-                    createdProject = (await ociUtils.createDevOpsProject(provider, projectName, compartment, notificationTopic)).project.id;
+                    createdProject = (await ociUtils.createDevOpsProject(provider, projectName, compartment.ocid, notificationTopic, projectDescription)).project.id;
                 } catch (err) {
                     const message: string | undefined = (err as any).message;
                     if (message && message.indexOf('project name already exists') !== -1) {
@@ -97,12 +99,13 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 increment,
                 message: 'Setting up logging...'
             });
-            const logGroup = await ociUtils.getDefaultLogGroup(provider, compartment, true);
+            const logGroupDescription = `Shared log group for devops projects in compartment ${compartment.name}`;
+            const logGroup = await ociUtils.getDefaultLogGroup(provider, compartment.ocid, true, logGroupDescription);
             if (!logGroup) {
                 resolve('Failed to resolve log group.');
                 return;
             }
-            const logResp = await ociUtils.createProjectLog(provider, compartment, logGroup, project, projectName);
+            const logResp = await ociUtils.createProjectLog(provider, compartment.ocid, logGroup, project, projectName);
             if (!logResp) {
                 resolve('Failed to create project log.');
                 return;
@@ -113,7 +116,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 increment,
                 message: 'Setting up dynamic group for build pipelines...'
             });
-            const buildPipelinesGroup = await ociUtils.getDefaultBuildPipelinesGroup(provider, compartment, true).catch(err => {
+            const buildPipelinesGroup = await ociUtils.getDefaultBuildPipelinesGroup(provider, compartment.ocid, true).catch(err => {
                 vscode.window.showErrorMessage('Failed to resolve group for build pipelines: ' + err.message);
             });
 
@@ -122,7 +125,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 increment,
                 message: 'Setting up dynamic group for deployment pipelines...'
             });
-            const deployPipelinesGroup = await ociUtils.getDefaultDeployPipelinesGroup(provider, compartment, true).catch(err => {
+            const deployPipelinesGroup = await ociUtils.getDefaultDeployPipelinesGroup(provider, compartment.ocid, true).catch(err => {
                 vscode.window.showErrorMessage('Failed to resolve group for deployment pipelines: ' + err.message);
             });
 
@@ -131,7 +134,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 increment,
                 message: 'Setting up dynamic group for code repositories...'
             });
-            const codeRepositoriesGroup = await ociUtils.getDefaultCodeRepositoriesGroup(provider, compartment, true).catch(err => {
+            const codeRepositoriesGroup = await ociUtils.getDefaultCodeRepositoriesGroup(provider, compartment.ocid, true).catch(err => {
                 vscode.window.showErrorMessage('Failed to resolve group for code repositories: ' + err.message);
             });
 
@@ -141,7 +144,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     increment,
                     message: 'Setting up policy for accessing resources in compartment...'
                 });
-                const compartmentAccessPolicy = await ociUtils.getCompartmentAccessPolicy(provider, compartment, buildPipelinesGroup.name, deployPipelinesGroup.name, codeRepositoriesGroup.name, true);
+                const compartmentAccessPolicy = await ociUtils.getCompartmentAccessPolicy(provider, compartment.ocid, buildPipelinesGroup.name, deployPipelinesGroup.name, codeRepositoriesGroup.name, true);
                 if (!compartmentAccessPolicy) {
                     resolve('Failed to resolve policy for accessing resources in compartment.');
                     return;
@@ -153,7 +156,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 increment,
                 message: `Creating artifact repository...`
             });
-            const artifactsRepository = (await ociUtils.createArtifactsRepository(provider, compartment, projectName, {
+            const artifactsRepository = (await ociUtils.createArtifactsRepository(provider, compartment.ocid, projectName, {
                 "gcn_tooling_projectOCID" : project
             }))?.repository.id;
             if (!artifactsRepository) {
@@ -178,9 +181,11 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 increment,
                 message: `Creating ADM knowledge base for ${projectName}...`
             });
-            const knowledgeBaseOCID = await ociUtils.createKnowledgeBase(provider, compartment, `Audits-for-${projectName}`, {
-                "gcn_tooling_projectOCID" : project,
-                "gcn_tooling_usage" : "gcn-adm-audit"
+            const knowledgeBaseDescription = `Vulnerability audits for devops project ${projectName}`;
+            const knowledgeBaseOCID = await ociUtils.createKnowledgeBase(provider, compartment.ocid, projectName, {
+                'gcn_tooling_projectOCID': project,
+                'gcn_tooling_description': knowledgeBaseDescription,
+                'gcn_tooling_usage': 'gcn-adm-audit'
             });
 
             for (const folder of folders) {
@@ -192,7 +197,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     increment,
                     message: `Creating source code repository ${repositoryName}...`
                 });
-                const codeRepository = (await ociUtils.createCodeRepository(provider, project, repositoryName, 'master'))?.repository;
+                const description = `Source code repository ${folder.name}`;
+                const codeRepository = (await ociUtils.createCodeRepository(provider, project, repositoryName, 'master', description))?.repository;
                 if (!codeRepository) {
                     resolve(`Failed to create source code repository ${repositoryName}.`);
                     return;
@@ -208,7 +214,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     message: `Creating container repository...`
                 });
                 const containerRepositoryName = folders.length > 1 ? `${projectName}-${repositoryName}` : projectName;
-                const containerRepository = (await ociUtils.createContainerRepository(provider, compartment, containerRepositoryName))?.containerRepository;
+                const containerRepository = (await ociUtils.createContainerRepository(provider, compartment.ocid, projectName, repositoryName, containerRepositoryName))?.containerRepository;
                 if (!containerRepository) {
                     resolve(`Failed to create container repository ${containerRepositoryName}.`);
                     return;
@@ -216,38 +222,40 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
                 const devbuildspec_template = 'devbuild_spec.yaml';
 
-                // --- Create devbuild artifact
+                // --- Create fat JAR artifact
                 progress.report({
                     increment,
-                    message: `Creating devbuild artifacts for ${repositoryName}...`
+                    message: `Creating fat JAR artifact for ${repositoryName}...`
                 });
                 const devbuildArtifactPath = `${repositoryName}-dev.jar`;
                 const devbuildArtifactName = `${repositoryName}_dev_fatjar`;
-                const devbuildArtifactDescription = `Devbuild artifact for project ${projectName} & repository ${repositoryName}`;
+                const devbuildArtifactDescription = `Fat JAR artifact for devops project ${projectName} & repository ${repositoryName}`;
                 const devbuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactsRepository, project, devbuildArtifactPath, devbuildArtifactName, devbuildArtifactDescription))?.deployArtifact.id;
                 if (!devbuildArtifact) {
-                    resolve(`Failed to create devbuild artifacts for ${repositoryName}.`);
+                    resolve(`Failed to create fat JAR artifact for ${repositoryName}.`);
                     return;
                 }
 
-                // --- Create devbuild pipeline
+                // --- Create fat JAR pipeline
                 progress.report({
                     increment,
-                    message: `Creating build pipeline for devbuilds of ${repositoryName}...`
+                    message: `Creating build pipeline for fat JARs of ${repositoryName}...`
                 });
-                const devbuildPipeline = (await ociUtils.createBuildPipeline(provider, project, 'DevbuildPipeline'))?.buildPipeline.id;
+                const devbuildPipelineName = 'Build Fat JAR';
+                const devbuildPipelineDescription = `Build pipeline to build fat JAR for devops project ${projectName} & repository ${repositoryName}`;
+                const devbuildPipeline = (await ociUtils.createBuildPipeline(provider, project, devbuildPipelineName, devbuildPipelineDescription))?.buildPipeline.id;
                 if (!devbuildPipeline) {
-                    resolve(`Failed to create devbuild pipeline for ${repositoryName}.`);
+                    resolve(`Failed to create fat JAR pipeline for ${repositoryName}.`);
                     return;
                 }
                 const devbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, devbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${devbuildspec_template}`))?.buildPipelineStage.id;
                 if (!devbuildPipelineBuildStage) {
-                    resolve(`Failed to create devbuild pipeline build stage for ${repositoryName}.`);
+                    resolve(`Failed to create fat JAR pipeline build stage for ${repositoryName}.`);
                     return;
                 }
                 const devbuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, devbuildPipeline, devbuildPipelineBuildStage, devbuildArtifact, devbuildArtifactName))?.buildPipelineStage.id;
                 if (!devbuildPipelineArtifactsStage) {
-                    resolve(`Failed to create devbuild pipeline artifacts stage for ${repositoryName}.`);
+                    resolve(`Failed to create fat JAR pipeline artifacts stage for ${repositoryName}.`);
                     return;
                 }
 
@@ -256,14 +264,14 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 // --- Create native image artifact
                 progress.report({
                     increment,
-                    message: `Creating native executable artifacts for ${repositoryName}...`
+                    message: `Creating native executable artifact for ${repositoryName}...`
                 });
                 const nibuildArtifactPath = `${repositoryName}-dev`;
                 const nibuildArtifactName = `${repositoryName}_dev_executable`;
-                const nibuildArtifactDescription = `Native executable artifact for project ${projectName} & repository ${repositoryName}`;
+                const nibuildArtifactDescription = `Native executable artifact for devops project ${projectName} & repository ${repositoryName}`;
                 const nibuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactsRepository, project, nibuildArtifactPath, nibuildArtifactName, nibuildArtifactDescription))?.deployArtifact.id;
                 if (!nibuildArtifact) {
-                    resolve(`Failed to create native executable artifacts for ${repositoryName}.`);
+                    resolve(`Failed to create native executable artifact for ${repositoryName}.`);
                     return;
                 }
 
@@ -272,7 +280,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     increment,
                     message: `Creating build pipeline for native executables of ${repositoryName}...`
                 });
-                const nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, 'NativeImagePipeline'))?.buildPipeline.id;
+                const nibuildPipelineName = 'Build Native Image';
+                const nibuildPipelineDescription = `Build pipeline to build native image executable for devops project ${projectName} & repository ${repositoryName}`;
+                const nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, nibuildPipelineName, nibuildPipelineDescription))?.buildPipeline.id;
                 if (!nibuildPipeline) {
                     resolve(`Failed to create native executables pipeline for ${repositoryName}.`);
                     return;
@@ -293,7 +303,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 // --- Create docker native image artifact
                 progress.report({
                     increment,
-                    message: `Creating docker native executable artifacts for ${repositoryName}...`
+                    message: `Creating docker native executable artifact for ${repositoryName}...`
                 });
                 let tenancy: string | undefined;
                 try {
@@ -305,10 +315,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 }
                 const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${tenancy}/${containerRepository.displayName}:\${DOCKER_TAG}`;
                 const docker_nibuildArtifactName = `${repositoryName}_dev_docker_image`;
-                const docker_nibuildArtifactDescription = `Docker native executable artifact for project ${projectName} & repository ${repositoryName}`;
+                const docker_nibuildArtifactDescription = `Docker native executable artifact for devops project ${projectName} & repository ${repositoryName}`;
                 const docker_nibuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, project, docker_nibuildImage, docker_nibuildArtifactName, docker_nibuildArtifactDescription))?.deployArtifact.id;
                 if (!docker_nibuildArtifact) {
-                    resolve(`Failed to create docker native executable artifacts for ${repositoryName}.`);
+                    resolve(`Failed to create docker native executable artifact for ${repositoryName}.`);
                     return;
                 }
 
@@ -317,7 +327,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     increment,
                     message: `Creating build pipeline for docker native executables of ${repositoryName}...`
                 });
-                const docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, 'DockerNativeImagePipeline'))?.buildPipeline.id;
+                const docker_nibuildPipelineName = 'Build Docker Native Image';
+                const docker_nibuildPipelineDescription = `Build pipeline to build docker native executable for devops project ${projectName} & repository ${repositoryName}`;
+                const docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, docker_nibuildPipelineName, docker_nibuildPipelineDescription))?.buildPipeline.id;
                 if (!docker_nibuildPipeline) {
                     resolve(`Failed to create docker native executables build pipeline for ${repositoryName}.`);
                     return;
@@ -348,7 +360,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     return;
                 }
                 const oke_deployConfigArtifactName = `${repositoryName}_oke_deploy_configuration`;
-                const oke_deployConfigArtifactDescription = `Native executable artifact for project ${projectName} & repository ${repositoryName}`;
+                const oke_deployConfigArtifactDescription = `OKE deployment configuration artifact for devops project ${projectName} & repository ${repositoryName}`;
                 const oke_deployConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, project, oke_deployConfigInlineContent, oke_deployConfigArtifactName, oke_deployConfigArtifactDescription))?.deployArtifact.id;
                 if (!oke_deployConfigArtifact) {
                     resolve(`Failed to create OKE deployment configuration artifact for ${repositoryName}.`);
@@ -360,7 +372,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     increment,
                     message: `Creating deployment to OKE pipeline for docker native executables of ${repositoryName}...`
                 });
-                const oke_deployPipeline = (await ociUtils.createDeployPipeline(provider, project, 'DeployDockerImageToOkePipeline', [{
+                const oke_deployPipelineName = 'Deploy Docker Native Image to OKE';
+                const oke_deployPipelineDescription = `Deployment pipeline to deploy docker native executable for devops project ${projectName} & repository ${repositoryName} to OKE`;
+                const oke_deployPipeline = (await ociUtils.createDeployPipeline(provider, project, oke_deployPipelineName, oke_deployPipelineDescription, [{
                     name: 'DOCKER_TAG',
                     defaultValue: 'latest'
                 }], {
@@ -442,7 +456,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     version: '1.0'
                 };
                 data[authentication.getDataName()] = authentication.getData();
-                const oci = new ociContext.Context(authentication, compartment, project, codeRepository.id);
+                const oci = new ociContext.Context(authentication, compartment.ocid, project, codeRepository.id);
                 data[oci.getDataName()] = oci.getData();
                 data.services = {
                     // TODO: Might use populated instance of buildServices.Service as dataSupport.DataProducer
@@ -450,15 +464,15 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         items: [
                             {
                                 'ocid': devbuildPipeline,
-                                'displayName': 'Devbuild (fat JAR)'
+                                'displayName': devbuildPipelineName
                             },
                             {
                                 'ocid': nibuildPipeline,
-                                'displayName': 'Build Native Image'
+                                'displayName': nibuildPipelineName
                             },
                             {
                                 'ocid': docker_nibuildPipeline,
-                                'displayName': 'Build Docker Native Image'
+                                'displayName': docker_nibuildPipelineName
                             }
                         ]
                     },
@@ -467,7 +481,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         items: [
                             {
                                 'ocid': oke_deployPipeline,
-                                'displayName': 'Deploy Docker Native Image to OKE'
+                                'displayName': oke_deployPipelineName
                             }
                         ]
                     },
@@ -517,12 +531,21 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 async function selectProjectName(suggestedName?: string): Promise<string | undefined> {
     function validateProjectName(name: string): string | undefined {
         if (!name || name.length === 0) {
-            return 'Project name cannot be empty.'
+            return 'DevOps project name cannot be empty.'
         }
         if (name.indexOf(' ') !== -1) {
-            return 'Project name may not contain spaces.'
+            return 'DevOps project name may not contain spaces.'
         }
-        // TODO: check for other devops project name constraints
+        if (name.startsWith('-') || name.endsWith('-')) {
+            return 'DevOps project name cannot start or end with \'-\'.'
+        }
+        if (name.indexOf('--') != -1) {
+            return 'DevOps project name cannot contain \'--\'.'
+        }
+        if (!isNaN(name.charAt(0) as any)) {
+            return 'DevOps project name cannot start with a number'
+        }
+        // TODO: check that the name is "ASCII letter, digit, '_' (underscore) or '-' (hyphen) characters"
         return undefined;
     }
     let projectName = await vscode.window.showInputBox({
@@ -536,7 +559,7 @@ async function selectProjectName(suggestedName?: string): Promise<string | undef
     return projectName;
 }
 
-async function selectCluster(authentication: ociAuthentication.Authentication, compartmentID: string, region: string): Promise<string | undefined> {
+async function selectOkeCluster(authentication: ociAuthentication.Authentication, compartmentID: string, region: string): Promise<string | undefined> {
     const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: 'Reading available OKE clusters...',
@@ -565,9 +588,9 @@ async function selectCluster(authentication: ociAuthentication.Authentication, c
     }
 
     if (choices.length === 0) {
-        const createOption = 'Quick create cluster';
+        const createOption = 'Quick Create Cluster';
         if (createOption === await vscode.window.showWarningMessage('No OKE cluster available.', createOption)) {
-            ociNodes.openInConsole({ getAddress: () => `https://cloud.oracle.com/containers/clusters/quick?region=${region}` });
+            dialogs.openInBrowser(`https://cloud.oracle.com/containers/clusters/quick?region=${region}`);
         }
         return undefined;
     }

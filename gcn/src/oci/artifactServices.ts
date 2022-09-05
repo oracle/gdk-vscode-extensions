@@ -82,22 +82,25 @@ async function selectArtifactRepositories(oci: ociContext.Context, ignore: Artif
         })
     }
     const artifactRepositories: ArtifactRepository[] = [];
+    const descriptions: string[] = [];
     const existing = await listArtifactRepositories(oci);
     if (existing) {
         let idx = 1;
         for (const item of existing) {
             if (!shouldIgnore(item.id)) {
                 const displayName = item.displayName ? item.displayName : `Artifact Repository ${idx++}`;
+                const description = item.description ? item.description : 'Artifact repository';
                 artifactRepositories.push({
                     ocid: item.id,
                     displayName: displayName
                 });
+                descriptions.push(description);
             }
         }
     }
     const choices: dialogs.QuickPickObject[] = [];
-    for (const artifactRepository of artifactRepositories) {
-        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${artifactRepository.displayName}`, undefined, undefined, artifactRepository));
+    for (let i = 0; i < artifactRepositories.length; i++) {
+        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${artifactRepositories[i].displayName}`, undefined, descriptions[i], artifactRepositories[i]));
     }
     // TODO: provide a possibility to create a new artifact repository
     // TODO: provide a possibility to select artifact repositories from different compartments
