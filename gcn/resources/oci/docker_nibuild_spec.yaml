@@ -79,10 +79,10 @@ steps:
       echo "APP_FILE: ${APP_FILE}"
       docker build -f ./.gcn/Dockerfile.native \
                   --build-arg APP_FILE=${{project_artifact_location}} \
-                  -t ${DOCKER_TAG} .
+                  -t ${{image_name}}:${DOCKER_TAG} -t ${{image_name}}:latest .
       echo "Done"
       printf "List of docker images:\n $(docker images)"
 outputArtifacts:
   - name: ${{deploy_artifact_name}}
     type: DOCKER_IMAGE
-    location: ${DOCKER_TAG}
+    location: ${{image_name}}:latest

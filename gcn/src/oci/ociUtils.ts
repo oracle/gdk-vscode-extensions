@@ -1377,7 +1377,7 @@ export async function createBuildPipelineArtifactsStage(authenticationDetailsPro
     }
 }
 
-export async function createDeployPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, name: string, tags?: { [key:string]: string }): Promise<devops.responses.CreateDeployPipelineResponse | undefined> {
+export async function createDeployPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, name: string, params?: devops.models.DeployPipelineParameter[], tags?: { [key:string]: string }): Promise<devops.responses.CreateDeployPipelineResponse | undefined> {
     try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createDeployPipelineDetails: devops.models.CreateDeployPipelineDetails = {
@@ -1385,6 +1385,9 @@ export async function createDeployPipeline(authenticationDetailsProvider: common
             displayName: name,
             projectId: projectID
         };
+        if (params) {
+            createDeployPipelineDetails.deployPipelineParameters = { items: params };
+        }
         if (tags) {
             createDeployPipelineDetails.freeformTags = tags;
         }
@@ -1491,15 +1494,20 @@ export async function getDeployment(authenticationDetailsProvider: common.Config
     return client.getDeployment(getDeploymentRequest);
 }
 
-export async function createDeployment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, name: string, tags?: { [key:string]: string }): Promise<devops.responses.CreateDeploymentResponse | undefined> {
+export async function createDeployment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, name: string, args?: devops.models.DeploymentArgument[], tags?: { [key:string]: string }): Promise<devops.responses.CreateDeploymentResponse | undefined> {
     try {
         const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
         const createDeploymentDetails: devops.models.CreateDeployPipelineDeploymentDetails = {
             displayName: name,
             deploymentType: devops.models.CreateDeployPipelineDeploymentDetails.deploymentType,
-            deployPipelineId: pipelineID,
-            freeformTags: tags
+            deployPipelineId: pipelineID
         };
+        if (args) {
+            createDeploymentDetails.deploymentArguments = { items: args };
+        }
+        if (tags) {
+            createDeploymentDetails.freeformTags = tags;
+        }
         const createDeploymentRequest: devops.requests.CreateDeploymentRequest = {
             createDeploymentDetails: createDeploymentDetails
         };

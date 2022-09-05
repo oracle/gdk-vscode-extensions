@@ -303,7 +303,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     resolve(`Failed to create docker native executables pipeline for ${repositoryName} - cannot resolve tenancy name.`);
                     return;
                 }
-                const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${tenancy}/${containerRepository.displayName}:dev`;
+                const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${tenancy}/${containerRepository.displayName}:\${DOCKER_TAG}`;
                 const docker_nibuildArtifactName = `${repositoryName}_dev_docker_image`;
                 const docker_nibuildArtifactDescription = `Docker native executable artifact for project ${projectName} & repository ${repositoryName}`;
                 const docker_nibuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, project, docker_nibuildImage, docker_nibuildArtifactName, docker_nibuildArtifactDescription))?.deployArtifact.id;
@@ -339,7 +339,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     message: `Creating OKE deployment configuration artifact for ${repositoryName}...`
                 });
                 const oke_deploy_config_template = 'oke_deploy_config.yaml';
-                const oke_deployConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_config_template, '', docker_nibuildImage, repositoryName.toLowerCase());
+                const oke_deployConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_config_template, {
+                    image_name: docker_nibuildImage,
+                    app_name: repositoryName.toLowerCase()
+                });
                 if (!oke_deployConfigInlineContent) {
                     resolve(`Failed to configure OKE deployment configuration for ${repositoryName}`);
                     return;
@@ -357,7 +360,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     increment,
                     message: `Creating deployment to OKE pipeline for docker native executables of ${repositoryName}...`
                 });
-                const oke_deployPipeline = (await ociUtils.createDeployPipeline(provider, project, 'DeployDockerImageToOkePipeline', {
+                const oke_deployPipeline = (await ociUtils.createDeployPipeline(provider, project, 'DeployDockerImageToOkePipeline', [{
+                    name: 'DOCKER_TAG',
+                    defaultValue: 'latest'
+                }], {
                     'gcn_tooling_buildPipelineOCID': docker_nibuildPipeline,
                     'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()
                 }))?.deployPipeline.id;
@@ -384,7 +390,11 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 if (!project_devbuild_artifact_location) {
                     return `Failed to resolve project devbuild artifact for folder ${folder.uri.fsPath}`;
                 }
-                const devbuildTemplate = expandTemplate(resourcesPath, devbuildspec_template, project_devbuild_command, project_devbuild_artifact_location, devbuildArtifactName, folder);
+                const devbuildTemplate = expandTemplate(resourcesPath, devbuildspec_template, {
+                    project_build_command: project_devbuild_command,
+                    project_artifact_location: project_devbuild_artifact_location,
+                    deploy_artifact_name: devbuildArtifactName
+                }, folder);
                 if (!devbuildTemplate) {
                     resolve(`Failed to configure devbuild build spec for ${repositoryName}`);
                     return;
@@ -397,18 +407,27 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 if (!project_native_executable_artifact_location) {
                     return `Failed to resolve project native executable artifact for folder ${folder.uri.fsPath}`;
                 }
-                const nibuildTemplate = expandTemplate(resourcesPath, nibuildspec_template, project_build_native_executable_command, project_native_executable_artifact_location, nibuildArtifactName, folder);
+                const nibuildTemplate = expandTemplate(resourcesPath, nibuildspec_template, {
+                    project_build_command: project_build_native_executable_command,
+                    project_artifact_location: project_native_executable_artifact_location,
+                    deploy_artifact_name: nibuildArtifactName
+                }, folder);
                 if (!nibuildTemplate) {
                     resolve(`Failed to configure native executable build spec for ${repositoryName}`);
                     return;
                 }
-                const docker_nibuildTemplate = expandTemplate(resourcesPath, docker_nibuildspec_template, project_build_native_executable_command, project_native_executable_artifact_location, docker_nibuildArtifactName, folder);
+                const docker_nibuildTemplate = expandTemplate(resourcesPath, docker_nibuildspec_template, {
+                    project_build_command: project_build_native_executable_command,
+                    project_artifact_location: project_native_executable_artifact_location,
+                    deploy_artifact_name: docker_nibuildArtifactName,
+                    image_name: containerRepository.displayName.toLowerCase()
+                }, folder);
                 if (!docker_nibuildTemplate) {
                     resolve(`Failed to configure docker native executable build spec for ${repositoryName}`);
                     return;
                 }
                 const docker_ni_file = 'Dockerfile.native';
-                const docker_niFile = expandTemplate(resourcesPath, docker_ni_file, '', '', '', folder);
+                const docker_niFile = expandTemplate(resourcesPath, docker_ni_file, {}, folder);
                 if (!docker_niFile) {
                     resolve(`Failed to configure docker native file for ${repositoryName}`);
                     return;
@@ -564,13 +583,13 @@ async function selectCluster(authentication: ociAuthentication.Authentication, c
     return choice ? choice.object : undefined;
 }
 
-function expandTemplate(templatesStorage: string, template: string, projectBuildCommand: string, projectArtifactLocation: string, deployArtifactName: string, folder?: vscode.WorkspaceFolder): string | undefined {
+function expandTemplate(templatesStorage: string, template: string, args: { [key:string] : string }, folder?: vscode.WorkspaceFolder): string | undefined {
     const templatespec = path.join(templatesStorage, template);
     let templateString = fs.readFileSync(templatespec).toString();
 
-    templateString = templateString.replace(/\${{project_build_command}}/g, projectBuildCommand);
-    templateString = templateString.replace(/\${{project_artifact_location}}/g, projectArtifactLocation);
-    templateString = templateString.replace(/\${{deploy_artifact_name}}/g, deployArtifactName);
+    for (let key in args) {
+        templateString = templateString.replace(new RegExp(`\\\${{${key}}}`, 'g'), args[key]);
+    }
 
     if (folder) {
         const dest = path.join(folder.uri.fsPath, '.gcn');

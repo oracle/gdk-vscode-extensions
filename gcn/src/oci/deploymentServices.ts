@@ -241,25 +241,29 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
             }, (_progress, _token) => {
                 return new Promise(async resolve => {
                     try {
+                        const dockerTagVarName = 'DOCKER_TAG';
+                        let artifactsCount: number | undefined;
+                        let dockerTag: string | undefined;
                         const buildPipelineID = (await this.getResource()).freeformTags?.gcn_tooling_buildPipelineOCID;
                         if (buildPipelineID) {
                             const lastBuilds = (await ociUtils.listBuildRuns(this.oci.getProvider(), buildPipelineID))?.buildRunSummaryCollection.items;
                             const buildRunId = lastBuilds?.find(build => ociUtils.isSuccess(build.lifecycleState))?.id;
-                            let artifactsCount: number | undefined;
                             if (buildRunId) {
                                 try {
-                                    artifactsCount = (await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId)).buildRun.buildOutputs?.deliveredArtifacts?.items.length;
+                                    const buildOutputs = (await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId)).buildRun.buildOutputs;
+                                    artifactsCount = buildOutputs?.deliveredArtifacts?.items.length;
+                                    dockerTag = buildOutputs?.exportedVariables?.items.find(v => v.name === dockerTagVarName)?.value;
                                 } catch (err) {
                                     // TODO: handle?
                                 }
                             }
-                            if (!artifactsCount) {
-                                vscode.window.showErrorMessage('No build artifact to deploy. Make sure you run the appropriate build pipeline first.');
-                                resolve(false);
-                                return;
-                            }
                         }
-                        const deployment = (await ociUtils.createDeployment(this.oci.getProvider(), this.object.ocid, deploymentName))?.deployment;
+                        if (!artifactsCount) {
+                            vscode.window.showErrorMessage('No build artifact to deploy. Make sure you run the appropriate build pipeline first.');
+                            resolve(false);
+                            return;
+                        }
+                        const deployment = (await ociUtils.createDeployment(this.oci.getProvider(), this.object.ocid, deploymentName, dockerTag ? [{ name: dockerTagVarName, value: dockerTag }] : undefined))?.deployment;
                         resolve(true);
                         if (deployment) {
                             this.object.lastDeployment = deployment.id;

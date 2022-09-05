@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ${{deploy_artifact_name}}
+  name: ${{app_name}}
   labels:
-    app: ${{deploy_artifact_name}}
+    app: ${{app_name}}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ${{deploy_artifact_name}}
+      app: ${{app_name}}
   template:
     metadata:
       labels:
-        app: ${{deploy_artifact_name}}
+        app: ${{app_name}}
     spec:
       containers:
-      - name: ${{deploy_artifact_name}}
+      - name: ${{app_name}}
         imagePullPolicy: Always
-        image: ${{project_artifact_location}}
+        image: ${{image_name}}
         ports:
           - containerPort: 8080
