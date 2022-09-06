@@ -318,6 +318,7 @@ body, html {
 .banner-button {
 	cursor: pointer;
 	border: none;
+	border-radius: 2px;
     padding: 5px 20px 5px 20px;
     margin: 0px;
     color: var(--vscode-button-foreground);
