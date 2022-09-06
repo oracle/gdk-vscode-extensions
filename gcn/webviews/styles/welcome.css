@@ -208,7 +208,12 @@ body, html {
 }
 
 .welcomePage .footer .showOnStartup > .checkbox {
-	vertical-align: bottom;
+	transform: scale(1.2);
+	vertical-align: bottom !important;
+}
+
+.welcomePage .footer .showOnStartup > .checkboxLabel {
+	vertical-align: top !important;
 }
 
 .welcomePage .footer .showOnStartup > .checkbox:focus {
