@@ -113,6 +113,7 @@ body, html {
 	border: none;
 	margin: 1px;
 	padding: 12px 10px;
+	border-radius: 2px;
 	font-size: 1.3em;
 	text-align: left;
 	white-space: nowrap;
@@ -148,6 +149,7 @@ body, html {
 	border: none;
 	margin: 1px;
 	padding: 12px 10px;
+	border-radius: 2px;
 	font-size: 1.3em;
 	text-align: left;
 	cursor: pointer;
