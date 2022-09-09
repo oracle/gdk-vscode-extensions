@@ -10,7 +10,6 @@ import * as cp from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 
-
 function getGitAPI() {
     return vscode.extensions.getExtension('vscode.git')?.exports.getAPI(1);
 }
@@ -104,74 +103,34 @@ export async function pushLocalBranch(target: vscode.Uri): Promise<boolean | und
         await vscode.commands.executeCommand('git.publish', [repository]);
         return true;
     } catch (err) {
-        vscode.window.showErrorMessage('Error while pushing a branch');
+        vscode.window.showErrorMessage(`Error while pushing a branch: ${err}`);
         return false;
     }
 }
 
 export async function populateNewRepository(address: string, source: string, ...forced: string[]): Promise<string | undefined> {
-    const gitPath = getPath();
-    if (!gitPath) {
+    const gitApi = getGitAPI();
+    if (!gitApi) {
         return 'Cannot access Git support.';
     }
     try {
-        const command = `${gitPath} init`;
-        // console.log('>>> ' + command + ' in ' + source);
-        await execute(command, source);
-    } catch (err) {
-        return `git init: ${err}`;
-    }
-    try {
-        const command = `${gitPath} remote add origin ${address}`;
-        // console.log('>>> ' + command + ' in ' + source);
-        await execute(command, source);
-    } catch (err) {
-        return `git remote add origin: ${err}`;
-    }
-    try {
-        const command = `${gitPath} fetch`;
-        // console.log('>>> ' + command + ' in ' + source);
-        await execute(command, source);
-    } catch (err) {
-        return `git fetch: ${err}`;
-    }
-    try {
-        const command = `${gitPath} checkout master`;
-        // console.log('>>> ' + command + ' in ' + source);
-        await execute(command, source);
-    } catch (err) {
-        return `git checkout master: ${err}`;
-    }
-    try {
-        const command = `${gitPath} add .`;
-        // console.log('>>> ' + command + ' in ' + source);
-        await execute(command, source);
-    } catch (err) {
-        return `git add: ${err}`;
-    }
-    if (forced && forced.length > 0) {
-        try {
-            const files = forced.join(' ');
-            const command = `${gitPath} add -f ${files}`;
-            // console.log('>>> ' + command + ' in ' + source);
-            await execute(command, source);
-        } catch (err) {
-            return `git add -f: ${err}`;
+        const repository = await gitApi.init(vscode.Uri.file(source));
+        if (!repository) {
+            vscode.window.showErrorMessage(`Cannot initialize Git repository for ${source}`);
+            return undefined;
         }
-    }
-    try {
-        const command = `${gitPath} commit -m "Initial commit from VS Code"`;
-        // console.log('>>> ' + command + ' in ' + source);
-        await execute(command, source);
+        await repository.addRemote('origin', address);
+        await repository.fetch();
+        await repository.checkout('master');
+        await execute(`${gitApi.git.path} add .`, source);
+        await repository.commit('Initial commit from VS Code');
+        await repository.push();
+        if (forced && forced.length) {
+            const files = forced.join(' ');
+            await execute(`${gitApi.git.path} update-index --skip-worktree  ${files}`, source);
+        }
     } catch (err) {
-        return `git commit: ${err}`;
-    }
-    try {
-        const command = `${gitPath} push`;
-        // console.log('>>> ' + command + ' in ' + source);
-        await execute(command, source);
-    } catch (err) {
-        return `git push: ${err}`;
+        return `Error while populating new repository: ${err}`;
     }
     return undefined;
 }

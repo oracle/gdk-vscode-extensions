@@ -498,9 +498,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     return;
                 }
 
-                // Add .vscode/gcn.json to .gitignore
                 const storage = folderStorage.getDefaultLocation();
-                gitUtils.addGitIgnoreEntry(repositoryDir, storage);
 
                 // --- Populate code repository
                 progress.report({
