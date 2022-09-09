@@ -62,8 +62,8 @@ steps:
   - type: Command
     name: "Build application native image"
     command: |
-      echo "Executing build command: ${{project_build_command}}"
-      ${{project_build_command}}
+      echo "Executing build command: {{{project_build_command}}}"
+      {{{project_build_command}}}
     onFailure:
       - type: Command
         command: |
@@ -78,11 +78,11 @@ steps:
       echo "Docker Image Tag: ${DOCKER_TAG}"
       echo "APP_FILE: ${APP_FILE}"
       docker build -f ./.gcn/Dockerfile.native \
-                  --build-arg APP_FILE=${{project_artifact_location}} \
-                  -t ${{image_name}}:${DOCKER_TAG} -t ${{image_name}}:latest .
+                  --build-arg APP_FILE={{{project_artifact_location}}} \
+                  -t {{{image_name}}}:${DOCKER_TAG} -t {{{image_name}}}:latest .
       echo "Done"
       printf "List of docker images:\n $(docker images)"
 outputArtifacts:
-  - name: ${{deploy_artifact_name}}
+  - name: {{{deploy_artifact_name}}}
     type: DOCKER_IMAGE
-    location: ${{image_name}}:latest
+    location: {{{image_name}}}:latest

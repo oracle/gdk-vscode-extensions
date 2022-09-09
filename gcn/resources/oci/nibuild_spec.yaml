@@ -52,8 +52,8 @@ steps:
     name: "Build application native image"
     timeoutInSeconds: 3600
     command: |
-      echo "Executing build command: ${{project_build_command}}"
-      ${{project_build_command}}
+      echo "Executing build command: {{{project_build_command}}}"
+      {{{project_build_command}}}
     onFailure:
       - type: Command
         command: |
@@ -62,6 +62,6 @@ steps:
         timeoutInSeconds: 40
         runAs: root
 outputArtifacts:
-  - name: ${{deploy_artifact_name}}
+  - name: {{{deploy_artifact_name}}}
     type: BINARY
-    location: ${OCI_PRIMARY_SOURCE_DIR}/${{project_artifact_location}}
+    location: ${OCI_PRIMARY_SOURCE_DIR}/{{{project_artifact_location}}}

@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as mustache from 'mustache';
 import * as gitUtils from '../gitUtils'
 import * as dialogs from '../dialogs';
 import * as folderStorage from '../folderStorage';
@@ -55,7 +56,6 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
             // -- Create notification topic
             progress.report({
-                increment,
                 message: 'Setting up notifications...'
             });
             const notificationTopicDescription = `Shared notification topic for devops projects in compartment ${compartment.name}`;
@@ -610,9 +610,7 @@ function expandTemplate(templatesStorage: string, template: string, args: { [key
     const templatespec = path.join(templatesStorage, template);
     let templateString = fs.readFileSync(templatespec).toString();
 
-    for (let key in args) {
-        templateString = templateString.replace(new RegExp(`\\\${{${key}}}`, 'g'), args[key]);
-    }
+    templateString = mustache.render(templateString, args)
 
     if (folder) {
         const dest = path.join(folder.uri.fsPath, '.gcn');
