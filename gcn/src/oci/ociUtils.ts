@@ -191,20 +191,17 @@ export async function getTenancy(authenticationDetailsProvider: common.ConfigFil
     return client.getTenancy(getTenancyRequest);
 }
 
-export async function listCompartments(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.responses.ListCompartmentsResponse | undefined> {
-    try {
-        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const listCompartmentsRequest: identity.requests.ListCompartmentsRequest = {
-            compartmentId: authenticationDetailsProvider.getTenantId(),
-            compartmentIdInSubtree: true,
-            lifecycleState: identity.models.Compartment.LifecycleState.Active,
-            accessLevel: identity.requests.ListCompartmentsRequest.AccessLevel.Accessible
-        };
-        return client.listCompartments(listCompartmentsRequest);
-    } catch (error) {
-        console.log('>>> listCompartments ' + error);
-        return undefined;
-    }
+export async function listCompartments(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.responses.ListCompartmentsResponse> {
+    // TODO: read paged responses
+    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const listCompartmentsRequest: identity.requests.ListCompartmentsRequest = {
+        compartmentId: authenticationDetailsProvider.getTenantId(),
+        compartmentIdInSubtree: true,
+        lifecycleState: identity.models.Compartment.LifecycleState.Active,
+        accessLevel: identity.requests.ListCompartmentsRequest.AccessLevel.Accessible,
+        limit: 1000
+    };
+    return client.listCompartments(listCompartmentsRequest);
 }
 
 export async function getCompartment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<identity.responses.GetCompartmentResponse> {

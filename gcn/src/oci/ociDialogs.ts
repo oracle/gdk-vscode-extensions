@@ -13,6 +13,7 @@ import * as ociAuthentication from './ociAuthentication';
 
 export async function selectCompartment(authentication: ociAuthentication.Authentication): Promise<{ ocid: string, name: string } | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
+    // TODO: add root compartment
     const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: 'Reading available compartments...',
@@ -23,20 +24,32 @@ export async function selectCompartment(authentication: ociAuthentication.Authen
                 if (!compartments) {
                     resolve(undefined);
                 } else {
+                    const compartmentsMap: any = {};
+                    for (const compartment of compartments.items) {
+                        compartmentsMap[compartment.id] = compartment;
+                    }
                     const choices: dialogs.QuickPickObject[] = [];
                     for (const compartment of compartments.items) {
+                        let name = compartment.name;
+                        let parent = compartmentsMap[compartment.compartmentId]; // will be undefined for root compartment
+                        while (parent) {
+                            name = `${parent.name}/${name}`;
+                            parent = compartmentsMap[parent.compartmentId];
+                        }
                         const description = compartment.description ? compartment.description : undefined;
-                        const choice = new dialogs.QuickPickObject(compartment.name, description, undefined, { ocid: compartment.id, name: compartment.name });
+                        const choice = new dialogs.QuickPickObject(name, description, undefined, { ocid: compartment.id, name: name });
                         choices.push(choice);
                     }
-                    resolve(choices);
+                    resolve(choices.sort((o1, o2) => o1.label.localeCompare(o2.label)));
                 }
+            }).catch(err => {
+                vscode.window.showErrorMessage('Failed to read compartments: ' + err.message);
+                resolve(undefined);
             });
         });
     });
 
     if (!choices) {
-        vscode.window.showErrorMessage('Failed to read compartments.');
         return undefined;
     }
 
