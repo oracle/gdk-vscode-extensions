@@ -175,20 +175,20 @@ export async function devopsWaitForResourceCompletionStatus(
     return requestState.resources[0].identifier;
 }
 
-export async function getUser(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.responses.GetUserResponse> {
+export async function getUser(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.models.User> {
     const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const getUserRequest: identity.requests.GetUserRequest = {
         userId: authenticationDetailsProvider.getUser()
     };
-    return client.getUser(getUserRequest);
+    return client.getUser(getUserRequest).then(response => response.user);
 }
 
-export async function getTenancy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.responses.GetTenancyResponse> {
+export async function getTenancy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.models.Tenancy> {
     const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const getTenancyRequest: identity.requests.GetTenancyRequest = {
         tenancyId: authenticationDetailsProvider.getTenantId()
     };
-    return client.getTenancy(getTenancyRequest);
+    return client.getTenancy(getTenancyRequest).then(response => response.tenancy);
 }
 
 export async function listCompartments(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.models.Compartment[]> {
@@ -211,12 +211,12 @@ export async function listCompartments(authenticationDetailsProvider: common.Con
     return result;
 }
 
-export async function getCompartment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<identity.responses.GetCompartmentResponse> {
+export async function getCompartment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<identity.models.Compartment> {
     const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const getCompartmentRequest: identity.requests.GetCompartmentRequest = {
         compartmentId: compartmentID
     };
-    return client.getCompartment(getCompartmentRequest);
+    return client.getCompartment(getCompartmentRequest).then(response => response.compartment);
 }
 
 export async function listDevOpsProjects(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<devops.models.ProjectSummary[]> {
@@ -238,21 +238,16 @@ export async function listDevOpsProjects(authenticationDetailsProvider: common.C
 }
 
 export async function getDevopsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectId : string): Promise<devops.models.Project> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const getProjectsRequest: devops.requests.GetProjectRequest = {
-            projectId : projectId
-        };
-        return client.getProject(getProjectsRequest).then(r => r.project);
-    } catch (error) {
-        console.log('>>> getDevopsProjects ' + error);
-        throw error;
-    }
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const getProjectsRequest: devops.requests.GetProjectRequest = {
+        projectId : projectId
+    };
+    return client.getProject(getProjectsRequest).then(response => response.project);
 }
 
 export async function deleteDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectId : string) {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    return client.deleteProject({ projectId : projectId});
+    return client.deleteProject({ projectId : projectId });
 }
 
 export async function listCodeRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.models.RepositorySummary[]> {
@@ -273,17 +268,12 @@ export async function listCodeRepositories(authenticationDetailsProvider: common
     return result;
 }
 
-export async function getDeployEnvironment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, envID: string): Promise<devops.responses.GetDeployEnvironmentResponse | undefined> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const createDeployEnvironmentRequest: devops.requests.GetDeployEnvironmentRequest = {
-            deployEnvironmentId: envID
-        };
-        return await client.getDeployEnvironment(createDeployEnvironmentRequest);
-    } catch (error) {
-        console.log('>>> getDeployEnvironment ' + error);
-        return undefined;
-    }
+export async function getDeployEnvironment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, envID: string): Promise<devops.models.DeployEnvironment> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const createDeployEnvironmentRequest: devops.requests.GetDeployEnvironmentRequest = {
+        deployEnvironmentId: envID
+    };
+    return client.getDeployEnvironment(createDeployEnvironmentRequest).then(response => response.deployEnvironment);
 }
 
 export function asOkeDeployEnvironemnt(env?: devops.models.DeployEnvironment): devops.models.OkeClusterDeployEnvironment | undefined {
@@ -293,17 +283,12 @@ export function asOkeDeployEnvironemnt(env?: devops.models.DeployEnvironment): d
     return undefined;
 }
 
-export async function getCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string): Promise<devops.responses.GetRepositoryResponse | undefined> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const getRepositoryRequest: devops.requests.GetRepositoryRequest = {
-            repositoryId: repositoryID
-        };
-        return client.getRepository(getRepositoryRequest);
-    } catch (error) {
-        console.log('>>> getRepository ' + error);
-        return undefined;
-    }
+export async function getCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string): Promise<devops.models.Repository> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const getRepositoryRequest: devops.requests.GetRepositoryRequest = {
+        repositoryId: repositoryID
+    };
+    return client.getRepository(getRepositoryRequest).then(response => response.repository);
 }
 
 export async function deleteCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repo : string) : Promise<devops.responses.DeleteRepositoryResponse> {
@@ -311,29 +296,33 @@ export async function deleteCodeRepository(authenticationDetailsProvider: common
     return client.deleteRepository({ repositoryId: repo });
 }
 
-export async function getBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string): Promise<devops.responses.GetBuildPipelineResponse> {
+export async function getBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string): Promise<devops.models.BuildPipeline> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const getBuildPipelineRequest: devops.requests.GetBuildPipelineRequest = {
         buildPipelineId: pipelineID
     };
-    return client.getBuildPipeline(getBuildPipelineRequest);
+    return client.getBuildPipeline(getBuildPipelineRequest).then(response => response.buildPipeline);
 }
 
-export async function listBuildPipelines(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.responses.ListBuildPipelinesResponse | undefined> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const listBuildPipelinesRequest: devops.requests.ListBuildPipelinesRequest = {
-            projectId: projectID,
-            lifecycleState: devops.models.BuildPipeline.LifecycleState.Active
-        };
-        return client.listBuildPipelines(listBuildPipelinesRequest);
-    } catch (error) {
-        console.log('>>> listBuildPipelines ' + error);
-        return undefined;
-    }
+export async function listBuildPipelines(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.models.BuildPipelineSummary[]> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const listBuildPipelinesRequest: devops.requests.ListBuildPipelinesRequest = {
+        projectId: projectID,
+        lifecycleState: devops.models.BuildPipeline.LifecycleState.Active,
+        limit: 1000
+    };
+    const result: devops.models.BuildPipelineSummary[] = [];
+    let nextPage;
+    do {
+        listBuildPipelinesRequest.page = nextPage;
+        const listBuildPipelinesResponse = await client.listBuildPipelines(listBuildPipelinesRequest);
+        result.push(...listBuildPipelinesResponse.buildPipelineCollection.items);
+        nextPage = listBuildPipelinesResponse.opcNextPage;
+    } while (nextPage);
+    return result;
 }
 
-export async function deleteBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipeId: string, wait : boolean = false) : Promise<devops.responses.DeleteBuildPipelineResponse>{
+export async function deleteBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipeId: string, wait: boolean = false) : Promise<devops.responses.DeleteBuildPipelineResponse>{
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     if (!wait) {
         return client.deleteBuildPipeline({ buildPipelineId : pipeId });
@@ -346,18 +335,22 @@ export async function deleteBuildPipeline(authenticationDetailsProvider: common.
     }
 }
 
-export async function listBuildPipelineStages(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string): Promise<devops.responses.ListBuildPipelineStagesResponse | undefined> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const listBuildPipelineStagesRequest: devops.requests.ListBuildPipelineStagesRequest = {
-            buildPipelineId: pipelineID,
-            lifecycleState: devops.models.BuildPipelineStage.LifecycleState.Active
-        };
-        return await client.listBuildPipelineStages(listBuildPipelineStagesRequest);
-    } catch (error) {
-        console.log('>>> listBuildPipelineStages ' + error);
-        return undefined;
-    }
+export async function listBuildPipelineStages(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string): Promise<devops.models.BuildPipelineStageSummary[]> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const listBuildPipelineStagesRequest: devops.requests.ListBuildPipelineStagesRequest = {
+        buildPipelineId: pipelineID,
+        lifecycleState: devops.models.BuildPipelineStage.LifecycleState.Active,
+        limit: 1000
+    };
+    const result: devops.models.BuildPipelineStageSummary[] = [];
+    let nextPage;
+    do {
+        listBuildPipelineStagesRequest.page = nextPage;
+        const listBuildPipelineStagesResponse = await client.listBuildPipelineStages(listBuildPipelineStagesRequest);
+        result.push(...listBuildPipelineStagesResponse.buildPipelineStageCollection.items);
+        nextPage = listBuildPipelineStagesResponse.opcNextPage;
+    } while (nextPage);
+    return result;
 }
 
 export async function deleteBuildPipelineStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, stage : string, wait: boolean = false) : Promise<devops.responses.DeleteBuildPipelineStageResponse>{
@@ -377,11 +370,11 @@ export async function listBuildPipelinesByCodeRepository(authenticationDetailsPr
     const buildPipelines = await listBuildPipelines(authenticationDetailsProvider, projectID);
     const buildPipelineSummaries: devops.models.BuildPipelineSummary[] = [];
     if (buildPipelines) {
-        for (const buildPipeline of buildPipelines.buildPipelineCollection.items) {
+        for (const buildPipeline of buildPipelines) {
             const stages = await listBuildPipelineStages(authenticationDetailsProvider, buildPipeline.id);
             if (stages) {
                 let buildPipelineSummary: devops.models.BuildPipelineSummary | undefined = undefined;
-                for (const stage of stages.buildPipelineStageCollection.items) {
+                for (const stage of stages) {
                     if (stage.buildPipelineStageType === devops.models.BuildStage.buildPipelineStageType) {
                         const buildStage = stage as devops.models.BuildStage;
                         for (const buildSource of buildStage.buildSourceCollection.items) {

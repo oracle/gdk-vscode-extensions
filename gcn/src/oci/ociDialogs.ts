@@ -41,7 +41,7 @@ export async function selectCompartment(authentication: ociAuthentication.Authen
                         choices.push(choice);
                     }
                     choices.sort((o1, o2) => o1.label.localeCompare(o2.label));
-                    const tenancy = (await ociUtils.getTenancy(authentication.getProvider())).tenancy;
+                    const tenancy = await ociUtils.getTenancy(authentication.getProvider());
                     const rootCompartmentName = tenancy.name ? `${tenancy.name} (root)` : 'root';
                     choices.unshift(new dialogs.QuickPickObject(rootCompartmentName, `Root of the${tenancy.name ? ' ' + tenancy.name : ''} tenancy`, undefined, { ocid: tenancy.id, name: rootCompartmentName }));
                     resolve(choices);

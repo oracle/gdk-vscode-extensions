@@ -284,7 +284,7 @@ class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource 
         }, async () => {
             try {
                 const regionKey = this.oci.getProvider().getRegion().regionCode;
-                const tenancyNamespace = (await ociUtils.getTenancy(this.oci.getProvider())).tenancy.name;
+                const tenancyNamespace = (await ociUtils.getTenancy(this.oci.getProvider())).name;
                 if (tenancyNamespace) {
                     const resource = await this.getResource();
                     const repositoryName = resource.repositoryName;

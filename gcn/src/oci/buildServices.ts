@@ -105,7 +105,11 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
-                resolve((await ociUtils.listBuildPipelines(oci.getProvider(), oci.getDevOpsProject()))?.buildPipelineCollection?.items);
+                try {
+                    resolve(await ociUtils.listBuildPipelines(oci.getProvider(), oci.getDevOpsProject()));
+                } catch (err) {
+                    resolve(undefined); // TODO: should be handled somehow
+                }
             });
         })
     }
@@ -237,7 +241,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
     }
 
     async getResource(): Promise<devops.models.BuildPipeline> {
-        return (await ociUtils.getBuildPipeline(this.oci.getProvider(), this.object.ocid)).buildPipeline;
+        return ociUtils.getBuildPipeline(this.oci.getProvider(), this.object.ocid);
     }
 
     rename() {
@@ -294,22 +298,27 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                             cancellable: false
                         }, (_progress, _token) => {
                             return new Promise(async resolve => {
-                                let commitInfo;
-                                if (head?.name && head.commit) {
-                                    const repository = (await ociUtils.getCodeRepository(this.oci.getProvider(), this.oci.getCodeRepository()))?.repository;
-                                    if (repository && repository.httpUrl && `refs/heads/${head.name}` !== repository.defaultBranch) {
-                                        commitInfo = { repositoryUrl: repository.httpUrl, repositoryBranch: head.name, commitHash: head.commit };
+                                try {
+                                    let commitInfo;
+                                    if (head?.name && head.commit) {
+                                        const repository = await ociUtils.getCodeRepository(this.oci.getProvider(), this.oci.getCodeRepository());
+                                        if (repository && repository.httpUrl && `refs/heads/${head.name}` !== repository.defaultBranch) {
+                                            commitInfo = { repositoryUrl: repository.httpUrl, repositoryBranch: head.name, commitHash: head.commit };
+                                        }
                                     }
-                                }
-                                const buildRun = (await ociUtils.createBuildRun(this.oci.getProvider(), this.object.ocid, buildName, params, commitInfo))?.buildRun;
-                                resolve(true);
-                                if (buildRun) {
-                                    this.object.lastBuildRun = buildRun.id;
-                                    const service = findByNode(this);
-                                    service?.serviceNodesChanged(this);
-                                    this.updateLastRun(buildRun.id, buildRun.lifecycleState, buildRun.displayName ? vscode.window.createOutputChannel(buildRun.displayName) : undefined);
-                                    this.showBuildOutput();
-                                    this.updateWhenCompleted(buildRun.id, buildRun.compartmentId);
+                                    const buildRun = (await ociUtils.createBuildRun(this.oci.getProvider(), this.object.ocid, buildName, params, commitInfo))?.buildRun;
+                                    resolve(true);
+                                    if (buildRun) {
+                                        this.object.lastBuildRun = buildRun.id;
+                                        const service = findByNode(this);
+                                        service?.serviceNodesChanged(this);
+                                        this.updateLastRun(buildRun.id, buildRun.lifecycleState, buildRun.displayName ? vscode.window.createOutputChannel(buildRun.displayName) : undefined);
+                                        this.showBuildOutput();
+                                        this.updateWhenCompleted(buildRun.id, buildRun.compartmentId);
+                                    }
+                                } catch (err) {
+                                    vscode.window.showErrorMessage(`Failed to start build pipeline${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                                    resolve(false);
                                 }
                             });
                         })

@@ -308,7 +308,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                         return;
                     }
                     const deployEnvId = deployment.deployPipelineEnvironments?.items.find(env => env.deployEnvironmentId)?.deployEnvironmentId;
-                    const deployEnvironment = deployEnvId ? (await ociUtils.getDeployEnvironment(this.oci.getProvider(), deployEnvId))?.deployEnvironment : undefined;
+                    const deployEnvironment = deployEnvId ? await ociUtils.getDeployEnvironment(this.oci.getProvider(), deployEnvId) : undefined;
                     const okeDeployEnvironment = ociUtils.asOkeDeployEnvironemnt(deployEnvironment);
                     if (!okeDeployEnvironment?.clusterId) {
                         resolve(false);

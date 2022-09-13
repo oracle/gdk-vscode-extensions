@@ -307,7 +307,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 });
                 let tenancy: string | undefined;
                 try {
-                    tenancy = (await ociUtils.getTenancy(provider)).tenancy.name;
+                    tenancy = (await ociUtils.getTenancy(provider)).name;
                 } catch (err) {}
                 if (!tenancy) {
                     resolve(`Failed to create docker native executables pipeline for ${repositoryName} - cannot resolve tenancy name.`);

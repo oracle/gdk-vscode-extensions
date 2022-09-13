@@ -56,7 +56,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         title: `Validating OCI data for folder ${folder.folder.name}`
     }, async (_progress, _token) => {
         const p = await ociUtils.getDevopsProject(authProvider, devopsId);
-        const c = (await ociUtils.getCompartment(authProvider, compartmentId))?.compartment;
+        const c = await ociUtils.getCompartment(authProvider, compartmentId);
         return [p, c];
     });
     if (!data[0]) {
@@ -97,17 +97,17 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         // console.log(`Process pipelines`);
         _progress.report({message : "Listing Build Pipelines"});
 
-        const buildPipelines : devops.models.BuildPipelineSummary[] = (await ociUtils.listBuildPipelines(authProvider, devopsId))?.buildPipelineCollection?.items || [];
+        const buildPipelines: devops.models.BuildPipelineSummary[] = await ociUtils.listBuildPipelines(authProvider, devopsId);
         for (let pipe of buildPipelines) {
             _progress.report({message : `Processing pipeline ${pipe.displayName}`});
 
             // console.log(`Inspecting pipeline ${pipe.displayName} = ${pipe.id}`)
-            const stages : Array<devops.models.BuildPipelineStageSummary> = (await ociUtils.listBuildPipelineStages(authProvider, pipe.id))?.buildPipelineStageCollection.items || [];
-            const orderedStages : devops.models.BuildPipelineStageSummary[] = [];
-            const id2Stage : Map<string, devops.models.BuildPipelineStageSummary> = new Map();
+            const stages: Array<devops.models.BuildPipelineStageSummary> = await ociUtils.listBuildPipelineStages(authProvider, pipe.id);
+            const orderedStages: devops.models.BuildPipelineStageSummary[] = [];
+            const id2Stage: Map<string, devops.models.BuildPipelineStageSummary> = new Map();
 
             // push leaf stages first.
-            const revDeps : Map<string, number> = new Map();
+            const revDeps: Map<string, number> = new Map();
             stages.forEach(s => {
                 id2Stage.set(s.id, s);
                 if (!revDeps.has(s.id)) {

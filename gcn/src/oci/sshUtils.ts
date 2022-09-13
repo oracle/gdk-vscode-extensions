@@ -39,11 +39,13 @@ export async function initializeSshKeys() {
                     let identityFile: string | null | undefined;
                     try {
                         const provider = new common.ConfigFileAuthenticationDetailsProvider();
-                        userName = (await ociUtils.getUser(provider))?.user.name;
-                        tenancyName = (await ociUtils.getTenancy(provider)).tenancy.name;
+                        userName = (await ociUtils.getUser(provider)).name;
+                        tenancyName = (await ociUtils.getTenancy(provider)).name;
                         identityFile = common.ConfigFileReader.parseDefault(null).get('key_file');
                     } catch (err) {
-                        // TODO: handle errors
+                        vscode.window.showErrorMessage(`Failed to read OCI configuration${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                        resolve();
+                        return;
                     }
                     const uri = fileExists ? vscode.Uri.file(defaultConfigLocation) : vscode.Uri.parse('untitled:' + defaultConfigLocation);
                     const editor = await vscode.window.showTextDocument(uri);
