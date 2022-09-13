@@ -31,12 +31,12 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
         return undefined;
     }
 
-    const devopsProject = await ociDialogs.selectDevOpsProject(authentication, compartment.ocid);
+    const devopsProject = await ociDialogs.selectDevOpsProject(authentication, compartment);
     if (!devopsProject) {
         return undefined;
     }
 
-    const repositories = await ociDialogs.selectCodeRepositories(authentication, devopsProject.ocid);
+    const repositories = await ociDialogs.selectCodeRepositories(authentication, devopsProject);
     if (!repositories || repositories.length === 0) {
         return undefined;
     }

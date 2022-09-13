@@ -191,8 +191,7 @@ export async function getTenancy(authenticationDetailsProvider: common.ConfigFil
     return client.getTenancy(getTenancyRequest);
 }
 
-export async function listCompartments(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.responses.ListCompartmentsResponse> {
-    // TODO: read paged responses
+export async function listCompartments(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.models.Compartment[]> {
     const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const listCompartmentsRequest: identity.requests.ListCompartmentsRequest = {
         compartmentId: authenticationDetailsProvider.getTenantId(),
@@ -201,7 +200,15 @@ export async function listCompartments(authenticationDetailsProvider: common.Con
         accessLevel: identity.requests.ListCompartmentsRequest.AccessLevel.Accessible,
         limit: 1000
     };
-    return client.listCompartments(listCompartmentsRequest);
+    const result: identity.models.Compartment[] = [];
+    let nextPage;
+    do {
+        listCompartmentsRequest.page = nextPage;
+        const listCompartmentsResponse = await client.listCompartments(listCompartmentsRequest);
+        result.push(...listCompartmentsResponse.items);
+        nextPage = listCompartmentsResponse.opcNextPage;
+    } while (nextPage);
+    return result;
 }
 
 export async function getCompartment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<identity.responses.GetCompartmentResponse> {
@@ -212,18 +219,22 @@ export async function getCompartment(authenticationDetailsProvider: common.Confi
     return client.getCompartment(getCompartmentRequest);
 }
 
-export async function listDevOpsProjects(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<devops.responses.ListProjectsResponse | undefined> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const listProjectsRequest: devops.requests.ListProjectsRequest = {
-            compartmentId: compartmentID,
-            lifecycleState: devops.models.Project.LifecycleState.Active
-        };
-        return client.listProjects(listProjectsRequest);
-    } catch (error) {
-        console.log('>>> listDevopsProjects ' + error);
-        return undefined;
-    }
+export async function listDevOpsProjects(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<devops.models.ProjectSummary[]> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const listProjectsRequest: devops.requests.ListProjectsRequest = {
+        compartmentId: compartmentID,
+        lifecycleState: devops.models.Project.LifecycleState.Active,
+        limit: 1000
+    };
+    const result: devops.models.ProjectSummary[] = [];
+    let nextPage;
+    do {
+        listProjectsRequest.page = nextPage;
+        const listDevOpsProjectsResponse = await client.listProjects(listProjectsRequest);
+        result.push(...listDevOpsProjectsResponse.projectCollection.items);
+        nextPage = listDevOpsProjectsResponse.opcNextPage;
+    } while (nextPage);
+    return result;
 }
 
 export async function getDevopsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectId : string): Promise<devops.models.Project> {
@@ -244,18 +255,22 @@ export async function deleteDevOpsProject(authenticationDetailsProvider: common.
     return client.deleteProject({ projectId : projectId});
 }
 
-export async function listCodeRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.responses.ListRepositoriesResponse | undefined> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const listRepositoriesRequest: devops.requests.ListRepositoriesRequest = {
-            projectId: projectID,
-            lifecycleState: devops.models.Repository.LifecycleState.Active
-        };
-        return client.listRepositories(listRepositoriesRequest);
-    } catch (error) {
-        console.log('>>> listRepositories ' + error);
-        return undefined;
-    }
+export async function listCodeRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.models.RepositorySummary[]> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const listRepositoriesRequest: devops.requests.ListRepositoriesRequest = {
+        projectId: projectID,
+        lifecycleState: devops.models.Repository.LifecycleState.Active,
+        limit: 1000
+    };
+    const result: devops.models.RepositorySummary[] = [];
+    let nextPage;
+    do {
+        listRepositoriesRequest.page = nextPage;
+        const listRepositoriesResponse = await client.listRepositories(listRepositoriesRequest);
+        result.push(...listRepositoriesResponse.repositoryCollection.items);
+        nextPage = listRepositoriesResponse.opcNextPage;
+    } while (nextPage);
+    return result;
 }
 
 export async function getDeployEnvironment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, envID: string): Promise<devops.responses.GetDeployEnvironmentResponse | undefined> {

@@ -25,7 +25,11 @@ export async function undeployFolders() {
         return;
     }
     for (const folder of selected) {
-        await undeployFolder(folder);
+        try {
+            await undeployFolder(folder);
+        } catch (err) {
+            vscode.window.showErrorMessage(`Failed to undeploy folder ${folder.folder.name}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+        }
     }
     await gcnServices.build();
 }
@@ -73,7 +77,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
     }, async (_progress, _token) => {
         _progress.report({message : "Listing project repositories"});
         const repoNames: string[] = [];
-        const repoPromises : Promise<any>[] | undefined = (await ociUtils.listCodeRepositories(authProvider, devopsId))?.repositoryCollection.items.map( repo => {
+        const repoPromises : Promise<any>[] | undefined = (await ociUtils.listCodeRepositories(authProvider, devopsId)).map(repo => {
             if (repo.name) {
                 repoNames.push(repo.name);
             }
