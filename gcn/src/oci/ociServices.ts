@@ -68,29 +68,53 @@ export function findByFolderData(folder: gcnServices.FolderData): OciServices[] 
 export async function importServices(oci: ociContext.Context): Promise<dataSupport.DataProducer> {
     // TODO: Might return populated instance of OciServices which internally called importServices() on every Service
     const data: any = {};
-    const buildServicesData = await buildServices.importServices(oci);
-    if (buildServicesData) {
-        data[buildServicesData.getDataName()] = buildServicesData.getData();
+    try {
+        const buildServicesData = await buildServices.importServices(oci);
+        if (buildServicesData) {
+            data[buildServicesData.getDataName()] = buildServicesData.getData();
+        }
+    } catch (err) {
+        vscode.window.showErrorMessage(`Failed to import build pipelines${(err as any).message ? ': ' + (err as any).message : ''}.`);
     }
-    const deploymentServicesData = await deploymentServices.importServices(oci);
-    if (deploymentServicesData) {
-        data[deploymentServicesData.getDataName()] = deploymentServicesData.getData();
+    try {
+        const deploymentServicesData = await deploymentServices.importServices(oci);
+        if (deploymentServicesData) {
+            data[deploymentServicesData.getDataName()] = deploymentServicesData.getData();
+        }
+    } catch (err) {
+        vscode.window.showErrorMessage(`Failed to import deployment pipelines${(err as any).message ? ': ' + (err as any).message : ''}.`);
     }
-    const deployArtifactServicesData = await deployArtifactServices.importServices(oci);
-    if (deployArtifactServicesData) {
-        data[deployArtifactServicesData.getDataName()] = deployArtifactServicesData.getData();
+    try {
+        const deployArtifactServicesData = await deployArtifactServices.importServices(oci);
+        if (deployArtifactServicesData) {
+            data[deployArtifactServicesData.getDataName()] = deployArtifactServicesData.getData();
+        }
+    } catch (err) {
+        vscode.window.showErrorMessage(`Failed to import build artifacts${(err as any).message ? ': ' + (err as any).message : ''}.`);
     }
-    const artifactServicesData = await artifactServices.importServices(oci);
-    if (artifactServicesData) {
-        data[artifactServicesData.getDataName()] = artifactServicesData.getData();
+    try {
+        const artifactServicesData = await artifactServices.importServices(oci);
+        if (artifactServicesData) {
+            data[artifactServicesData.getDataName()] = artifactServicesData.getData();
+        }
+    } catch (err) {
+        vscode.window.showErrorMessage(`Failed to import artifact repositories${(err as any).message ? ': ' + (err as any).message : ''}.`);
     }
-    const containerServicesData = await containerServices.importServices(oci);
-    if (containerServicesData) {
-        data[containerServicesData.getDataName()] = containerServicesData.getData();
+    try {
+        const containerServicesData = await containerServices.importServices(oci);
+        if (containerServicesData) {
+            data[containerServicesData.getDataName()] = containerServicesData.getData();
+        }
+    } catch (err) {
+        vscode.window.showErrorMessage(`Failed to import container repositories${(err as any).message ? ': ' + (err as any).message : ''}.`);
     }
-    const knowledgeBaseServicesData = await knowledgeBaseServices.importServices(oci);
-    if (knowledgeBaseServicesData) {
-        data[knowledgeBaseServicesData.getDataName()] = knowledgeBaseServicesData.getData();
+    try {
+        const knowledgeBaseServicesData = await knowledgeBaseServices.importServices(oci);
+        if (knowledgeBaseServicesData) {
+            data[knowledgeBaseServicesData.getDataName()] = knowledgeBaseServicesData.getData();
+        }
+    } catch (err) {
+        vscode.window.showErrorMessage(`Failed to import knowledge bases${(err as any).message ? ': ' + (err as any).message : ''}.`);
     }
     const result: dataSupport.DataProducer = {
         getDataName: () => DATA_NAME,

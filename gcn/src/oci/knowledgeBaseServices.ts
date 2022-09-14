@@ -56,7 +56,7 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
     // TODO: Might return populated instance of Service which internally called importServices()
     const provider = oci.getProvider();
     const compartment = oci.getCompartment();
-    const knowledgeBases = (await ociUtils.listKnowledgeBases(provider, compartment))?.knowledgeBaseCollection.items;
+    const knowledgeBases = await ociUtils.listKnowledgeBases(provider, compartment);
     if (knowledgeBases && knowledgeBases.length > 0) {
         const knowledgeBase = knowledgeBases[0].id;
         const result: dataSupport.DataProducer = {
@@ -127,7 +127,15 @@ async function selectAuditKnowledgeBase(oci: ociContext.Context): Promise<string
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
-                resolve((await ociUtils.listKnowledgeBases(oci.getProvider(), oci.getCompartment()))?.knowledgeBaseCollection.items);
+                try {
+                    const items = await ociUtils.listKnowledgeBases(oci.getProvider(), oci.getCompartment());
+                    resolve(items);
+                    return;
+                } catch (err) {
+                    resolve(undefined);
+                    vscode.window.showErrorMessage(`Failed to read knowledge bases${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    return;
+                }
             });
         })
     }
@@ -172,7 +180,15 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
-                resolve((await ociUtils.listKnowledgeBases(oci.getProvider(), oci.getCompartment()))?.knowledgeBaseCollection.items);
+                try {
+                    const items = await ociUtils.listKnowledgeBases(oci.getProvider(), oci.getCompartment());
+                    resolve(items);
+                    return;
+                } catch (err) {
+                    resolve(undefined);
+                    vscode.window.showErrorMessage(`Failed to read knowledge bases${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    return;
+                }
             });
         })
     }
@@ -347,7 +363,7 @@ class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, 
         const provider = this.oci.getProvider();
         const compartment = this.oci.getCompartment();
         const knowledgeBase = this.object.ocid;
-        const audits = (await ociUtils.listVulnerabilityAudits(provider, compartment, knowledgeBase))?.vulnerabilityAuditCollection.items;
+        const audits = await ociUtils.listVulnerabilityAudits(provider, compartment, knowledgeBase);
         if (audits !== undefined && audits.length > 0) {
             let idx = 0;
             for (const audit of audits) {

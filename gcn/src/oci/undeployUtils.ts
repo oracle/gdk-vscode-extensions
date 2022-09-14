@@ -275,14 +275,14 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             }
         }
         _progress.report({ message: 'Searching OKE cluster environments'});
-        const okeClusterEnvironments = (await ociUtils.listDeployEnvironments(authProvider, devopsId))?.deployEnvironmentCollection.items || [];
+        const okeClusterEnvironments = await ociUtils.listDeployEnvironments(authProvider, devopsId);
         for (const env of okeClusterEnvironments) {
             _progress.report({message : `Deleting OKE cluster environment ${env.displayName}`});
             await ociUtils.deleteDeployEnvironment(authProvider, env.id);
         }
         // PENDING: knowledgebase search + deletion should be done by the Services Plugin; need API to invoke it on the OCI configuration.
         _progress.report({ message: 'Searching knowledge bases'});
-        let knowledgeBases = (await ociUtils.listKnowledgeBases(authProvider, compartmentId))?.knowledgeBaseCollection.items || [];
+        let knowledgeBases = await ociUtils.listKnowledgeBases(authProvider, compartmentId);
         for (let kb of knowledgeBases) {
             if ((kb.freeformTags?.['gcn_tooling_usage'] === "gcn-adm-audit") &&
                 (kb.freeformTags?.['gcn_tooling_projectOCID'] == devopsId)) {

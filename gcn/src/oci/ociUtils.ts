@@ -201,13 +201,11 @@ export async function listCompartments(authenticationDetailsProvider: common.Con
         limit: 1000
     };
     const result: identity.models.Compartment[] = [];
-    let nextPage;
     do {
-        request.page = nextPage;
         const response = await client.listCompartments(request);
         result.push(...response.items);
-        nextPage = response.opcNextPage;
-    } while (nextPage);
+        request.page = response.opcNextPage;
+    } while (request.page);
     return result;
 }
 
@@ -227,13 +225,11 @@ export async function listDevOpsProjects(authenticationDetailsProvider: common.C
         limit: 1000
     };
     const result: devops.models.ProjectSummary[] = [];
-    let nextPage;
     do {
-        request.page = nextPage;
         const response = await client.listProjects(request);
         result.push(...response.projectCollection.items);
-        nextPage = response.opcNextPage;
-    } while (nextPage);
+        request.page = response.opcNextPage;
+    } while (request.page);
     return result;
 }
 
@@ -258,13 +254,11 @@ export async function listCodeRepositories(authenticationDetailsProvider: common
         limit: 1000
     };
     const result: devops.models.RepositorySummary[] = [];
-    let nextPage;
     do {
-        request.page = nextPage;
         const response = await client.listRepositories(request);
         result.push(...response.repositoryCollection.items);
-        nextPage = response.opcNextPage;
-    } while (nextPage);
+        request.page = response.opcNextPage;
+    } while (request.page);
     return result;
 }
 
@@ -312,13 +306,11 @@ export async function listBuildPipelines(authenticationDetailsProvider: common.C
         limit: 1000
     };
     const result: devops.models.BuildPipelineSummary[] = [];
-    let nextPage;
     do {
-        request.page = nextPage;
         const response = await client.listBuildPipelines(request);
         result.push(...response.buildPipelineCollection.items);
-        nextPage = response.opcNextPage;
-    } while (nextPage);
+        request.page = response.opcNextPage;
+    } while (request.page);
     return result;
 }
 
@@ -328,10 +320,10 @@ export async function deleteBuildPipeline(authenticationDetailsProvider: common.
         return client.deleteBuildPipeline({ buildPipelineId : pipeId });
     } else {
         // console.log(`> deletePipeline ${pipeId}`);
-        const resp = await client.deleteBuildPipeline({ buildPipelineId : pipeId });
+        const response = await client.deleteBuildPipeline({ buildPipelineId : pipeId });
         // console.log(`> deletePipeline ${pipeId}will wait for ${resp.opcWorkRequestId}`);
-        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting build pipeline", resp.opcWorkRequestId);
-        return resp;
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting build pipeline", response.opcWorkRequestId);
+        return response;
     }
 }
 
@@ -343,13 +335,11 @@ export async function listBuildPipelineStages(authenticationDetailsProvider: com
         limit: 1000
     };
     const result: devops.models.BuildPipelineStageSummary[] = [];
-    let nextPage;
     do {
-        request.page = nextPage;
         const response = await client.listBuildPipelineStages(request);
         result.push(...response.buildPipelineStageCollection.items);
-        nextPage = response.opcNextPage;
-    } while (nextPage);
+        request.page = response.opcNextPage;
+    } while (request.page);
     return result;
 }
 
@@ -359,10 +349,10 @@ export async function deleteBuildPipelineStage(authenticationDetailsProvider: co
         return client.deleteBuildPipelineStage({ buildPipelineStageId : stage });
     } else {
         // console.log(`> deleteBuildPipelineStage${stage}`);
-        const resp = await client.deleteBuildPipelineStage({ buildPipelineStageId : stage });
+        const response = await client.deleteBuildPipelineStage({ buildPipelineStageId : stage });
         // console.log(`> deleteBuildPipelineStage${stage} will wait for ${resp.opcWorkRequestId}`);
-        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting build pipeline stage", resp.opcWorkRequestId);
-        return resp;
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting build pipeline stage", response.opcWorkRequestId);
+        return response;
     }
 }
 
@@ -408,13 +398,11 @@ export async function listDeployPipelines(authenticationDetailsProvider: common.
         limit: 1000
     };
     const result: devops.models.DeployPipelineSummary[] = [];
-    let nextPage;
     do {
-        request.page = nextPage;
         const response = await client.listDeployPipelines(request);
         result.push(...response.deployPipelineCollection.items);
-        nextPage = response.opcNextPage;
-    } while (nextPage);
+        request.page = response.opcNextPage;
+    } while (request.page);
     return result;
 }
 
@@ -432,10 +420,10 @@ export async function deleteDeployPipeline(authenticationDetailsProvider: common
         return client.deleteDeployPipeline({ deployPipelineId : pipeId });
     } else {
         // console.log(`> deletePipeline ${pipeId}`);
-        const resp = await client.deleteDeployPipeline({ deployPipelineId : pipeId });
+        const response = await client.deleteDeployPipeline({ deployPipelineId : pipeId });
         // console.log(`> deletePipeline ${pipeId}will wait for ${resp.opcWorkRequestId}`);
-        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy pipeline", resp.opcWorkRequestId);
-        return resp;
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy pipeline", response.opcWorkRequestId);
+        return response;
     }
 }
 
@@ -447,13 +435,11 @@ export async function listDeployStages(authenticationDetailsProvider: common.Con
         limit: 1000
     };
     const result: devops.models.DeployStageSummary[] = [];
-    let nextPage;
     do {
-        request.page = nextPage;
         const response = await client.listDeployStages(request);
         result.push(...response.deployStageCollection.items);
-        nextPage = response.opcNextPage;
-    } while (nextPage);
+        request.page = response.opcNextPage;
+    } while (request.page);
     return result;
 }
 
@@ -463,10 +449,10 @@ export async function deleteDeployStage(authenticationDetailsProvider: common.Co
         return client.deleteDeployStage({ deployStageId: stage });
     } else {
         // console.log(`> deleteBuildPipelineStage${stage}`);
-        const resp = await client.deleteDeployStage({ deployStageId: stage });
+        const response = await client.deleteDeployStage({ deployStageId: stage });
         // console.log(`> deleteBuildPipelineStage${stage} will wait for ${resp.opcWorkRequestId}`);
-        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy stage", resp.opcWorkRequestId);
-        return resp;
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy stage", response.opcWorkRequestId);
+        return response;
     }
 }
 
@@ -478,13 +464,11 @@ export async function listArtifactRepositories(authenticationDetailsProvider: co
         limit: 1000
     };
     const result: artifacts.models.RepositorySummary[] = [];
-    let nextPage;
     do {
-        request.page = nextPage;
         const response = await client.listRepositories(request);
         result.push(...response.repositoryCollection.items);
-        nextPage = response.opcNextPage;
-    } while (nextPage);
+        request.page = response.opcNextPage;
+    } while (request.page);
     return result;
 }
 
@@ -507,8 +491,8 @@ export async function deleteArtifactsRepository(authenticationDetailsProvider: c
             await client.deleteGenericArtifact(deleteGenericArtifactRequest);
         }
     }
-    let resp = client.deleteRepository({ repositoryId : repositoryID});
-    return resp;
+    let response = client.deleteRepository({ repositoryId : repositoryID});
+    return response;
 }
 
 export async function listGenericArtifacts(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string, artifactPath?: string): Promise<artifacts.models.GenericArtifactSummary[]> {
@@ -522,13 +506,11 @@ export async function listGenericArtifacts(authenticationDetailsProvider: common
         limit: 1000
     };
     const result: artifacts.models.GenericArtifactSummary[] = [];
-    let nextPage;
     do {
-        request.page = nextPage;
         const response = await client.listGenericArtifacts(request);
         result.push(...response.genericArtifactCollection.items);
-        nextPage = response.opcNextPage;
-    } while (nextPage);
+        request.page = response.opcNextPage;
+    } while (request.page);
     return result;
 }
 
@@ -551,13 +533,13 @@ export async function getGenericArtifactContent(authenticationDetailsProvider: c
 export async function deleteDeployArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactId : string, wait : boolean = false) {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     // console.log(`> deleteDeployArtifact ${artifactId}`);
-    const resp = client.deleteDeployArtifact({ deployArtifactId : artifactId });
+    const response = client.deleteDeployArtifact({ deployArtifactId : artifactId });
     if (wait) {
-        const requestId = (await resp).opcWorkRequestId;
+        const requestId = (await response).opcWorkRequestId;
         // console.log(`> deleteDeployArtifact ${artifactId} will wait for ${requestId}`);
         await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy artifact", requestId);
     }
-    return resp;
+    return response;
 }
 
 export async function listDeployArtifacts(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.models.DeployArtifactSummary[]> {
@@ -568,13 +550,11 @@ export async function listDeployArtifacts(authenticationDetailsProvider: common.
         limit: 1000
     };
     const result: devops.models.DeployArtifactSummary[] = [];
-    let nextPage;
     do {
-        request.page = nextPage;
         const response = await client.listDeployArtifacts(request);
         result.push(...response.deployArtifactCollection.items);
-        nextPage = response.opcNextPage;
-    } while (nextPage);
+        request.page = response.opcNextPage;
+    } while (request.page);
     return result;
 }
 
@@ -594,13 +574,11 @@ export async function listContainerRepositories(authenticationDetailsProvider: c
         limit: 1000
     };
     const result: artifacts.models.ContainerRepositorySummary[] = [];
-    let nextPage;
     do {
-        request.page = nextPage;
         const response = await client.listContainerRepositories(request);
         result.push(...response.containerRepositoryCollection.items);
-        nextPage = response.opcNextPage;
-    } while (nextPage);
+        request.page = response.opcNextPage;
+    } while (request.page);
     return result;
 }
 
@@ -617,109 +595,114 @@ export async function deleteContainerRepository(authenticationDetailsProvider: c
     return client.deleteContainerRepository({ repositoryId : repositoryID});
 }
 
-export async function listContainerImages(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string): Promise<artifacts.responses.ListContainerImagesResponse | undefined> {
-    try {
-        const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const listContainerImagesRequest: artifacts.requests.ListContainerImagesRequest = {
-            compartmentId: compartmentID,
-            repositoryId: repositoryID,
-            lifecycleState: artifacts.models.ContainerImage.LifecycleState.Available
-        };
-        return client.listContainerImages(listContainerImagesRequest);
-    } catch (error) {
-        console.log('>>> listContainerImages ' + error);
-        return undefined;
-    }
+export async function listContainerImages(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string): Promise<artifacts.models.ContainerImageSummary[]> {
+    const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: artifacts.requests.ListContainerImagesRequest = {
+        compartmentId: compartmentID,
+        repositoryId: repositoryID,
+        lifecycleState: artifacts.models.ContainerImage.LifecycleState.Available,
+        limit: 1000
+    };
+    const result: artifacts.models.ContainerImageSummary[] = [];
+    do {
+        const response = await client.listContainerImages(request);
+        result.push(...response.containerImageCollection.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    return result;
 }
 
 export async function getContainerImage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, imageID: string): Promise<artifacts.responses.GetContainerImageResponse> {
     const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    const getContainerImageRequest: artifacts.requests.GetContainerImageRequest = {
+    const request: artifacts.requests.GetContainerImageRequest = {
         imageId: imageID
     };
-    return client.getContainerImage(getContainerImageRequest);
+    return client.getContainerImage(request);
 }
 
-export async function listDeployEnvironments(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.responses.ListDeployEnvironmentsResponse | undefined> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const listDeployEnvironmentsRequest: devops.requests.ListDeployEnvironmentsRequest = {
-            projectId: projectID,
-            lifecycleState: devops.models.DeployEnvironment.LifecycleState.Active
-        };
-        return client.listDeployEnvironments(listDeployEnvironmentsRequest);
-    } catch (error) {
-        console.log('>>> listDeployEnvironments ' + error);
-        return undefined;
-    }
+export async function listDeployEnvironments(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.models.DeployEnvironmentSummary[]> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: devops.requests.ListDeployEnvironmentsRequest = {
+        projectId: projectID,
+        lifecycleState: devops.models.DeployEnvironment.LifecycleState.Active,
+        limit: 1000
+    };
+    const result: devops.models.DeployEnvironmentSummary[] = [];
+    do {
+        const response = await client.listDeployEnvironments(request);
+        result.push(...response.deployEnvironmentCollection.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    return result;
 }
 
-export async function deleteDeployEnvironment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, envID: string): Promise<devops.responses.DeleteDeployEnvironmentResponse | undefined> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const deleteDeployEnvironmentRequest: devops.requests.DeleteDeployEnvironmentRequest = {
-            deployEnvironmentId: envID
-        };
-        return client.deleteDeployEnvironment(deleteDeployEnvironmentRequest);
-    } catch (error) {
-        console.log('>>> deleteDeployEnvironment ' + error);
-        return undefined;
-    }
+export async function deleteDeployEnvironment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, envID: string): Promise<devops.responses.DeleteDeployEnvironmentResponse> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: devops.requests.DeleteDeployEnvironmentRequest = {
+        deployEnvironmentId: envID
+    };
+    return client.deleteDeployEnvironment(request);
 }
 
-export async function listKnowledgeBases(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<adm.responses.ListKnowledgeBasesResponse | undefined> {
-    try {
-        const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const listKnowledgeBasesRequest: adm.requests.ListKnowledgeBasesRequest = {
-            compartmentId: compartmentID,
-            lifecycleState: adm.models.KnowledgeBase.LifecycleState.Active
-        };
-        return client.listKnowledgeBases(listKnowledgeBasesRequest);
-    } catch (error) {
-        console.log('>>> listKnowledgeBases ' + error);
-        return undefined;
-    }
+export async function listKnowledgeBases(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<adm.models.KnowledgeBaseSummary[]> {
+    const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: adm.requests.ListKnowledgeBasesRequest = {
+        compartmentId: compartmentID,
+        lifecycleState: adm.models.KnowledgeBase.LifecycleState.Active,
+        limit: 1000
+    };
+    const result: adm.models.KnowledgeBaseSummary[] = [];
+    do {
+        const response = await client.listKnowledgeBases(request);
+        result.push(...response.knowledgeBaseCollection.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    return result;
 }
 
 export async function getKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, knowledgeBaseID: string): Promise<adm.responses.GetKnowledgeBaseResponse> {
     const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    const getKnowledgeBaseRequest: adm.requests.GetKnowledgeBaseRequest = {
+    const request: adm.requests.GetKnowledgeBaseRequest = {
         knowledgeBaseId: knowledgeBaseID
     };
-    return client.getKnowledgeBase(getKnowledgeBaseRequest);
+    return client.getKnowledgeBase(request);
 }
 
 export async function deleteKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, knowledgeId : string, wait : boolean = false): Promise<adm.responses.DeleteKnowledgeBaseResponse> {
     const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    let resp = client.deleteKnowledgeBase({ knowledgeBaseId : knowledgeId});
+    let response = client.deleteKnowledgeBase({ knowledgeBaseId : knowledgeId});
     if (wait) {
-        admWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting knowledge base", (await resp).opcWorkRequestId);
+        admWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting knowledge base", (await response).opcWorkRequestId);
     }
-    return resp;
+    return response;
 }    
 
-export async function listVulnerabilityAudits(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, knowledgeBaseID: string): Promise<adm.responses.ListVulnerabilityAuditsResponse | undefined> {
-    try {
-        const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const listVulnerabilityAuditsRequest: adm.requests.ListVulnerabilityAuditsRequest = {
-            compartmentId: compartmentID,
-            knowledgeBaseId: knowledgeBaseID,
-            lifecycleState: adm.models.VulnerabilityAudit.LifecycleState.Active,
-            limit: 10
-        };
-        return client.listVulnerabilityAudits(listVulnerabilityAuditsRequest);
-    } catch (error) {
-        console.log('>>> listVulnerabilityAudits ' + error);
-        return undefined;
-    }
+export async function listVulnerabilityAudits(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, knowledgeBaseID: string, limit: number | undefined = 10): Promise<adm.models.VulnerabilityAuditSummary[]> {
+    const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: adm.requests.ListVulnerabilityAuditsRequest = {
+        compartmentId: compartmentID,
+        knowledgeBaseId: knowledgeBaseID,
+        lifecycleState: adm.models.VulnerabilityAudit.LifecycleState.Active,
+        limit: limit ? Math.min(1000, limit) : 1000
+    };
+    const result: adm.models.VulnerabilityAuditSummary[] = [];
+    do {
+        const response = await client.listVulnerabilityAudits(request);
+        result.push(...response.vulnerabilityAuditCollection.items);
+        request.page = response.opcNextPage;
+        if (limit) {
+            request.limit = Math.min(1000, limit - result.length);
+        }
+    } while (request.page && (request.limit as number) > 0);
+    return result;
 }
 
 export async function getVulnerabilityAudit(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, vulnerabilityAuditID: string): Promise<adm.responses.GetVulnerabilityAuditResponse> {
     const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    const getVulnerabilityAuditRequest: adm.requests.GetVulnerabilityAuditRequest = {
+    const request: adm.requests.GetVulnerabilityAuditRequest = {
         vulnerabilityAuditId: vulnerabilityAuditID
     };
-    return client.getVulnerabilityAudit(getVulnerabilityAuditRequest);
+    return client.getVulnerabilityAudit(request);
 }
 
 export async function listNotificationTopics(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<ons.responses.ListTopicsResponse | undefined> {
@@ -755,8 +738,8 @@ export async function createKnowledgeBase(authenticationDetailsProvider: common.
         request.createKnowledgeBaseDetails.freeformTags = flags;
     }
 
-    let resp = await client.createKnowledgeBase(request);
-    return admWaitForResourceCompletionStatus(authenticationDetailsProvider, `Create knowledge base ${displayName}`, resp.opcWorkRequestId);
+    let response = await client.createKnowledgeBase(request);
+    return admWaitForResourceCompletionStatus(authenticationDetailsProvider, `Create knowledge base ${displayName}`, response.opcWorkRequestId);
 }
 
 export async function createDefaultNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<ons.responses.CreateTopicResponse | undefined> {

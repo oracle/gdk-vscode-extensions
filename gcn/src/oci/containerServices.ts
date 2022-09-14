@@ -193,8 +193,8 @@ class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.Removable
         const provider = this.oci.getProvider();
         const compartment = this.oci.getCompartment();
         const repository = this.object.ocid;
-        const images = (await ociUtils.listContainerImages(provider, compartment, repository))?.containerImageCollection.items;
-        if (images) {
+        try {
+            const images = await ociUtils.listContainerImages(provider, compartment, repository)
             for (const image of images) {
                 const ocid = image.id;
                 let displayName = image.displayName;
@@ -209,6 +209,8 @@ class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.Removable
                 }
                 children.push(new ContainerImageNode(imageObject, this.oci, image));
             }
+        } catch (err) {
+            // TODO: notify error (add a nodes.TextNode with error message?)
         }
         if (children.length === 0) {
             children.push(new nodes.NoItemsNode());
