@@ -78,7 +78,15 @@ async function selectContainerRepositories(oci: ociContext.Context, ignore: Cont
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
-                resolve((await ociUtils.listContainerRepositories(oci.getProvider(), oci.getCompartment()))?.containerRepositoryCollection.items);
+                try {
+                    const items = await ociUtils.listContainerRepositories(oci.getProvider(), oci.getCompartment());
+                    resolve(items);
+                    return;
+                } catch (err) {
+                    resolve(undefined);
+                    vscode.window.showErrorMessage(`Failed to read container repositories${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    return;
+                }
             });
         })
     }

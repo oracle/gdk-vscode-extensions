@@ -72,11 +72,19 @@ async function selectDeploymentPipelines(oci: ociContext.Context, ignore: Deploy
         // TODO: display the progress in QuickPick
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: 'Reading project build pipelines...',
+            title: 'Reading project deployment pipelines...',
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
-                resolve((await ociUtils.listDeployPipelines(oci.getProvider(), oci.getDevOpsProject()))?.deployPipelineCollection?.items);
+                try {
+                    const items = await ociUtils.listDeployPipelines(oci.getProvider(), oci.getDevOpsProject());
+                    resolve(items);
+                    return;
+                } catch (err) {
+                    resolve(undefined);
+                    vscode.window.showErrorMessage(`Failed to read deployment pipelines${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    return;
+                }
             });
         })
     }

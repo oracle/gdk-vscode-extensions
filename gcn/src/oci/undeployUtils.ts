@@ -166,17 +166,17 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         // console.log(`Process pipelines`);
         _progress.report({message : "Listing Build Pipelines"});
 
-        const deployPipelines : devops.models.DeployPipelineSummary[] = (await ociUtils.listDeployPipelines(authProvider, devopsId))?.deployPipelineCollection?.items || [];
+        const deployPipelines: devops.models.DeployPipelineSummary[] = await ociUtils.listDeployPipelines(authProvider, devopsId);
         for (let pipe of deployPipelines) {
             _progress.report({message : `Processing pipeline ${pipe.displayName}`});
 
             // console.log(`Inspecting pipeline ${pipe.displayName} = ${pipe.id}`)
-            const stages : Array<devops.models.DeployStageSummary> = (await ociUtils.listDeployStages(authProvider, pipe.id))?.deployStageCollection.items || [];
-            const orderedStages : devops.models.DeployStageSummary[] = [];
-            const id2Stage : Map<string, devops.models.DeployStageSummary> = new Map();
+            const stages: devops.models.DeployStageSummary[] = await ociUtils.listDeployStages(authProvider, pipe.id);
+            const orderedStages: devops.models.DeployStageSummary[] = [];
+            const id2Stage: Map<string, devops.models.DeployStageSummary> = new Map();
 
             // push leaf stages first.
-            const revDeps : Map<string, number> = new Map();
+            const revDeps: Map<string, number> = new Map();
             stages.forEach(s => {
                 id2Stage.set(s.id, s);
                 if (!revDeps.has(s.id)) {
@@ -246,15 +246,15 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         
         // console.log(`Process artifacts`);
         _progress.report({message : "Listing deploy artifacts"});
-        let artifacts = (await ociUtils.listProjectDeployArtifacts(authProvider, devopsId))?.deployArtifactCollection.items || [];
+        let artifacts = await ociUtils.listDeployArtifacts(authProvider, devopsId);
         for (let a of artifacts) {
             _progress.report({ message: `Deleting artifact ${a.displayName}`});
             // console.log(`Delete artifact ${a.displayName}`);
             // seems that deleteArtifact also transaction-conflicts on the project.
-            await ociUtils.deleteProjectDeployArtifact(authProvider, a.id, true);
+            await ociUtils.deleteDeployArtifact(authProvider, a.id, true);
         };
         _progress.report({ message: 'Searching artifact repositories'});
-        const artifactsRepositories = (await ociUtils.listArtifactRepositories(authProvider, compartmentId))?.repositoryCollection.items;
+        const artifactsRepositories = await ociUtils.listArtifactRepositories(authProvider, compartmentId);
         if (artifactsRepositories) {
             for (const repo of artifactsRepositories) {
                 if ((repo.freeformTags?.['gcn_tooling_projectOCID'] == devopsId)) {
@@ -264,7 +264,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             }
         }
         _progress.report({ message: 'Searching container repositories'});
-        const containerRepositories = (await ociUtils.listContainerRepositories(authProvider, compartmentId))?.containerRepositoryCollection.items;
+        const containerRepositories = await ociUtils.listContainerRepositories(authProvider, compartmentId);
         if (containerRepositories) {
             const containerRepositoryNames = repoNames.length > 1 ? repoNames.map(name => `${data[0].name}-${name}`.toLowerCase()) : [ data[0].name.toLowerCase() ];
             for (const repo of containerRepositories) {

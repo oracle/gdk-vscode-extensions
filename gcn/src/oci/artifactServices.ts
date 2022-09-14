@@ -77,7 +77,15 @@ async function selectArtifactRepositories(oci: ociContext.Context, ignore: Artif
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
-                resolve((await ociUtils.listArtifactRepositories(oci.getProvider(), oci.getCompartment()))?.repositoryCollection.items);
+                try {
+                    const items = await ociUtils.listArtifactRepositories(oci.getProvider(), oci.getCompartment());
+                    resolve(items);
+                    return;
+                } catch (err) {
+                    resolve(undefined);
+                    vscode.window.showErrorMessage(`Failed to read artifact repositories${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    return;
+                }
             });
         })
     }
@@ -188,7 +196,7 @@ class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableN
         const compartment = this.oci.getCompartment();
         const repository = this.object.ocid;
         try {
-            const artifacts = (await ociUtils.listGenericArtifacts(provider, compartment, repository)).genericArtifactCollection.items;
+            const artifacts = await ociUtils.listGenericArtifacts(provider, compartment, repository);
             for (const artifact of artifacts) {
                 const ocid = artifact.id;
                 let displayName = artifact.displayName;

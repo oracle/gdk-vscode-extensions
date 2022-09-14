@@ -86,19 +86,12 @@ async function selectDeployArtifacts(oci: ociContext.Context, ignore: DeployArti
         }, (_progress, _token) => {
             return new Promise(async(resolve) => {
                 try {
-                    // TODO: should list deploy artifacts per source repository
-                    const artifacts = (await ociUtils.listDeployArtifacts(oci.getProvider(), oci.getDevOpsProject()))?.deployArtifactCollection.items;
-                    resolve(artifacts);
+                    const items = await ociUtils.listDeployArtifacts(oci.getProvider(), oci.getDevOpsProject());
+                    resolve(items);
                     return;
                 } catch (err) {
                     resolve(undefined);
-                    let msg = 'Failed to read build artifacts';
-                    if ((err as any).message) {
-                        msg += `: ${(err as any).message}`;
-                    } else {
-                        msg += '.';
-                    }
-                    vscode.window.showErrorMessage(msg);
+                    vscode.window.showErrorMessage(`Failed to read build artifacts${(err as any).message ? ': ' + (err as any).message : ''}.`);
                     return;
                 }
             });
@@ -323,7 +316,7 @@ class GenericDeployArtifactNode extends DeployArtifactNode {
                 const deployArtifact = await this.getResource();
                 const deployArtifactSource = deployArtifact.deployArtifactSource as devops.models.GenericDeployArtifactSource;
                 const deployArtifactPath = deployArtifactSource.deployArtifactPath;
-                const genericArtifacts = (await ociUtils.listGenericArtifacts(this.oci.getProvider(), deployArtifact.compartmentId, deployArtifactSource.repositoryId, deployArtifactPath)).genericArtifactCollection.items;
+                const genericArtifacts = await ociUtils.listGenericArtifacts(this.oci.getProvider(), deployArtifact.compartmentId, deployArtifactSource.repositoryId, deployArtifactPath);
                 const artifacts: artifacts.models.GenericArtifactSummary[] = [];
                 for (const genericArtifact of genericArtifacts) {
                     if (genericArtifact.artifactPath === deployArtifactPath) {

@@ -106,9 +106,13 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
                 try {
-                    resolve(await ociUtils.listBuildPipelines(oci.getProvider(), oci.getDevOpsProject()));
+                    const items = await ociUtils.listBuildPipelines(oci.getProvider(), oci.getDevOpsProject());
+                    resolve(items);
+                    return;
                 } catch (err) {
-                    resolve(undefined); // TODO: should be handled somehow
+                    resolve(undefined);
+                    vscode.window.showErrorMessage(`Failed to read build pipelines${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    return;
                 }
             });
         })
