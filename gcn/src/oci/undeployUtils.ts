@@ -70,7 +70,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
 
     const folderPath = folder.folder.uri.fsPath;
 
-    const result: string | devops.responses.DeleteProjectResponse = await vscode.window.withProgress({
+    await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: `Undeploying ${data[0].name} from OCI `,
         cancellable: false
@@ -303,5 +303,4 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
 
         return p;
     });
-    return result;
 }

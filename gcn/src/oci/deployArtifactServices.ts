@@ -269,7 +269,7 @@ abstract class DeployArtifactNode extends nodes.ChangeableNode implements nodes.
     }
 
     async getResource(): Promise<devops.models.DeployArtifact> {
-        return (await ociUtils.getDeployArtifact(this.oci.getProvider(), this.object.ocid)).deployArtifact;
+        return ociUtils.getDeployArtifact(this.oci.getProvider(), this.object.ocid);
     }
 
     rename() {

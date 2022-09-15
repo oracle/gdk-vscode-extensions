@@ -347,7 +347,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                         switch (artifact.type) {
                             case 'GENERIC_ARTIFACT':
                                 try {
-                                    const genericArtifact = (await ociUtils.getGenericArtifact(this.oci.getProvider(), artifact.id)).genericArtifact;
+                                    const genericArtifact = await ociUtils.getGenericArtifact(this.oci.getProvider(), artifact.id);
                                     if (genericArtifact.displayName && genericArtifact.artifactPath) {
                                         choices.push({ label: genericArtifact.displayName, type: artifact.type, id: genericArtifact.id, path: genericArtifact.artifactPath });
                                     }
@@ -372,49 +372,41 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                 case 'GENERIC_ARTIFACT':
                     try {
                         ociUtils.getGenericArtifactContent(this.oci.getProvider(), choice.id).then(content => {
-                            if (content) {
-                                vscode.window.showSaveDialog({
-                                    defaultUri: vscode.Uri.file(choice.path || ''),
-                                    title: 'Save Artifact As'
-                                }).then(fileUri => {
-                                    if (fileUri) {
-                                        vscode.window.withProgress({
-                                            location: vscode.ProgressLocation.Notification,
-                                            title: `Downloading artifact ${choice.path}...`,
-                                            cancellable: false
-                                        }, (_progress, _token) => {
-                                            return new Promise(async (resolve) => {
-                                                const data = content.value;
-                                                const file = fs.createWriteStream(fileUri.fsPath);
-                                                data.pipe(file);
-                                                data.on('error', (err: Error) => {
-                                                    vscode.window.showErrorMessage(err.message);
-                                                    file.destroy();
-                                                    resolve(false);
-                                                });
-                                                data.on('end', () => {
-                                                    const open = 'Open File Location';
-                                                    vscode.window.showInformationMessage(`Artifact ${choice.path} downloaded.`, open).then(choice => {
-                                                        if (choice === open) {
-                                                            vscode.commands.executeCommand('revealFileInOS', fileUri);
-                                                        }
-                                                    });
-                                                    resolve(true);
-                                                });
+                            vscode.window.showSaveDialog({
+                                defaultUri: vscode.Uri.file(choice.path || ''),
+                                title: 'Save Artifact As'
+                            }).then(fileUri => {
+                                if (fileUri) {
+                                    vscode.window.withProgress({
+                                        location: vscode.ProgressLocation.Notification,
+                                        title: `Downloading artifact ${choice.path}...`,
+                                        cancellable: false
+                                    }, (_progress, _token) => {
+                                        return new Promise(async (resolve) => {
+                                            const data = content;
+                                            const file = fs.createWriteStream(fileUri.fsPath);
+                                            data.pipe(file);
+                                            data.on('error', (err: Error) => {
+                                                vscode.window.showErrorMessage(err.message);
+                                                file.destroy();
+                                                resolve(false);
                                             });
-                                        })
-                                    }
-                                });
-                            } else {
-                                vscode.window.showErrorMessage('Failed to download artifact.');
-                            }
+                                            data.on('end', () => {
+                                                const open = 'Open File Location';
+                                                vscode.window.showInformationMessage(`Artifact ${choice.path} downloaded.`, open).then(choice => {
+                                                    if (choice === open) {
+                                                        vscode.commands.executeCommand('revealFileInOS', fileUri);
+                                                    }
+                                                });
+                                                resolve(true);
+                                            });
+                                        });
+                                    })
+                                }
+                            });
                         });
                     } catch (err) {
-                        if ((err as any).message) {
-                            vscode.window.showErrorMessage(`Failed to download artifact: ${(err as any).message}`);
-                        } else {
-                            vscode.window.showErrorMessage('Failed to download artifact.');
-                        }
+                        vscode.window.showErrorMessage(`Failed to download artifact${(err as any).message ? ': ' + (err as any).message : ''}.`);
                     }
                     break;
                 case 'OCIR':

@@ -59,9 +59,11 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 message: 'Setting up notifications...'
             });
             const notificationTopicDescription = `Shared notification topic for devops projects in compartment ${compartment.name}`;
-            const notificationTopic = await ociUtils.getOrCreateNotificationTopic(provider, compartment.ocid, notificationTopicDescription);
-            if (!notificationTopic) {
-                resolve('Failed to prepare notification topic.');
+            let notificationTopic: string;
+            try {
+                notificationTopic = await ociUtils.getOrCreateNotificationTopic(provider, compartment.ocid, notificationTopicDescription);
+            } catch (err) {
+                resolve(`Failed to prepare notification topic${(err as any).message ? ': ' + (err as any).message : ''}.`);
                 return;
             }
 
@@ -182,11 +184,17 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 message: `Creating ADM knowledge base for ${projectName}...`
             });
             const knowledgeBaseDescription = `Vulnerability audits for devops project ${projectName}`;
-            const knowledgeBaseOCID = await ociUtils.createKnowledgeBase(provider, compartment.ocid, projectName, {
-                'gcn_tooling_projectOCID': project,
-                'gcn_tooling_description': knowledgeBaseDescription,
-                'gcn_tooling_usage': 'gcn-adm-audit'
-            });
+            let knowledgeBaseOCID: string;
+            try {
+                knowledgeBaseOCID = await ociUtils.createKnowledgeBase(provider, compartment.ocid, projectName, {
+                    'gcn_tooling_projectOCID': project,
+                    'gcn_tooling_description': knowledgeBaseDescription,
+                    'gcn_tooling_usage': 'gcn-adm-audit'
+                });
+            } catch (err) {
+                resolve(`Failed to create knowledge base${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                return;
+            }
 
             for (const folder of folders) {
                 const repositoryDir = folder.uri.fsPath;

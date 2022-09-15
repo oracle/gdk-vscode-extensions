@@ -233,17 +233,17 @@ export async function listDevOpsProjects(authenticationDetailsProvider: common.C
     return result;
 }
 
-export async function getDevopsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectId : string): Promise<devops.models.Project> {
+export async function getDevopsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectId: string): Promise<devops.models.Project> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: devops.requests.GetProjectRequest = {
-        projectId : projectId
+        projectId: projectId
     };
     return client.getProject(request).then(response => response.project);
 }
 
-export async function deleteDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectId : string) {
+export async function deleteDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectId: string) {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    return client.deleteProject({ projectId : projectId });
+    client.deleteProject({ projectId: projectId });
 }
 
 export async function listCodeRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.models.RepositorySummary[]> {
@@ -285,9 +285,9 @@ export async function getCodeRepository(authenticationDetailsProvider: common.Co
     return client.getRepository(request).then(response => response.repository);
 }
 
-export async function deleteCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repo : string) : Promise<devops.responses.DeleteRepositoryResponse> {
+export async function deleteCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repo: string) {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    return client.deleteRepository({ repositoryId: repo });
+    client.deleteRepository({ repositoryId: repo });
 }
 
 export async function getBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string): Promise<devops.models.BuildPipeline> {
@@ -314,16 +314,11 @@ export async function listBuildPipelines(authenticationDetailsProvider: common.C
     return result;
 }
 
-export async function deleteBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipeId: string, wait: boolean = false) : Promise<devops.responses.DeleteBuildPipelineResponse>{
+export async function deleteBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipeId: string, wait: boolean = false) {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    if (!wait) {
-        return client.deleteBuildPipeline({ buildPipelineId : pipeId });
-    } else {
-        // console.log(`> deletePipeline ${pipeId}`);
-        const response = await client.deleteBuildPipeline({ buildPipelineId : pipeId });
-        // console.log(`> deletePipeline ${pipeId}will wait for ${resp.opcWorkRequestId}`);
-        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting build pipeline", response.opcWorkRequestId);
-        return response;
+    const response = client.deleteBuildPipeline({ buildPipelineId : pipeId });
+    if (wait) {
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting build pipeline", (await response).opcWorkRequestId);
     }
 }
 
@@ -343,16 +338,11 @@ export async function listBuildPipelineStages(authenticationDetailsProvider: com
     return result;
 }
 
-export async function deleteBuildPipelineStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, stage : string, wait: boolean = false) : Promise<devops.responses.DeleteBuildPipelineStageResponse>{
+export async function deleteBuildPipelineStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, stage: string, wait: boolean = false) {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    if (!wait) {
-        return client.deleteBuildPipelineStage({ buildPipelineStageId : stage });
-    } else {
-        // console.log(`> deleteBuildPipelineStage${stage}`);
-        const response = await client.deleteBuildPipelineStage({ buildPipelineStageId : stage });
-        // console.log(`> deleteBuildPipelineStage${stage} will wait for ${resp.opcWorkRequestId}`);
-        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting build pipeline stage", response.opcWorkRequestId);
-        return response;
+    const response = client.deleteBuildPipelineStage({ buildPipelineStageId : stage });
+    if (wait) {
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting build pipeline stage", (await response).opcWorkRequestId);
     }
 }
 
@@ -406,24 +396,19 @@ export async function listDeployPipelines(authenticationDetailsProvider: common.
     return result;
 }
 
-export async function getDeployPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string): Promise<devops.responses.GetDeployPipelineResponse> {
+export async function getDeployPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string): Promise<devops.models.DeployPipeline> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: devops.requests.GetDeployPipelineRequest = {
         deployPipelineId: pipelineID
     };
-    return client.getDeployPipeline(request);
+    return client.getDeployPipeline(request).then(response => response.deployPipeline);
 }
 
-export async function deleteDeployPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipeId: string, wait: boolean = false) : Promise<devops.responses.DeleteDeployPipelineResponse>{
+export async function deleteDeployPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipeId: string, wait: boolean = false) {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    if (!wait) {
-        return client.deleteDeployPipeline({ deployPipelineId : pipeId });
-    } else {
-        // console.log(`> deletePipeline ${pipeId}`);
-        const response = await client.deleteDeployPipeline({ deployPipelineId : pipeId });
-        // console.log(`> deletePipeline ${pipeId}will wait for ${resp.opcWorkRequestId}`);
-        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy pipeline", response.opcWorkRequestId);
-        return response;
+    const response = client.deleteDeployPipeline({ deployPipelineId : pipeId });
+    if (wait) {
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy pipeline", (await response).opcWorkRequestId);
     }
 }
 
@@ -443,16 +428,11 @@ export async function listDeployStages(authenticationDetailsProvider: common.Con
     return result;
 }
 
-export async function deleteDeployStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, stage: string, wait: boolean = false) : Promise<devops.responses.DeleteDeployStageResponse>{
+export async function deleteDeployStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, stage: string, wait: boolean = false) {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    if (!wait) {
-        return client.deleteDeployStage({ deployStageId: stage });
-    } else {
-        // console.log(`> deleteBuildPipelineStage${stage}`);
-        const response = await client.deleteDeployStage({ deployStageId: stage });
-        // console.log(`> deleteBuildPipelineStage${stage} will wait for ${resp.opcWorkRequestId}`);
-        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy stage", response.opcWorkRequestId);
-        return response;
+    const response = client.deleteDeployStage({ deployStageId: stage });
+    if (wait) {
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy stage", (await response).opcWorkRequestId);
     }
 }
 
@@ -472,15 +452,15 @@ export async function listArtifactRepositories(authenticationDetailsProvider: co
     return result;
 }
 
-export async function getArtifactRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string): Promise<artifacts.responses.GetRepositoryResponse> {
+export async function getArtifactRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string): Promise<artifacts.models.Repository> {
     const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const request: artifacts.requests.GetRepositoryRequest = {
-            repositoryId: repositoryID
-        };
-        return client.getRepository(request);
+    const request: artifacts.requests.GetRepositoryRequest = {
+        repositoryId: repositoryID
+    };
+    return client.getRepository(request).then(response => response.repository);
 }
 
-export async function deleteArtifactsRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string): Promise<artifacts.responses.DeleteRepositoryResponse> {
+export async function deleteArtifactsRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string) {
     const items = await listGenericArtifacts(authenticationDetailsProvider, compartmentID, repositoryID);
     const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     if (items) {
@@ -491,8 +471,7 @@ export async function deleteArtifactsRepository(authenticationDetailsProvider: c
             await client.deleteGenericArtifact(deleteGenericArtifactRequest);
         }
     }
-    let response = client.deleteRepository({ repositoryId : repositoryID});
-    return response;
+    client.deleteRepository({ repositoryId: repositoryID });
 }
 
 export async function listGenericArtifacts(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string, artifactPath?: string): Promise<artifacts.models.GenericArtifactSummary[]> {
@@ -514,32 +493,29 @@ export async function listGenericArtifacts(authenticationDetailsProvider: common
     return result;
 }
 
-export async function getGenericArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactID: string): Promise<artifacts.responses.GetGenericArtifactResponse> {
+export async function getGenericArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactID: string): Promise<artifacts.models.GenericArtifact> {
     const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: artifacts.requests.GetGenericArtifactRequest = {
         artifactId: artifactID
     };
-    return client.getGenericArtifact(request);
+    return client.getGenericArtifact(request).then(response => response.genericArtifact);
 }
 
-export async function getGenericArtifactContent(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactID: string): Promise<genericartifactscontent.responses.GetGenericArtifactContentByPathResponse> {
+export async function getGenericArtifactContent(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactID: string): Promise<any> {
     const client = new genericartifactscontent.GenericArtifactsContentClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: genericartifactscontent.requests.GetGenericArtifactContentRequest = {
         artifactId: artifactID
     };
-    return client.getGenericArtifactContent(request);
+    return client.getGenericArtifactContent(request).then(response => response.value);
 }
 
-export async function deleteDeployArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactId : string, wait : boolean = false) {
+export async function deleteDeployArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactId: string, wait : boolean = false) {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     // console.log(`> deleteDeployArtifact ${artifactId}`);
     const response = client.deleteDeployArtifact({ deployArtifactId : artifactId });
     if (wait) {
-        const requestId = (await response).opcWorkRequestId;
-        // console.log(`> deleteDeployArtifact ${artifactId} will wait for ${requestId}`);
-        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy artifact", requestId);
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy artifact", (await response).opcWorkRequestId);
     }
-    return response;
 }
 
 export async function listDeployArtifacts(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.models.DeployArtifactSummary[]> {
@@ -558,12 +534,12 @@ export async function listDeployArtifacts(authenticationDetailsProvider: common.
     return result;
 }
 
-export async function getDeployArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactID: string): Promise<devops.responses.GetDeployArtifactResponse> {
+export async function getDeployArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, artifactID: string): Promise<devops.models.DeployArtifact> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: devops.requests.GetDeployArtifactRequest = {
         deployArtifactId: artifactID
     };
-    return await client.getDeployArtifact(request);
+    return client.getDeployArtifact(request).then(response => response.deployArtifact);
 }
 
 export async function listContainerRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<artifacts.models.ContainerRepositorySummary[]> {
@@ -582,17 +558,17 @@ export async function listContainerRepositories(authenticationDetailsProvider: c
     return result;
 }
 
-export async function getContainerRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string): Promise<artifacts.responses.GetContainerRepositoryResponse> {
+export async function getContainerRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string): Promise<artifacts.models.ContainerRepository> {
     const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: artifacts.requests.GetContainerRepositoryRequest = {
         repositoryId: repositoryID
     };
-    return client.getContainerRepository(request);
+    return client.getContainerRepository(request).then(response => response.containerRepository);
 }
 
-export async function deleteContainerRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string): Promise<artifacts.responses.DeleteContainerRepositoryResponse> {
+export async function deleteContainerRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string) {
     const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    return client.deleteContainerRepository({ repositoryId : repositoryID});
+    client.deleteContainerRepository({ repositoryId : repositoryID});
 }
 
 export async function listContainerImages(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string): Promise<artifacts.models.ContainerImageSummary[]> {
@@ -612,12 +588,12 @@ export async function listContainerImages(authenticationDetailsProvider: common.
     return result;
 }
 
-export async function getContainerImage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, imageID: string): Promise<artifacts.responses.GetContainerImageResponse> {
+export async function getContainerImage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, imageID: string): Promise<artifacts.models.ContainerImage> {
     const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: artifacts.requests.GetContainerImageRequest = {
         imageId: imageID
     };
-    return client.getContainerImage(request);
+    return client.getContainerImage(request).then(response => response.containerImage);
 }
 
 export async function listDeployEnvironments(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.models.DeployEnvironmentSummary[]> {
@@ -636,12 +612,12 @@ export async function listDeployEnvironments(authenticationDetailsProvider: comm
     return result;
 }
 
-export async function deleteDeployEnvironment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, envID: string): Promise<devops.responses.DeleteDeployEnvironmentResponse> {
+export async function deleteDeployEnvironment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, envID: string) {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: devops.requests.DeleteDeployEnvironmentRequest = {
         deployEnvironmentId: envID
     };
-    return client.deleteDeployEnvironment(request);
+    client.deleteDeployEnvironment(request);
 }
 
 export async function listKnowledgeBases(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<adm.models.KnowledgeBaseSummary[]> {
@@ -660,21 +636,20 @@ export async function listKnowledgeBases(authenticationDetailsProvider: common.C
     return result;
 }
 
-export async function getKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, knowledgeBaseID: string): Promise<adm.responses.GetKnowledgeBaseResponse> {
+export async function getKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, knowledgeBaseID: string): Promise<adm.models.KnowledgeBase> {
     const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: adm.requests.GetKnowledgeBaseRequest = {
         knowledgeBaseId: knowledgeBaseID
     };
-    return client.getKnowledgeBase(request);
+    return client.getKnowledgeBase(request).then(response => response.knowledgeBase);
 }
 
-export async function deleteKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, knowledgeId : string, wait : boolean = false): Promise<adm.responses.DeleteKnowledgeBaseResponse> {
+export async function deleteKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, knowledgeId: string, wait: boolean = false) {
     const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     let response = client.deleteKnowledgeBase({ knowledgeBaseId : knowledgeId});
     if (wait) {
         admWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting knowledge base", (await response).opcWorkRequestId);
     }
-    return response;
 }    
 
 export async function listVulnerabilityAudits(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, knowledgeBaseID: string, limit: number | undefined = 10): Promise<adm.models.VulnerabilityAuditSummary[]> {
@@ -697,30 +672,32 @@ export async function listVulnerabilityAudits(authenticationDetailsProvider: com
     return result;
 }
 
-export async function getVulnerabilityAudit(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, vulnerabilityAuditID: string): Promise<adm.responses.GetVulnerabilityAuditResponse> {
+export async function getVulnerabilityAudit(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, vulnerabilityAuditID: string): Promise<adm.models.VulnerabilityAudit> {
     const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: adm.requests.GetVulnerabilityAuditRequest = {
         vulnerabilityAuditId: vulnerabilityAuditID
     };
-    return client.getVulnerabilityAudit(request);
+    return client.getVulnerabilityAudit(request).then(response => response.vulnerabilityAudit);
 }
 
-export async function listNotificationTopics(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<ons.responses.ListTopicsResponse | undefined> {
-    try {
-        const client = new ons.NotificationControlPlaneClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const listTopicsRequest: ons.requests.ListTopicsRequest = {
-            compartmentId:compartmentID,
-            lifecycleState : ons.models.NotificationTopic.LifecycleState.Active
-        };
-        return client.listTopics(listTopicsRequest);
-    } catch (error) {
-        console.log('>>> listNotificationTopics ' + error);
-        return undefined;
-    }
+export async function listNotificationTopics(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<ons.models.NotificationTopicSummary[]> {
+    const client = new ons.NotificationControlPlaneClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: ons.requests.ListTopicsRequest = {
+        compartmentId:compartmentID,
+        lifecycleState : ons.models.NotificationTopic.LifecycleState.Active,
+        limit: 50
+    };
+    const result: ons.models.NotificationTopicSummary[] = [];
+    do {
+        const response = await client.listTopics(request);
+        result.push(...response.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    return result;
 }
 
 export async function createKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, 
-    compartmentID: string, projectName: string, flags?: { [key: string]: string } | undefined): Promise<string | undefined> {
+    compartmentID: string, projectName: string, flags?: { [key: string]: string } | undefined): Promise<string> {
     const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     
     // PENDING: displayName must match ".*(?:^[a-zA-Z_](-?[a-zA-Z_0-9])*$).*" -- transliterate invalid characters in name
@@ -742,47 +719,36 @@ export async function createKnowledgeBase(authenticationDetailsProvider: common.
     return admWaitForResourceCompletionStatus(authenticationDetailsProvider, `Create knowledge base ${displayName}`, response.opcWorkRequestId);
 }
 
-export async function createDefaultNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<ons.responses.CreateTopicResponse | undefined> {
-    try {
-        const idClient = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const getCompartmentsRequest: identity.requests.GetCompartmentRequest = {
-            compartmentId: compartmentID
-        };
+export async function createDefaultNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<ons.models.NotificationTopic> {
+    const idClient = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const compartmentRequest: identity.requests.GetCompartmentRequest = {
+        compartmentId: compartmentID
+    };
 
-        // PENDING: Creating a notification with a name already used within the tenancy (although in a different compartment) fails - whether it is a feature or a bug is not known.
-        // Let's default the name to <Compartment-Name>+constant -- althoug even compartment name may not be unique (same name in 2 different parents). Should be the OCID there :) ?
-        const resp = await idClient.getCompartment(getCompartmentsRequest);
+    // PENDING: Creating a notification with a name already used within the tenancy (although in a different compartment) fails - whether it is a feature or a bug is not known.
+    // Let's default the name to <Compartment-Name>+constant -- althoug even compartment name may not be unique (same name in 2 different parents). Should be the OCID there :) ?
+    const compartmentResponse = await idClient.getCompartment(compartmentRequest);
 
-        const client = new ons.NotificationControlPlaneClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const createTopicDetails = {
-            name: resp.compartment.name.replace(/\W+/g,'') + DEFAULT_NOTIFICATION_TOPIC,
-            compartmentId: compartmentID,
-            description: description
-        };
-        const createTopicRequest: ons.requests.CreateTopicRequest = {
-            createTopicDetails: createTopicDetails
-        };
-        return client.createTopic(createTopicRequest);
-    } catch (error) {
-        console.log('>>> createDefaultNotificationTopic ' + error);
-        return undefined;
-    }
+    const client = new ons.NotificationControlPlaneClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const createTopicDetails = {
+        name: compartmentResponse.compartment.name.replace(/\W+/g,'') + DEFAULT_NOTIFICATION_TOPIC,
+        compartmentId: compartmentID,
+        description: description
+    };
+    const request: ons.requests.CreateTopicRequest = {
+        createTopicDetails: createTopicDetails
+    };
+    return (await client.createTopic(request)).notificationTopic;
 }
 
-export async function getOrCreateNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<string | undefined> {
-    try {
-        const notificationTopics = await listNotificationTopics(authenticationDetailsProvider, compartmentID);
-        if (notificationTopics) {
-            if (notificationTopics.items.length > 0) {
-                return notificationTopics.items[0].topicId;
-            }
+export async function getOrCreateNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<string> {
+    const notificationTopics = await listNotificationTopics(authenticationDetailsProvider, compartmentID);
+    if (notificationTopics) {
+        if (notificationTopics.length > 0) {
+            return notificationTopics[0].topicId;
         }
-        const created = await createDefaultNotificationTopic(authenticationDetailsProvider, compartmentID, description);
-        return created?.notificationTopic.topicId;
-    } catch (error) {
-        console.log('>>> getOrCreateNotificationTopic ' + error);
-        return undefined;
     }
+    return createDefaultNotificationTopic(authenticationDetailsProvider, compartmentID, description).then(response => response.topicId);
 }
 
 export async function listClusters(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<containerengine.responses.ListClustersResponse | undefined> {
