@@ -57,7 +57,6 @@ export async function deployFolders(folders?: gcnServices.FolderData | gcnServic
     if (!cloudSupport) {
         return;
     }
-    const workspaceFolders = gcnServices.folderDataToWorkspaceFolders(folders) as vscode.WorkspaceFolder[];
-    await cloudSupport.deployFolders(workspaceFolders);
+    await cloudSupport.deployFolders(folders);
     await gcnServices.build();
 }
