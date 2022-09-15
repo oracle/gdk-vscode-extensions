@@ -33,6 +33,8 @@
 	"activationEvents": [
 		"onCommand:gcn.showWelcomePage",
 		"onCommand:gcn.oci.projectAudit.execute",
+		"onCommand:gcn.createGcnProject",
+		"onCommand:gcn.oci.initializeSshKeys",
 		"onView:gcn-services"
 	],
 	"main": "./dist/extension",
