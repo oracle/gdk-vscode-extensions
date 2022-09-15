@@ -223,7 +223,7 @@ class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.Removable
     }
 
     async getResource(): Promise<artifacts.models.ContainerRepository> {
-        return (await ociUtils.getContainerRepository(this.oci.getProvider(), this.object.ocid)).containerRepository;
+        return ociUtils.getContainerRepository(this.oci.getProvider(), this.object.ocid);
     }
 
     rename() {
@@ -277,7 +277,7 @@ class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource 
     }
 
     async getResource(): Promise<artifacts.models.ContainerImage> {
-        return (await ociUtils.getContainerImage(this.oci.getProvider(), this.object.ocid)).containerImage;
+        return ociUtils.getContainerImage(this.oci.getProvider(), this.object.ocid);
     }
 
     // NOTE: Doesn't work reliably in the Cloud Console, mostly opens just the Container Registry overview

@@ -8,76 +8,172 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as model from './model';
 
+const GET_PROJECT_INFO = 'nbls.project.info';
 const GET_PROJECT_ARTIFACTS = 'nbls.gcn.project.artifacts';
 const NATIVE_BUILD = 'native-build';
 
 // TODO: implement correctly for Maven/Gradle projects
 
-export function getProjectBuildCommand(folder: vscode.WorkspaceFolder): string | undefined {
-    if (isMaven(folder)) {
-        return 'chmod 777 ./mvnw && ./mvnw --no-transfer-progress package';
-    }
-    if (isGradle(folder)) {
-        return 'chmod 777 ./gradlew && ./gradlew build';
-    }
-    return undefined;
-}
-
-export function getProjectBuildNativeExecutableCommand(folder: vscode.WorkspaceFolder): string | undefined {
-    if (isMaven(folder)) {
-        return 'chmod 777 ./mvnw && ./mvnw install --no-transfer-progress -Dpackaging=native-image -DskipTests';
-    }
-    if (isGradle(folder)) {
-        return 'chmod 777 ./gradlew && ./gradlew nativeCompile -x test';
-    }
-    return undefined;
-}
-
-export async function getProjectBuildArtifactLocation(folder: vscode.WorkspaceFolder): Promise<string | undefined> {
-    if ((await vscode.commands.getCommands()).find(cmd => GET_PROJECT_ARTIFACTS === cmd)) {
-        const projectUri: string = folder.uri.toString();
-        const artifacts: any[] = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, projectUri);
-        if (artifacts && artifacts.length === 1) {
-            const loc: string = artifacts[0].location;
-            if (loc.startsWith(projectUri + '/')) {
-                return loc.slice(projectUri.length + 1);
+export async function getProjectInfo(folder: vscode.WorkspaceFolder): Promise<ProjectInfo | undefined> {
+    const infos: any[] = await vscode.commands.executeCommand(GET_PROJECT_INFO, folder.uri.toString(), { projectStructure: true });
+    if (infos?.length && infos[0]) {
+        // TODO: add better check for supported projects
+        const subprojects = [];
+        for(const sub of infos[0].subprojects) {
+            const subInfos: any[] = await vscode.commands.executeCommand(GET_PROJECT_INFO, sub);
+            if (subInfos?.length && subInfos[0]) {
+                const name: string = subInfos[0].displayName; // TODO: non deterministic displayName returned
+                let idx = name.lastIndexOf(path.sep);
+                if (idx < 0) {
+                    idx = name.lastIndexOf(':');
+                }
+                subprojects.push({ name: idx < 0 ? name : name.slice(idx + 1), uri: sub } );
             }
         }
-    }
-    if (isMaven(folder)) {
-        return `target/${folder.name}-0.1.jar`;
-    }
-    if (isGradle(folder)) {
-        return `build/libs/${folder.name}-0.1-all.jar`;
-    }
-    return undefined;
-}
-
-export async function getProjectNativeExecutableArtifactLocation(folder: vscode.WorkspaceFolder): Promise<string | undefined> {
-    if ((await vscode.commands.getCommands()).find(cmd => GET_PROJECT_ARTIFACTS === cmd)) {
-        const projectUri: string = folder.uri.toString();
-        const artifacts: any[] = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, projectUri, NATIVE_BUILD);
-        if (artifacts && artifacts.length === 1) {
-            const loc: string = artifacts[0].location;
-            if (loc.startsWith(projectUri + '/')) {
-                return loc.slice(projectUri.length + 1);
-            }
+        if (fs.existsSync(path.join(subprojects.length > 0 ? path.join(folder.uri.fsPath, 'app') : folder.uri.fsPath, 'src', 'main', 'resources', 'application.yml'))) {
+            return {
+                projectDirectory: infos[0].projectDirectory,
+                projectType: infos[0].subprojects?.length ? 'GCN' : 'Micronaut',
+                subprojects
+            };
         }
     }
-    if (isMaven(folder)) {
-        return `target/${folder.name}`;
+    return undefined;
+}
+
+export function getProjectBuildCommand(folder: model.DeployFolder, subfolder: string = 'app'): string | undefined {
+    if (isMaven(folder.folder.uri)) {
+        if (folder.projectInfo?.projectType === 'Micronaut') {
+            return 'chmod 777 ./mvnw && ./mvnw package --no-transfer-progress';
+        }
+        if (folder.projectInfo?.projectType === 'GCN') {
+            return `chmod 777 ./mvnw && ./mvnw package -pl ${subfolder} -am --no-transfer-progress`;
+        }
     }
-    if (isGradle(folder)) {
-        return `build/native/nativeCompile/${folder.name}`;
+    if (isGradle(folder.folder.uri)) {
+        if (folder.projectInfo?.projectType === 'Micronaut') {
+            return 'chmod 777 ./gradlew && ./gradlew build';
+        }
+        if (folder.projectInfo?.projectType === 'GCN') {
+            return `chmod 777 ./gradlew && ./gradlew ${subfolder}:build`;
+        }
     }
     return undefined;
 }
 
-function isMaven(folder: vscode.WorkspaceFolder) {
-    return fs.existsSync(path.join(folder.uri.fsPath, 'mvnw'));
+export function getProjectBuildNativeExecutableCommand(folder: model.DeployFolder, subfolder?: string): string | undefined {
+    if (isMaven(folder.folder.uri)) {
+        if (folder.projectInfo?.projectType === 'Micronaut') {
+            return 'chmod 777 ./mvnw && ./mvnw install --no-transfer-progress -Dpackaging=native-image -DskipTests';
+        }
+        if (folder.projectInfo?.projectType === 'GCN') {
+            if (subfolder) {
+                return `chmod 777 ./mvnw && ./mvnw install -pl app -am --no-transfer-progress -DskipTests && ./mvnw install -pl ${subfolder} --no-transfer-progress -Dpackaging=native-image -DskipTests`;
+            }
+            return `chmod 777 ./mvnw && ./mvnw install -pl app -am --no-transfer-progress -Dpackaging=native-image -DskipTests`;
+        }
+    }
+    if (isGradle(folder.folder.uri)) {
+        if (folder.projectInfo?.projectType === 'Micronaut') {
+            return 'chmod 777 ./gradlew && ./gradlew nativeCompile -x test';
+        }
+        if (folder.projectInfo?.projectType === 'GCN') {
+            return `chmod 777 ./gradlew && ./gradlew ${subfolder || 'app'}:nativeCompile -x test`;
+        }
+    }
+    return undefined;
 }
 
-function isGradle(folder: vscode.WorkspaceFolder) {
-    return fs.existsSync(path.join(folder.uri.fsPath, 'gradlew'));
+export async function getProjectBuildArtifactLocation(folder: model.DeployFolder, subfolder: string = 'app'): Promise<string | undefined> {
+    const projectUri: string = folder.folder.uri.toString();
+    let artifacts: any[] | undefined = undefined;
+    if (folder.projectInfo?.projectType === 'Micronaut') {
+        artifacts = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, projectUri);
+    }
+    if (folder.projectInfo?.projectType === 'GCN') {
+        const uri = folder.projectInfo.subprojects.find(sub => sub.name === subfolder)?.uri;
+        if (uri) {
+            artifacts = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, uri);
+        }
+    }
+    if (artifacts && artifacts.length === 1) {
+        const loc: string = artifacts[0].location;
+        if (loc.startsWith(projectUri + '/')) {
+            return loc.slice(projectUri.length + 1);
+        }
+    }
+    if (isMaven(folder.folder.uri)) {
+        if (folder.projectInfo?.projectType === 'Micronaut') {
+            return `target/${folder.folder.name}-0.1.jar`;
+        }
+        if (folder.projectInfo?.projectType === 'GCN') {
+            return `${subfolder}/target/${subfolder}-0.1.jar`;
+        }
+    }
+    if (isGradle(folder.folder.uri)) {
+        if (folder.projectInfo?.projectType === 'Micronaut') {
+            return `build/libs/${folder.folder.name}-0.1-all.jar`;
+        }
+        if (folder.projectInfo?.projectType === 'GCN') {
+            return `${subfolder}/build/libs/${subfolder}-0.1-all.jar`;
+        }
+    }
+    return undefined;
+}
+
+export async function getProjectNativeExecutableArtifactLocation(folder: model.DeployFolder, subfolder: string = 'app'): Promise<string | undefined> {
+    const projectUri: string = folder.folder.uri.toString();
+    let artifacts: any[] | undefined = undefined;
+    if (folder.projectInfo?.projectType === 'Micronaut') {
+        artifacts = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, projectUri, NATIVE_BUILD);
+    }
+    if (folder.projectInfo?.projectType === 'GCN') {
+        const uri = folder.projectInfo.subprojects.find(sub => sub.name === subfolder)?.uri;
+        if (uri) {
+            artifacts = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, uri, NATIVE_BUILD);
+        }
+    }
+    if (artifacts && artifacts.length === 1) {
+        const loc: string = artifacts[0].location;
+        if (loc.startsWith(projectUri + '/')) {
+            return loc.slice(projectUri.length + 1);
+        }
+    }
+    if (isMaven(folder.folder.uri)) {
+        if (folder.projectInfo?.projectType === 'Micronaut') {
+            return `target/${folder.folder.name}`;
+        }
+        if (folder.projectInfo?.projectType === 'GCN') {
+            return `${subfolder}/target/${subfolder}`;
+        }
+    }
+    if (isGradle(folder.folder.uri)) {
+        if (folder.projectInfo?.projectType === 'Micronaut') {
+            return `build/native/nativeCompile/${folder.folder.name}`;
+        }
+        if (folder.projectInfo?.projectType === 'GCN') {
+            return `${subfolder}/build/native/nativeCompile/${subfolder}`;
+        }
+    }
+    return undefined;
+}
+
+export function getCloudSpecificSubProjectNames(folder: model.DeployFolder): string[] {
+    return folder.projectInfo?.subprojects.map(sub => sub.name).filter(name => name !== 'app') || [];
+}
+
+export interface ProjectInfo {
+    readonly projectDirectory: string;
+    readonly projectType: 'GCN' | 'Micronaut';
+    readonly subprojects: {name: string, uri: string}[];
+}
+
+function isMaven(uri: vscode.Uri) {
+    return fs.existsSync(path.join(uri.fsPath, 'mvnw'));
+}
+
+function isGradle(uri: vscode.Uri) {
+    return fs.existsSync(path.join(uri.fsPath, 'gradlew'));
 }

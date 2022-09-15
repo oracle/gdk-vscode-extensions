@@ -120,10 +120,10 @@ export async function build(folders: gcnServices.FolderData[]) {
                 }
             }
             const folderNode = new FolderNode(folder, serviceNodes);
-            if (folders.length > 1) {
+            if (folders.length > 1 || !folderNode.getFolderData().projectInfo) {
                 const children = folderNode.getChildren();
                 if (children && children.length === 0) {
-                    folderNode.setChildren([ new NotDeployedNode() ]);
+                    folderNode.setChildren([ folderNode.getFolderData().projectInfo ? new NotDeployedNode() : new NotDeployableNode() ]);
                 }
             }
             folderNodes.push(folderNode);
@@ -143,7 +143,7 @@ class FolderNode extends nodes.BaseNode implements nodes.DeployNode, nodes.AddCo
     private folder: gcnServices.FolderData;
 
     constructor(folder: gcnServices.FolderData, children: FolderServicesNode[]) {
-        super(folder.folder.name, undefined, folder.services.length > 0 ? FolderNode.CONTEXTS[0] : FolderNode.CONTEXTS[1], children, true);
+        super(folder.folder.name, undefined, folder.services.length > 0 ? FolderNode.CONTEXTS[0] : folder.projectInfo ? FolderNode.CONTEXTS[1] : undefined, children, true);
         this.folder = folder;
         this.collapseOneChildNode();
         this.updateAppearance();
@@ -227,6 +227,14 @@ class NotDeployedNode extends nodes.TextNode {
 
 }
 
+class NotDeployableNode extends nodes.TextNode {
+
+    constructor() {
+        super('<cannot be deployed to cloud>');
+        this.tooltip = 'Only GCN and/or Micronaut projects are currently supported';
+    }
+
+}
 class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 
 	private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null> = new vscode.EventEmitter<vscode.TreeItem | undefined | null>();

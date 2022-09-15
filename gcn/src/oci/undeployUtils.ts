@@ -12,6 +12,7 @@ import * as identity from 'oci-identity';
 import * as devops from 'oci-devops';
 import * as gcnServices from '../gcnServices';
 import * as dialogs from '../dialogs';
+import * as projectUtils from '../projectUtils';
 import * as ociUtils from './ociUtils';
 import * as ociServices from './ociServices';
 
@@ -70,7 +71,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
 
     const folderPath = folder.folder.uri.fsPath;
 
-    const result: string | devops.responses.DeleteProjectResponse = await vscode.window.withProgress({
+    await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: `Undeploying ${data[0].name} from OCI `,
         cancellable: false
@@ -164,7 +165,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         };
 
         // console.log(`Process pipelines`);
-        _progress.report({message : "Listing Build Pipelines"});
+        _progress.report({message : "Listing Deploy Pipelines"});
 
         const deployPipelines: devops.models.DeployPipelineSummary[] = await ociUtils.listDeployPipelines(authProvider, devopsId);
         for (let pipe of deployPipelines) {
@@ -266,7 +267,27 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         _progress.report({ message: 'Searching container repositories'});
         const containerRepositories = await ociUtils.listContainerRepositories(authProvider, compartmentId);
         if (containerRepositories) {
-            const containerRepositoryNames = repoNames.length > 1 ? repoNames.map(name => `${data[0].name}-${name}`.toLowerCase()) : [ data[0].name.toLowerCase() ];
+            const containerRepositoryNames: string[] = [];
+            const cloudSubNames = projectUtils.getCloudSpecificSubProjectNames(folder);
+            if (repoNames.length > 1) {
+                for (const name of repoNames) {
+                    if (cloudSubNames.length) {
+                        for (const subName of cloudSubNames) {
+                            containerRepositoryNames.push(`${data[0].name}-${name}-${subName}`.toLowerCase());
+                        }
+                    } else {
+                        containerRepositoryNames.push(`${data[0].name}-${name}`.toLowerCase());
+                    }
+                }
+            } else {
+                if (cloudSubNames.length) {
+                    for (const subName of cloudSubNames) {
+                        containerRepositoryNames.push(`${data[0].name}-${subName}`.toLowerCase());
+                    }
+                } else {
+                    containerRepositoryNames.push(data[0].name.toLowerCase());
+                }
+            }
             for (const repo of containerRepositories) {
                 if (containerRepositoryNames.includes(repo.displayName)) {
                     _progress.report({message : `Deleting container repository ${repo.displayName}`});
@@ -303,5 +324,4 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
 
         return p;
     });
-    return result;
 }

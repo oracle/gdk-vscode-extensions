@@ -187,7 +187,7 @@
 			{
 				"view": "gcn-services",
 				"contents": "Click the Deploy to Cloud button to deploy the current folder(s) to cloud:\n[Deploy to Cloud](command:gcn.deployToCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
-				"when": "gcn.servicesInitialized && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
+				"when": "gcn.servicesInitialized && gcn.deployableFoldersCount > 0 && gcn.serviceFoldersCount == 0"
 			}
 		],
 		"views": {
@@ -195,7 +195,8 @@
 				{
 					"id": "gcn-services",
 					"name": "GCN Services",
-					"icon": "resources/GCN_logo.png"
+					"icon": "resources/GCN_logo.png",
+					"when": "nbJavaLSReady"
 				}
 			]
 		},
@@ -384,7 +385,8 @@
 		"webpack": "^5.40.0",
 		"webpack-cli": "^4.7.2"
 	},
-	"extensionDependencies": [
+    "extensionDependencies": [
+		"asf.apache-netbeans-java",
 		"ms-kubernetes-tools.vscode-kubernetes-tools"
-	]
+    ]
 }

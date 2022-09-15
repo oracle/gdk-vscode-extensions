@@ -385,7 +385,7 @@ class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, 
     }
 
     async getResource(): Promise<adm.models.KnowledgeBase> {
-        return (await ociUtils.getKnowledgeBase(this.oci.getProvider(), this.object.ocid)).knowledgeBase;
+        return ociUtils.getKnowledgeBase(this.oci.getProvider(), this.object.ocid);
     }
 
     rename() {
@@ -473,7 +473,7 @@ class VulnerabilityAuditNode extends nodes.BaseNode implements nodes.ShowReportN
     }
 
     async getResource(): Promise<adm.models.VulnerabilityAudit> {
-        return (await ociUtils.getVulnerabilityAudit(this.oci.getProvider(), this.object.ocid)).vulnerabilityAudit;
+        return ociUtils.getVulnerabilityAudit(this.oci.getProvider(), this.object.ocid);
     }
 
     async getAddress(): Promise<string> {

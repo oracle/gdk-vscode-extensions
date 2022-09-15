@@ -216,7 +216,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
     }
 
     async getResource(): Promise<devops.models.DeployPipeline> {
-        return (await ociUtils.getDeployPipeline(this.oci.getProvider(), this.object.ocid)).deployPipeline;
+        return ociUtils.getDeployPipeline(this.oci.getProvider(), this.object.ocid);
     }
 
     rename() {

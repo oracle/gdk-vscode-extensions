@@ -225,7 +225,7 @@ class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableN
     }
 
     async getResource(): Promise<artifacts.models.Repository> {
-        return (await ociUtils.getArtifactRepository(this.oci.getProvider(), this.object.ocid)).repository;
+        return ociUtils.getArtifactRepository(this.oci.getProvider(), this.object.ocid);
     }
 
     rename() {
@@ -281,7 +281,7 @@ class GenericArtifactNode extends nodes.BaseNode implements ociNodes.OciResource
     }
 
     async getResource(): Promise<artifacts.models.GenericArtifact> {
-        return (await ociUtils.getGenericArtifact(this.oci.getProvider(), this.object.ocid)).genericArtifact;
+        return ociUtils.getGenericArtifact(this.oci.getProvider(), this.object.ocid);
     }
 
     download() {
@@ -304,11 +304,7 @@ export function downloadGenericArtifactContent(oci: ociContext.Context, artifact
         try {
             return await ociUtils.getGenericArtifactContent(oci.getProvider(), artifactID);
         } catch (err) {
-            if ((err as any).message) {
-                return new Error(`Failed to resolve build artifact content: ${(err as any).message}`);
-            } else {
-                return new Error('Failed to resolve build artifact content');
-            }
+            return new Error(`Failed to resolve build artifact content${(err as any).message ? ': ' + (err as any).message : ''}.`);
         }
     }).then(result => {
         if (result instanceof Error) {
@@ -325,7 +321,7 @@ export function downloadGenericArtifactContent(oci: ociContext.Context, artifact
                         cancellable: false
                     }, (_progress, _token) => {
                         return new Promise(async (resolve) => {
-                            const data = result.value;
+                            const data = result;
                             const file = fs.createWriteStream(fileUri.fsPath);
                             data.pipe(file);
                             data.on('error', (err: Error) => {
