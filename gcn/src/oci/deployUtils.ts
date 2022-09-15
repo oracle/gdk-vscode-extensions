@@ -17,6 +17,7 @@ import * as ociUtils from './ociUtils';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
 import * as ociDialogs from './ociDialogs';
+import { addCloudKnownHosts, sshUtilitiesPresent } from './sshUtils';
 
 
 export type SaveConfig = (folder: string, config: any) => boolean;
@@ -182,12 +183,11 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 message: `Creating ADM knowledge base for ${projectName}...`
             });
             const knowledgeBaseDescription = `Vulnerability audits for devops project ${projectName}`;
-            const knowledgeBaseOCID = await ociUtils.createKnowledgeBase(provider, compartment.ocid, projectName, {
+            const knowledgeBaseOCID = await ociUtils.createKnowledgeBase(provider, compartment?.ocid || "", projectName, {
                 'gcn_tooling_projectOCID': project,
                 'gcn_tooling_description': knowledgeBaseDescription,
                 'gcn_tooling_usage': 'gcn-adm-audit'
             });
-
             for (const folder of folders) {
                 const repositoryDir = folder.uri.fsPath;
                 const repositoryName = folder.name; // TODO: repositoryName should be unique within the devops project
@@ -206,6 +206,17 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 if (!codeRepository.sshUrl || !codeRepository.httpUrl) {
                     resolve(`Failed to resolve URL of source code repository ${repositoryName}.`);
                     return;
+                }
+
+                if (codeRepository.sshUrl) {
+                    const r = /ssh:\/\/([^/]+)\//.exec(codeRepository.sshUrl);
+                    if (r && r.length == 2) {
+                        const hostname = r[1];
+                        const success = await addCloudKnownHosts(hostname, true);
+                        if (success == -1) {
+                            vscode.window.showWarningMessage("SSH utilities are not available. Some Git operations may fail. See https://code.visualstudio.com/docs/remote/troubleshooting#_installing-a-supported-ssh-client for the recommended software.");
+                        }
+                    }
                 }
 
                 // --- Create container repository
