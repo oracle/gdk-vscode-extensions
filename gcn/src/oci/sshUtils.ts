@@ -16,6 +16,9 @@ import * as ociUtils from './ociUtils';
 
 
 let sshKeyInitInProgress = false;
+
+const defaultConfigLocation = path.join(os.homedir(), '.ssh', 'config');
+
 export async function initializeSshKeys() {
     if (!sshKeyInitInProgress) {
         sshKeyInitInProgress = true;
@@ -26,7 +29,6 @@ export async function initializeSshKeys() {
                 cancellable: false
             }, (progress, _token) => {
                 return new Promise<void>(async resolve => {
-                    const defaultConfigLocation = path.join(os.homedir(), '.ssh', 'config');
                     const fileExists = fs.existsSync(defaultConfigLocation);
                     if (fileExists) {
                         const content = fs.readFileSync(defaultConfigLocation);
@@ -153,72 +155,93 @@ export async function addCloudKnownHosts(hostname : string, ask : boolean) : Pro
     return 1;
 }
 
-export async function addAutoAcceptHostFingerprintForCloud() : Promise<boolean> {
-    const defaultConfigLocation = path.join(os.homedir(), '.ssh', 'config');
+class ParsedKnownHosts {
+    lines?: string[];
+    foundIndex: number = -1;
+    checkHostIPIndex?: number;
+    strictHostsIndex?: number;
+    checkOK = false;
+    strictOK = false;
 
-    const fileExists = fs.existsSync(defaultConfigLocation);
-    if (fileExists) {
+    constructor() {
+        const fileExists = fs.existsSync(defaultConfigLocation);
+        if (!fileExists) {
+            return;
+        }
         const content = fs.readFileSync(defaultConfigLocation);
         const contentStr = content.toString();
-        if (!/^Host devops.scmservice.*.oci.oraclecloud.com/mi.test(contentStr)) {
-            return false;
-        }
+        this.lines = contentStr.split(os.EOL);
 
-        const lines : string[] = contentStr.split(os.EOL);
-        let foundIndex : number = -1;
-        let checkHostIPIndex : number = -1;
-        let strictHostsIndex : number = -1;
-        let checkOK = false;
-        let strictOK = false;
-
-        for (let index = 0; index < lines.length; index++) {
-            const line = lines[index];
-            if (/^Host devops.scmservice.\*.oci.oraclecloud.com/i.test(line)) {
-                foundIndex = index;
+        for (let index = 0; index < this.lines.length; index++) {
+            const line = this.lines[index];
+            if (/^Host devops.scmservice\..*\.oci.oraclecloud.com/i.test(line)) {
+                this.foundIndex = index;
                 continue;
             }
-            if (/^\s*CheckHostIP/i.test(line)) {
-                checkHostIPIndex = index;
-                checkOK = /^\s*CheckHostIP(\s*=\s*|\s+)(no)/i.test(line);
-            } else if (/^\s*StrictHostKeyChecking/i.test(line)) {
-                strictHostsIndex = index;
-                checkOK = /^\s*StrictHostKeyChecking(\s*=\s*|\s+)(accept-new|no|off)/i.test(line);
-            } else if (/^(Host|Match)/i.test(line)) {
-                // terminate at the next host
-                break;
+            if (this.foundIndex > -1) {
+                if (/^\s*CheckHostIP/i.test(line)) {
+                    this.checkHostIPIndex = index;
+                    this.checkOK = /^\s*CheckHostIP(\s*=\s*|\s+)(no)/i.test(line);
+                } else if (/^\s*StrictHostKeyChecking/i.test(line)) {
+                    this.strictHostsIndex = index;
+                    this.strictOK = /^\s*StrictHostKeyChecking(\s*=\s*|\s+)(accept-new|no|off)/i.test(line);
+                } else if (/^(Host|Match)/i.test(line)) {
+                    // terminate at the next host
+                    break;
+                }
             }
         }
-
-        if (foundIndex == -1) {
-            // no entry for the oracle cloud machine found.
-            return false;
-        }
-        if (checkOK && strictOK) {
-            return true;
-        }
-
-        vscode.window.showInformationMessage("When working with the remote Git repository, the remote host fingerprint");
-
-        if (checkHostIPIndex != -1 && !checkOK) {
-            let s = lines[checkHostIPIndex];
-            lines[checkHostIPIndex] = s.replace(new RegExp("CheckHostIP.*"), "CheckHostIP no");
-        }
-        if (strictHostsIndex != -1 && !strictOK) {
-            let s = lines[strictHostsIndex];
-            lines[strictHostsIndex] = s.replace(new RegExp("StrictHostKeyChecking.*"), "StrictHostKeyChecking accept-new");
-        }
-        if (checkHostIPIndex == -1) {
-            lines.splice(foundIndex + 1, 0, "  CheckHostIP no");
-        }
-        
-        if (strictHostsIndex == -1) {
-            lines.splice(foundIndex + 1, 0, "  StrictHostKeyChecking accept-new");
-        }
-        const newContents = lines.join(os.EOL);
-        fs.writeFileSync(defaultConfigLocation, newContents);
-
-        return true;
     }
 
-    return false;
+    isDisabled() : boolean {
+        return this.strictOK && this.checkOK;
+    }
+
+    addStrictAndCheckDirectives() {
+        const l : string[] = this.lines || [];
+        if (this.checkHostIPIndex && !this.checkOK) {
+            let s = l[this.checkHostIPIndex];
+            l[this.checkHostIPIndex] = s.replace(new RegExp("CheckHostIP.*"), "CheckHostIP no");
+            this.checkOK = true;
+        }
+        if (this.strictHostsIndex && !this.strictOK) {
+            let s = l[this.strictHostsIndex];
+            l[this.strictHostsIndex] = s.replace(new RegExp("StrictHostKeyChecking.*"), "StrictHostKeyChecking accept-new");
+            this.strictOK = true;
+        }
+        let fi = this.foundIndex + 1;
+        if (!this.checkHostIPIndex) {
+            l.splice(fi, 0, "  CheckHostIP no");
+            this.checkHostIPIndex = fi++;
+            this.checkOK = true;
+        }
+        
+        if (!this.strictHostsIndex) {
+            l.splice(fi, 0, "  StrictHostKeyChecking accept-new");
+            this.strictHostsIndex = fi++;
+            this.strictOK = true;
+        }
+        this.lines = l;
+    }
+}
+
+export function isAutoAcceptHostFingerprint() : boolean {
+    const parsed = new ParsedKnownHosts();
+    return parsed.isDisabled();
+}
+
+export async function addAutoAcceptHostFingerprintForCloud() : Promise<boolean> {
+    const parsed = new ParsedKnownHosts();
+    if (!parsed.foundIndex) {
+        return false;
+    }
+    if (parsed.isDisabled()) {
+        return true;
+    }
+    
+    parsed.addStrictAndCheckDirectives();
+    const newContents = parsed.lines?.join(os.EOL);
+    fs.writeFileSync(defaultConfigLocation, newContents);
+
+    return true;
 }
