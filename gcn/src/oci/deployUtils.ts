@@ -18,7 +18,7 @@ import * as ociUtils from './ociUtils';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
 import * as ociDialogs from './ociDialogs';
-import { addCloudKnownHosts, sshUtilitiesPresent } from './sshUtils';
+import { addCloudKnownHosts } from './sshUtils';
 
 
 export type SaveConfig = (folder: string, config: any) => boolean;
