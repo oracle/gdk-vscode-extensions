@@ -412,19 +412,23 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                     const timeEnd = ociUtils.isRunning(deployment.lifecycleState) ? new Date() : deployment.deploymentExecutionProgress?.timeFinished;
                     if (timeStart && timeEnd) {
                         // While the build run is in progress, messages in the log cloud appear out of order.
-                        const results = await ociUtils.searchLogs(this.oci.getProvider(), compartmentId, groupId, logId, 'deployment', deployment.id, timeStart, timeEnd);
-                        if (this.lastDeployment?.output && this.lastDeployment?.ocid === deploymentId && results?.length && results.length > lastResults.length) {
-                            if (lastResults.find((result: any, idx: number) => result.data.logContent.time !== results[idx].data.logContent.time || result.data.logContent.data.message !== results[idx].data.logContent.data.message)) {
-                                this.lastDeployment.output.clear();
-                                for (let result of results) {
-                                    this.lastDeployment.output.appendLine(`${result.data.logContent.time}  ${result.data.logContent.data.message}`);
+                        try {
+                            const results = await ociUtils.searchLogs(this.oci.getProvider(), compartmentId, groupId, logId, 'deployment', deployment.id, timeStart, timeEnd);
+                            if (this.lastDeployment?.output && this.lastDeployment?.ocid === deploymentId && results?.length && results.length > lastResults.length) {
+                                if (lastResults.find((result: any, idx: number) => result.data.logContent.time !== results[idx].data.logContent.time || result.data.logContent.data.message !== results[idx].data.logContent.data.message)) {
+                                    this.lastDeployment.output.clear();
+                                    for (let result of results) {
+                                        this.lastDeployment.output.appendLine(`${result.data.logContent.time}  ${result.data.logContent.data.message}`);
+                                    }
+                                } else {
+                                    for (let result of results.slice(lastResults.length)) {
+                                        this.lastDeployment.output.appendLine(`${result.data.logContent.time}  ${result.data.logContent.data.message}`);
+                                    }
                                 }
-                            } else {
-                                for (let result of results.slice(lastResults.length)) {
-                                    this.lastDeployment.output.appendLine(`${result.data.logContent.time}  ${result.data.logContent.data.message}`);
-                                }
+                                lastResults = results;
                             }
-                            lastResults = results;
+                        } catch (err) {
+                            // TODO: handle
                         }
                     }
                 }

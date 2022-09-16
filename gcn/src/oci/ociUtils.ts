@@ -465,10 +465,10 @@ export async function deleteArtifactsRepository(authenticationDetailsProvider: c
     const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     if (items) {
         for (const item of items) {
-            const deleteGenericArtifactRequest: artifacts.requests.DeleteGenericArtifactRequest = {
+            const request: artifacts.requests.DeleteGenericArtifactRequest = {
                 artifactId: item.id
             };
-            await client.deleteGenericArtifact(deleteGenericArtifactRequest);
+            await client.deleteGenericArtifact(request);
         }
     }
     client.deleteRepository({ repositoryId: repositoryID });
@@ -812,64 +812,53 @@ export async function listLogs(authenticationDetailsProvider: common.ConfigFileA
     return result;
 }
 
-export async function searchLogs(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, logGroupID: string, logID: string, operation: 'buildRun' | 'deployment', operationID: string, timeStart: Date, timeEnd: Date): Promise<loggingsearch.models.SearchResult[] | undefined> {
-    try {
-        const client = new loggingsearch.LogSearchClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+export async function searchLogs(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, logGroupID: string, logID: string, operation: 'buildRun' | 'deployment', operationID: string, timeStart: Date, timeEnd: Date): Promise<loggingsearch.models.SearchResult[]> {
+    const client = new loggingsearch.LogSearchClient({ authenticationDetailsProvider: authenticationDetailsProvider });
 
-        const requestDetails: loggingsearch.models.SearchLogsDetails = {
-            timeStart: timeStart,
-            timeEnd: timeEnd,
-            searchQuery: `search "${compartmentID}/${logGroupID}/${logID}" | where data.${operation}Id = '${operationID}'`,
-            isReturnFieldInfo: false
+    const requestDetails: loggingsearch.models.SearchLogsDetails = {
+        timeStart: timeStart,
+        timeEnd: timeEnd,
+        searchQuery: `search "${compartmentID}/${logGroupID}/${logID}" | where data.${operation}Id = '${operationID}'`,
+        isReturnFieldInfo: false
+    };
+
+    const result: loggingsearch.models.SearchResult[] = [];
+    let nextPage;
+    do {
+        const request: loggingsearch.requests.SearchLogsRequest = {
+            searchLogsDetails: requestDetails,
+            limit: 1000,
+            page: nextPage
         };
-
-        const result: loggingsearch.models.SearchResult[] = [];
-        let nextPage;
-        do {
-            const request: loggingsearch.requests.SearchLogsRequest = {
-                searchLogsDetails: requestDetails,
-                limit: 1000,
-                page: nextPage
-            };
-            const response = await client.searchLogs(request);
-            if (response.searchResponse.results?.length) {
-                if (!result.length && !response.opcNextPage) {
-                    return response.searchResponse.results;
-                }
-                result.push(...response.searchResponse.results);
+        const response = await client.searchLogs(request);
+        if (response.searchResponse.results?.length) {
+            if (!result.length && !response.opcNextPage) {
+                return response.searchResponse.results;
             }
-            nextPage = response.opcNextPage;
-        } while (nextPage);
+            result.push(...response.searchResponse.results);
+        }
+        nextPage = response.opcNextPage;
+    } while (nextPage);
 
-        return result;
-    } catch (error) {
-        console.log('>>> searchLogs ' + error);
-        return undefined;
-    }
+    return result;
 }
 
-export async function createDefaultLogGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<logging.responses.CreateLogGroupResponse | undefined> {
-    try {
-        const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const createLogGroupDetails = {
-            compartmentId: compartmentID,
-            displayName: DEFAULT_LOG_GROUP,
-            description: description
+export async function createDefaultLogGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string) {
+    const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const requestDetails: logging.models.CreateLogGroupDetails = {
+        compartmentId: compartmentID,
+        displayName: DEFAULT_LOG_GROUP,
+        description: description
+    };
+    const request: logging.requests.CreateLogGroupRequest = {
+        createLogGroupDetails: requestDetails
+    };
+    const response = await client.createLogGroup(request);
+    if (response.opcWorkRequestId) {
+        const getWorkRequestRequest: logging.requests.GetWorkRequestRequest = {
+            workRequestId: response.opcWorkRequestId
         };
-        const createLogGroupRequest: logging.requests.CreateLogGroupRequest = {
-            createLogGroupDetails: createLogGroupDetails
-        };
-        const createLogGroupResponse = await client.createLogGroup(createLogGroupRequest);
-        if (createLogGroupResponse.opcWorkRequestId) {
-            const getWorkRequestRequest: logging.requests.GetWorkRequestRequest = {
-                workRequestId: createLogGroupResponse.opcWorkRequestId
-            };
-            await completion(2000, async () => (await client.getWorkRequest(getWorkRequestRequest)).workRequest.status);
-        }
-        return createLogGroupResponse;
-    } catch (error) {
-        console.log('>>> createLogGroup ' + error);
-        return undefined;
+        await completion(2000, async () => (await client.getWorkRequest(getWorkRequestRequest)).workRequest.status);
     }
 }
 
@@ -879,68 +868,58 @@ export async function getDefaultLogGroup(authenticationDetailsProvider: common.C
         return logGroup[0].id;
     }
     if (create) {
-        const created = await createDefaultLogGroup(authenticationDetailsProvider, compartmentID, description);
-        if (created) {
-            const logGroup = await listLogGroups(authenticationDetailsProvider, compartmentID, DEFAULT_LOG_GROUP);
-            if (logGroup.length > 0) {
-                return logGroup[0].id;
-            }
+        await createDefaultLogGroup(authenticationDetailsProvider, compartmentID, description);
+        const logGroup = await listLogGroups(authenticationDetailsProvider, compartmentID, DEFAULT_LOG_GROUP);
+        if (logGroup.length > 0) {
+            return logGroup[0].id;
         }
     }
     return undefined;
 }
 
-export async function listDynamicGroups(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name?: string): Promise<identity.responses.ListDynamicGroupsResponse | undefined> {
-    try {
-        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const listDynamicGroupsRequest: identity.requests.ListDynamicGroupsRequest = {
-            compartmentId: compartmentID,
-            name
-        };
-        return client.listDynamicGroups(listDynamicGroupsRequest);
-    } catch (error) {
-        console.log('>>> listDynamicGroups ' + error);
-        return undefined;
-    }
+export async function listDynamicGroups(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name?: string): Promise<identity.models.DynamicGroup[]> {
+    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: identity.requests.ListDynamicGroupsRequest = {
+        compartmentId: compartmentID,
+        name: name,
+        limit: 1000
+    };
+    const result: identity.models.DynamicGroup[] = [];
+    do {
+        const response = await client.listDynamicGroups(request);
+        result.push(...response.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    return result;
 }
 
-export async function createDynamicGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name: string, description: string, matchingRule: string): Promise<identity.responses.CreateDynamicGroupResponse | undefined> {
-    try {
-        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const createDynamicGroupDetails = {
-            compartmentId: compartmentID,
-            name,
-            description,
-            matchingRule
-        };
-        const createTopicRequest: identity.requests.CreateDynamicGroupRequest = {
-            createDynamicGroupDetails: createDynamicGroupDetails
-        };
-        return client.createDynamicGroup(createTopicRequest);
-    } catch (error) {
-        console.log('>>> createDynamicGroup ' + error);
-        return undefined;
-    }
+export async function createDynamicGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name: string, description: string, matchingRule: string): Promise<identity.models.DynamicGroup> {
+    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const requestDetails: identity.models.CreateDynamicGroupDetails = {
+        compartmentId: compartmentID,
+        name,
+        description,
+        matchingRule
+    };
+    const request: identity.requests.CreateDynamicGroupRequest = {
+        createDynamicGroupDetails: requestDetails
+    };
+    return client.createDynamicGroup(request).then(response => response.dynamicGroup);
 }
 
-export async function updateDynamicGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, groupID: string, details: identity.models.UpdateDynamicGroupDetails): Promise<identity.responses.UpdateDynamicGroupResponse | undefined> {
-    try {
-        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const updateDynamicGroupRequest: identity.requests.UpdateDynamicGroupRequest = {
-            dynamicGroupId: groupID,
-            updateDynamicGroupDetails: details
-        };
-        return client.updateDynamicGroup(updateDynamicGroupRequest);
-    } catch (error) {
-        console.log('>>> updateDynamicGroup ' + error);
-        return undefined;
-    }
+export async function updateDynamicGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, groupID: string, details: identity.models.UpdateDynamicGroupDetails): Promise<identity.models.DynamicGroup> {
+    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: identity.requests.UpdateDynamicGroupRequest = {
+        dynamicGroupId: groupID,
+        updateDynamicGroupDetails: details
+    };
+    return client.updateDynamicGroup(request).then(response => response.dynamicGroup);
 }
 
 export async function getDefaultBuildPipelinesGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean): Promise<identity.models.DynamicGroup | undefined> {
     const tenancy = authenticationDetailsProvider.getTenantId();
     const rule = `ALL {resource.type = 'devopsbuildpipeline', resource.compartment.id = '${compartmentID}'}`;
-    const group = (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_BUILD_PIPELINES_GROUP))?.items.find(g => DEFAULT_BUILD_PIPELINES_GROUP === g.name);
+    const group = (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_BUILD_PIPELINES_GROUP)).find(g => DEFAULT_BUILD_PIPELINES_GROUP === g.name);
     if (group) {
         if (group.matchingRule.indexOf(rule) < 0) {
             const len = group.matchingRule.length;
@@ -949,10 +928,9 @@ export async function getDefaultBuildPipelinesGroup(authenticationDetailsProvide
         return group;
     }
     if (create) {
-        const created = await createDynamicGroup(authenticationDetailsProvider, tenancy, DEFAULT_BUILD_PIPELINES_GROUP, 'Default group for build pipelines created from VS Code', `Any {${rule}}`);
-        if (created) {
-            return (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_BUILD_PIPELINES_GROUP))?.items.find(g => DEFAULT_BUILD_PIPELINES_GROUP === g.name);
-        }
+        // TODO: why is the created group not returned immediately?
+        await createDynamicGroup(authenticationDetailsProvider, tenancy, DEFAULT_BUILD_PIPELINES_GROUP, 'Default group for build pipelines created from VS Code', `Any {${rule}}`);
+        return (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_BUILD_PIPELINES_GROUP)).find(g => DEFAULT_BUILD_PIPELINES_GROUP === g.name);
     }
     return undefined;
 }
@@ -960,7 +938,7 @@ export async function getDefaultBuildPipelinesGroup(authenticationDetailsProvide
 export async function getDefaultDeployPipelinesGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean): Promise<identity.models.DynamicGroup | undefined> {
     const tenancy = authenticationDetailsProvider.getTenantId();
     const rule = `ALL {resource.type = 'devopsdeploypipeline', resource.compartment.id = '${compartmentID}'}`;
-    const group = (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_DEPLOY_PIPELINES_GROUP))?.items.find(g => DEFAULT_DEPLOY_PIPELINES_GROUP === g.name);
+    const group = (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_DEPLOY_PIPELINES_GROUP)).find(g => DEFAULT_DEPLOY_PIPELINES_GROUP === g.name);
     if (group) {
         if (group.matchingRule.indexOf(rule) < 0) {
             const len = group.matchingRule.length;
@@ -969,10 +947,9 @@ export async function getDefaultDeployPipelinesGroup(authenticationDetailsProvid
         return group;
     }
     if (create) {
-        const created = await createDynamicGroup(authenticationDetailsProvider, tenancy, DEFAULT_DEPLOY_PIPELINES_GROUP, 'Default group for deployment pipelines created from VS Code', `Any {${rule}}`);
-        if (created) {
-            return (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_DEPLOY_PIPELINES_GROUP))?.items.find(g => DEFAULT_DEPLOY_PIPELINES_GROUP === g.name);
-        }
+        // TODO: why is the created group not returned immediately?
+        await createDynamicGroup(authenticationDetailsProvider, tenancy, DEFAULT_DEPLOY_PIPELINES_GROUP, 'Default group for deployment pipelines created from VS Code', `Any {${rule}}`);
+        return (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_DEPLOY_PIPELINES_GROUP)).find(g => DEFAULT_DEPLOY_PIPELINES_GROUP === g.name);
     }
     return undefined;
 }
@@ -980,7 +957,7 @@ export async function getDefaultDeployPipelinesGroup(authenticationDetailsProvid
 export async function getDefaultCodeRepositoriesGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean): Promise<identity.models.DynamicGroup | undefined> {
     const tenancy = authenticationDetailsProvider.getTenantId();
     const rule = `ALL {resource.type = 'devopsrepository', resource.compartment.id = '${compartmentID}'}`;
-    const group = (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_CODE_REPOSITORIES_GROUP))?.items.find(g => DEFAULT_CODE_REPOSITORIES_GROUP === g.name);
+    const group = (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_CODE_REPOSITORIES_GROUP)).find(g => DEFAULT_CODE_REPOSITORIES_GROUP === g.name);
     if (group) {
         if (group.matchingRule.indexOf(rule) < 0) {
             const len = group.matchingRule.length;
@@ -989,66 +966,57 @@ export async function getDefaultCodeRepositoriesGroup(authenticationDetailsProvi
         return group;
     }
     if (create) {
-        const created = await createDynamicGroup(authenticationDetailsProvider, tenancy, DEFAULT_CODE_REPOSITORIES_GROUP, 'Default group for code repositories created from VS Code', `Any {${rule}}`);
-        if (created) {
-            return (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_CODE_REPOSITORIES_GROUP))?.items.find(g => DEFAULT_CODE_REPOSITORIES_GROUP === g.name);
-        }
+        // TODO: why is the created group not returned immediately?
+        await createDynamicGroup(authenticationDetailsProvider, tenancy, DEFAULT_CODE_REPOSITORIES_GROUP, 'Default group for code repositories created from VS Code', `Any {${rule}}`);
+        return (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_CODE_REPOSITORIES_GROUP)).find(g => DEFAULT_CODE_REPOSITORIES_GROUP === g.name);
     }
     return undefined;
 }
 
-export async function listPolicies(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name?: string): Promise<identity.responses.ListPoliciesResponse | undefined> {
-    try {
-        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const listPoliciesRequest: identity.requests.ListPoliciesRequest = {
-            compartmentId: compartmentID,
-            name,
-        };
-        return client.listPolicies(listPoliciesRequest);
-    } catch (error) {
-        console.log('>>> listPolicies ' + error);
-        return undefined;
-    }
+export async function listPolicies(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name?: string): Promise<identity.models.Policy[]> {
+    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: identity.requests.ListPoliciesRequest = {
+        compartmentId: compartmentID,
+        name: name,
+        limit: 1000
+    };
+    const result: identity.models.Policy[] = [];
+    do {
+        const response = await client.listPolicies(request);
+        result.push(...response.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    return result;
 }
 
-export async function createPolicy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description: string, statements: string[]): Promise<identity.responses.CreatePolicyResponse | undefined> {
-    try {
-        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const createPolicyDetails = {
-            compartmentId: compartmentID,
-            name: DEFAULT_COMPARTMENT_ACCESS_POLICY,
-            description,
-            statements
-        };
-        const createPolicyRequest: identity.requests.CreatePolicyRequest = {
-            createPolicyDetails: createPolicyDetails
-        };
-        return client.createPolicy(createPolicyRequest);
-    } catch (error) {
-        console.log('>>> createPolicy ' + error);
-        return undefined;
-    }
+export async function createPolicy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description: string, statements: string[]): Promise<identity.models.Policy> {
+    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const requestDetails: identity.models.CreatePolicyDetails = {
+        compartmentId: compartmentID,
+        name: DEFAULT_COMPARTMENT_ACCESS_POLICY,
+        description,
+        statements
+    };
+    const request: identity.requests.CreatePolicyRequest = {
+        createPolicyDetails: requestDetails
+    };
+    return client.createPolicy(request).then(response => response.policy);
 }
 
-export async function updatePolicy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, policyID: string, details: identity.models.UpdatePolicyDetails): Promise<identity.responses.UpdatePolicyResponse | undefined> {
-    try {
-        const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const updatePolicyRequest: identity.requests.UpdatePolicyRequest = {
-            policyId: policyID,
-            updatePolicyDetails: details
-        };
-        return client.updatePolicy(updatePolicyRequest);
-    } catch (error) {
-        console.log('>>> updatePolicy ' + error);
-        return undefined;
-    }
+export async function updatePolicy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, policyID: string, details: identity.models.UpdatePolicyDetails): Promise<identity.models.Policy> {
+    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: identity.requests.UpdatePolicyRequest = {
+        policyId: policyID,
+        updatePolicyDetails: details
+    };
+    return client.updatePolicy(request).then(response => response.policy);
 }
 
 export async function getCompartmentAccessPolicy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, buildPipelinesGroupName: string, deployPipelinesGroupName: string, codeRepositoriesGroupName: string, create?: boolean): Promise<string | undefined> {
     const buildPipelinesGroupRule = `Allow dynamic-group ${buildPipelinesGroupName} to manage all-resources in compartment id ${compartmentID}`;
     const deployPipelinesGroupRule = `Allow dynamic-group ${deployPipelinesGroupName} to manage all-resources in compartment id ${compartmentID}`;
     const codeRepositoriesGroupRule = `Allow dynamic-group ${codeRepositoriesGroupName} to manage all-resources in compartment id ${compartmentID}`;
-    const policy = (await listPolicies(authenticationDetailsProvider, compartmentID, DEFAULT_COMPARTMENT_ACCESS_POLICY))?.items.find(p => DEFAULT_COMPARTMENT_ACCESS_POLICY === p.name);
+    const policy = (await listPolicies(authenticationDetailsProvider, compartmentID, DEFAULT_COMPARTMENT_ACCESS_POLICY)).find(p => DEFAULT_COMPARTMENT_ACCESS_POLICY === p.name);
     if (policy) {
         let statements = [...policy.statements];
         if (!policy.statements.includes(buildPipelinesGroupRule)) {
@@ -1066,14 +1034,12 @@ export async function getCompartmentAccessPolicy(authenticationDetailsProvider: 
         return policy.id;
     }
     if (create) {
-        const created = await createPolicy(authenticationDetailsProvider, compartmentID, 'Default policy for accessing compartment resources created from VS Code', [
+        await createPolicy(authenticationDetailsProvider, compartmentID, 'Default policy for accessing compartment resources created from VS Code', [
             buildPipelinesGroupRule,
             deployPipelinesGroupRule,
             codeRepositoriesGroupRule
         ]);
-        if (created) {
-            return (await listPolicies(authenticationDetailsProvider, compartmentID, DEFAULT_COMPARTMENT_ACCESS_POLICY))?.items.find(g => DEFAULT_COMPARTMENT_ACCESS_POLICY == g.name)?.id;
-        }
+        return (await listPolicies(authenticationDetailsProvider, compartmentID, DEFAULT_COMPARTMENT_ACCESS_POLICY)).find(g => DEFAULT_COMPARTMENT_ACCESS_POLICY == g.name)?.id;
     }
     return undefined;
 }

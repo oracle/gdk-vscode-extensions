@@ -17,7 +17,7 @@ import * as ociUtils from './ociUtils';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
 import * as ociDialogs from './ociDialogs';
-import { addAutoAcceptHostFingerprintForCloud, addCloudKnownHosts, isAutoAcceptHostFingerprint } from './sshUtils';
+import * as sshUtils from './sshUtils';
 
 
 export type SaveConfig = (folder: string, config: any) => boolean;
@@ -167,11 +167,18 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     increment,
                     message: 'Setting up policy for accessing resources in compartment...'
                 });
-                const compartmentAccessPolicy = await ociUtils.getCompartmentAccessPolicy(provider, compartment.ocid, buildPipelinesGroup.name, deployPipelinesGroup.name, codeRepositoriesGroup.name, true);
-                if (!compartmentAccessPolicy) {
-                    resolve('Failed to resolve policy for accessing resources in compartment.');
+                let compartmentAccessPolicy;
+                try {
+                    compartmentAccessPolicy = await ociUtils.getCompartmentAccessPolicy(provider, compartment.ocid, buildPipelinesGroup.name, deployPipelinesGroup.name, codeRepositoriesGroup.name, true);
+                    if (!compartmentAccessPolicy) {
+                        resolve('Failed to resolve policy for accessing resources in compartment.');
+                        return;
+                    }
+                } catch (err) {
+                    resolve(`Failed to resolve policy for accessing resources in compartment${(err as any).message ? ': ' + (err as any).message : ''}.`);
                     return;
                 }
+                
             }
 
             // --- Create artifact repository
@@ -250,15 +257,15 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     const r = /ssh:\/\/([^/]+)\//.exec(codeRepository.sshUrl);
                     if (r && r.length == 2) {
                         const hostname = r[1];
-                        const autoAccept = isAutoAcceptHostFingerprint();
-                        let success = autoAccept ? 1 : await addCloudKnownHosts(hostname, true);
+                        const autoAccept = sshUtils.isAutoAcceptHostFingerprint();
+                        let success = autoAccept ? 1 : await sshUtils.addCloudKnownHosts(hostname, true);
                         if (success == -1) {
                             const disableHosts = await vscode.window.showWarningMessage(
                                 "Do you want to disable SSH known_hosts checking for OCI infrastructure ?\n" +
                                 "This is less secure than adding host keys to known_hosts. The change will affect only connections to SCM OCI services.",
                                 "Yes", "No");
                             if ("Yes" === disableHosts) {
-                                if (await addAutoAcceptHostFingerprintForCloud()) {
+                                if (await sshUtils.addAutoAcceptHostFingerprintForCloud()) {
                                     success = 0;
                                 }
                             }
