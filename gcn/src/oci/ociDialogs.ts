@@ -173,3 +173,48 @@ export async function selectCodeRepositories(authentication: ociAuthentication.A
 
     return undefined;
 }
+
+export async function selectOkeCluster(authentication: ociAuthentication.Authentication, compartmentID: string, region: string): Promise<string | undefined> {
+    const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: 'Reading available OKE clusters...',
+        cancellable: false
+    }, (_progress, _token) => {
+        return new Promise(async resolve => {
+            ociUtils.listClusters(authentication.getProvider(), compartmentID).then(clusters => {
+                const choices: dialogs.QuickPickObject[] = [];
+                for (const cluster of clusters) {
+                    if (cluster.name && cluster.id) {
+                        choices.push(new dialogs.QuickPickObject(cluster.name, undefined, undefined, cluster.id));
+                    }
+                }
+                resolve(choices);
+            }).catch(err => {
+                vscode.window.showErrorMessage('Failed to read OKE clusters: ' + err.message);
+                resolve(undefined);
+            });
+        });
+    });
+
+    if (choices === undefined) {
+        return undefined;
+    }
+
+    if (choices.length === 0) {
+        const createOption = 'Quick Create Cluster';
+        if (createOption === await vscode.window.showWarningMessage('No OKE cluster available.', createOption)) {
+            dialogs.openInBrowser(`https://cloud.oracle.com/containers/clusters/quick?region=${region}`);
+        }
+        return undefined;
+    }
+
+    if (choices.length === 1) {
+        return choices[0].object;
+    }
+
+    const choice = await vscode.window.showQuickPick(choices, {
+        placeHolder: 'Select OKE Cluster'
+    });
+
+    return choice ? choice.object : undefined;
+}

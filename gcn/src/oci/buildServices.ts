@@ -452,7 +452,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
 
     private async updateWhenCompleted(buildRunId: string, compartmentId?: string) {
         const groupId = compartmentId ? await ociUtils.getDefaultLogGroup(this.oci.getProvider(), compartmentId) : undefined;
-        const logId = groupId ? (await ociUtils.listLogs(this.oci.getProvider(), groupId))?.items.find(item => item.configuration?.source.resource === this.oci.getDevOpsProject())?.id : undefined;
+        const logId = groupId ? (await ociUtils.listLogs(this.oci.getProvider(), groupId)).find(item => item.configuration?.source.resource === this.oci.getDevOpsProject())?.id : undefined;
         let deliveredArtifacts: { id: string, type: string }[] | undefined;
         let lastResults: any[] = [];
         const update = async () => {

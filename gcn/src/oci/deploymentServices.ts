@@ -391,7 +391,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
 
     private async updateWhenCompleted(deploymentId: string, compartmentId?: string) {
         const groupId = compartmentId ? await ociUtils.getDefaultLogGroup(this.oci.getProvider(), compartmentId) : undefined;
-        const logId = groupId ? (await ociUtils.listLogs(this.oci.getProvider(), groupId))?.items.find(item => item.configuration?.source.resource === this.oci.getDevOpsProject())?.id : undefined;
+        const logId = groupId ? (await ociUtils.listLogs(this.oci.getProvider(), groupId)).find(item => item.configuration?.source.resource === this.oci.getDevOpsProject())?.id : undefined;
         let lastResults: any[] = [];
         const update = async () => {
             if (this.lastDeployment?.ocid !== deploymentId) {

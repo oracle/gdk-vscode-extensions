@@ -684,7 +684,7 @@ export async function listNotificationTopics(authenticationDetailsProvider: comm
     const client = new ons.NotificationControlPlaneClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: ons.requests.ListTopicsRequest = {
         compartmentId:compartmentID,
-        lifecycleState : ons.models.NotificationTopic.LifecycleState.Active,
+        lifecycleState: ons.models.NotificationTopic.LifecycleState.Active,
         limit: 50
     };
     const result: ons.models.NotificationTopicSummary[] = [];
@@ -705,14 +705,9 @@ export async function createKnowledgeBase(authenticationDetailsProvider: common.
     const request : adm.requests.CreateKnowledgeBaseRequest = {
         createKnowledgeBaseDetails : {
             "compartmentId" : compartmentID,
-            "displayName": displayName
+            "displayName": displayName,
+            freeformTags: flags
         }
-    }
-
-    // Because I can't query GetWorkRequest despite ID is available, I'll mark the Knowledgebase with some UUID, then
-    // search for such created knowledgebase
-    if (flags) {
-        request.createKnowledgeBaseDetails.freeformTags = flags;
     }
 
     let response = await client.createKnowledgeBase(request);
@@ -738,7 +733,7 @@ export async function createDefaultNotificationTopic(authenticationDetailsProvid
     const request: ons.requests.CreateTopicRequest = {
         createTopicDetails: createTopicDetails
     };
-    return (await client.createTopic(request)).notificationTopic;
+    return client.createTopic(request).then(response => response.notificationTopic);
 }
 
 export async function getOrCreateNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<string> {
@@ -751,22 +746,25 @@ export async function getOrCreateNotificationTopic(authenticationDetailsProvider
     return createDefaultNotificationTopic(authenticationDetailsProvider, compartmentID, description).then(response => response.topicId);
 }
 
-export async function listClusters(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<containerengine.responses.ListClustersResponse | undefined> {
-    try {
-        const client = new containerengine.ContainerEngineClient({
-            authenticationDetailsProvider: authenticationDetailsProvider
-        });
-        const listClustersRequest: containerengine.requests.ListClustersRequest = {
-            compartmentId: compartmentID
-        };
-        return client.listClusters(listClustersRequest);
-    } catch (error) {
-        console.log('>>> listClusters ' + error);
-        return undefined;
-    }
+export async function listClusters(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<containerengine.models.ClusterSummary[]> {
+    const client = new containerengine.ContainerEngineClient({
+        authenticationDetailsProvider: authenticationDetailsProvider
+    });
+    const request: containerengine.requests.ListClustersRequest = {
+        compartmentId: compartmentID,
+        lifecycleState: [ containerengine.models.ClusterLifecycleState.Active ],
+        limit: 1000
+    };
+    const result: containerengine.models.ClusterSummary[] = [];
+    do {
+        const response = await client.listClusters(request);
+        result.push(...response.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    return result;
 }
 
-export async function createDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectName: string, compartmentID: string, notificationTopicID: string, description?: string): Promise<devops.responses.CreateProjectResponse> {
+export async function createDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectName: string, compartmentID: string, notificationTopicID: string, description?: string): Promise<devops.models.Project> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const createProjectDetails = {
         name: projectName,
@@ -776,39 +774,42 @@ export async function createDevOpsProject(authenticationDetailsProvider: common.
         },
         compartmentId: compartmentID
     };
-    const createProjectRequest: devops.requests.CreateProjectRequest = {
+    const request: devops.requests.CreateProjectRequest = {
         createProjectDetails: createProjectDetails
     };
-    return client.createProject(createProjectRequest);
+    return client.createProject(request).then(response => response.project);
 }
 
-export async function listLogGroups(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name?: string): Promise<logging.responses.ListLogGroupsResponse | undefined> {
-    try {
-        const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const listLogGroupsRequest: logging.requests.ListLogGroupsRequest = {
-            compartmentId: compartmentID,
-            displayName: name
-        };
-        return client.listLogGroups(listLogGroupsRequest);
-    } catch (error) {
-        console.log('>>> listLogGroups ' + error);
-        return undefined;
-    }
+export async function listLogGroups(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name?: string): Promise<logging.models.LogGroupSummary[]> {
+    const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: logging.requests.ListLogGroupsRequest = {
+        compartmentId: compartmentID,
+        displayName: name,
+        limit: 1000
+    };
+    const result: logging.models.LogGroupSummary[] = [];
+    do {
+        const response = await client.listLogGroups(request);
+        result.push(...response.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    return result;
 }
 
-export async function listLogs(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, logGroupID: string): Promise<logging.responses.ListLogsResponse | undefined> {
-    try {
-        const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-
-        const listLogsRequest: logging.requests.ListLogsRequest = {
-            logGroupId: logGroupID
-        };
-
-        return client.listLogs(listLogsRequest);
-    } catch (error) {
-        console.log('>>> listLogs ' + error);
-        return undefined;
-    }
+export async function listLogs(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, logGroupID: string): Promise<logging.models.LogSummary[]> {
+    const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: logging.requests.ListLogsRequest = {
+        logGroupId: logGroupID,
+        lifecycleState: logging.models.LogLifecycleState.Active,
+        limit: 1000
+    };
+    const result: logging.models.LogSummary[] = [];
+    do {
+        const response = await client.listLogs(request);
+        result.push(...response.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    return result;
 }
 
 export async function searchLogs(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, logGroupID: string, logID: string, operation: 'buildRun' | 'deployment', operationID: string, timeStart: Date, timeEnd: Date): Promise<loggingsearch.models.SearchResult[] | undefined> {
@@ -874,19 +875,15 @@ export async function createDefaultLogGroup(authenticationDetailsProvider: commo
 
 export async function getDefaultLogGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean, description?: string): Promise<string | undefined> {
     const logGroup = await listLogGroups(authenticationDetailsProvider, compartmentID, DEFAULT_LOG_GROUP);
-    if (logGroup) {
-        if (logGroup.items.length > 0) {
-            return logGroup.items[0].id;
-        }
+    if (logGroup.length > 0) {
+        return logGroup[0].id;
     }
     if (create) {
         const created = await createDefaultLogGroup(authenticationDetailsProvider, compartmentID, description);
         if (created) {
             const logGroup = await listLogGroups(authenticationDetailsProvider, compartmentID, DEFAULT_LOG_GROUP);
-            if (logGroup) {
-                if (logGroup.items.length > 0) {
-                    return logGroup.items[0].id;
-                }
+            if (logGroup.length > 0) {
+                return logGroup[0].id;
             }
         }
     }
@@ -1083,17 +1080,11 @@ export async function getCompartmentAccessPolicy(authenticationDetailsProvider: 
 
 export async function listLogsByProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentId : string, projectId : string) : Promise<logging.models.LogSummary[]> {
     const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    const value : logging.models.LogSummary[] = [];
-
-    let groups = (await listLogGroups(authenticationDetailsProvider, compartmentId))?.items;
-
-    if (!groups) {
-        return value;
-    }
-
+    const value: logging.models.LogSummary[] = [];
+    const groups = await listLogGroups(authenticationDetailsProvider, compartmentId);
     for (let lg of groups) {
         let logs = (await client.listLogs({ 
-                logGroupId : lg.id, 
+                logGroupId: lg.id, 
                 sourceResource : projectId
             }))?.items;
         logs.forEach(l => {
@@ -1115,235 +1106,191 @@ export async function listLogsByProject(authenticationDetailsProvider: common.Co
 export async function deleteLog(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, logId : string, logGroupID: string, wait : boolean = false) {
     const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     // console.log(`> deleteLog ${logId}`);
-    const delResp = client.deleteLog({ 
+    const response = client.deleteLog({ 
         logGroupId : logGroupID, 
         logId : logId
     });
     if (wait) {
-        const requestId = (await delResp).opcWorkRequestId;
-        // console.log(`> will wait for ${requestId}`);
-        await loggingWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting project log", requestId);
+        await loggingWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting project log", (await response).opcWorkRequestId);
     }
-    return delResp;
 }
 
-export async function createProjectLog(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, logGroupID: string, projectID: string, projectName: string): Promise<logging.responses.CreateLogResponse | undefined> {
-    try {
-        const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const createLogDetails = {
-            displayName: `${projectName}Log`,
-            logType: logging.models.CreateLogDetails.LogType.Service,
-            isEnabled: true,
-            configuration: {
-                compartmentId: compartmentID,
-                source: {
-                    sourceType: logging.models.OciService.sourceType,
-                    service: 'devops',
-                    resource: projectID,
-                    category: 'all',
-                    parameters: {}
-                },
-                archiving: {
-                    isEnabled: false
+export async function createProjectLog(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, logGroupID: string, projectID: string, projectName: string) {
+    const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const createLogDetails = {
+        displayName: `${projectName}Log`,
+        logType: logging.models.CreateLogDetails.LogType.Service,
+        isEnabled: true,
+        configuration: {
+            compartmentId: compartmentID,
+            source: {
+                sourceType: logging.models.OciService.sourceType,
+                service: 'devops',
+                resource: projectID,
+                category: 'all',
+                parameters: {}
+            },
+            archiving: {
+                isEnabled: false
+            }
+        },
+        retentionDuration: 30
+    };
+    const request: logging.requests.CreateLogRequest = {
+        logGroupId: logGroupID,
+        createLogDetails: createLogDetails
+    };
+    const response = await client.createLog(request);
+    if (response.opcWorkRequestId) {
+        const getWorkRequestRequest: logging.requests.GetWorkRequestRequest = {
+            workRequestId: response.opcWorkRequestId
+        };
+        await completion(2000, async () => (await client.getWorkRequest(getWorkRequestRequest)).workRequest.status);
+    }
+}
+
+export async function createArtifactsRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, projectName: string, flags? : { [key:string] : string } | undefined): Promise<artifacts.models.Repository> {
+    const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const createRepositoryDetails = {
+        repositoryType: artifacts.models.CreateGenericRepositoryDetails.repositoryType,
+        displayName: `${projectName}ArtifactRepository`,
+        compartmentId: compartmentID,
+        description: `Artifact repository for devops project ${projectName}`,
+        isImmutable: false,
+        freeformTags: flags
+    };
+    const request: artifacts.requests.CreateRepositoryRequest = {
+        createRepositoryDetails: createRepositoryDetails
+    };
+    return client.createRepository(request).then(response => response.repository);
+}
+
+export async function createContainerRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, projectName: string, codeRepositoryName: string, repositoryName: string): Promise<artifacts.models.ContainerRepository> {
+    const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const createContainerRepositoryDetails = {
+        compartmentId: compartmentID,
+        displayName: repositoryName.toLowerCase(),
+        description: `Container repository for devops project ${projectName} & code repository ${codeRepositoryName}`,
+        isImmutable: false,
+        isPublic: true
+    };
+    const request: artifacts.requests.CreateContainerRepositoryRequest = {
+        createContainerRepositoryDetails: createContainerRepositoryDetails
+    };
+    return client.createContainerRepository(request).then(response => response.containerRepository);
+}
+
+export async function createOkeDeployEnvironment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, projectName: string, clusterID: string): Promise<devops.models.DeployEnvironment> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const createDeployEnvironmentDetails = {
+        deployEnvironmentType: devops.models.CreateOkeClusterDeployEnvironmentDetails.deployEnvironmentType,
+        displayName: `${projectName}OkeDeployEnvironment`,
+        description: `OKE cluster environment for devops project ${projectName}`,
+        projectId: projectID,
+        clusterId: clusterID
+    };
+    const request: devops.requests.CreateDeployEnvironmentRequest = {
+        createDeployEnvironmentDetails: createDeployEnvironmentDetails
+    };
+    return client.createDeployEnvironment(request).then(response => response.deployEnvironment);
+}
+
+export async function createCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, repositoryName: string, defaultBranchName: string, description?: string): Promise<devops.models.Repository> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const createRepositoryDetails = {
+        name: repositoryName,
+        description: description,
+        projectId: projectID,
+        defaultBranch: defaultBranchName,
+        repositoryType: devops.models.Repository.RepositoryType.Hosted
+    };
+    const request: devops.requests.CreateRepositoryRequest = {
+        createRepositoryDetails: createRepositoryDetails
+    };
+    const response = await client.createRepository(request);
+    if (response.opcWorkRequestId) {
+        const getWorkRequestRequest: devops.requests.GetWorkRequestRequest = {
+            workRequestId: response.opcWorkRequestId
+        };
+        await completion(2000, async () => (await client.getWorkRequest(getWorkRequestRequest)).workRequest.status);
+    }
+    return response.repository;
+}
+
+export async function createBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, displayName: string, description?: string): Promise<devops.models.BuildPipeline> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const createBuildPipelineDetails = {
+        displayName: displayName,
+        description: description,
+        projectId: projectID
+    };
+    const request: devops.requests.CreateBuildPipelineRequest = {
+        createBuildPipelineDetails: createBuildPipelineDetails
+    };
+    return client.createBuildPipeline(request).then(response => response.buildPipeline);
+}
+
+export async function createBuildPipelineBuildStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, repositoryID: string, repositoryName: string, repositoryUrl: string, buildSpecFile: string): Promise<devops.models.BuildPipelineStage> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const createBuildPipelineStageDetails: devops.models.CreateBuildStageDetails = {
+        displayName: 'Build',
+        description: 'Build stage generated by VS Code',
+        buildPipelineId: pipelineID,
+        buildPipelineStagePredecessorCollection: {
+            items: [
+                {
+                    id: pipelineID
                 }
-            },
-            retentionDuration: 30
-        };
-        const createLogRequest: logging.requests.CreateLogRequest = {
-            logGroupId: logGroupID,
-            createLogDetails: createLogDetails
-        };
-        const createLogResponse = await client.createLog(createLogRequest);
-        if (createLogResponse.opcWorkRequestId) {
-            const getWorkRequestRequest: logging.requests.GetWorkRequestRequest = {
-                workRequestId: createLogResponse.opcWorkRequestId
-            };
-            await completion(2000, async () => (await client.getWorkRequest(getWorkRequestRequest)).workRequest.status);
-        }
-        return createLogResponse;
-    } catch (error) {
-        console.log('>>> createProjectLog ' + error);
-        return undefined;
-    }
+            ]
+        },
+        buildSpecFile: buildSpecFile,
+        image: BUILD_IMAGE,
+        buildSourceCollection: {
+            items: [
+                {
+                    name: repositoryName,
+                    repositoryUrl: repositoryUrl,
+                    repositoryId: repositoryID,
+                    branch: 'master',
+                    connectionType: devops.models.DevopsCodeRepositoryBuildSource.connectionType
+                }
+            ] as devops.models.DevopsCodeRepositoryBuildSource[]
+        },
+        buildPipelineStageType: devops.models.CreateBuildStageDetails.buildPipelineStageType
+    };
+    const request: devops.requests.CreateBuildPipelineStageRequest = {
+        createBuildPipelineStageDetails: createBuildPipelineStageDetails
+    };
+    return client.createBuildPipelineStage(request).then(response => response.buildPipelineStage);
 }
 
-export async function createArtifactsRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, projectName: string, flags? : { [key:string] : string } | undefined): Promise<artifacts.responses.CreateRepositoryResponse | undefined> {
-    try {
-        const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const createRepositoryDetails = {
-            repositoryType: artifacts.models.CreateGenericRepositoryDetails.repositoryType,
-            displayName: `${projectName}ArtifactRepository`,
-            compartmentId: compartmentID,
-            description: `Artifact repository for devops project ${projectName}`,
-            isImmutable: false,
-            freeformTags: flags
-        };
-        const createRepositoryRequest: artifacts.requests.CreateRepositoryRequest = {
-            createRepositoryDetails: createRepositoryDetails
-        };
-        return await client.createRepository(createRepositoryRequest);
-    } catch (error) {
-        console.log('>>> createArtifactsRepository ' + error);
-        return undefined;
-    }
-}
-
-export async function createContainerRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, projectName: string, codeRepositoryName: string, repositoryName: string): Promise<artifacts.responses.CreateContainerRepositoryResponse | undefined> {
-    try {
-        const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const createContainerRepositoryDetails = {
-            compartmentId: compartmentID,
-            displayName: repositoryName.toLowerCase(),
-            description: `Container repository for devops project ${projectName} & code repository ${codeRepositoryName}`,
-            isImmutable: false,
-            isPublic: true
-        };
-        const createContainerRepositoryRequest: artifacts.requests.CreateContainerRepositoryRequest = {
-            createContainerRepositoryDetails: createContainerRepositoryDetails
-        };
-        return await client.createContainerRepository(createContainerRepositoryRequest);
-    } catch (error) {
-        console.log('>>> createContainerRepository ' + error);
-        return undefined;
-    }
-}
-
-export async function createOkeDeployEnvironment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, projectName: string, clusterID: string): Promise<devops.responses.CreateDeployEnvironmentResponse | undefined> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const createDeployEnvironmentDetails = {
-            deployEnvironmentType: devops.models.CreateOkeClusterDeployEnvironmentDetails.deployEnvironmentType,
-            displayName: `${projectName}OkeDeployEnvironment`,
-            description: `OKE cluster environment for devops project ${projectName}`,
-            projectId: projectID,
-            clusterId: clusterID
-        };
-        const createDeployEnvironmentRequest: devops.requests.CreateDeployEnvironmentRequest = {
-            createDeployEnvironmentDetails: createDeployEnvironmentDetails
-        };
-        return await client.createDeployEnvironment(createDeployEnvironmentRequest);
-    } catch (error) {
-        console.log('>>> createOkeDeployEnvironment ' + error);
-        return undefined;
-    }
-}
-
-export async function createCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, repositoryName: string, defaultBranchName: string, description?: string): Promise<devops.responses.CreateRepositoryResponse | undefined> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const createRepositoryDetails = {
-            name: repositoryName,
-            description: description,
-            projectId: projectID,
-            defaultBranch: defaultBranchName,
-            repositoryType: devops.models.Repository.RepositoryType.Hosted
-        };
-        const createRepositoryRequest: devops.requests.CreateRepositoryRequest = {
-            createRepositoryDetails: createRepositoryDetails
-        };
-        const createRepositoryResponse = await client.createRepository(createRepositoryRequest);
-        if (createRepositoryResponse.opcWorkRequestId) {
-            const getWorkRequestRequest: devops.requests.GetWorkRequestRequest = {
-                workRequestId: createRepositoryResponse.opcWorkRequestId
-            };
-            await completion(2000, async () => (await client.getWorkRequest(getWorkRequestRequest)).workRequest.status);
-        }
-        return createRepositoryResponse;
-    } catch (error) {
-        console.log('>>> createCodeRepository ' + error);
-        return undefined;
-    }
-}
-
-export async function createBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, displayName: string, description?: string): Promise<devops.responses.CreateBuildPipelineResponse | undefined> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const createBuildPipelineDetails = {
-            displayName: displayName,
-            description: description,
-            projectId: projectID
-        };
-        const createBuildPipelineRequest: devops.requests.CreateBuildPipelineRequest = {
-            createBuildPipelineDetails: createBuildPipelineDetails
-        };
-        return client.createBuildPipeline(createBuildPipelineRequest);
-    } catch (error) {
-        console.log('>>> createBuildPipeline ' + error);
-        return undefined;
-    }
-}
-
-export async function createBuildPipelineBuildStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, repositoryID: string, repositoryName: string, repositoryUrl: string, buildSpecFile: string): Promise<devops.responses.CreateBuildPipelineStageResponse | undefined> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const createBuildPipelineStageDetails: devops.models.CreateBuildStageDetails = {
-            displayName: 'Build',
-            description: 'Build stage generated by VS Code',
-            buildPipelineId: pipelineID,
-            buildPipelineStagePredecessorCollection: {
-                items: [
-                    {
-                        id: pipelineID
-                    }
-                ]
-            },
-            buildSpecFile: buildSpecFile,
-            image: BUILD_IMAGE,
-            buildSourceCollection: {
-                items: [
-                    {
-                        name: repositoryName,
-                        repositoryUrl: repositoryUrl,
-                        repositoryId: repositoryID,
-                        branch: 'master',
-                        connectionType: devops.models.DevopsCodeRepositoryBuildSource.connectionType
-                    }
-                ] as devops.models.DevopsCodeRepositoryBuildSource[]
-            },
-            buildPipelineStageType: devops.models.CreateBuildStageDetails.buildPipelineStageType
-        };
-        const createBuildPipelineStageRequest: devops.requests.CreateBuildPipelineStageRequest = {
-            createBuildPipelineStageDetails: createBuildPipelineStageDetails
-        };
-        return await client.createBuildPipelineStage(createBuildPipelineStageRequest);
-    } catch (error) {
-        console.log('>>> createBuildPipelineBuildStage ' + error);
-        return undefined;
-    }
-}
-
-export async function createBuildPipelineArtifactsStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, buildStageID: string, artifactID: string, artifactName: string): Promise<devops.responses.CreateBuildPipelineStageResponse | undefined> {
-    try {
-        const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-        const createBuildPipelineStageDetails: devops.models.CreateDeliverArtifactStageDetails = {
-            displayName: 'Artifacts',
-            description: 'Artifacts stage generated by VS Code',
-            buildPipelineId: pipelineID,
-            buildPipelineStagePredecessorCollection: {
-                items: [
-                    {
-                        id: buildStageID
-                    }
-                ]
-            },
-            deliverArtifactCollection: {
-                items: [
-                    {
-                        artifactName: artifactName,
-                        artifactId: artifactID
-                    }
-                ]
-            },
-            buildPipelineStageType: devops.models.CreateDeliverArtifactStageDetails.buildPipelineStageType
-        };
-        const createBuildPipelineStageRequest: devops.requests.CreateBuildPipelineStageRequest = {
-            createBuildPipelineStageDetails: createBuildPipelineStageDetails
-        };
-        return await client.createBuildPipelineStage(createBuildPipelineStageRequest);
-    } catch (error) {
-        console.log('>>> createBuildPipelineArtifactsStage ' + error);
-        return undefined;
-    }
+export async function createBuildPipelineArtifactsStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, buildStageID: string, artifactID: string, artifactName: string): Promise<devops.models.BuildPipelineStage> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const createBuildPipelineStageDetails: devops.models.CreateDeliverArtifactStageDetails = {
+        displayName: 'Artifacts',
+        description: 'Artifacts stage generated by VS Code',
+        buildPipelineId: pipelineID,
+        buildPipelineStagePredecessorCollection: {
+            items: [
+                {
+                    id: buildStageID
+                }
+            ]
+        },
+        deliverArtifactCollection: {
+            items: [
+                {
+                    artifactName: artifactName,
+                    artifactId: artifactID
+                }
+            ]
+        },
+        buildPipelineStageType: devops.models.CreateDeliverArtifactStageDetails.buildPipelineStageType
+    };
+    const request: devops.requests.CreateBuildPipelineStageRequest = {
+        createBuildPipelineStageDetails: createBuildPipelineStageDetails
+    };
+    return client.createBuildPipelineStage(request).then(response => response.buildPipelineStage);
 }
 
 export async function createDeployPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, name: string, description?: string, params?: devops.models.DeployPipelineParameter[], tags?: { [key:string]: string }): Promise<devops.responses.CreateDeployPipelineResponse | undefined> {

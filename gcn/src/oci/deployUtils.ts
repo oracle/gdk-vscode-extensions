@@ -10,7 +10,6 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as mustache from 'mustache';
 import * as gitUtils from '../gitUtils'
-import * as dialogs from '../dialogs';
 import * as folderStorage from '../folderStorage';
 import * as model from '../model';
 import * as projectUtils from '../projectUtils';
@@ -43,7 +42,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
     }
     let projectName = selectedName;
 
-    const okeCluster = await selectOkeCluster(authentication, compartment.ocid, provider.getRegion().regionId);
+    const okeCluster = await ociDialogs.selectOkeCluster(authentication, compartment.ocid, provider.getRegion().regionId);
     if (!okeCluster) {
         return undefined;
     }
@@ -92,7 +91,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
             const projectDescription = 'Graal Cloud Native project deployed from the VS Code';
             while (createdProject === undefined) {
                 try {
-                    createdProject = (await ociUtils.createDevOpsProject(provider, projectName, compartment.ocid, notificationTopic, projectDescription)).project.id;
+                    createdProject = (await ociUtils.createDevOpsProject(provider, projectName, compartment.ocid, notificationTopic, projectDescription)).id;
                 } catch (err) {
                     const message: string | undefined = (err as any).message;
                     if (message && message.indexOf('project name already exists') !== -1) {
@@ -117,14 +116,21 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 message: 'Setting up logging...'
             });
             const logGroupDescription = `Shared log group for devops projects in compartment ${compartment.name}`;
-            const logGroup = await ociUtils.getDefaultLogGroup(provider, compartment.ocid, true, logGroupDescription);
+            let logGroup: string | undefined;
+            try {
+                logGroup = await ociUtils.getDefaultLogGroup(provider, compartment.ocid, true, logGroupDescription);
+            } catch (err) {
+                resolve(`Failed to resolve log group${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                return;
+            }
             if (!logGroup) {
                 resolve('Failed to resolve log group.');
                 return;
             }
-            const logResp = await ociUtils.createProjectLog(provider, compartment.ocid, logGroup, project, projectName);
-            if (!logResp) {
-                resolve('Failed to create project log.');
+            try {
+                await ociUtils.createProjectLog(provider, compartment.ocid, logGroup, project, projectName);
+            } catch (err) {
+                resolve(`Failed to create project log${(err as any).message ? ': ' + (err as any).message : ''}.`);
                 return;
             }
 
@@ -173,11 +179,13 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 increment,
                 message: `Creating artifact repository...`
             });
-            const artifactsRepository = (await ociUtils.createArtifactsRepository(provider, compartment.ocid, projectName, {
-                "gcn_tooling_projectOCID" : project
-            }))?.repository.id;
-            if (!artifactsRepository) {
-                resolve('Failed to create artifact repository.');
+            let artifactsRepository: string;
+            try {
+                artifactsRepository = (await ociUtils.createArtifactsRepository(provider, compartment.ocid, projectName, {
+                    "gcn_tooling_projectOCID" : project
+                })).id;
+            } catch (err) {
+                resolve(`Failed to create artifact repository${(err as any).message ? ': ' + (err as any).message : ''}.`);
                 return;
             }
 
@@ -186,9 +194,11 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 increment,
                 message: `Creating OKE cluster environment...`
             });
-            const okeClusterEnvironment = (await ociUtils.createOkeDeployEnvironment(provider, project, projectName, okeCluster))?.deployEnvironment.id;
-            if (!okeClusterEnvironment) {
-                resolve('Failed to create OKE cluster environment.');
+            let okeClusterEnvironment: string;
+            try {
+                okeClusterEnvironment = (await ociUtils.createOkeDeployEnvironment(provider, project, projectName, okeCluster)).id;
+            } catch (err) {
+                resolve(`Failed to create OKE cluster environment${(err as any).message ? ': ' + (err as any).message : ''}.`);
                 return;
             }
 
@@ -224,9 +234,11 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     message: `Creating source code repository ${repositoryName}...`
                 });
                 const description = `Source code repository ${folder.name}`;
-                const codeRepository = (await ociUtils.createCodeRepository(provider, project, repositoryName, 'master', description))?.repository;
-                if (!codeRepository) {
-                    resolve(`Failed to create source code repository ${repositoryName}.`);
+                let codeRepository;
+                try {
+                    codeRepository = await ociUtils.createCodeRepository(provider, project, repositoryName, 'master', description);
+                } catch (err) {
+                    resolve(`Failed to create source code repository ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
                     return;
                 }
                 if (!codeRepository.sshUrl || !codeRepository.httpUrl) {
@@ -303,19 +315,25 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 });
                 const devbuildPipelineName = 'Build Fat JAR';
                 const devbuildPipelineDescription = `Build pipeline to build fat JAR for devops project ${projectName} & repository ${repositoryName}`;
-                const devbuildPipeline = (await ociUtils.createBuildPipeline(provider, project, devbuildPipelineName, devbuildPipelineDescription))?.buildPipeline.id;
-                if (!devbuildPipeline) {
-                    resolve(`Failed to create fat JAR pipeline for ${repositoryName}.`);
+                let devbuildPipeline;
+                try {
+                    devbuildPipeline = (await ociUtils.createBuildPipeline(provider, project, devbuildPipelineName, devbuildPipelineDescription)).id;
+                } catch (err) {
+                    resolve(`Failed to create fat JAR pipeline for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
                     return;
                 }
-                const devbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, devbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${devbuildspec_template}`))?.buildPipelineStage.id;
-                if (!devbuildPipelineBuildStage) {
-                    resolve(`Failed to create fat JAR pipeline build stage for ${repositoryName}.`);
+                let devbuildPipelineBuildStage;
+                try {
+                    devbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, devbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${devbuildspec_template}`)).id;
+                } catch (err) {
+                    resolve(`Failed to create fat JAR pipeline build stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
                     return;
                 }
-                const devbuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, devbuildPipeline, devbuildPipelineBuildStage, devbuildArtifact, devbuildArtifactName))?.buildPipelineStage.id;
-                if (!devbuildPipelineArtifactsStage) {
-                    resolve(`Failed to create fat JAR pipeline artifacts stage for ${repositoryName}.`);
+                // let devbuildPipelineArtifactsStage;
+                try {
+                    /*devbuildPipelineArtifactsStage = (*/await ociUtils.createBuildPipelineArtifactsStage(provider, devbuildPipeline, devbuildPipelineBuildStage, devbuildArtifact, devbuildArtifactName)/*).id*/;
+                } catch (err) {
+                    resolve(`Failed to create fat JAR pipeline artifacts stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
                     return;
                 }
                 buildPipelines.push({ 'ocid': devbuildPipeline, 'displayName': devbuildPipelineName });
@@ -366,19 +384,25 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 });
                 const nibuildPipelineName = 'Build Native Image';
                 const nibuildPipelineDescription = `Build pipeline to build native image executable for devops project ${projectName} & repository ${repositoryName}`;
-                const nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, nibuildPipelineName, nibuildPipelineDescription))?.buildPipeline.id;
-                if (!nibuildPipeline) {
-                    resolve(`Failed to create native executables pipeline for ${repositoryName}.`);
+                let nibuildPipeline;
+                try {
+                    nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, nibuildPipelineName, nibuildPipelineDescription)).id;
+                } catch (err) {
+                    resolve(`Failed to create native executables pipeline for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
                     return;
                 }
-                const nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${nibuildspec_template}`))?.buildPipelineStage.id;
-                if (!nibuildPipelineBuildStage) {
-                    resolve(`Failed to create native executables pipeline build stage for ${repositoryName}.`);
+                let nibuildPipelineBuildStage;
+                try {
+                    nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${nibuildspec_template}`)).id;
+                } catch (err) {
+                    resolve(`Failed to create native executables pipeline build stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
                     return;
                 }
-                const nibuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, nibuildPipeline, nibuildPipelineBuildStage, nibuildArtifact, nibuildArtifactName))?.buildPipelineStage.id;
-                if (!nibuildPipelineArtifactsStage) {
-                    resolve(`Failed to create native executables pipeline artifacts stage for ${repositoryName}.`);
+                // let nibuildPipelineArtifactsStage;
+                try {
+                    /*nibuildPipelineArtifactsStage = (*/await ociUtils.createBuildPipelineArtifactsStage(provider, nibuildPipeline, nibuildPipelineBuildStage, nibuildArtifact, nibuildArtifactName)/*).id*/;
+                } catch (err) {
+                    resolve(`Failed to create native executables pipeline artifacts stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
                     return;
                 }
                 buildPipelines.push({ 'ocid': nibuildPipeline, 'displayName': nibuildPipelineName });
@@ -400,9 +424,11 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                         message: `Creating container repository for ${repositoryName}...`
                     });
                     const containerRepositoryName = folders.length > 1 ? `${projectName}-${repositoryName}` : projectName;
-                    const containerRepository = (await ociUtils.createContainerRepository(provider, compartment.ocid, projectName, repositoryName, containerRepositoryName))?.containerRepository;
-                    if (!containerRepository) {
-                        resolve(`Failed to create container repository ${containerRepositoryName}.`);
+                    let containerRepository;
+                    try {
+                        containerRepository = await ociUtils.createContainerRepository(provider, compartment.ocid, projectName, repositoryName, containerRepositoryName);
+                    } catch (err) {
+                        resolve(`Failed to create container repository ${containerRepositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
                         return;
                     }
 
@@ -445,19 +471,25 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     });
                     const docker_nibuildPipelineName = 'Build Docker Native Image';
                     const docker_nibuildPipelineDescription = `Build pipeline to build docker native executable for devops project ${projectName} & repository ${repositoryName}`;
-                    const docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, docker_nibuildPipelineName, docker_nibuildPipelineDescription))?.buildPipeline.id;
-                    if (!docker_nibuildPipeline) {
-                        resolve(`Failed to create docker native executable build pipeline for ${repositoryName}.`);
+                    let docker_nibuildPipeline;
+                    try {
+                        docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, docker_nibuildPipelineName, docker_nibuildPipelineDescription)).id;
+                    } catch (err) {
+                        resolve(`Failed to create docker native executable build pipeline for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
                         return;
                     }
-                    const docker_nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, docker_nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${docker_nibuildspec_template}`))?.buildPipelineStage.id;
-                    if (!docker_nibuildPipelineBuildStage) {
-                        resolve(`Failed to create docker native executable pipeline build stage for ${repositoryName}.`);
+                    let docker_nibuildPipelineBuildStage;
+                    try {
+                        docker_nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, docker_nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${docker_nibuildspec_template}`)).id;
+                    } catch (err) {
+                        resolve(`Failed to create docker native executable pipeline build stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
                         return;
                     }
-                    const docker_nibuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, docker_nibuildPipeline, docker_nibuildPipelineBuildStage, docker_nibuildArtifact, docker_nibuildArtifactName))?.buildPipelineStage.id;
-                    if (!docker_nibuildPipelineArtifactsStage) {
-                        resolve(`Failed to create docker native executable pipeline artifacts stage for ${repositoryName}.`);
+                    // let docker_nibuildPipelineArtifactsStage;
+                    try {
+                        /*docker_nibuildPipelineArtifactsStage = (*/await ociUtils.createBuildPipelineArtifactsStage(provider, docker_nibuildPipeline, docker_nibuildPipelineBuildStage, docker_nibuildArtifact, docker_nibuildArtifactName)/*).id*/;
+                    } catch (err) {
+                        resolve(`Failed to create docker native executable pipeline artifacts stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
                         return;
                     }
                     buildPipelines.push({ 'ocid': docker_nibuildPipeline, 'displayName': docker_nibuildPipelineName });
@@ -519,9 +551,11 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                                 message: `Creating container repository for ${repositoryName}...`
                             });
                             const containerRepositoryName = folders.length > 1 ? `${projectName}-${repositoryName}-${subName}` : `${projectName}-${subName}`;
-                            const containerRepository = (await ociUtils.createContainerRepository(provider, compartment.ocid, projectName, repositoryName, containerRepositoryName))?.containerRepository;
-                            if (!containerRepository) {
-                                resolve(`Failed to create container repository ${containerRepositoryName}.`);
+                            let containerRepository;
+                            try {
+                                containerRepository = await ociUtils.createContainerRepository(provider, compartment.ocid, projectName, repositoryName, containerRepositoryName);
+                            } catch (err) {
+                                resolve(`Failed to create container repository ${containerRepositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
                                 return;
                             }
 
@@ -572,19 +606,25 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                             });
                             const docker_nibuildPipelineName = `Build ${subName.toUpperCase()} Docker Native Image`;
                             const docker_nibuildPipelineDescription = `Build pipeline to build docker native executable for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}`;
-                            const docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, docker_nibuildPipelineName, docker_nibuildPipelineDescription))?.buildPipeline.id;
-                            if (!docker_nibuildPipeline) {
-                                resolve(`Failed to create ${subName} docker native executable build pipeline for ${repositoryName}.`);
+                            let docker_nibuildPipeline;
+                            try {
+                                docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, docker_nibuildPipelineName, docker_nibuildPipelineDescription)).id;
+                            } catch (err) {
+                                resolve(`Failed to create ${subName} docker native executable build pipeline for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
                                 return;
                             }
-                            const docker_nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, docker_nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${subName}_${docker_nibuildspec_template}`))?.buildPipelineStage.id;
-                            if (!docker_nibuildPipelineBuildStage) {
-                                resolve(`Failed to create ${subName} docker native executable pipeline build stage for ${repositoryName}.`);
+                            let docker_nibuildPipelineBuildStage;
+                            try {
+                                docker_nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, docker_nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${subName}_${docker_nibuildspec_template}`)).id;
+                            } catch (err) {
+                                resolve(`Failed to create ${subName} docker native executable pipeline build stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
                                 return;
                             }
-                            const docker_nibuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, docker_nibuildPipeline, docker_nibuildPipelineBuildStage, docker_nibuildArtifact, docker_nibuildArtifactName))?.buildPipelineStage.id;
-                            if (!docker_nibuildPipelineArtifactsStage) {
-                                resolve(`Failed to create ${subName} docker native executable pipeline artifacts stage for ${repositoryName}.`);
+                            // let docker_nibuildPipelineArtifactsStage;
+                            try {
+                                /*docker_nibuildPipelineArtifactsStage = (*/await ociUtils.createBuildPipelineArtifactsStage(provider, docker_nibuildPipeline, docker_nibuildPipelineBuildStage, docker_nibuildArtifact, docker_nibuildArtifactName)/*).id*/;
+                            } catch (err) {
+                                resolve(`Failed to create ${subName} docker native executable pipeline artifacts stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
                                 return;
                             }
 
@@ -739,53 +779,6 @@ async function selectProjectName(suggestedName?: string): Promise<string | undef
         projectName = projectName.replace(/\s+/g, '');
     }
     return projectName;
-}
-
-async function selectOkeCluster(authentication: ociAuthentication.Authentication, compartmentID: string, region: string): Promise<string | undefined> {
-    const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: 'Reading available OKE clusters...',
-        cancellable: false
-    }, (_progress, _token) => {
-        return new Promise(async resolve => {
-            ociUtils.listClusters(authentication.getProvider(), compartmentID).then(clusters => {
-                if (!clusters) {
-                    resolve(undefined);
-                } else {
-                    const choices: dialogs.QuickPickObject[] = [];
-                    for (const cluster of clusters.items) {
-                        if (cluster.name && cluster.id && cluster.lifecycleState === 'ACTIVE') {
-                            choices.push(new dialogs.QuickPickObject(cluster.name, undefined, undefined, cluster.id));
-                        }
-                    }
-                    resolve(choices);
-                }
-            });
-        });
-    });
-
-    if (!choices) {
-        vscode.window.showErrorMessage('Failed to read OKE clusters.');
-        return undefined;
-    }
-
-    if (choices.length === 0) {
-        const createOption = 'Quick Create Cluster';
-        if (createOption === await vscode.window.showWarningMessage('No OKE cluster available.', createOption)) {
-            dialogs.openInBrowser(`https://cloud.oracle.com/containers/clusters/quick?region=${region}`);
-        }
-        return undefined;
-    }
-
-    if (choices.length === 1) {
-        return choices[0].object;
-    }
-
-    const choice = await vscode.window.showQuickPick(choices, {
-        placeHolder: 'Select OKE Cluster'
-    });
-
-    return choice ? choice.object : undefined;
 }
 
 function expandTemplate(templatesStorage: string, template: string, args: { [key:string] : string }, folder?: vscode.WorkspaceFolder, name?: string): string | undefined {
