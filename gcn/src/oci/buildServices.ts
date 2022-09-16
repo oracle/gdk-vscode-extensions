@@ -228,11 +228,10 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         if (this.object.lastBuildRun) {
             try {
                 ociUtils.getBuildRun(this.oci.getProvider(), this.object.lastBuildRun).then(buildRun => {
-                    const run = buildRun.buildRun;
-                    const output = run.displayName ? vscode.window.createOutputChannel(run.displayName) : undefined;
+                    const output = buildRun.displayName ? vscode.window.createOutputChannel(buildRun.displayName) : undefined;
                     output?.hide();
-                    this.updateLastRun(run.id, run.lifecycleState, output);
-                    this.updateWhenCompleted(run.id, run.compartmentId);
+                    this.updateLastRun(buildRun.id, buildRun.lifecycleState, output);
+                    this.updateWhenCompleted(buildRun.id, buildRun.compartmentId);
                 });
             } catch (err) {
                 // TODO: handle?
@@ -310,7 +309,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                                             commitInfo = { repositoryUrl: repository.httpUrl, repositoryBranch: head.name, commitHash: head.commit };
                                         }
                                     }
-                                    const buildRun = (await ociUtils.createBuildRun(this.oci.getProvider(), this.object.ocid, buildName, params, commitInfo))?.buildRun;
+                                    const buildRun = await ociUtils.createBuildRun(this.oci.getProvider(), this.object.ocid, buildName, params, commitInfo);
                                     resolve(true);
                                     if (buildRun) {
                                         this.object.lastBuildRun = buildRun.id;
@@ -461,7 +460,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
             }
             let buildRun: devops.models.BuildRun;
             try {
-                buildRun = (await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId)).buildRun;
+                buildRun = await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId);
             } catch (err) {
                 return undefined;
             }
@@ -504,18 +503,22 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
             }
             return state;
         };
-        const state = await ociUtils.completion(5000, update);
-        if (this.lastRun?.ocid === buildRunId) {
-            this.updateLastRun(buildRunId, state, this.lastRun?.output, deliveredArtifacts);
-            // Some messages can appear in the log minutes after the build run finished.
-            // Wating for 10 minutes periodiccaly polling for them.
-            for (let i = 0; i < 60; i++) {
-                if (this.lastRun?.ocid !== buildRunId) {
-                    return;
+        try {
+            const state = await ociUtils.completion(5000, update);
+            if (this.lastRun?.ocid === buildRunId) {
+                this.updateLastRun(buildRunId, state, this.lastRun?.output, deliveredArtifacts);
+                // Some messages can appear in the log minutes after the build run finished.
+                // Wating for 10 minutes periodiccaly polling for them.
+                for (let i = 0; i < 60; i++) {
+                    if (this.lastRun?.ocid !== buildRunId) {
+                        return;
+                    }
+                    await ociUtils.delay(10000);
+                    await update();
                 }
-                await ociUtils.delay(10000);
-                await update();
             }
+        } catch (err) {
+            // TODO: handle
         }
     }
 }

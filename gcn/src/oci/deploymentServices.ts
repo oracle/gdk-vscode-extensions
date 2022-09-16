@@ -198,8 +198,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
         this.updateAppearance();
         if (this.object.lastDeployment) {
             try {
-                ociUtils.getDeployment(this.oci.getProvider(), this.object.lastDeployment).then(deploymentResp => {
-                    const deployment = deploymentResp.deployment;
+                ociUtils.getDeployment(this.oci.getProvider(), this.object.lastDeployment).then(deployment => {
                     const output = deployment.displayName ? vscode.window.createOutputChannel(deployment.displayName) : undefined;
                     output?.hide();
                     this.updateLastDeployment(deployment.id, deployment.lifecycleState, output);
@@ -257,11 +256,11 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                         let dockerTag: string | undefined;
                         const buildPipelineID = (await this.getResource()).freeformTags?.gcn_tooling_buildPipelineOCID;
                         if (buildPipelineID) {
-                            const lastBuilds = (await ociUtils.listBuildRuns(this.oci.getProvider(), buildPipelineID))?.buildRunSummaryCollection.items;
+                            const lastBuilds = await ociUtils.listBuildRuns(this.oci.getProvider(), buildPipelineID);
                             const buildRunId = lastBuilds?.find(build => ociUtils.isSuccess(build.lifecycleState))?.id;
                             if (buildRunId) {
                                 try {
-                                    const buildOutputs = (await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId)).buildRun.buildOutputs;
+                                    const buildOutputs = (await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId)).buildOutputs;
                                     artifactsCount = buildOutputs?.deliveredArtifacts?.items.length;
                                     dockerTag = buildOutputs?.exportedVariables?.items.find(v => v.name === dockerTagVarName)?.value;
                                 } catch (err) {
@@ -274,7 +273,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                             resolve(false);
                             return;
                         }
-                        const deployment = (await ociUtils.createDeployment(this.oci.getProvider(), this.object.ocid, deploymentName, dockerTag ? [{ name: dockerTagVarName, value: dockerTag }] : undefined))?.deployment;
+                        const deployment = await ociUtils.createDeployment(this.oci.getProvider(), this.object.ocid, deploymentName, dockerTag ? [{ name: dockerTagVarName, value: dockerTag }] : undefined);
                         resolve(true);
                         if (deployment) {
                             this.object.lastDeployment = deployment.id;
@@ -308,7 +307,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                         resolve(false);
                         return;
                     }
-                    const deployment = this.lastDeployment ? (await ociUtils.getDeployment(this.oci.getProvider(), this.lastDeployment?.ocid))?.deployment : undefined;
+                    const deployment = this.lastDeployment ? await ociUtils.getDeployment(this.oci.getProvider(), this.lastDeployment?.ocid) : undefined;
                     const deploymentName = this.lastDeployment?.deploymentName;
                     if (!deployment || !deploymentName) {
                         resolve(false);
@@ -399,7 +398,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
             }
             let deployment: devops.models.Deployment;
             try {
-                deployment = (await ociUtils.getDeployment(this.oci.getProvider(), deploymentId)).deployment;
+                deployment = await ociUtils.getDeployment(this.oci.getProvider(), deploymentId);
             } catch (err) {
                 return undefined;
             }
@@ -432,18 +431,22 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
             }
             return state;
         };
-        const state = await ociUtils.completion(5000, update);
-        if (this.lastDeployment?.ocid === deploymentId) {
-            this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output, this.lastDeployment?.deploymentName);
-            // Some messages can appear in the log minutes after the deployment finished.
-            // Wating for 10 minutes periodiccaly polling for them.
-            for (let i = 0; i < 60; i++) {
-                if (this.lastDeployment?.ocid !== deploymentId) {
-                    return;
+        try {
+            const state = await ociUtils.completion(5000, update);
+            if (this.lastDeployment?.ocid === deploymentId) {
+                this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output, this.lastDeployment?.deploymentName);
+                // Some messages can appear in the log minutes after the deployment finished.
+                // Wating for 10 minutes periodiccaly polling for them.
+                for (let i = 0; i < 60; i++) {
+                    if (this.lastDeployment?.ocid !== deploymentId) {
+                        return;
+                    }
+                    await ociUtils.delay(10000);
+                    await update();
                 }
-                await ociUtils.delay(10000);
-                await update();
             }
+        } catch (err) {
+            // TODO: handle
         }
     }
 
