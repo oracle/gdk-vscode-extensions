@@ -714,19 +714,41 @@ export async function createKnowledgeBase(authenticationDetailsProvider: common.
     return admWaitForResourceCompletionStatus(authenticationDetailsProvider, `Create knowledge base ${displayName}`, response.opcWorkRequestId);
 }
 
-export async function createDefaultNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<ons.models.NotificationTopic> {
-    const idClient = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    const compartmentRequest: identity.requests.GetCompartmentRequest = {
+export async function getFqnCompartmentName(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<string> {
+    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: identity.requests.GetCompartmentRequest = {
         compartmentId: compartmentID
     };
+    let compartment = (await client.getCompartment(request)).compartment;
+    let name = '';
+    while (compartment.compartmentId) {
+        name = name.length === 0 ? compartment.name : `${compartment.name}-${name}`;
+        request.compartmentId = compartment.compartmentId;
+        compartment = (await client.getCompartment(request)).compartment;
+    }
+    // NOTE: returns empty string for root tenancy
+    return name;
+}
 
-    // PENDING: Creating a notification with a name already used within the tenancy (although in a different compartment) fails - whether it is a feature or a bug is not known.
-    // Let's default the name to <Compartment-Name>+constant -- althoug even compartment name may not be unique (same name in 2 different parents). Should be the OCID there :) ?
-    const compartmentResponse = await idClient.getCompartment(compartmentRequest);
-
+export async function createCompartmentNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<ons.models.NotificationTopic> {
+    // // PENDING: Creating a notification with a name already used within the tenancy (although in a different compartment) fails - whether it is a feature or a bug is not known.
+    // // Let's default the name to <FQN-Compartment-Name>-constant -- althoug even compartment name may not be unique (clearing non-allowed characters).
+    // // TODO: check whether `${compartmentName}-${DEFAULT_NOTIFICATION_TOPIC}` exceeds 256 characters & shorten
+    // let compartmentName = await getFqnCompartmentName(authenticationDetailsProvider, compartmentID);
+    // if (compartmentName.length === 0) {
+    //     compartmentName = 'root';
+    // } else {
+    //     compartmentName = compartmentName.replace(/[^a-zA-Z0-9_\-]+/g,''); // notification topic name only allows alphanum_-
+    //     // TODO: notification topic name cannot contain subsequent -- !
+    //     if (/^[^a-zA-Z_]/.test(compartmentName)) {
+    //         compartmentName = `_${compartmentName}`; // notification topic name must have a leading letter or underscore
+    //     }
+    // }
+    const name = `${DEFAULT_NOTIFICATION_TOPIC}-${Date.now()}`;
     const client = new ons.NotificationControlPlaneClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: ons.models.CreateTopicDetails = {
-        name: compartmentResponse.compartment.name.replace(/\W+/g,'') + DEFAULT_NOTIFICATION_TOPIC,
+        // name: `${compartmentName}-${DEFAULT_NOTIFICATION_TOPIC}`,
+        name: name,
         compartmentId: compartmentID,
         description: description
     };
@@ -738,12 +760,10 @@ export async function createDefaultNotificationTopic(authenticationDetailsProvid
 
 export async function getOrCreateNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<string> {
     const notificationTopics = await listNotificationTopics(authenticationDetailsProvider, compartmentID);
-    if (notificationTopics) {
-        if (notificationTopics.length > 0) {
-            return notificationTopics[0].topicId;
-        }
+    if (notificationTopics.length > 0) {
+        return notificationTopics[0].topicId;
     }
-    return createDefaultNotificationTopic(authenticationDetailsProvider, compartmentID, description).then(response => response.topicId);
+    return createCompartmentNotificationTopic(authenticationDetailsProvider, compartmentID, description).then(response => response.topicId);
 }
 
 export async function listClusters(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<containerengine.models.ClusterSummary[]> {
