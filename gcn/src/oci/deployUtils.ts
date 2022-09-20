@@ -31,9 +31,15 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
         return undefined;
     }
     const provider = authentication.getProvider();
+    const deployData: any = {};
 
-    const compartment = await ociDialogs.selectCompartment(authentication);
-    if (!compartment) {
+    deployData.compartment = await ociDialogs.selectCompartment(provider);
+    if (!deployData.compartment) {
+        return undefined;
+    }
+
+    deployData.okeCluster = await ociDialogs.selectOkeCluster(provider, deployData.compartment.ocid, provider.getRegion().regionId);
+    if (deployData.okeCluster === undefined) {
         return undefined;
     }
 
@@ -43,11 +49,6 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
     }
     let projectName = selectedName;
 
-    const okeCluster = await ociDialogs.selectOkeCluster(authentication, compartment.ocid, provider.getRegion().regionId);
-    if (!okeCluster) {
-        return undefined;
-    }
-
     const error: string | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: 'Creating devops project',
@@ -55,17 +56,21 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
     }, (progress, _token) => {
         return new Promise(async resolve => {
             let totalSteps = folders.reduce((total, current) => {
+                total += 3; // code repository, cloud services config, populating code repository
                 if (current.projectInfo?.projectType === 'GCN') {
-                    // Jar artifact, build spec and pipeline, NI artifact, build spec and pipeline, OKE deploy config and deploy to OKE pipeline
-                    // Docker image, build spec, and pipeline, container repository per cloud specific subproject
-                    total += 8 + (projectUtils.getCloudSpecificSubProjectNames(current).length) * 4
+                    total += 7; // Jar artifact, build spec and pipeline, NI artifact, build spec and pipeline, OKE deploy config
+                    if (deployData.okeCluster) {
+                        total += 1; // deploy to OKE pipeline
+                    }
+                    total += 4 * projectUtils.getCloudSpecificSubProjectNames(current).length; // Docker image, build spec, and pipeline, container repository per cloud specific subproject
                 } else if (current.projectInfo?.projectType === 'Micronaut') {
-                    // Jar artifact, build spec and pipeline, NI artifact, build spec and pipeline, Docker image, build spec and pipeline, container repository, OKE deploy config and deploy to OKE pipeline
-                    total += 12;
+                    total += 11; // Jar artifact, build spec and pipeline, NI artifact, build spec and pipeline, Docker image, build spec and pipeline, OKE deploy config, container repository
+                    if (deployData.okeCluster) {
+                        total += 1; // deploy to OKE pipeline
+                    }
                 }
                 return total;
             }, 0);
-            totalSteps += folders.length * 3; // code repository, cloud services config, populating code repository per deployed folder
             totalSteps += 10; // notification topic, devops project, project log, dynamic groups and policies, artifact repository, OKE cluster environment, knowledge base
             const increment = 100 / totalSteps;
 
@@ -73,10 +78,9 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
             progress.report({
                 message: 'Setting up notifications...'
             });
-            const notificationTopicDescription = `Shared notification topic for devops projects in compartment ${compartment.name}`;
-            let notificationTopic: string;
+            const notificationTopicDescription = `Shared notification topic for devops projects in compartment ${deployData.compartment.name}`;
             try {
-                notificationTopic = await ociUtils.getOrCreateNotificationTopic(provider, compartment.ocid, notificationTopicDescription);
+                deployData.notificationTopic = await ociUtils.getOrCreateNotificationTopic(provider, deployData.compartment.ocid, notificationTopicDescription);
             } catch (err) {
                 resolve(dialogs.getErrorMessage('Failed to prepare notification topic', err));
                 return;
@@ -88,11 +92,10 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 message: 'Creating devops project...'
             });
             
-            let createdProject: string | undefined;
             const projectDescription = 'Graal Cloud Native project deployed from the VS Code';
-            while (createdProject === undefined) {
+            while (deployData.project === undefined) {
                 try {
-                    createdProject = (await ociUtils.createDevOpsProject(provider, projectName, compartment.ocid, notificationTopic, projectDescription)).id;
+                    deployData.project = (await ociUtils.createDevOpsProject(provider, projectName, deployData.compartment.ocid, deployData.notificationTopic, projectDescription)).id;
                 } catch (err) {
                     const message: string | undefined = (err as any).message;
                     if (message && message.indexOf('project name already exists') !== -1) {
@@ -109,17 +112,16 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     }
                 }
             }
-            const project = createdProject;
 
             // --- Create project log
             progress.report({
                 increment,
                 message: 'Setting up logging...'
             });
-            const logGroupDescription = `Shared log group for devops projects in compartment ${compartment.name}`;
+            const logGroupDescription = `Shared log group for devops projects in compartment ${deployData.compartment.name}`;
             let logGroup: string | undefined;
             try {
-                logGroup = await ociUtils.getDefaultLogGroup(provider, compartment.ocid, true, logGroupDescription);
+                logGroup = await ociUtils.getDefaultLogGroup(provider, deployData.compartment.ocid, true, logGroupDescription);
             } catch (err) {
                 resolve(dialogs.getErrorMessage('Failed to resolve log group', err));
                 return;
@@ -129,7 +131,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 return;
             }
             try {
-                await ociUtils.createProjectLog(provider, compartment.ocid, logGroup, project, projectName);
+                await ociUtils.createProjectLog(provider, deployData.compartment.ocid, logGroup, deployData.project, projectName);
             } catch (err) {
                 resolve(dialogs.getErrorMessage('Failed to create project log', err));
                 return;
@@ -140,7 +142,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 increment,
                 message: 'Setting up dynamic group for build pipelines...'
             });
-            const buildPipelinesGroup = await ociUtils.getDefaultBuildPipelinesGroup(provider, compartment.ocid, true).catch(err => {
+            const buildPipelinesGroup = await ociUtils.getDefaultBuildPipelinesGroup(provider, deployData.compartment.ocid, true).catch(err => {
                 dialogs.showErrorMessage('Failed to resolve group for build pipelines', err);
             });
 
@@ -149,7 +151,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 increment,
                 message: 'Setting up dynamic group for deployment pipelines...'
             });
-            const deployPipelinesGroup = await ociUtils.getDefaultDeployPipelinesGroup(provider, compartment.ocid, true).catch(err => {
+            const deployPipelinesGroup = await ociUtils.getDefaultDeployPipelinesGroup(provider, deployData.compartment.ocid, true).catch(err => {
                 dialogs.showErrorMessage('Failed to resolve group for deployment pipelines', err);
             });
 
@@ -158,7 +160,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 increment,
                 message: 'Setting up dynamic group for code repositories...'
             });
-            const codeRepositoriesGroup = await ociUtils.getDefaultCodeRepositoriesGroup(provider, compartment.ocid, true).catch(err => {
+            const codeRepositoriesGroup = await ociUtils.getDefaultCodeRepositoriesGroup(provider, deployData.compartment.ocid, true).catch(err => {
                 dialogs.showErrorMessage('Failed to resolve group for code repositories', err);
             });
 
@@ -168,9 +170,8 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     increment,
                     message: 'Setting up policy for accessing resources in compartment...'
                 });
-                let compartmentAccessPolicy;
                 try {
-                    compartmentAccessPolicy = await ociUtils.getCompartmentAccessPolicy(provider, compartment.ocid, buildPipelinesGroup.name, deployPipelinesGroup.name, codeRepositoriesGroup.name, true);
+                    const compartmentAccessPolicy = await ociUtils.getCompartmentAccessPolicy(provider, deployData.compartment.ocid, buildPipelinesGroup.name, deployPipelinesGroup.name, codeRepositoriesGroup.name, true);
                     if (!compartmentAccessPolicy) {
                         resolve('Failed to resolve policy for accessing resources in compartment.');
                         return;
@@ -179,7 +180,6 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     resolve(dialogs.getErrorMessage('Failed to resolve policy for accessing resources in compartment', err));
                     return;
                 }
-                
             }
 
             // --- Create artifact repository
@@ -187,27 +187,28 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 increment,
                 message: `Creating artifact repository...`
             });
-            let artifactsRepository: string;
             try {
-                artifactsRepository = (await ociUtils.createArtifactsRepository(provider, compartment.ocid, projectName, {
-                    "gcn_tooling_projectOCID" : project
+                deployData.artifactsRepository = (await ociUtils.createArtifactsRepository(provider, deployData.compartment.ocid, projectName, {
+                    "gcn_tooling_projectOCID" : deployData.project
                 })).id;
             } catch (err) {
                 resolve(dialogs.getErrorMessage('Failed to create artifact repository', err));
                 return;
             }
 
-            // --- Create cluster environment
-            progress.report({
-                increment,
-                message: `Creating OKE cluster environment...`
-            });
-            let okeClusterEnvironment: string;
-            try {
-                okeClusterEnvironment = (await ociUtils.createOkeDeployEnvironment(provider, project, projectName, okeCluster)).id;
-            } catch (err) {
-                resolve(dialogs.getErrorMessage('Failed to create OKE cluster environment', err));
-                return;
+            if (deployData.okeCluster) {
+                // --- Create cluster environment
+                progress.report({
+                    increment,
+                    message: `Creating OKE cluster environment...`
+                });
+                let okeClusterEnvironment: string;
+                try {
+                    okeClusterEnvironment = (await ociUtils.createOkeDeployEnvironment(provider, deployData.project, projectName, deployData.okeCluster)).id;
+                } catch (err) {
+                    resolve(dialogs.getErrorMessage('Failed to create OKE cluster environment', err));
+                    return;
+                }
             }
 
             // --- Create a default knowledge base; tie it to a project + mark so it can be recognized later
@@ -217,10 +218,9 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 message: `Creating ADM knowledge base for ${projectName}...`
             });
             const knowledgeBaseDescription = `Vulnerability audits for devops project ${projectName}`;
-            let knowledgeBaseOCID: string;
             try {
-                knowledgeBaseOCID = await ociUtils.createKnowledgeBase(provider, compartment?.ocid || "", projectName, {
-                    'gcn_tooling_projectOCID': project,
+                deployData.knowledgeBaseOCID = await ociUtils.createKnowledgeBase(provider, deployData.compartment?.ocid || "", projectName, {
+                    'gcn_tooling_projectOCID': deployData.project,
                     'gcn_tooling_description': knowledgeBaseDescription,
                     'gcn_tooling_usage': 'gcn-adm-audit'
                 });
@@ -244,7 +244,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 const description = `Source code repository ${folder.name}`;
                 let codeRepository;
                 try {
-                    codeRepository = await ociUtils.createCodeRepository(provider, project, repositoryName, 'master', description);
+                    codeRepository = await ociUtils.createCodeRepository(provider, deployData.project, repositoryName, 'master', description);
                 } catch (err) {
                     resolve(dialogs.getErrorMessage(`Failed to create source code repository ${repositoryName}`, err));
                     return;
@@ -287,7 +287,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 const devbuildArtifactDescription = `Fat JAR artifact for devops project ${projectName} & repository ${repositoryName}`;
                 let devbuildArtifact;
                 try {
-                    devbuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactsRepository, project, devbuildArtifactPath, devbuildArtifactName, devbuildArtifactDescription)).id;
+                    devbuildArtifact = (await ociUtils.createProjectDevArtifact(provider, deployData.artifactsRepository, deployData.project, devbuildArtifactPath, devbuildArtifactName, devbuildArtifactDescription)).id;
                 } catch (err) {
                     resolve(dialogs.getErrorMessage(`Failed to create fat JAR artifact for ${repositoryName}`, err));
                     return;
@@ -327,7 +327,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 const devbuildPipelineDescription = `Build pipeline to build fat JAR for devops project ${projectName} & repository ${repositoryName}`;
                 let devbuildPipeline;
                 try {
-                    devbuildPipeline = (await ociUtils.createBuildPipeline(provider, project, devbuildPipelineName, devbuildPipelineDescription)).id;
+                    devbuildPipeline = (await ociUtils.createBuildPipeline(provider, deployData.project, devbuildPipelineName, devbuildPipelineDescription)).id;
                 } catch (err) {
                     resolve(dialogs.getErrorMessage(`Failed to create fat JAR pipeline for ${repositoryName}`, err));
                     return;
@@ -339,9 +339,8 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     resolve(dialogs.getErrorMessage(`Failed to create fat JAR pipeline build stage for ${repositoryName}`, err));
                     return;
                 }
-                // let devbuildPipelineArtifactsStage;
                 try {
-                    /*devbuildPipelineArtifactsStage = (*/await ociUtils.createBuildPipelineArtifactsStage(provider, devbuildPipeline, devbuildPipelineBuildStage, devbuildArtifact, devbuildArtifactName)/*).id*/;
+                    await ociUtils.createBuildPipelineArtifactsStage(provider, devbuildPipeline, devbuildPipelineBuildStage, devbuildArtifact, devbuildArtifactName);
                 } catch (err) {
                     resolve(dialogs.getErrorMessage(`Failed to create fat JAR pipeline artifacts stage for ${repositoryName}`, err));
                     return;
@@ -358,7 +357,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 const nibuildArtifactDescription = `Native executable artifact for devops project ${projectName} & repository ${repositoryName}`;
                 let nibuildArtifact;
                 try {
-                    nibuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactsRepository, project, nibuildArtifactPath, nibuildArtifactName, nibuildArtifactDescription)).id;
+                    nibuildArtifact = (await ociUtils.createProjectDevArtifact(provider, deployData.artifactsRepository, deployData.project, nibuildArtifactPath, nibuildArtifactName, nibuildArtifactDescription)).id;
                 } catch (err) {
                     resolve(dialogs.getErrorMessage(`Failed to create native executable artifact for ${repositoryName}`, err));
                     return;
@@ -398,7 +397,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 const nibuildPipelineDescription = `Build pipeline to build native image executable for devops project ${projectName} & repository ${repositoryName}`;
                 let nibuildPipeline;
                 try {
-                    nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, nibuildPipelineName, nibuildPipelineDescription)).id;
+                    nibuildPipeline = (await ociUtils.createBuildPipeline(provider, deployData.project, nibuildPipelineName, nibuildPipelineDescription)).id;
                 } catch (err) {
                     resolve(dialogs.getErrorMessage(`Failed to create native executables pipeline for ${repositoryName}`, err));
                     return;
@@ -410,9 +409,8 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     resolve(dialogs.getErrorMessage(`Failed to create native executables pipeline build stage for ${repositoryName}`, err));
                     return;
                 }
-                // let nibuildPipelineArtifactsStage;
                 try {
-                    /*nibuildPipelineArtifactsStage = (*/await ociUtils.createBuildPipelineArtifactsStage(provider, nibuildPipeline, nibuildPipelineBuildStage, nibuildArtifact, nibuildArtifactName)/*).id*/;
+                    await ociUtils.createBuildPipelineArtifactsStage(provider, nibuildPipeline, nibuildPipelineBuildStage, nibuildArtifact, nibuildArtifactName);
                 } catch (err) {
                     resolve(dialogs.getErrorMessage(`Failed to create native executables pipeline artifacts stage for ${repositoryName}`, err));
                     return;
@@ -429,7 +427,6 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 }
 
                 if (deployFolder.projectInfo?.projectType === 'Micronaut') {
-
                     // --- Create container repository
                     progress.report({
                         increment,
@@ -438,7 +435,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     const containerRepositoryName = folders.length > 1 ? `${projectName}-${repositoryName}` : projectName;
                     let containerRepository;
                     try {
-                        containerRepository = await ociUtils.createContainerRepository(provider, compartment.ocid, containerRepositoryName);
+                        containerRepository = await ociUtils.createContainerRepository(provider, deployData.compartment.ocid, containerRepositoryName);
                     } catch (err) {
                         resolve(dialogs.getErrorMessage(`Failed to create container repository ${containerRepositoryName}`, err));
                         return;
@@ -454,7 +451,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     const docker_nibuildArtifactDescription = `Docker native executable artifact for devops project ${projectName} & repository ${repositoryName}`;
                     let docker_nibuildArtifact;
                     try {
-                        docker_nibuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, project, docker_nibuildImage, docker_nibuildArtifactName, docker_nibuildArtifactDescription)).id;
+                        docker_nibuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, deployData.project, docker_nibuildImage, docker_nibuildArtifactName, docker_nibuildArtifactDescription)).id;
                     } catch (err) {
                         resolve(dialogs.getErrorMessage(`Failed to create docker native executable artifact for ${repositoryName}`, err));
                         return;
@@ -487,7 +484,9 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     const docker_nibuildPipelineDescription = `Build pipeline to build docker native executable for devops project ${projectName} & repository ${repositoryName}`;
                     let docker_nibuildPipeline;
                     try {
-                        docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, docker_nibuildPipelineName, docker_nibuildPipelineDescription)).id;
+                        docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, deployData.project, docker_nibuildPipelineName, docker_nibuildPipelineDescription, {
+                            'gcn_tooling_docker_image': 'oci'
+                        })).id;
                     } catch (err) {
                         resolve(dialogs.getErrorMessage(`Failed to create docker native executable build pipeline for ${repositoryName}`, err));
                         return;
@@ -499,9 +498,8 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                         resolve(dialogs.getErrorMessage(`Failed to create docker native executable pipeline build stage for ${repositoryName}`, err));
                         return;
                     }
-                    // let docker_nibuildPipelineArtifactsStage;
                     try {
-                        /*docker_nibuildPipelineArtifactsStage = (*/await ociUtils.createBuildPipelineArtifactsStage(provider, docker_nibuildPipeline, docker_nibuildPipelineBuildStage, docker_nibuildArtifact, docker_nibuildArtifactName)/*).id*/;
+                        await ociUtils.createBuildPipelineArtifactsStage(provider, docker_nibuildPipeline, docker_nibuildPipelineBuildStage, docker_nibuildArtifact, docker_nibuildArtifactName);
                     } catch (err) {
                         resolve(dialogs.getErrorMessage(`Failed to create docker native executable pipeline artifacts stage for ${repositoryName}`, err));
                         return;
@@ -526,45 +524,44 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     const oke_deployConfigArtifactDescription = `OKE deployment configuration artifact for devops project ${projectName} & repository ${repositoryName}`;
                     let oke_deployConfigArtifact;
                     try {
-                        oke_deployConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, project, oke_deployConfigInlineContent, oke_deployConfigArtifactName, oke_deployConfigArtifactDescription)).id;
+                        oke_deployConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, deployData.project, oke_deployConfigInlineContent, oke_deployConfigArtifactName, oke_deployConfigArtifactDescription)).id;
                     } catch (err) {
                         resolve(dialogs.getErrorMessage(`Failed to create OKE deployment configuration artifact for ${repositoryName}`, err));
                         return;
                     }
 
-                    // --- Create OKE deployment pipeline
-                    progress.report({
-                        increment,
-                        message: `Creating deployment to OKE pipeline for docker native executables of ${repositoryName}...`
-                    });
-                    const oke_deployPipelineName = 'Deploy Docker Native Image to OKE';
-                    const oke_deployPipelineDescription = `Deployment pipeline to deploy docker native executable for devops project ${projectName} & repository ${repositoryName} to OKE`;
-                    let oke_deployPipeline;
-                    try {
-                        oke_deployPipeline = (await ociUtils.createDeployPipeline(provider, project, oke_deployPipelineName, oke_deployPipelineDescription, [{
-                            name: 'DOCKER_TAG',
-                            defaultValue: 'latest'
-                        }], {
-                            'gcn_tooling_buildPipelineOCID': docker_nibuildPipeline,
-                            'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()
-                        })).id;
-                    } catch (err) {
-                        resolve(dialogs.getErrorMessage(`Failed to create docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
-                        return;
+                    if (deployData.okeClusterEnvironment) {
+                        // --- Create OKE deployment pipeline
+                        progress.report({
+                            increment,
+                            message: `Creating deployment to OKE pipeline for docker native executables of ${repositoryName}...`
+                        });
+                        const oke_deployPipelineName = 'Deploy Docker Native Image to OKE';
+                        const oke_deployPipelineDescription = `Deployment pipeline to deploy docker native executable for devops project ${projectName} & repository ${repositoryName} to OKE`;
+                        let oke_deployPipeline;
+                        try {
+                            oke_deployPipeline = (await ociUtils.createDeployPipeline(provider, deployData.project, oke_deployPipelineName, oke_deployPipelineDescription, [{
+                                name: 'DOCKER_TAG',
+                                defaultValue: 'latest'
+                            }], {
+                                'gcn_tooling_buildPipelineOCID': docker_nibuildPipeline,
+                                'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()
+                            })).id;
+                        } catch (err) {
+                            resolve(dialogs.getErrorMessage(`Failed to create docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
+                            return;
+                        }
+                        try {
+                            await ociUtils.createDeployToOkeStage(provider, oke_deployPipeline, deployData.okeClusterEnvironment, oke_deployConfigArtifact);
+                        } catch (err) {
+                            resolve(dialogs.getErrorMessage(`Failed to create docker native executables deployment to OKE stage for ${repositoryName}`, err));
+                            return;
+                        }
+                        deployPipelines.push({ 'ocid': oke_deployPipeline, 'displayName': oke_deployPipelineName });
                     }
-                    // let oke_deployPipelineStage;
-                    try {
-                        /*oke_deployPipelineStage = (*/await ociUtils.createDeployToOkeStage(provider, oke_deployPipeline, okeClusterEnvironment, oke_deployConfigArtifact)/*).id*/;
-                    } catch (err) {
-                        resolve(dialogs.getErrorMessage(`Failed to create docker native executables deployment to OKE stage for ${repositoryName}`, err));
-                        return;
-                    }
-                    deployPipelines.push({ 'ocid': oke_deployPipeline, 'displayName': oke_deployPipelineName });
-
                 } else if (deployFolder.projectInfo?.projectType === 'GCN') {
                     for (const subName of projectUtils.getCloudSpecificSubProjectNames(deployFolder)) {
                         if (subName !== 'app') {
-
                             // --- Create container repository
                             progress.report({
                                 increment,
@@ -573,7 +570,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                             const containerRepositoryName = folders.length > 1 ? `${projectName}-${repositoryName}-${subName}` : `${projectName}-${subName}`;
                             let containerRepository;
                             try {
-                                containerRepository = await ociUtils.createContainerRepository(provider, compartment.ocid, containerRepositoryName);
+                                containerRepository = await ociUtils.createContainerRepository(provider, deployData.compartment.ocid, containerRepositoryName);
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to create container repository ${containerRepositoryName}`, err));
                                 return;
@@ -589,7 +586,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                             const docker_nibuildArtifactDescription = `Docker native executable artifact for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}`;
                             let docker_nibuildArtifact;
                             try {
-                                docker_nibuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, project, docker_nibuildImage, docker_nibuildArtifactName, docker_nibuildArtifactDescription)).id;
+                                docker_nibuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, deployData.project, docker_nibuildImage, docker_nibuildArtifactName, docker_nibuildArtifactDescription)).id;
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executable artifact for ${repositoryName}`, err));
                                 return;
@@ -630,7 +627,9 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                             const docker_nibuildPipelineDescription = `Build pipeline to build docker native executable for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}`;
                             let docker_nibuildPipeline;
                             try {
-                                docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, docker_nibuildPipelineName, docker_nibuildPipelineDescription)).id;
+                                docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, deployData.project, docker_nibuildPipelineName, docker_nibuildPipelineDescription, {
+                                    'gcn_tooling_docker_image': subName.toLowerCase()
+                                })).id;
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executable build pipeline for ${repositoryName}`, err));
                                 return;
@@ -642,9 +641,8 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                                 resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executable pipeline build stage for ${repositoryName}`, err));
                                 return;
                             }
-                            // let docker_nibuildPipelineArtifactsStage;
                             try {
-                                /*docker_nibuildPipelineArtifactsStage = (*/await ociUtils.createBuildPipelineArtifactsStage(provider, docker_nibuildPipeline, docker_nibuildPipelineBuildStage, docker_nibuildArtifact, docker_nibuildArtifactName)/*).id*/;
+                                await ociUtils.createBuildPipelineArtifactsStage(provider, docker_nibuildPipeline, docker_nibuildPipelineBuildStage, docker_nibuildArtifact, docker_nibuildArtifactName);
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executable pipeline artifacts stage for ${repositoryName}`, err));
                                 return;
@@ -671,40 +669,41 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                                 const oke_deployConfigArtifactDescription = `OKE deployment configuration artifact for devops project ${projectName} & repository ${repositoryName}`;
                                 let oke_deployConfigArtifact;
                                 try {
-                                    oke_deployConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, project, oke_deployConfigInlineContent, oke_deployConfigArtifactName, oke_deployConfigArtifactDescription)).id;
+                                    oke_deployConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, deployData.project, oke_deployConfigInlineContent, oke_deployConfigArtifactName, oke_deployConfigArtifactDescription)).id;
                                 } catch (err) {
                                     resolve(dialogs.getErrorMessage(`Failed to create OKE deployment configuration artifact for ${repositoryName}`, err));
                                     return;
                                 }
 
-                                // --- Create OKE deployment pipeline
-                                progress.report({
-                                    increment,
-                                    message: `Creating deployment to OKE pipeline for ${subName} docker native executables of ${repositoryName}...`
-                                });
-                                const oke_deployPipelineName = 'Deploy OCI Docker Native Image to OKE';
-                                const oke_deployPipelineDescription = `Deployment pipeline to deploy docker native executable for OCI & devops project ${projectName} & repository ${repositoryName} to OKE`;
-                                let oke_deployPipeline;
-                                try {
-                                    oke_deployPipeline = (await ociUtils.createDeployPipeline(provider, project, oke_deployPipelineName, oke_deployPipelineDescription, [{
-                                        name: 'DOCKER_TAG',
-                                        defaultValue: 'latest'
-                                    }], {
-                                        'gcn_tooling_buildPipelineOCID': docker_nibuildPipeline,
-                                        'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()
-                                    })).id;
-                                } catch (err) {
-                                    resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
-                                    return;
+                                if (deployData.okeClusterEnvironment) {
+                                    // --- Create OKE deployment pipeline
+                                    progress.report({
+                                        increment,
+                                        message: `Creating deployment to OKE pipeline for ${subName} docker native executables of ${repositoryName}...`
+                                    });
+                                    const oke_deployPipelineName = 'Deploy OCI Docker Native Image to OKE';
+                                    const oke_deployPipelineDescription = `Deployment pipeline to deploy docker native executable for OCI & devops project ${projectName} & repository ${repositoryName} to OKE`;
+                                    let oke_deployPipeline;
+                                    try {
+                                        oke_deployPipeline = (await ociUtils.createDeployPipeline(provider, deployData.project, oke_deployPipelineName, oke_deployPipelineDescription, [{
+                                            name: 'DOCKER_TAG',
+                                            defaultValue: 'latest'
+                                        }], {
+                                            'gcn_tooling_buildPipelineOCID': docker_nibuildPipeline,
+                                            'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()
+                                        })).id;
+                                    } catch (err) {
+                                        resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
+                                        return;
+                                    }
+                                    try {
+                                        await ociUtils.createDeployToOkeStage(provider, oke_deployPipeline, deployData.okeClusterEnvironment, oke_deployConfigArtifact);
+                                    } catch (err) {
+                                        resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executables deployment to OKE stage for ${repositoryName}`, err));
+                                        return;
+                                    }
+                                    deployPipelines.push({ 'ocid': oke_deployPipeline, 'displayName': oke_deployPipelineName });
                                 }
-                                // let oke_deployPipelineStage;
-                                try {
-                                    /*oke_deployPipelineStage = (*/await ociUtils.createDeployToOkeStage(provider, oke_deployPipeline, okeClusterEnvironment, oke_deployConfigArtifact)/*).id*/;
-                                } catch (err) {
-                                    resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executables deployment to OKE stage for ${repositoryName}`, err));
-                                    return;
-                                }
-                                deployPipelines.push({ 'ocid': oke_deployPipeline, 'displayName': oke_deployPipelineName });
                             }
                         }
                     }
@@ -726,7 +725,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     version: '1.0'
                 };
                 data[authentication.getDataName()] = authentication.getData();
-                const oci = new ociContext.Context(authentication, compartment.ocid, project, codeRepository.id);
+                const oci = new ociContext.Context(authentication, deployData.compartment.ocid, deployData.project, codeRepository.id);
                 data[oci.getDataName()] = oci.getData();
                 data.services = {
                     // TODO: Might use populated instance of buildServices.Service as dataSupport.DataProducer
@@ -740,7 +739,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     // TODO: Might use populated instance of knowledgeBaseServices.Service as dataSupport.DataProducer
                     knowledgeBases: {
                         settings: {
-                            folderAuditsKnowledgeBase: knowledgeBaseOCID
+                            folderAuditsKnowledgeBase: deployData.knowledgeBaseOCID
                         }
                     },
                 };

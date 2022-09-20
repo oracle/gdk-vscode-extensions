@@ -25,18 +25,19 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
         vscode.window.showErrorMessage(configurationProblem);
         return undefined;
     }
+    const provider = authentication.getProvider();
 
-    const compartment = await ociDialogs.selectCompartment(authentication);
+    const compartment = await ociDialogs.selectCompartment(provider);
     if (!compartment) {
         return undefined;
     }
 
-    const devopsProject = await ociDialogs.selectDevOpsProject(authentication, compartment);
+    const devopsProject = await ociDialogs.selectDevOpsProject(provider, compartment);
     if (!devopsProject) {
         return undefined;
     }
 
-    const repositories = await ociDialogs.selectCodeRepositories(authentication, devopsProject);
+    const repositories = await ociDialogs.selectCodeRepositories(provider, devopsProject);
     if (!repositories || repositories.length === 0) {
         return undefined;
     }

@@ -772,7 +772,7 @@ export async function listClusters(authenticationDetailsProvider: common.ConfigF
     });
     const request: containerengine.requests.ListClustersRequest = {
         compartmentId: compartmentID,
-        lifecycleState: [ containerengine.models.ClusterLifecycleState.Active ],
+        lifecycleState: [ containerengine.models.ClusterLifecycleState.Active, containerengine.models.ClusterLifecycleState.Creating ],
         limit: 1000
     };
     const result: containerengine.models.ClusterSummary[] = [];
@@ -1202,13 +1202,16 @@ export async function createCodeRepository(authenticationDetailsProvider: common
     return response.repository;
 }
 
-export async function createBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, displayName: string, description?: string): Promise<devops.models.BuildPipeline> {
+export async function createBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, displayName: string, description?: string, tags?: { [key:string]: string }): Promise<devops.models.BuildPipeline> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: devops.models.CreateBuildPipelineDetails = {
         displayName: displayName,
         description: description,
         projectId: projectID
     };
+    if (tags) {
+        requestDetails.freeformTags = tags;
+    }
     const request: devops.requests.CreateBuildPipelineRequest = {
         createBuildPipelineDetails: requestDetails
     };

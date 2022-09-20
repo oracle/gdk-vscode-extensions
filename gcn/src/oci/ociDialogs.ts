@@ -6,12 +6,12 @@
  */
 
 import * as vscode from 'vscode';
+import * as common from 'oci-common';
 import * as dialogs from '../dialogs';
 import * as ociUtils from './ociUtils';
-import * as ociAuthentication from './ociAuthentication';
 
 
-export async function selectCompartment(authentication: ociAuthentication.Authentication): Promise<{ ocid: string, name: string } | undefined> {
+export async function selectCompartment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<{ ocid: string, name: string } | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
     // TODO: add root compartment
     const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
@@ -20,7 +20,7 @@ export async function selectCompartment(authentication: ociAuthentication.Authen
         cancellable: false
     }, (_progress, _token) => {
         return new Promise(async resolve => {
-            ociUtils.listCompartments(authentication.getProvider()).then(async compartments => {
+            ociUtils.listCompartments(authenticationDetailsProvider).then(async compartments => {
                 if (!compartments) {
                     resolve(undefined);
                 } else {
@@ -41,7 +41,7 @@ export async function selectCompartment(authentication: ociAuthentication.Authen
                         choices.push(choice);
                     }
                     choices.sort((o1, o2) => o1.label.localeCompare(o2.label));
-                    const tenancy = await ociUtils.getTenancy(authentication.getProvider());
+                    const tenancy = await ociUtils.getTenancy(authenticationDetailsProvider);
                     const rootCompartmentName = tenancy.name ? `${tenancy.name} (root)` : 'root';
                     choices.unshift(new dialogs.QuickPickObject(rootCompartmentName, `Root of the${tenancy.name ? ' ' + tenancy.name : ''} tenancy`, undefined, { ocid: tenancy.id, name: rootCompartmentName }));
                     resolve(choices);
@@ -73,7 +73,7 @@ export async function selectCompartment(authentication: ociAuthentication.Authen
     return choice ? choice.object : undefined;
 }
 
-export async function selectDevOpsProject(authentication: ociAuthentication.Authentication, compartment: { ocid: string, name?: string }): Promise<{ ocid: string, name: string } | undefined> {
+export async function selectDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartment: { ocid: string, name?: string }): Promise<{ ocid: string, name: string } | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
     const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
@@ -81,7 +81,7 @@ export async function selectDevOpsProject(authentication: ociAuthentication.Auth
         cancellable: false
     }, (_progress, _token) => {
         return new Promise(async resolve => {
-            ociUtils.listDevOpsProjects(authentication.getProvider(), compartment.ocid).then(projects => {
+            ociUtils.listDevOpsProjects(authenticationDetailsProvider, compartment.ocid).then(projects => {
                 const choices: dialogs.QuickPickObject[] = [];
                 for (const project of projects) {
                     const description = project.description ? project.description : 'DevOps Project';
@@ -116,7 +116,7 @@ export async function selectDevOpsProject(authentication: ociAuthentication.Auth
     return choice ? choice.object : undefined;
 }
 
-export async function selectCodeRepositories(authentication: ociAuthentication.Authentication, project: { ocid: string, name?: string }): Promise<{ ocid: string, name: string, httpUrl: string | undefined, sshUrl: string | undefined }[] | undefined> {
+export async function selectCodeRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, project: { ocid: string, name?: string }): Promise<{ ocid: string, name: string, httpUrl: string | undefined, sshUrl: string | undefined }[] | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
     const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
@@ -124,7 +124,7 @@ export async function selectCodeRepositories(authentication: ociAuthentication.A
         cancellable: false
     }, (_progress, _token) => {
         return new Promise(async resolve => {
-            ociUtils.listCodeRepositories(authentication.getProvider(), project.ocid).then(repositories => {
+            ociUtils.listCodeRepositories(authenticationDetailsProvider, project.ocid).then(repositories => {
                 if (!repositories) {
                     resolve(undefined);
                 } else {
@@ -174,14 +174,14 @@ export async function selectCodeRepositories(authentication: ociAuthentication.A
     return undefined;
 }
 
-export async function selectOkeCluster(authentication: ociAuthentication.Authentication, compartmentID: string, region: string): Promise<string | undefined> {
+export async function selectOkeCluster(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, region: string): Promise<string | null | undefined> {
     const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: 'Reading available OKE clusters...',
         cancellable: false
     }, (_progress, _token) => {
         return new Promise(async resolve => {
-            ociUtils.listClusters(authentication.getProvider(), compartmentID).then(clusters => {
+            ociUtils.listClusters(authenticationDetailsProvider, compartmentID).then(clusters => {
                 const choices: dialogs.QuickPickObject[] = [];
                 for (const cluster of clusters) {
                     if (cluster.name && cluster.id) {
@@ -202,7 +202,12 @@ export async function selectOkeCluster(authentication: ociAuthentication.Authent
 
     if (choices.length === 0) {
         const createOption = 'Quick Create Cluster';
-        if (createOption === await vscode.window.showWarningMessage('No OKE cluster available.', createOption)) {
+        const skipDeployToOKEPipeline = 'Skip Deploy to OKE Pipeline Creation';
+        const sel = await vscode.window.showWarningMessage('No OKE cluster available.', createOption, skipDeployToOKEPipeline);
+        if (skipDeployToOKEPipeline === sel) {
+            return null;
+        }
+        if (createOption === sel) {
             dialogs.openInBrowser(`https://cloud.oracle.com/containers/clusters/quick?region=${region}`);
         }
         return undefined;
