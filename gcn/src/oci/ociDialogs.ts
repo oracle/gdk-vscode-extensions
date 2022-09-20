@@ -47,7 +47,7 @@ export async function selectCompartment(authentication: ociAuthentication.Authen
                     resolve(choices);
                 }
             }).catch(err => {
-                vscode.window.showErrorMessage('Failed to read compartments: ' + err.message);
+                dialogs.showErrorMessage('Failed to read compartments', err);
                 resolve(undefined);
             });
         });
@@ -90,7 +90,7 @@ export async function selectDevOpsProject(authentication: ociAuthentication.Auth
                 }
                 resolve(choices);
             }).catch(err => {
-                vscode.window.showErrorMessage('Failed to read devops projects: ' + err.message);
+                dialogs.showErrorMessage('Failed to read devops projects', err);
                 resolve(undefined);
             });
         });
@@ -139,7 +139,7 @@ export async function selectCodeRepositories(authentication: ociAuthentication.A
                     resolve(choices);
                 }
             }).catch(err => {
-                vscode.window.showErrorMessage('Failed to read code repositories: ' + err.message);
+                dialogs.showErrorMessage('Failed to read code repositories', err);
                 resolve(undefined);
             });
         });
@@ -190,7 +190,7 @@ export async function selectOkeCluster(authentication: ociAuthentication.Authent
                 }
                 resolve(choices);
             }).catch(err => {
-                vscode.window.showErrorMessage('Failed to read OKE clusters: ' + err.message);
+                dialogs.showErrorMessage('Failed to read OKE clusters', err);
                 resolve(undefined);
             });
         });

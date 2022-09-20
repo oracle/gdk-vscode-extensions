@@ -6,6 +6,7 @@
  */
 
 import * as common from 'oci-common';
+import * as dialogs from '../dialogs';
 import * as dataSupport from './dataSupport';
 
 
@@ -48,7 +49,7 @@ export function createDefault(): Authentication {
     try {
         provider = new common.ConfigFileAuthenticationDetailsProvider();
     } catch (err) {
-        return new Authentication(undefined, `Failed to initialize OCI authentication: ${err}`);
+        return new Authentication(undefined, dialogs.getErrorMessage('Failed to initialize OCI authentication', err));
     }
     return new Authentication(provider);
 }

@@ -83,7 +83,7 @@ async function selectArtifactRepositories(oci: ociContext.Context, ignore: Artif
                     return;
                 } catch (err) {
                     resolve(undefined);
-                    vscode.window.showErrorMessage(`Failed to read artifact repositories${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    dialogs.showErrorMessage('Failed to read artifact repositories', err);
                     return;
                 }
             });
@@ -304,7 +304,7 @@ export function downloadGenericArtifactContent(oci: ociContext.Context, artifact
         try {
             return await ociUtils.getGenericArtifactContent(oci.getProvider(), artifactID);
         } catch (err) {
-            return new Error(`Failed to resolve build artifact content${(err as any).message ? ': ' + (err as any).message : ''}.`);
+            return new Error(dialogs.getErrorMessage('Error while populating new repository', err));
         }
     }).then(result => {
         if (result instanceof Error) {

@@ -133,7 +133,7 @@ async function selectAuditKnowledgeBase(oci: ociContext.Context): Promise<string
                     return;
                 } catch (err) {
                     resolve(undefined);
-                    vscode.window.showErrorMessage(`Failed to read knowledge bases${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    dialogs.showErrorMessage('Failed to read knowledge bases', err);
                     return;
                 }
             });
@@ -186,7 +186,7 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
                     return;
                 } catch (err) {
                     resolve(undefined);
-                    vscode.window.showErrorMessage(`Failed to read knowledge bases${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    dialogs.showErrorMessage('Failed to read knowledge bases', err);
                     return;
                 }
             });

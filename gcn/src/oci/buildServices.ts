@@ -111,7 +111,7 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
                     return;
                 } catch (err) {
                     resolve(undefined);
-                    vscode.window.showErrorMessage(`Failed to read build pipelines${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    dialogs.showErrorMessage('Failed to read build pipelines', err);
                     return;
                 }
             });
@@ -320,7 +320,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                                         this.updateWhenCompleted(buildRun.id, buildRun.compartmentId);
                                     }
                                 } catch (err) {
-                                    vscode.window.showErrorMessage(`Failed to start build pipeline${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                                    dialogs.showErrorMessage('Failed to start build pipeline', err);
                                     resolve(false);
                                 }
                             });
@@ -405,7 +405,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                             });
                         });
                     } catch (err) {
-                        vscode.window.showErrorMessage(`Failed to download artifact${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                        dialogs.showErrorMessage('Failed to download artifact', err);
                     }
                     break;
                 case 'OCIR':

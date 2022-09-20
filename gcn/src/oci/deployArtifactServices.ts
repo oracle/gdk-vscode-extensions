@@ -91,7 +91,7 @@ async function selectDeployArtifacts(oci: ociContext.Context, ignore: DeployArti
                     return;
                 } catch (err) {
                     resolve(undefined);
-                    vscode.window.showErrorMessage(`Failed to read build artifacts${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    dialogs.showErrorMessage('Failed to read build artifacts', err);
                     return;
                 }
             });
@@ -330,11 +330,7 @@ class GenericDeployArtifactNode extends DeployArtifactNode {
                     return undefined;
                 }
             } catch (err) {
-                if ((err as any).message) {
-                    return new Error(`Failed to resolve build artifact: ${(err as any).message}`);
-                } else {
-                    return new Error('Failed to resolve build artifact');
-                }
+                return new Error(dialogs.getErrorMessage('Failed to resolve build artifact', err));
             }
         }).then(result => {
             if (result instanceof Error) {
@@ -367,11 +363,7 @@ class OcirDeployArtifactNode extends DeployArtifactNode {
                 const deployArtifactSource = deployArtifact.deployArtifactSource as devops.models.OcirDeployArtifactSource;
                 return deployArtifactSource.imageUri;
             } catch (err) {
-                if ((err as any).message) {
-                    return new Error(`Failed to resolve build artifact: ${(err as any).message}`);
-                } else {
-                    return new Error('Failed to resolve build artifact');
-                }
+                return new Error(dialogs.getErrorMessage('Failed to resolve build artifact', err));
             }
         }).then(result => {
             if (typeof result === 'string') {

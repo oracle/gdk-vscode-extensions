@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as dialogs from './dialogs';
 
 function getGitAPI() {
     return vscode.extensions.getExtension('vscode.git')?.exports.getAPI(1);
@@ -54,7 +55,7 @@ export async function cloneRepository(address: string, target: string): Promise<
         const command = `${gitPath} clone ${address}`;
         await execute(command, target);
     } catch (err) {
-        vscode.window.showErrorMessage('Failed to clone repository.');
+        dialogs.showErrorMessage('Failed to clone repository', err);
         return false;
     }
     return true;
@@ -103,7 +104,7 @@ export async function pushLocalBranch(target: vscode.Uri): Promise<boolean | und
         await vscode.commands.executeCommand('git.publish', [repository]);
         return true;
     } catch (err) {
-        vscode.window.showErrorMessage(`Error while pushing a branch: ${err}`);
+        dialogs.showErrorMessage('Error while pushing a branch', err);
         return false;
     }
 }
@@ -130,7 +131,7 @@ export async function populateNewRepository(address: string, source: string, ...
             await execute(`${gitApi.git.path} update-index --skip-worktree  ${files}`, source);
         }
     } catch (err) {
-        return `Error while populating new repository: ${err}`;
+        return dialogs.getErrorMessage('Error while populating new repository', err);
     }
     return undefined;
 }

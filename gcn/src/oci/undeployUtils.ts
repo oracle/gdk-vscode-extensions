@@ -29,7 +29,7 @@ export async function undeployFolders() {
         try {
             await undeployFolder(folder);
         } catch (err) {
-            vscode.window.showErrorMessage(`Failed to undeploy folder ${folder.folder.name}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+            dialogs.showErrorMessage(`Failed to undeploy folder ${folder.folder.name}`, err);
         }
     }
     await gcnServices.build();

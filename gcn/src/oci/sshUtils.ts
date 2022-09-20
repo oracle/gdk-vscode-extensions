@@ -12,6 +12,7 @@ import * as path from 'path';
 import * as os from 'os';
 import * as which from 'which';
 import * as common from 'oci-common';
+import * as dialogs from '../dialogs';
 import * as ociUtils from './ociUtils';
 
 
@@ -47,7 +48,7 @@ export async function initializeSshKeys() {
                         tenancyName = (await ociUtils.getTenancy(provider)).name;
                         identityFile = common.ConfigFileReader.parseDefault(null).get('key_file');
                     } catch (err) {
-                        vscode.window.showErrorMessage(`Failed to read OCI configuration${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                        dialogs.showErrorMessage('Failed to read OCI configuration', err);
                         resolve();
                         return;
                     }

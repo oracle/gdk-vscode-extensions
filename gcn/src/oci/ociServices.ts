@@ -74,7 +74,7 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
             data[buildServicesData.getDataName()] = buildServicesData.getData();
         }
     } catch (err) {
-        vscode.window.showErrorMessage(`Failed to import build pipelines${(err as any).message ? ': ' + (err as any).message : ''}.`);
+        dialogs.showErrorMessage('Failed to import build pipelines', err);
     }
     try {
         const deploymentServicesData = await deploymentServices.importServices(oci);
@@ -82,7 +82,7 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
             data[deploymentServicesData.getDataName()] = deploymentServicesData.getData();
         }
     } catch (err) {
-        vscode.window.showErrorMessage(`Failed to import deployment pipelines${(err as any).message ? ': ' + (err as any).message : ''}.`);
+        dialogs.showErrorMessage('Failed to import deployment pipelines', err);
     }
     try {
         const deployArtifactServicesData = await deployArtifactServices.importServices(oci);
@@ -90,7 +90,7 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
             data[deployArtifactServicesData.getDataName()] = deployArtifactServicesData.getData();
         }
     } catch (err) {
-        vscode.window.showErrorMessage(`Failed to import build artifacts${(err as any).message ? ': ' + (err as any).message : ''}.`);
+        dialogs.showErrorMessage('Failed to import build artifacts', err);
     }
     try {
         const artifactServicesData = await artifactServices.importServices(oci);
@@ -98,7 +98,7 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
             data[artifactServicesData.getDataName()] = artifactServicesData.getData();
         }
     } catch (err) {
-        vscode.window.showErrorMessage(`Failed to import artifact repositories${(err as any).message ? ': ' + (err as any).message : ''}.`);
+        dialogs.showErrorMessage('Failed to import artifact repositories', err);
     }
     try {
         const containerServicesData = await containerServices.importServices(oci);
@@ -106,7 +106,7 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
             data[containerServicesData.getDataName()] = containerServicesData.getData();
         }
     } catch (err) {
-        vscode.window.showErrorMessage(`Failed to import container repositories${(err as any).message ? ': ' + (err as any).message : ''}.`);
+        dialogs.showErrorMessage('Failed to import container repositories', err);
     }
     try {
         const knowledgeBaseServicesData = await knowledgeBaseServices.importServices(oci);
@@ -114,7 +114,7 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
             data[knowledgeBaseServicesData.getDataName()] = knowledgeBaseServicesData.getData();
         }
     } catch (err) {
-        vscode.window.showErrorMessage(`Failed to import knowledge bases${(err as any).message ? ': ' + (err as any).message : ''}.`);
+        dialogs.showErrorMessage('Failed to import knowledge bases', err);
     }
     const result: dataSupport.DataProducer = {
         getDataName: () => DATA_NAME,

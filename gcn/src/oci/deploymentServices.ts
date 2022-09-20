@@ -82,7 +82,7 @@ async function selectDeploymentPipelines(oci: ociContext.Context, ignore: Deploy
                     return;
                 } catch (err) {
                     resolve(undefined);
-                    vscode.window.showErrorMessage(`Failed to read deployment pipelines${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    dialogs.showErrorMessage('Failed to read deployment pipelines', err);
                     return;
                 }
             });
@@ -284,9 +284,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                             this.updateWhenCompleted(deployment.id, deployment.compartmentId);
                         }
                     } catch (err) {
-                        if ((err as any).message) {
-                            vscode.window.showErrorMessage((err as any).message);
-                        }
+                        dialogs.showErrorMessage('Failed to start deployment pipeline', err);
                         resolve(false)
                     }
                 });
@@ -347,9 +345,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                     vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${localPort}`));
                     resolve(true);
                 } catch (err) {
-                    if ((err as any).message) {
-                        vscode.window.showErrorMessage((err as any).message);
-                    }
+                    dialogs.showErrorMessage('Failed to open deployment in browser', err);
                     resolve(false)
                 }
             });

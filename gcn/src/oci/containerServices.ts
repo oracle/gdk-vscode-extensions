@@ -84,7 +84,7 @@ async function selectContainerRepositories(oci: ociContext.Context, ignore: Cont
                     return;
                 } catch (err) {
                     resolve(undefined);
-                    vscode.window.showErrorMessage(`Failed to read container repositories${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    dialogs.showErrorMessage('Failed to read container repositories', err);
                     return;
                 }
             });
@@ -309,11 +309,7 @@ class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource 
                     return new Error('Failed to resolve docker pull command - unknown tenancy name.');
                 }
             } catch (err) {
-                if ((err as any).message) {
-                    return new Error(`Failed to resolve docker pull command: ${(err as any).message}`);
-                } else {
-                    return new Error('Failed to resolve docker pull command.');
-                }
+                return new Error(dialogs.getErrorMessage('Failed to resolve docker pull command', err));
             }
         }).then(result => {
             if (typeof result === 'string') {

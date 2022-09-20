@@ -13,6 +13,7 @@ import * as gitUtils from '../gitUtils'
 import * as folderStorage from '../folderStorage';
 import * as model from '../model';
 import * as projectUtils from '../projectUtils';
+import * as dialogs from '../dialogs';
 import * as ociUtils from './ociUtils';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
@@ -77,7 +78,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
             try {
                 notificationTopic = await ociUtils.getOrCreateNotificationTopic(provider, compartment.ocid, notificationTopicDescription);
             } catch (err) {
-                resolve(`Failed to prepare notification topic${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                resolve(dialogs.getErrorMessage('Failed to prepare notification topic', err));
                 return;
             }
 
@@ -103,7 +104,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                         }
                         projectName = newName;
                     } else {
-                        resolve('Failed to create devops project.');
+                        resolve(dialogs.getErrorMessage('Failed to create devops project', err));
                         return;
                     }
                 }
@@ -120,7 +121,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
             try {
                 logGroup = await ociUtils.getDefaultLogGroup(provider, compartment.ocid, true, logGroupDescription);
             } catch (err) {
-                resolve(`Failed to resolve log group${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                resolve(dialogs.getErrorMessage('Failed to resolve log group', err));
                 return;
             }
             if (!logGroup) {
@@ -130,7 +131,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
             try {
                 await ociUtils.createProjectLog(provider, compartment.ocid, logGroup, project, projectName);
             } catch (err) {
-                resolve(`Failed to create project log${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                resolve(dialogs.getErrorMessage('Failed to create project log', err));
                 return;
             }
 
@@ -140,7 +141,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 message: 'Setting up dynamic group for build pipelines...'
             });
             const buildPipelinesGroup = await ociUtils.getDefaultBuildPipelinesGroup(provider, compartment.ocid, true).catch(err => {
-                vscode.window.showErrorMessage('Failed to resolve group for build pipelines: ' + err.message);
+                dialogs.showErrorMessage('Failed to resolve group for build pipelines', err);
             });
 
             // --- Create deployment pipelines dynamic group
@@ -149,7 +150,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 message: 'Setting up dynamic group for deployment pipelines...'
             });
             const deployPipelinesGroup = await ociUtils.getDefaultDeployPipelinesGroup(provider, compartment.ocid, true).catch(err => {
-                vscode.window.showErrorMessage('Failed to resolve group for deployment pipelines: ' + err.message);
+                dialogs.showErrorMessage('Failed to resolve group for deployment pipelines', err);
             });
 
             // --- Create code repositories dynamic group
@@ -158,7 +159,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 message: 'Setting up dynamic group for code repositories...'
             });
             const codeRepositoriesGroup = await ociUtils.getDefaultCodeRepositoriesGroup(provider, compartment.ocid, true).catch(err => {
-                vscode.window.showErrorMessage('Failed to resolve group for code repositories: ' + err.message);
+                dialogs.showErrorMessage('Failed to resolve group for code repositories', err);
             });
 
             if (buildPipelinesGroup && deployPipelinesGroup && codeRepositoriesGroup) {
@@ -175,7 +176,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                         return;
                     }
                 } catch (err) {
-                    resolve(`Failed to resolve policy for accessing resources in compartment${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    resolve(dialogs.getErrorMessage('Failed to resolve policy for accessing resources in compartment', err));
                     return;
                 }
                 
@@ -192,7 +193,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     "gcn_tooling_projectOCID" : project
                 })).id;
             } catch (err) {
-                resolve(`Failed to create artifact repository${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                resolve(dialogs.getErrorMessage('Failed to create artifact repository', err));
                 return;
             }
 
@@ -205,7 +206,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
             try {
                 okeClusterEnvironment = (await ociUtils.createOkeDeployEnvironment(provider, project, projectName, okeCluster)).id;
             } catch (err) {
-                resolve(`Failed to create OKE cluster environment${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                resolve(dialogs.getErrorMessage('Failed to create OKE cluster environment', err));
                 return;
             }
 
@@ -224,7 +225,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     'gcn_tooling_usage': 'gcn-adm-audit'
                 });
             } catch (err) {
-                resolve(`Failed to create knowledge base${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                resolve(dialogs.getErrorMessage('Failed to create knowledge base', err));
                 return;
             }
 
@@ -245,7 +246,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 try {
                     codeRepository = await ociUtils.createCodeRepository(provider, project, repositoryName, 'master', description);
                 } catch (err) {
-                    resolve(`Failed to create source code repository ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    resolve(dialogs.getErrorMessage(`Failed to create source code repository ${repositoryName}`, err));
                     return;
                 }
                 if (!codeRepository.sshUrl || !codeRepository.httpUrl) {
@@ -288,7 +289,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 try {
                     devbuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactsRepository, project, devbuildArtifactPath, devbuildArtifactName, devbuildArtifactDescription)).id;
                 } catch (err) {
-                    resolve(`Failed to create fat JAR artifact for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    resolve(dialogs.getErrorMessage(`Failed to create fat JAR artifact for ${repositoryName}`, err));
                     return;
                 }
 
@@ -328,21 +329,21 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 try {
                     devbuildPipeline = (await ociUtils.createBuildPipeline(provider, project, devbuildPipelineName, devbuildPipelineDescription)).id;
                 } catch (err) {
-                    resolve(`Failed to create fat JAR pipeline for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    resolve(dialogs.getErrorMessage(`Failed to create fat JAR pipeline for ${repositoryName}`, err));
                     return;
                 }
                 let devbuildPipelineBuildStage;
                 try {
                     devbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, devbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${devbuildspec_template}`)).id;
                 } catch (err) {
-                    resolve(`Failed to create fat JAR pipeline build stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    resolve(dialogs.getErrorMessage(`Failed to create fat JAR pipeline build stage for ${repositoryName}`, err));
                     return;
                 }
                 // let devbuildPipelineArtifactsStage;
                 try {
                     /*devbuildPipelineArtifactsStage = (*/await ociUtils.createBuildPipelineArtifactsStage(provider, devbuildPipeline, devbuildPipelineBuildStage, devbuildArtifact, devbuildArtifactName)/*).id*/;
                 } catch (err) {
-                    resolve(`Failed to create fat JAR pipeline artifacts stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    resolve(dialogs.getErrorMessage(`Failed to create fat JAR pipeline artifacts stage for ${repositoryName}`, err));
                     return;
                 }
                 buildPipelines.push({ 'ocid': devbuildPipeline, 'displayName': devbuildPipelineName });
@@ -359,7 +360,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 try {
                     nibuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactsRepository, project, nibuildArtifactPath, nibuildArtifactName, nibuildArtifactDescription)).id;
                 } catch (err) {
-                    resolve(`Failed to create native executable artifact for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    resolve(dialogs.getErrorMessage(`Failed to create native executable artifact for ${repositoryName}`, err));
                     return;
                 }
 
@@ -399,21 +400,21 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 try {
                     nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, nibuildPipelineName, nibuildPipelineDescription)).id;
                 } catch (err) {
-                    resolve(`Failed to create native executables pipeline for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    resolve(dialogs.getErrorMessage(`Failed to create native executables pipeline for ${repositoryName}`, err));
                     return;
                 }
                 let nibuildPipelineBuildStage;
                 try {
                     nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${nibuildspec_template}`)).id;
                 } catch (err) {
-                    resolve(`Failed to create native executables pipeline build stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    resolve(dialogs.getErrorMessage(`Failed to create native executables pipeline build stage for ${repositoryName}`, err));
                     return;
                 }
                 // let nibuildPipelineArtifactsStage;
                 try {
                     /*nibuildPipelineArtifactsStage = (*/await ociUtils.createBuildPipelineArtifactsStage(provider, nibuildPipeline, nibuildPipelineBuildStage, nibuildArtifact, nibuildArtifactName)/*).id*/;
                 } catch (err) {
-                    resolve(`Failed to create native executables pipeline artifacts stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                    resolve(dialogs.getErrorMessage(`Failed to create native executables pipeline artifacts stage for ${repositoryName}`, err));
                     return;
                 }
                 buildPipelines.push({ 'ocid': nibuildPipeline, 'displayName': nibuildPipelineName });
@@ -439,7 +440,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     try {
                         containerRepository = await ociUtils.createContainerRepository(provider, compartment.ocid, containerRepositoryName);
                     } catch (err) {
-                        resolve(`Failed to create container repository ${containerRepositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                        resolve(dialogs.getErrorMessage(`Failed to create container repository ${containerRepositoryName}`, err));
                         return;
                     }
 
@@ -455,7 +456,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     try {
                         docker_nibuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, project, docker_nibuildImage, docker_nibuildArtifactName, docker_nibuildArtifactDescription)).id;
                     } catch (err) {
-                        resolve(`Failed to create docker native executable artifact for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                        resolve(dialogs.getErrorMessage(`Failed to create docker native executable artifact for ${repositoryName}`, err));
                         return;
                     }
 
@@ -488,21 +489,21 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     try {
                         docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, docker_nibuildPipelineName, docker_nibuildPipelineDescription)).id;
                     } catch (err) {
-                        resolve(`Failed to create docker native executable build pipeline for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                        resolve(dialogs.getErrorMessage(`Failed to create docker native executable build pipeline for ${repositoryName}`, err));
                         return;
                     }
                     let docker_nibuildPipelineBuildStage;
                     try {
                         docker_nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, docker_nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${docker_nibuildspec_template}`)).id;
                     } catch (err) {
-                        resolve(`Failed to create docker native executable pipeline build stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                        resolve(dialogs.getErrorMessage(`Failed to create docker native executable pipeline build stage for ${repositoryName}`, err));
                         return;
                     }
                     // let docker_nibuildPipelineArtifactsStage;
                     try {
                         /*docker_nibuildPipelineArtifactsStage = (*/await ociUtils.createBuildPipelineArtifactsStage(provider, docker_nibuildPipeline, docker_nibuildPipelineBuildStage, docker_nibuildArtifact, docker_nibuildArtifactName)/*).id*/;
                     } catch (err) {
-                        resolve(`Failed to create docker native executable pipeline artifacts stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                        resolve(dialogs.getErrorMessage(`Failed to create docker native executable pipeline artifacts stage for ${repositoryName}`, err));
                         return;
                     }
                     buildPipelines.push({ 'ocid': docker_nibuildPipeline, 'displayName': docker_nibuildPipelineName });
@@ -527,7 +528,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     try {
                         oke_deployConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, project, oke_deployConfigInlineContent, oke_deployConfigArtifactName, oke_deployConfigArtifactDescription)).id;
                     } catch (err) {
-                        resolve(`Failed to create OKE deployment configuration artifact for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                        resolve(dialogs.getErrorMessage(`Failed to create OKE deployment configuration artifact for ${repositoryName}`, err));
                         return;
                     }
 
@@ -548,14 +549,14 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                             'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()
                         })).id;
                     } catch (err) {
-                        resolve(`Failed to create docker native executables deployment to OKE pipeline for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                        resolve(dialogs.getErrorMessage(`Failed to create docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
                         return;
                     }
                     // let oke_deployPipelineStage;
                     try {
                         /*oke_deployPipelineStage = (*/await ociUtils.createDeployToOkeStage(provider, oke_deployPipeline, okeClusterEnvironment, oke_deployConfigArtifact)/*).id*/;
                     } catch (err) {
-                        resolve(`Failed to create docker native executables deployment to OKE stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                        resolve(dialogs.getErrorMessage(`Failed to create docker native executables deployment to OKE stage for ${repositoryName}`, err));
                         return;
                     }
                     deployPipelines.push({ 'ocid': oke_deployPipeline, 'displayName': oke_deployPipelineName });
@@ -574,7 +575,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                             try {
                                 containerRepository = await ociUtils.createContainerRepository(provider, compartment.ocid, containerRepositoryName);
                             } catch (err) {
-                                resolve(`Failed to create container repository ${containerRepositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                                resolve(dialogs.getErrorMessage(`Failed to create container repository ${containerRepositoryName}`, err));
                                 return;
                             }
 
@@ -590,7 +591,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                             try {
                                 docker_nibuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, project, docker_nibuildImage, docker_nibuildArtifactName, docker_nibuildArtifactDescription)).id;
                             } catch (err) {
-                                resolve(`Failed to create ${subName} docker native executable artifact for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executable artifact for ${repositoryName}`, err));
                                 return;
                             }
 
@@ -631,21 +632,21 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                             try {
                                 docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, project, docker_nibuildPipelineName, docker_nibuildPipelineDescription)).id;
                             } catch (err) {
-                                resolve(`Failed to create ${subName} docker native executable build pipeline for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executable build pipeline for ${repositoryName}`, err));
                                 return;
                             }
                             let docker_nibuildPipelineBuildStage;
                             try {
                                 docker_nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, docker_nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${subName}_${docker_nibuildspec_template}`)).id;
                             } catch (err) {
-                                resolve(`Failed to create ${subName} docker native executable pipeline build stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executable pipeline build stage for ${repositoryName}`, err));
                                 return;
                             }
                             // let docker_nibuildPipelineArtifactsStage;
                             try {
                                 /*docker_nibuildPipelineArtifactsStage = (*/await ociUtils.createBuildPipelineArtifactsStage(provider, docker_nibuildPipeline, docker_nibuildPipelineBuildStage, docker_nibuildArtifact, docker_nibuildArtifactName)/*).id*/;
                             } catch (err) {
-                                resolve(`Failed to create ${subName} docker native executable pipeline artifacts stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executable pipeline artifacts stage for ${repositoryName}`, err));
                                 return;
                             }
 
@@ -672,7 +673,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                                 try {
                                     oke_deployConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, project, oke_deployConfigInlineContent, oke_deployConfigArtifactName, oke_deployConfigArtifactDescription)).id;
                                 } catch (err) {
-                                    resolve(`Failed to create OKE deployment configuration artifact for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                                    resolve(dialogs.getErrorMessage(`Failed to create OKE deployment configuration artifact for ${repositoryName}`, err));
                                     return;
                                 }
 
@@ -693,14 +694,14 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                                         'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()
                                     })).id;
                                 } catch (err) {
-                                    resolve(`Failed to create ${subName} docker native executables deployment to OKE pipeline for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                                    resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
                                     return;
                                 }
                                 // let oke_deployPipelineStage;
                                 try {
                                     /*oke_deployPipelineStage = (*/await ociUtils.createDeployToOkeStage(provider, oke_deployPipeline, okeClusterEnvironment, oke_deployConfigArtifact)/*).id*/;
                                 } catch (err) {
-                                    resolve(`Failed to create ${subName} docker native executables deployment to OKE stage for ${repositoryName}${(err as any).message ? ': ' + (err as any).message : ''}.`);
+                                    resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executables deployment to OKE stage for ${repositoryName}`, err));
                                     return;
                                 }
                                 deployPipelines.push({ 'ocid': oke_deployPipeline, 'displayName': oke_deployPipelineName });

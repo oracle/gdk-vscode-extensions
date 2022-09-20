@@ -42,11 +42,7 @@ export function openInConsole(item: CloudConsoleItem) {
             try {
                 return await address;
             } catch (err) {
-                if ((err as any).message) {
-                    return new Error(`Failed to resolve item address: ${(err as any).message}`);
-                } else {
-                    return new Error('Failed to resolve item address');
-                }
+                return new Error(dialogs.getErrorMessage('Failed to resolve item address', err));
             }
         }).then(result => {
             if (result instanceof Error) {

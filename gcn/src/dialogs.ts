@@ -25,6 +25,25 @@ export async function openInBrowser(address: string): Promise<boolean> {
 	return vscode.env.openExternal(vscode.Uri.parse(address));
 }
 
+export function getErrorMessage(message: string, err: any): string {
+    if (err) {   
+        if (err.message) {
+            message = `${message}: ${err.message}`;
+        } else if (err.toString()) {
+            message = `${message}: ${err.toString()}`;
+        }
+    }
+    if (!message.endsWith('.')) {
+        message = `${message}.`;
+    }
+    return message;
+}
+
+export function showErrorMessage(message: string, err: any, ...items: string[]): Thenable<string | undefined> {
+    const msg = getErrorMessage(message, err);
+    return vscode.window.showErrorMessage(msg, ...items);
+}
+
 export async function selectName(title: string, currentName: string | undefined, forbiddenNames?: string[]): Promise<string | undefined> {
     if (!forbiddenNames) {
         forbiddenNames = [];
