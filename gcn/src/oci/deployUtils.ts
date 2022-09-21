@@ -38,7 +38,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
         return undefined;
     }
 
-    deployData.okeCluster = await ociDialogs.selectOkeCluster(provider, deployData.compartment.ocid, provider.getRegion().regionId);
+    deployData.okeCluster = await ociDialogs.selectOkeCluster(provider, deployData.compartment.ocid, provider.getRegion().regionId, true);
     if (deployData.okeCluster === undefined) {
         return undefined;
     }

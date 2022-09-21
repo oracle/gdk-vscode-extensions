@@ -156,8 +156,17 @@ export class QuickPickObject implements vscode.QuickPickItem {
         public readonly label: string,
         public readonly description : string | undefined,
         public readonly detail: string | undefined,
-        public readonly object?: any,
+        public readonly object?: any
     ) {}
+	static separator(label: string): QuickPickObject {
+		const separator = new QuickPickObject(label, undefined, undefined);
+		(separator as vscode.QuickPickItem).kind = vscode.QuickPickItemKind.Separator
+		return separator;
+	}
+}
+
+export function sortQuickPickObjectsByName(objects: QuickPickObject[]) {
+	objects.sort((o1, o2) => o1.label.localeCompare(o2.label));
 }
 
 export interface QuickPickParameters<T extends vscode.QuickPickItem> {

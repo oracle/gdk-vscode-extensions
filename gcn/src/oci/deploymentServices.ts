@@ -60,8 +60,8 @@ export function findByNode(node: nodes.BaseNode): Service | undefined {
     return service instanceof Service ? service as Service : undefined;
 }
 
-async function createDeploymentPipelines(oci: ociContext.Context, _ignore: DeploymentPipeline[]): Promise<DeploymentPipeline[] | undefined> {
-    const okeCluster = await ociDialogs.selectOkeCluster(oci.getProvider(), oci.getCompartment(), oci.getProvider().getRegion().regionId);
+async function createOkeDeploymentPipelines(oci: ociContext.Context): Promise<DeploymentPipeline[] | undefined> {
+    const okeCluster = await ociDialogs.selectOkeCluster(oci.getProvider(), oci.getCompartment(), oci.getProvider().getRegion().regionId, false);
     if (!okeCluster) {
         return undefined;
     }
@@ -294,26 +294,67 @@ async function selectDeploymentPipelines(oci: ociContext.Context, ignore: Deploy
             }
         }
     }
-    const choices: dialogs.QuickPickObject[] = [];
-    for (let i = 0; i < pipelines.length; i++) {
-        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${pipelines[i].displayName}`, undefined, descriptions[i], pipelines[i]));
-    }
     // TODO: display pipelines for the repository and for the project
-    // TODO: provide a possibility to create a new pipeline
     // TODO: provide a possibility to select pipelines from different projects / compartments
+    const existingContentChoices: dialogs.QuickPickObject[] = [];
+    for (let i = 0; i < pipelines.length; i++) {
+        existingContentChoices.push(new dialogs.QuickPickObject(`$(${ICON}) ${pipelines[i].displayName}`, undefined, descriptions[i], pipelines[i]));
+    }
+    dialogs.sortQuickPickObjectsByName(existingContentChoices);
+    let existingContentMultiSelect;
+    if (existingContentChoices.length > 1) {
+        const multiSelectExisting = async (): Promise<DeploymentPipeline[] | undefined> => {
+            const selection = await vscode.window.showQuickPick(existingContentChoices, {
+                placeHolder: 'Select Existing Deployment Pipeline(s) to Add',
+                canPickMany: true
+            });
+            if (selection?.length) {
+                const selected: DeploymentPipeline[] = [];
+                for (const sel of selection) {
+                    selected.push(sel.object as DeploymentPipeline);
+                }
+                return selected;
+            } else {
+                return undefined;
+            }
+        };
+        existingContentMultiSelect = new dialogs.QuickPickObject('Add multiple existing pipelines at once...', undefined, undefined, multiSelectExisting);
+    }
+    // TODO: don't offer to create the pipeline if already created
+    // NOTE: pipelines may be created for various OKE clusters from various compartments, which makes it more complicated
+    const newContentChoices: dialogs.QuickPickObject[] = [];
+    const newDeployment = async (): Promise<DeploymentPipeline[] | undefined> => {
+        return createOkeDeploymentPipelines(oci);
+    };
+    newContentChoices.push(new dialogs.QuickPickObject(`$(add) New Deployment to OKE`, undefined, 'Create and setup new pipeline to deploy built native executable containers to the OKE', newDeployment));
+    const choices: dialogs.QuickPickObject[] = [];
+    if (newContentChoices.length) {
+        if (existingContentChoices.length) {
+            choices.push(dialogs.QuickPickObject.separator('Create New'));
+        }
+        choices.push(...newContentChoices);
+    }
+    if (existingContentChoices.length) {
+        if (newContentChoices.length) {
+            choices.push(dialogs.QuickPickObject.separator('Add Existing'));
+        }
+        choices.push(...existingContentChoices);
+        if (existingContentMultiSelect) {
+            choices.push(existingContentMultiSelect);
+        }
+    }
     if (choices.length === 0) {
         vscode.window.showWarningMessage('All deployment pipelines already added or no deployment pipelines available.')
-    } else {
-        const selection = await vscode.window.showQuickPick(choices, {
-            placeHolder: 'Select Deployment Pipeline(s) to Add',
-            canPickMany: true
-        })
-        if (selection && selection.length > 0) {
-            const selected: DeploymentPipeline[] = [];
-            for (const sel of selection) {
-                selected.push(sel.object as DeploymentPipeline);
-            }
-            return selected;
+        return undefined;
+    }
+    const selection = await vscode.window.showQuickPick(choices, {
+        placeHolder: 'Select Deployment Pipeline to Add'
+    });
+    if (selection) {
+        if (typeof selection.object === 'function') {
+            return await selection.object();
+        } else {
+            return [ selection.object ];
         }
     }
     return undefined;
@@ -325,10 +366,10 @@ class Service extends ociService.Service {
         super(folder, oci, DATA_NAME, serviceData, dataChanged);
     }
 
-    async addContent(create?: boolean) {
+    async addContent() {
         if (this.treeChanged) {
             const displayed = this.itemsData ? this.itemsData as DeploymentPipeline[] : [];
-            const selected = await (create ? createDeploymentPipelines(this.oci, displayed) : selectDeploymentPipelines(this.oci, displayed));
+            const selected = await selectDeploymentPipelines(this.oci, displayed);
             if (selected) {
                 const added: nodes.BaseNode[] = [];
                 for (const pipeline of selected) {
@@ -341,8 +382,7 @@ class Service extends ociService.Service {
 
     getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
         return [
-            new dialogs.QuickPickObject(`$(${ICON}) Add Deployment Pipeline`, undefined, 'Add existing deployment pipeline', () => this.addContent()),
-            new dialogs.QuickPickObject(`$(${ICON}) Create Deployment Pipeline`, undefined, 'Create new deploy to OKE pipeline', () => this.addContent(true))
+            new dialogs.QuickPickObject(`$(${ICON}) Add Deployment Pipeline`, undefined, 'Add existing deployment pipeline or create a new one', () => this.addContent())
         ];
     }
 

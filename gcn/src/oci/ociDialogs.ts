@@ -40,7 +40,7 @@ export async function selectCompartment(authenticationDetailsProvider: common.Co
                         const choice = new dialogs.QuickPickObject(name, description, undefined, { ocid: compartment.id, name: name });
                         choices.push(choice);
                     }
-                    choices.sort((o1, o2) => o1.label.localeCompare(o2.label));
+                    dialogs.sortQuickPickObjectsByName(choices);
                     const tenancy = await ociUtils.getTenancy(authenticationDetailsProvider);
                     const rootCompartmentName = tenancy.name ? `${tenancy.name} (root)` : 'root';
                     choices.unshift(new dialogs.QuickPickObject(rootCompartmentName, `Root of the${tenancy.name ? ' ' + tenancy.name : ''} tenancy`, undefined, { ocid: tenancy.id, name: rootCompartmentName }));
@@ -174,7 +174,7 @@ export async function selectCodeRepositories(authenticationDetailsProvider: comm
     return undefined;
 }
 
-export async function selectOkeCluster(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, region: string): Promise<string | null | undefined> {
+export async function selectOkeCluster(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, region: string, skipAllowed: boolean): Promise<string | null | undefined> {
     const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: 'Reading available OKE clusters...',
@@ -202,10 +202,10 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
 
     if (choices.length === 0) {
         const createOption = 'Quick Create Cluster';
-        const skipDeployToOKEPipeline = 'Skip Deploy to OKE Pipeline Creation';
-        const sel = await vscode.window.showWarningMessage('No OKE cluster available.', createOption, skipDeployToOKEPipeline);
-        if (skipDeployToOKEPipeline === sel) {
-            return null;
+        const cancelOption = skipAllowed ? 'Skip Deploy to OKE Pipeline Creation' : 'Cancel';
+        const sel = await vscode.window.showWarningMessage('No OKE cluster available.', createOption, cancelOption);
+        if (cancelOption === sel) {
+            return skipAllowed ? null : undefined;
         }
         if (createOption === sel) {
             dialogs.openInBrowser(`https://cloud.oracle.com/containers/clusters/quick?region=${region}`);
@@ -218,7 +218,7 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
     }
 
     const choice = await vscode.window.showQuickPick(choices, {
-        placeHolder: 'Select OKE Cluster'
+        placeHolder: 'Select Target OKE Cluster'
     });
 
     return choice ? choice.object : undefined;
