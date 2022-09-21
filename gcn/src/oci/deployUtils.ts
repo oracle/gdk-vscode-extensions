@@ -202,9 +202,8 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     increment,
                     message: `Creating OKE cluster environment...`
                 });
-                let okeClusterEnvironment: string;
                 try {
-                    okeClusterEnvironment = (await ociUtils.createOkeDeployEnvironment(provider, deployData.project, projectName, deployData.okeCluster)).id;
+                    deployData.okeClusterEnvironment = (await ociUtils.createOkeDeployEnvironment(provider, deployData.project, projectName, deployData.okeCluster)).id;
                 } catch (err) {
                     resolve(dialogs.getErrorMessage('Failed to create OKE cluster environment', err));
                     return;
