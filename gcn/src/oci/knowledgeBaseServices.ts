@@ -101,7 +101,11 @@ export function findByFolder(folder: vscode.Uri): Service[] | undefined {
 }
 
 async function getFolderAuditsService(folder: vscode.Uri): Promise<Service | undefined> {
-    const services = findByFolder(folder);
+    let wsf = vscode.workspace.getWorkspaceFolder(folder);
+    if (!wsf) {
+        return;
+    }
+    const services = findByFolder(wsf.uri);
     if (!services || services.length === 0) {
         return undefined;
     }
@@ -303,13 +307,22 @@ class Service extends ociService.Service {
         )
     }
 
-    displayProjectAudit() {
+    async displayProjectAudit() {
         const auditsKnowledgeBase = this.getAuditsKnowledgeBase();
         if (!auditsKnowledgeBase) {
             return;
         }
         vscode.commands.executeCommand('nbls.gcn.projectAudit.display', this.folder.uri.toString(), auditsKnowledgeBase, 
                                         this.oci.getCompartment(), this.oci.getDevOpsProject());
+        const prjs: any[] = await vscode.commands.executeCommand('nbls.project.info', this.folder.uri.toString(), { recursive : true, projectStructure : true });
+
+        if (prjs.length < 2) {
+            return;
+        }
+        for (let i of prjs.slice(1)) {
+            vscode.commands.executeCommand('nbls.gcn.projectAudit.display', i.projectDirectory, auditsKnowledgeBase, 
+            this.oci.getCompartment(), this.oci.getDevOpsProject());
+        }
     }
 
     tryDisplayProjectAudit(attempt : number) {
