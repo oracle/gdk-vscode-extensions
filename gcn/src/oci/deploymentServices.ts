@@ -115,7 +115,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context): Promise<De
         return env.deployArtifactType === devops.models.DeployArtifact.DeployArtifactType.KubernetesManifest && `${repositoryName}_oke_deploy_configuration` === env.displayName;
     });
     if (!deployConfigArtifact) {
-        vscode.window.showErrorMessage('No OKE deployment configuration artifact found in project.')
+        dialogs.showErrorMessage('No OKE deployment configuration artifact found in project.')
         return undefined;
     }
 
@@ -539,7 +539,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                     const deploymentName = this.lastDeployment?.deploymentName;
                     if (!deployment || !deploymentName) {
                         resolve(false);
-                        vscode.window.showErrorMessage('Cannot resolve the latest deployment.');
+                        dialogs.showErrorMessage('Cannot resolve the latest deployment.');
                         return;
                     }
                     const deployEnvId = deployment.deployPipelineEnvironments?.items.find(env => env.deployEnvironmentId)?.deployEnvironmentId;
@@ -547,20 +547,20 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                     const okeDeployEnvironment = ociUtils.asOkeDeployEnvironemnt(deployEnvironment);
                     if (!okeDeployEnvironment?.clusterId) {
                         resolve(false);
-                        vscode.window.showErrorMessage('Cannot resolve destination OKE cluster.');
+                        dialogs.showErrorMessage('Cannot resolve destination OKE cluster.');
                         return;
                     }
                     if (!await kubernetesUtils.isCurrentCluster(okeDeployEnvironment.clusterId)) {
                         resolve(false);
                         const setup = 'Setup local access to destination OKE cluster';
-                        if (setup === await vscode.window.showErrorMessage('Kuberners extension not configured to access the destination OKE cluster.', setup)) {
+                        if (setup === await dialogs.showErrorMessage('Kuberners extension not configured to access the destination OKE cluster.', setup)) {
                             ociNodes.openInConsole({ getAddress: () => `https://cloud.oracle.com/containers/clusters/${okeDeployEnvironment.clusterId}?region=${this.oci.getProvider().getRegion().regionId}` });
                         }
                         return;
                     }
                     if (!await kubernetesUtils.getDeployment(deploymentName)) {
                         resolve(false);
-                        vscode.window.showErrorMessage(`Cannot find deployment ${deploymentName} in the destination OKE cluster.`);
+                        dialogs.showErrorMessage(`Cannot find deployment ${deploymentName} in the destination OKE cluster.`);
                         return;
                     }
                     // TODO: get remote port number from deployment ?
@@ -569,7 +569,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                     const result = await kubectl.portForward(`deployments/${deploymentName}`, undefined, localPort, remotePort, { showInUI: { location: 'status-bar' } }); 
                     if (!result) {
                         resolve(false);
-                        vscode.window.showErrorMessage(`Cannot forward port for the ${deploymentName} deployment.`);
+                        dialogs.showErrorMessage(`Cannot forward port for the ${deploymentName} deployment.`);
                         return;
                     }
                     vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${localPort}`));

@@ -48,7 +48,7 @@ export async function cloneSourceRepository(repoPath: string, repoName: string, 
 export async function cloneRepository(address: string, target: string): Promise<boolean> {
     const gitPath = getPath();
     if (!gitPath) {
-        vscode.window.showErrorMessage('Cannot access Git support.');
+        dialogs.showErrorMessage('Cannot access Git support.');
         return false;
     }
     try {
@@ -64,12 +64,12 @@ export async function cloneRepository(address: string, target: string): Promise<
 export function getHEAD(target: vscode.Uri): { name?: string, commit?: string, upstream?: object } | undefined {
     const gitApi = getGitAPI();
     if (!gitApi) {
-        vscode.window.showErrorMessage('Cannot access Git support.');
+        dialogs.showErrorMessage('Cannot access Git support.');
         return undefined;
     }
     const repository = gitApi.getRepository(target);
     if (!repository) {
-        vscode.window.showErrorMessage(`Cannot find Git repository for ${target}`);
+        dialogs.showErrorMessage(`Cannot find Git repository for ${target}`);
         return undefined;
     }
     return repository.state.HEAD;
@@ -78,12 +78,12 @@ export function getHEAD(target: vscode.Uri): { name?: string, commit?: string, u
 export function locallyModified(target: vscode.Uri): boolean | undefined {
     const gitApi = getGitAPI();
     if (!gitApi) {
-        vscode.window.showErrorMessage('Cannot access Git support.');
+        dialogs.showErrorMessage('Cannot access Git support.');
         return undefined;
     }
     const repository = gitApi.getRepository(target);
     if (!repository) {
-        vscode.window.showErrorMessage(`Cannot find Git repository for ${target}`);
+        dialogs.showErrorMessage(`Cannot find Git repository for ${target}`);
         return undefined;
     }
     return repository.state.indexChanges.length > 0 || repository.state.mergeChanges.length > 0 || repository.state.workingTreeChanges.length > 0;
@@ -92,12 +92,12 @@ export function locallyModified(target: vscode.Uri): boolean | undefined {
 export async function pushLocalBranch(target: vscode.Uri): Promise<boolean | undefined> {
     const gitApi = getGitAPI();
     if (!gitApi) {
-        vscode.window.showErrorMessage('Cannot access Git support.');
+        dialogs.showErrorMessage('Cannot access Git support.');
         return undefined;
     }
     const repository = gitApi.getRepository(target);
     if (!repository) {
-        vscode.window.showErrorMessage(`Cannot find Git repository for ${target}`);
+        dialogs.showErrorMessage(`Cannot find Git repository for ${target}`);
         return undefined;
     }
     try {
@@ -117,7 +117,7 @@ export async function populateNewRepository(address: string, source: string, ...
     try {
         const repository = await gitApi.init(vscode.Uri.file(source));
         if (!repository) {
-            vscode.window.showErrorMessage(`Cannot initialize Git repository for ${source}`);
+            dialogs.showErrorMessage(`Cannot initialize Git repository for ${source}`);
             return undefined;
         }
         await repository.addRemote('origin', address);

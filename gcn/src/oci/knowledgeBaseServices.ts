@@ -145,7 +145,7 @@ async function selectAuditKnowledgeBase(oci: ociContext.Context): Promise<string
     }
     const existing = await listKnowledgeBases(oci);
     if (!existing) {
-        vscode.window.showErrorMessage('No knowledge bases available to run the project audit.');
+        dialogs.showErrorMessage('No knowledge bases available to run the project audit.');
         return undefined;
     } else {
         if (existing.length === 1) {
@@ -296,7 +296,7 @@ class Service extends ociService.Service {
         }
 
         if (!(await vscode.commands.getCommands(true)).includes('nbls.gcn.projectAudit.execute')) {
-            vscode.window.showErrorMessage('Required Language Server is not ready.');
+            dialogs.showErrorMessage('Required Language Server is not ready.');
             return;
         }
 

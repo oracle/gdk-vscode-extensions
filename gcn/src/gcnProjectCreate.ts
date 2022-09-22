@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { MultiStepInput } from "./dialogs";
+import * as dialogs from "./dialogs";
 import { normalizeJavaVersion } from './graalvmUtils';
 
 require('../lib/gcn.ui.api');
@@ -27,8 +27,8 @@ require('../lib/gcn.ui.api');
  * Common type for list item display. Value is the code/id, label is the user-facing label, description goes to QuickPickItem.detail.
  */
 interface ValueAndLabel {
-    label : string;
-    value : string;
+    label: string;
+    value: string;
     detail?: string;
 }
 
@@ -78,18 +78,18 @@ interface CreateOptions {
 /**
  * External variable filled by resolve()
  */
-declare var AotjsVM : any;
+declare var AotjsVM: any;
 
 /**
  * Main entry point to the AOT.js-ed GCN CLI.
  */
-var gcnApi : any = undefined;
+var gcnApi: any = undefined;
 
-async function initialize() : Promise<any> {
+async function initialize(): Promise<any> {
     if (gcnApi) {
         return new Promise((resolve, _reject) => { resolve(gcnApi); });
     } else {
-        AotjsVM.run([]).then((vm : any) => {
+        AotjsVM.run([]).then((vm: any) => {
             return gcnApi = vm.exports.gcn.ui.API;
         });
     }
@@ -99,8 +99,8 @@ const OPEN_IN_NEW_WINDOW = 'Open in new window';
 const OPEN_IN_CURRENT_WINDOW = 'Open in current window';
 const ADD_TO_CURRENT_WORKSPACE = 'Add to current workspace';
 
-export async function createProject(context : vscode.ExtensionContext) : Promise<void> {
-    var options : CreateOptions | undefined;
+export async function createProject(context: vscode.ExtensionContext): Promise<void> {
+    var options: CreateOptions | undefined;
     await initialize();
     options = await initialize().then(() => {
         return selectCreateOptions();
@@ -132,11 +132,11 @@ export async function createProject(context : vscode.ExtensionContext) : Promise
     }
     if (fs.existsSync(targetLocation)) {
         if (!fs.statSync(targetLocation).isDirectory()) {
-            vscode.window.showErrorMessage(`The selected location ${targetLocation} is not a directory.`);
+            dialogs.showErrorMessage(`The selected location ${targetLocation} is not a directory.`);
             return;
         }
         if (fs.readdirSync(targetLocation).filter(n => n == '.' || n == '..' ? undefined : n).length > 0) {
-            vscode.window.showErrorMessage(`The selected location ${targetLocation} is not empty.`);
+            dialogs.showErrorMessage(`The selected location ${targetLocation} is not empty.`);
             return;
         }
     }
@@ -160,12 +160,12 @@ export async function createProject(context : vscode.ExtensionContext) : Promise
     }
 }
 
-async function writeProjectContents(options : CreateOptions, location : string) {
+async function writeProjectContents(options: CreateOptions, location: string) {
     if (!fs.existsSync(location)) {
-        fs.mkdirSync(location, { recursive : true });
+        fs.mkdirSync(location, { recursive: true });
     }
     
-    function fileHandler(pathName : any, bytes : any, _isBinary : any, isExecutable : any) {
+    function fileHandler(pathName: any, bytes: any, _isBinary: any, isExecutable: any) {
         const p : string = pathName.$as('string');
         const exe : boolean = isExecutable.$as('boolean');
         const data = bytes.$as(Int8Array).buffer;
@@ -211,13 +211,12 @@ async function writeProjectContents(options : CreateOptions, location : string) 
         fileHandler
     );
    } catch (err) {
-    vscode.window.showErrorMessage(`Project generation failed. See log for details`);
-    console.log(err);
+    dialogs.showErrorMessage(`Project generation failed`, err);
     throw err;
    }
 }
 
-async function selectLocation(context : vscode.ExtensionContext, options : CreateOptions) {
+async function selectLocation(context: vscode.ExtensionContext, options: CreateOptions) {
     const lastProjectParentDir: string | undefined = context.globalState.get(LAST_PROJECT_PARENTDIR);
     let defaultDir: vscode.Uri | undefined;
     if (lastProjectParentDir) {
@@ -256,12 +255,12 @@ async function selectLocation(context : vscode.ExtensionContext, options : Creat
  * @param state current state
  * @returns total steps
  */
-    function totalSteps(state : Partial<State>) : number {
+    function totalSteps(state: Partial<State>) : number {
     return fixedSteps + (state.featureCategories?.length || 0);
 }
 
-function convertLabelledValues(items : any[]) : ValueAndLabel[] {
-    const ret : {label: string, value: string}[]  = [];
+function convertLabelledValues(items: any[]): ValueAndLabel[] {
+    const ret: {label: string, value: string}[]  = [];
     for (let i = 0; i < items.length; i++) {
         let v = items[i];
         ret.push({
@@ -283,7 +282,7 @@ function getJavaVersions(): string[] {
     for (let i = 0; i < items.length; i++) {
         const item = items[i];
         const s = item.getName().$as('string') as string;
-        let match : string[] | null = s?.match(/JDK_(\d+)/);
+        let match: string[] | null = s?.match(/JDK_(\d+)/);
         if (match && match.length > 1) {
             versions.push(match[1]);
         }
@@ -291,10 +290,10 @@ function getJavaVersions(): string[] {
     return versions;
 }
 
-function getDefaultJavaVersion() : string {
+function getDefaultJavaVersion(): string {
     let j = gcnApi.javaVersions().getDefaultOption();
     const s = j.getName().$as('string') as string;
-    let match : string[] | null = s?.match(/JDK_(\d+)/);
+    let match: string[] | null = s?.match(/JDK_(\d+)/);
     return match && match.length > 1 ? match[1] : s;
 
 }
@@ -312,7 +311,7 @@ function getTestFrameworks() {
 }
 
 function getClouds() {
-    const ret : ValueAndLabel[]  = [];
+    const ret: ValueAndLabel[]  = [];
     const items = gcnApi.clouds().toArray();
     for (let i = 0; i < items.length; i++) {
         let v = items[i];
@@ -337,11 +336,11 @@ function getServices(): ValueAndLabel[] {
     return ret;
 }
 
-function getFeatureCategories() : string[] {
-    const ret : string[] = [];
+function getFeatureCategories(): string[] {
+    const ret: string[] = [];
     let cats = gcnApi.features().keySet().toArray();
     for (let i = 0; i < cats.length; i++) {
-        ret.push( cats[i].$as('string') as string);
+        ret.push(cats[i].$as('string') as string);
     }
     return ret;
 }
@@ -350,7 +349,7 @@ interface ValuePickItem extends vscode.QuickPickItem {
     value : string 
 };
 
-function findCategoryObject(cat : string) {
+function findCategoryObject(cat: string) {
     let cats = gcnApi.features().keySet().toArray();
     for (let i = 0; i < cats.length; i++) {
         if (cats[i].$as('string') == cat) {
@@ -360,8 +359,8 @@ function findCategoryObject(cat : string) {
     return undefined;
 }
 
-function getFeaturesFromCategory(category : string) : ValuePickItem[] {
-    const ret : ValuePickItem [] = [];
+function getFeaturesFromCategory(category: string): ValuePickItem[] {
+    const ret: ValuePickItem [] = [];
     const key = findCategoryObject(category);
     if (!key) {
         return ret;
@@ -373,11 +372,11 @@ function getFeaturesFromCategory(category : string) : ValuePickItem[] {
     }
     for (let i = 0; i < arr.length; i++) {
         let f = arr[i];
-        let label : string = f.getTitle().$as('string');
-        const val : string = f.getName().$as('string');
-        const desc : string = f.getDescription().$as('string');
-        const preview : boolean = f.isPreview().$as('boolean');
-        const community : boolean = f.isCommunity().$as('boolean');
+        let label: string = f.getTitle().$as('string');
+        const val: string = f.getName().$as('string');
+        const desc: string = f.getDescription().$as('string');
+        const preview: boolean = f.isPreview().$as('boolean');
+        const community: boolean = f.isCommunity().$as('boolean');
 
         if (preview) {
             label = '$(eye) ' + label;
@@ -387,9 +386,9 @@ function getFeaturesFromCategory(category : string) : ValuePickItem[] {
         }
 
         ret.push({
-            value : val,
+            value: val,
             label: label,
-            detail : desc
+            detail: desc
 
         });
     }
@@ -400,12 +399,12 @@ function getMicronautVersions() : { label : string }[] {
     return [ { label : gcnApi.micronautVersion().$as('string') as string }];
 }
 
-function findSelection(from: ValueAndLabel[], selected : ValueAndLabel[] | ValueAndLabel | undefined) {
+function findSelection(from: ValueAndLabel[], selected: ValueAndLabel[] | ValueAndLabel | undefined) {
     const sel = findSelectedItems(from, selected);
     return sel && sel.length > 0 ? sel[0] : undefined;
 }
 
-function findSelectedItems(from: ValueAndLabel[], selected : ValueAndLabel[] | ValueAndLabel | undefined) {
+function findSelectedItems(from: ValueAndLabel[], selected: ValueAndLabel[] | ValueAndLabel | undefined) {
     const ret : ValueAndLabel[]= [];
     if (!selected) {
         return ret;
@@ -430,10 +429,10 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 
 	async function collectInputs(): Promise<State | undefined> {
 		const state = {} as Partial<State>;
-        return await MultiStepInput.run(input => pickMicronautVersion(input, state)) ? state as State : undefined;
+        return await dialogs.MultiStepInput.run(input => pickMicronautVersion(input, state)) ? state as State : undefined;
 	}
 
-	async function pickMicronautVersion(input: MultiStepInput, state: Partial<State>) {
+	async function pickMicronautVersion(input: dialogs.MultiStepInput, state: Partial<State>) {
         const selected: any = await input.showQuickPick({
 			title,
 			step: 1,
@@ -444,10 +443,10 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			shouldResume: () => Promise.resolve(false)
         });
         state.micronautVersion = selected;
-		return (input: MultiStepInput) => pickApplicationType(input, state);
+		return (input: dialogs.MultiStepInput) => pickApplicationType(input, state);
 	}
 
-    async function pickApplicationType(input: MultiStepInput, state: Partial<State>) {
+    async function pickApplicationType(input: dialogs.MultiStepInput, state: Partial<State>) {
         const choices : ValueAndLabel[] = state.micronautVersion ? await getApplicationTypes() : [];
 		const selected: any = await input.showQuickPick({
 			title,
@@ -459,10 +458,10 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			shouldResume: () => Promise.resolve(false)
         });
         state.applicationType = selected;
-		return (input: MultiStepInput) => pickJavaVersion(input, state);
+		return (input: dialogs.MultiStepInput) => pickJavaVersion(input, state);
 	}
 
-	async function pickJavaVersion(input: MultiStepInput, state: Partial<State>) {
+	async function pickJavaVersion(input: dialogs.MultiStepInput, state: Partial<State>) {
         const items: {label: string, value: string, description?: string}[] = graalVMs.map(item => ({label: item.name, value: item.path, description: item.active ? '(active)' : undefined}));
         
         items.push({label: 'Other Java', value: '', description: '(manual configuration)'});
@@ -489,10 +488,10 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
             vscode.window.showInformationMessage(`Java version not selected. The project will target Java ${defVersion}. Adjust the setting in the generated project file(s).`);
             state.javaVersion.target = defVersion;
         }
-		return (input: MultiStepInput) => projectName(input, state);
+		return (input: dialogs.MultiStepInput) => projectName(input, state);
 	}
 
-	async function projectName(input: MultiStepInput, state: Partial<State>) {
+	async function projectName(input: dialogs.MultiStepInput, state: Partial<State>) {
 		state.projectName = await input.showInputBox({
 			title,
 			step: 4,
@@ -502,10 +501,10 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			validate: () => Promise.resolve(undefined),
 			shouldResume: () => Promise.resolve(false)
 		});
-		return (input: MultiStepInput) => basePackage(input, state);
+		return (input: dialogs.MultiStepInput) => basePackage(input, state);
 	}
 
-	async function basePackage(input: MultiStepInput, state: Partial<State>) {
+	async function basePackage(input: dialogs.MultiStepInput, state: Partial<State>) {
 		state.basePackage = await input.showInputBox({
 			title,
 			step: 5,
@@ -515,10 +514,10 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			validate: () => Promise.resolve(undefined),
 			shouldResume: () => Promise.resolve(false)
 		});
-		return (input: MultiStepInput) => pickLanguage(input, state);
+		return (input: dialogs.MultiStepInput) => pickLanguage(input, state);
 	}
 
-	async function pickLanguage(input: MultiStepInput, state: Partial<State>) {
+	async function pickLanguage(input: dialogs.MultiStepInput, state: Partial<State>) {
         const choices = getLanguages();
 		const selected: any = await input.showQuickPick({
 			title,
@@ -530,10 +529,10 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			shouldResume: () => Promise.resolve(false)
         });
         state.language = selected;
-		return (input: MultiStepInput) => pickServices(input, state);
+		return (input: dialogs.MultiStepInput) => pickServices(input, state);
 	}
 
-	async function pickServices(input: MultiStepInput, state: Partial<State>) {
+	async function pickServices(input: dialogs.MultiStepInput, state: Partial<State>) {
         const choices = state.micronautVersion && state.applicationType && state.javaVersion ? getServices() : [];
 		const selected: any = await input.showQuickPick({
 			title,
@@ -546,10 +545,10 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			shouldResume: () => Promise.resolve(false)
         });
         state.services = selected;
-		return (input: MultiStepInput) => pickBuildTool(input, state);
+		return (input: dialogs.MultiStepInput) => pickBuildTool(input, state);
 	}
 
-	async function pickBuildTool(input: MultiStepInput, state: Partial<State>) {
+	async function pickBuildTool(input: dialogs.MultiStepInput, state: Partial<State>) {
         const choices = getBuildTools();
 		const selected: any = await input.showQuickPick({
 			title,
@@ -561,10 +560,10 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			shouldResume: () => Promise.resolve(false)
         });
         state.buildTool = selected;
-		return (input: MultiStepInput) => pickTestFramework(input, state);
+		return (input: dialogs.MultiStepInput) => pickTestFramework(input, state);
 	}
 
-	async function pickTestFramework(input: MultiStepInput, state: Partial<State>) {
+	async function pickTestFramework(input: dialogs.MultiStepInput, state: Partial<State>) {
         const choices = getTestFrameworks();
 		const selected: any = await input.showQuickPick({
 			title,
@@ -576,10 +575,10 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			shouldResume: () => Promise.resolve(false)
         });
         state.testFramework = selected;
-        return (input: MultiStepInput) => pickCloud(input, state);
+        return (input: dialogs.MultiStepInput) => pickCloud(input, state);
 	}
 
-    async function pickCloud(input : MultiStepInput, state : Partial<State>) {
+    async function pickCloud(input: dialogs.MultiStepInput, state: Partial<State>) {
         const choices = getClouds() || [];
 		const selected: any = await input.showQuickPick({
 			title,
@@ -592,12 +591,12 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			shouldResume: () => Promise.resolve(false)
         });
         state.clouds = selected;
-        return (input: MultiStepInput) => pickFeatureCategories(input, state);
+        return (input: dialogs.MultiStepInput) => pickFeatureCategories(input, state);
     }
 
-    async function pickFeatureCategories(input : MultiStepInput, state : Partial<State>) {
+    async function pickFeatureCategories(input: dialogs.MultiStepInput, state: Partial<State>) {
         const cats : string[] = getFeatureCategories();
-        const choices = cats.map((v : string) => ({ label : v, value: v }));
+        const choices = cats.map((v: string) => ({ label: v, value: v }));
 		const selected: any = await input.showQuickPick({
 			title,
 			step: 11,
@@ -611,13 +610,13 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
         state.featureCategories = selected;
         if (selected.length > 0) {
             const chooseFrom = selected.map((c : ValueAndLabel) => c.value);
-            return (input: MultiStepInput) => pickFeaturesFromCategory(input, state, chooseFrom, selected[0].value);
+            return (input: dialogs.MultiStepInput) => pickFeaturesFromCategory(input, state, chooseFrom, selected[0].value);
         } else {
             return undefined;
         }
     }
 
-    async function pickFeaturesFromCategory(input : MultiStepInput, state : Partial<State>, cats : string[], category : string) {
+    async function pickFeaturesFromCategory(input: dialogs.MultiStepInput, state: Partial<State>, cats: string[], category: string) {
         const choices = getFeaturesFromCategory(category);
         const idx = cats.indexOf(category);
 		const selected: any = await input.showQuickPick({
@@ -635,17 +634,17 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
         }
         state.features?.set(category, selected as ValueAndLabel[]);
         if (idx >= 0 && idx < cats.length - 1) {
-            return (input: MultiStepInput) => pickFeaturesFromCategory(input, state, cats, cats[idx + 1]);
+            return (input: dialogs.MultiStepInput) => pickFeaturesFromCategory(input, state, cats, cats[idx + 1]);
         } else {
             return undefined;
         }
     }
-    const s : State | undefined = await collectInputs();
+    const s: State | undefined = await collectInputs();
     if (!s) {
         return undefined;
     }
     
-    function values(vals : ValueAndLabel[] | undefined) {
+    function values(vals: ValueAndLabel[] | undefined) {
         if (!vals || vals.length == 0) {
             return undefined;
         }
@@ -661,16 +660,16 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
     }
 
     return {
-        micronautVersion : { 
-            label : s.micronautVersion.label,
-            serviceUrl : s.micronautVersion.serviceUrl
+        micronautVersion: { 
+            label: s.micronautVersion.label,
+            serviceUrl: s.micronautVersion.serviceUrl
         },
         applicationType: s.applicationType.value,
         buildTool: s.buildTool.value,
-        language : s.language.value,
+        language: s.language.value,
         testFramework: s.testFramework.value,
 
-        basePackage : s.basePackage,
+        basePackage: s.basePackage,
         projectName: s.projectName,
         javaVersion: "JDK_" + s.javaVersion.target,
 
@@ -680,7 +679,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
     };
 }
 
-export function getGCNHome() : string {
+export function getGCNHome(): string {
     let gcnHome: string = vscode.workspace.getConfiguration('gcn').get('oci.home') as string;
     if (gcnHome) {
         return gcnHome;

@@ -326,7 +326,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                             });
                         })
                     } else {
-                        vscode.window.showErrorMessage('No local active GraalVM installation detected.');
+                        dialogs.showErrorMessage('Failed to start build pipeline: No local active GraalVM installation detected.');
                     }
                 });
             }
@@ -386,7 +386,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                                             const file = fs.createWriteStream(fileUri.fsPath);
                                             data.pipe(file);
                                             data.on('error', (err: Error) => {
-                                                vscode.window.showErrorMessage(err.message);
+                                                dialogs.showErrorMessage('Failed to download artifact', err);
                                                 file.destroy();
                                                 resolve(false);
                                             });

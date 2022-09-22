@@ -304,11 +304,11 @@ export function downloadGenericArtifactContent(oci: ociContext.Context, artifact
         try {
             return await ociUtils.getGenericArtifactContent(oci.getProvider(), artifactID);
         } catch (err) {
-            return new Error(dialogs.getErrorMessage('Error while populating new repository', err));
+            return new Error(dialogs.getErrorMessage('Error while resolving generic artifact', err));
         }
     }).then(result => {
         if (result instanceof Error) {
-            vscode.window.showErrorMessage(result.message);
+            dialogs.showError(result);
         } else {
             vscode.window.showSaveDialog({
                 defaultUri: vscode.Uri.file(filename),
@@ -325,7 +325,7 @@ export function downloadGenericArtifactContent(oci: ociContext.Context, artifact
                             const file = fs.createWriteStream(fileUri.fsPath);
                             data.pipe(file);
                             data.on('error', (err: Error) => {
-                                vscode.window.showErrorMessage(err.message);
+                                dialogs.showErrorMessage('Failed to download artifact', err);
                                 file.destroy();
                                 resolve(false);
                             });

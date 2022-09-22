@@ -44,7 +44,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
     const oci = services[0].getContext();
     const problem = oci.getConfigurationProblem();
     if (problem) {
-        vscode.window.showErrorMessage(`Cannot undeploy folder ${folder.folder.name}: ${problem}`);
+        dialogs.showErrorMessage(`Cannot undeploy folder ${folder.folder.name}: ${problem}`);
         return;
     }
 
@@ -61,11 +61,11 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         return [p, c];
     });
     if (!data[0]) {
-        vscode.window.showErrorMessage(`Cannot undeploy folder ${folder.folder.name}: Failed to resolve DevOps Project ${devopsId}`);
+        dialogs.showErrorMessage(`Cannot undeploy folder ${folder.folder.name}: Failed to resolve DevOps Project ${devopsId}`);
         return;
     }
     if (!data[1]) {
-        vscode.window.showErrorMessage(`Cannot undeploy folder ${folder.folder.name}: Failed to resolve Compartment ${compartmentId}`);
+        dialogs.showErrorMessage(`Cannot undeploy folder ${folder.folder.name}: Failed to resolve Compartment ${compartmentId}`);
         return;
     }
 

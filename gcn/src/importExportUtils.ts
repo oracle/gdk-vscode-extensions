@@ -42,7 +42,7 @@ export async function deployFolders(folders?: gcnServices.FolderData | gcnServic
         const selected = await dialogs.selectFolders('Select Folders to Deploy', false);
         if (!selected) {
             if (selected === null) {
-                vscode.window.showErrorMessage('No folders to deploy.');
+                dialogs.showErrorMessage('No folders to deploy.');
             }
             return;
         }
@@ -50,7 +50,7 @@ export async function deployFolders(folders?: gcnServices.FolderData | gcnServic
     } else if (!Array.isArray(folders)) {
         folders = [ folders ];
     } else if (folders.length === 0) {
-        vscode.window.showErrorMessage('No folders to deploy.');
+        dialogs.showErrorMessage('No folders to deploy.');
         return;
     }
     const cloudSupport = await dialogs.selectCloudSupport();

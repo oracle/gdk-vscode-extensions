@@ -10,6 +10,7 @@ import * as path from 'path';
 import * as model from '../model';
 import * as gitUtils from '../gitUtils';
 import * as folderStorage from '../folderStorage';
+import * as dialogs from '../dialogs';
 import * as ociServices from './ociServices';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
@@ -22,7 +23,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
     const authentication = ociAuthentication.createDefault();
     const configurationProblem = authentication.getConfigurationProblem();
     if (configurationProblem) {
-        vscode.window.showErrorMessage(configurationProblem);
+        dialogs.showErrorMessage(configurationProblem);
         return undefined;
     }
     const provider = authentication.getProvider();
@@ -101,7 +102,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
     });
 
     if (error) {
-        vscode.window.showErrorMessage(error);
+        dialogs.showErrorMessage(error);
         return undefined;
     }
 

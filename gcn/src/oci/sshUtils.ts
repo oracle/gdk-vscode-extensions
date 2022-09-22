@@ -129,7 +129,7 @@ export async function addCloudKnownHosts(hostname : string, ask : boolean) : Pro
         if (i >= 0) {
             msg = msg.substring(i + cmdString.length + 1).trim();
         }
-        vscode.window.showErrorMessage(`Fetching SSH host key for ${hostname} failed: ${msg}`);
+        dialogs.showErrorMessage(`Fetching SSH host key for ${hostname} failed: ${msg}`);
         return 0;
     }
     if (keys.length == 0) {

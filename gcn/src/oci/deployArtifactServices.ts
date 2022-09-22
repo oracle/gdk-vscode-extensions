@@ -334,7 +334,7 @@ class GenericDeployArtifactNode extends DeployArtifactNode {
             }
         }).then(result => {
             if (result instanceof Error) {
-                vscode.window.showErrorMessage(result.message);
+                dialogs.showError(result);
             } else if (result) {
                 artifactServices.downloadGenericArtifactContent(this.oci, result.id, this.object.displayName, result.artifactPath);
             }
@@ -369,7 +369,7 @@ class OcirDeployArtifactNode extends DeployArtifactNode {
             if (typeof result === 'string') {
                 dockerUtils.pullImage(result);
             } else if (result instanceof Error) {
-                vscode.window.showErrorMessage(result.message);
+                dialogs.showError(result);
             }
         });
     }

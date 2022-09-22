@@ -5,13 +5,13 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
-import * as vscode from 'vscode';
 import * as k8s from 'vscode-kubernetes-tools-api';
+import * as dialogs from './dialogs';
 
 export async function getKubectlAPI(): Promise<k8s.KubectlV1 | undefined> {
     const kubectl = await k8s.extension.kubectl.v1;
     if (!kubectl.available) {
-        vscode.window.showErrorMessage(`Kubectl API not available: ${kubectl.reason}`);
+        dialogs.showErrorMessage(`Kubectl API not available: ${kubectl.reason}`);
         return;
     }
     return kubectl.api;

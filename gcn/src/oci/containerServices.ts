@@ -315,7 +315,7 @@ class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource 
             if (typeof result === 'string') {
                 dockerUtils.pullImage(result as string);
             } else if (result instanceof Error) {
-                vscode.window.showErrorMessage((result as Error).message);
+                dialogs.showError(result);
             }
         });
     }

@@ -27,7 +27,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
     const authentication = ociAuthentication.createDefault();
     const configurationProblem = authentication.getConfigurationProblem();
     if (configurationProblem) {
-        vscode.window.showErrorMessage(configurationProblem);
+        dialogs.showErrorMessage(configurationProblem);
         return undefined;
     }
     const provider = authentication.getProvider();
@@ -769,8 +769,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
     });
 
     if (error) {
-        vscode.window.showErrorMessage(error);
-        return undefined;
+        dialogs.showErrorMessage(error);
     }
 
     return undefined;

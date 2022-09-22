@@ -46,7 +46,7 @@ export function openInConsole(item: CloudConsoleItem) {
             }
         }).then(result => {
             if (result instanceof Error) {
-                vscode.window.showErrorMessage(result.message);
+                dialogs.showError(result);
             } else {
                 dialogs.openInBrowser(result);
             }

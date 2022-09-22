@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import * as gcnServices from './gcnServices';
 import * as model from './model';
+import * as logUtils from './logUtils';
 import { CLOUD_SUPPORTS } from './extension';
 
 
@@ -25,27 +26,34 @@ export async function openInBrowser(address: string): Promise<boolean> {
 	return vscode.env.openExternal(vscode.Uri.parse(address));
 }
 
-export function getErrorMessage(message: string, err: any): string {
-    if (err) {   
+export function getErrorMessage(message: string | undefined, err?: any): string {
+	if (err) {   
         if (err.message) {
-            message = `${message}: ${err.message}`;
+            message = message ? `${message}: ${err.message}` : err.message;
         } else if (err.toString()) {
-            message = `${message}: ${err.toString()}`;
+            message = message ? `${message}: ${err.toString()}` : err.toString();
         }
     }
-    if (!message.endsWith('.')) {
+	if (!message) {
+		message = 'Unknown error.'
+	} else if (!message.endsWith('.')) {
         message = `${message}.`;
     }
     return message;
 }
 
-export function showErrorMessage(message: string, err: any, ...items: string[]): Thenable<string | undefined> {
+export function showErrorMessage(message: string | undefined, err?: any, ...items: string[]): Thenable<string | undefined> {
     const msg = getErrorMessage(message, err);
+	logUtils.logError(msg);
     return vscode.window.showErrorMessage(msg, ...items);
 }
 
+export function showError(err?: any, ...items: string[]): Thenable<string | undefined> {
+	return showErrorMessage(undefined, err, ...items);
+}
+
 export async function selectName(title: string, currentName: string | undefined, forbiddenNames?: string[]): Promise<string | undefined> {
-    if (!forbiddenNames) {
+	if (!forbiddenNames) {
         forbiddenNames = [];
     }
     function validateName(name: string): string | undefined {
