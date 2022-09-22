@@ -11,12 +11,10 @@ import { CLOUD_SUPPORTS } from './extension';
 import * as model from './model';
 import * as folderStorage from './folderStorage';
 import * as servicesView from './servicesView';
-import * as projectUtils from './projectUtils';
 
 
 export type FolderData = {
     folder: vscode.WorkspaceFolder;
-    projectInfo?: projectUtils.ProjectInfo;
     configurations: model.ServicesConfiguration[];
     services: model.CloudServices[];
 }
@@ -33,20 +31,15 @@ export async function build() {
     await servicesView.build(folderData);
 
     let serviceFoldersCount = 0;
-    let deployableFoldersCount = 0;
 
     const folders = vscode.workspace.workspaceFolders;
     if (folders) {
         for (const folder of folders) {
             const data: FolderData = {
                 folder: folder,
-                projectInfo: await projectUtils.getProjectInfo(folder),
                 configurations: [],
                 services: []
             };
-            if (data.projectInfo) {
-                deployableFoldersCount++;
-            }
             const services = folderStorage.readStorage(folder);
             const configurations = services?.getConfigurations();
             if (configurations) {
@@ -70,9 +63,8 @@ export async function build() {
 
     await servicesView.build(folderData);
 
-    await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', deployableFoldersCount - serviceFoldersCount > 1);
+    await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', folders && folders.length - serviceFoldersCount > 1);
 
-    await vscode.commands.executeCommand('setContext', 'gcn.deployableFoldersCount', deployableFoldersCount);
     await vscode.commands.executeCommand('setContext', 'gcn.serviceFoldersCount', serviceFoldersCount);
     await vscode.commands.executeCommand('setContext', 'gcn.servicesInitialized', true);
 }

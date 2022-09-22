@@ -187,7 +187,7 @@
 			{
 				"view": "gcn-services",
 				"contents": "Click the Deploy to Cloud button to deploy the current folder(s) to cloud:\n[Deploy to Cloud](command:gcn.deployToCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
-				"when": "gcn.servicesInitialized && gcn.deployableFoldersCount > 0 && gcn.serviceFoldersCount == 0"
+				"when": "gcn.servicesInitialized && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
 			}
 		],
 		"views": {
@@ -195,8 +195,7 @@
 				{
 					"id": "gcn-services",
 					"name": "GCN Services",
-					"icon": "resources/GCN_logo.png",
-					"when": "nbJavaLSReady"
+					"icon": "resources/GCN_logo.png"
 				}
 			]
 		},
@@ -267,7 +266,7 @@
 			"view/title": [
 				{
 					"command": "gcn.deployToCloud",
-					"when": "view == gcn-services && gcn.servicesInitialized && gcn.globalDeployAction",
+					"when": "view == gcn-services && gcn.servicesInitialized && gcn.globalDeployAction && nbJavaLSReady",
 					"group": "navigation@1"
 				},
 				{
@@ -279,7 +278,7 @@
 			"view/item/context": [
 				{
 					"command": "gcn.deployToCloud",
-					"when": "viewItem in gcn.deployToCloudNodes",
+					"when": "viewItem in gcn.deployToCloudNodes && nbJavaLSReady",
 					"group": "inline@1"
 				},
 				{

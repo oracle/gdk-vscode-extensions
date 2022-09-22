@@ -72,7 +72,7 @@ export type ImportResult = {
 
 export type DeployFolder = {
     folder: vscode.WorkspaceFolder;
-    projectInfo?: projectUtils.ProjectInfo;
+    projectInfo: projectUtils.ProjectInfo;
 }
 
 export type DeployResult = {

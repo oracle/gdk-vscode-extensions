@@ -57,13 +57,13 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
         return new Promise(async resolve => {
             let totalSteps = folders.reduce((total, current) => {
                 total += 3; // code repository, cloud services config, populating code repository
-                if (current.projectInfo?.projectType === 'GCN') {
+                if (current.projectInfo.projectType === 'GCN') {
                     total += 7; // Jar artifact, build spec and pipeline, NI artifact, build spec and pipeline, OKE deploy config
                     if (deployData.okeCluster) {
                         total += 1; // deploy to OKE pipeline
                     }
                     total += 4 * projectUtils.getCloudSpecificSubProjectNames(current).length; // Docker image, build spec, and pipeline, container repository per cloud specific subproject
-                } else if (current.projectInfo?.projectType === 'Micronaut') {
+                } else if (current.projectInfo.projectType === 'Micronaut') {
                     total += 11; // Jar artifact, build spec and pipeline, NI artifact, build spec and pipeline, Docker image, build spec and pipeline, OKE deploy config, container repository
                     if (deployData.okeCluster) {
                         total += 1; // deploy to OKE pipeline
@@ -425,7 +425,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     return;
                 }
 
-                if (deployFolder.projectInfo?.projectType === 'Micronaut') {
+                if (deployFolder.projectInfo.projectType === 'Micronaut') {
                     // --- Create container repository
                     progress.report({
                         increment,
@@ -558,7 +558,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                         }
                         deployPipelines.push({ 'ocid': oke_deployPipeline, 'displayName': oke_deployPipelineName });
                     }
-                } else if (deployFolder.projectInfo?.projectType === 'GCN') {
+                } else if (deployFolder.projectInfo.projectType === 'GCN') {
                     for (const subName of projectUtils.getCloudSpecificSubProjectNames(deployFolder)) {
                         if (subName !== 'app') {
                             // --- Create container repository
@@ -706,6 +706,9 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                             }
                         }
                     }
+
+                    // Add /bin folders created by EDT to .gitignore
+                    gitUtils.addGitIgnoreEntry(folder.uri.fsPath, '**/bin');
                 }
 
                 const docker_ni_file = 'Dockerfile.native';
