@@ -20,7 +20,7 @@ export async function getProjectInfo(folder: vscode.WorkspaceFolder): Promise<Pr
     const infos: any[] = await vscode.commands.executeCommand(GET_PROJECT_INFO, folder.uri.toString(), { projectStructure: true });
     if (infos?.length && infos[0]) {
         // TODO: add better check for supported projects
-        const buildSystem = infos[0].projectType.contains('gradle') ? 'Gradle' : infos[0].projectType.contains('maven') ? 'Maven' : undefined;
+        const buildSystem = infos[0].projectType.includes('gradle') ? 'Gradle' : infos[0].projectType.includes('maven') ? 'Maven' : undefined;
         const subprojects = [];
         for(const sub of infos[0].subprojects) {
             const subInfos: any[] = await vscode.commands.executeCommand(GET_PROJECT_INFO, sub);

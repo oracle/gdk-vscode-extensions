@@ -156,12 +156,13 @@ async function execute(command: string, cwd: string): Promise<string> {
     });
 }
 
-export async function skipWorkTree(folder: string, entry: string) {
+export async function skipWorkTree(folder: string, entry: string): Promise<void> {
     const gitApi = getGitAPI();
-    if (!gitApi) {
-        return 'Cannot access Git support.';
+    if (gitApi) {
+        await execute(`${gitApi.git.path} update-index --skip-worktree ${entry}`, folder);
+    } else {
+        dialogs.showErrorMessage('Cannot access Git support.');
     }
-    await execute(`${gitApi.git.path} update-index --skip-worktree ${entry}`, folder);
 }
 
 export function addGitIgnoreEntry(folder: string, entry: string) {
