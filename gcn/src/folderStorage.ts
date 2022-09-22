@@ -86,7 +86,7 @@ export function readStorage(folder: vscode.WorkspaceFolder): FolderStorage | und
     return undefined;
 }
 
-function read(folder: string): any | undefined {
+export function read(folder: string): any | undefined {
     const configurationFile = getConfigurationFile(folder);
     if (!fs.existsSync(configurationFile)) {
         return undefined;
@@ -94,86 +94,6 @@ function read(folder: string): any | undefined {
     const configurationString = fs.readFileSync(configurationFile).toString();
     const configuration = JSON.parse(configurationString);
     return configuration;
-}
-
-export function createSampleConfiguration(folder: vscode.WorkspaceFolder) {
-    const cloudServices = [
-        {
-            type: 'oci',
-            name: 'Default OCI services',
-            data: {
-                version: '1.0',
-                authentication: {
-                    type: 'configFile',
-                    path: 'default',
-                    profile: 'default'
-                },
-                context: {
-                    compartment: 'ocid1.compartment.oc1..aaaaaaaaal7rv2u5bgrz42nc2r36zpeir6fv47l5j3z6up2iajjb3ooalcfa',
-                    devopsProject: 'ocid1.devopsproject.oc1.iad.amaaaaaabnqp5kqamztzfqeqywsi2t243a4qzlmxk5syjiantkdlv45b7lra',
-                    codeRepository: 'ocid1.devopsrepository.oc1.iad.amaaaaaabnqp5kqat2b4bkua7xwq25eq2a3bt5ixlpye76qc5hvgtygsskpa'
-                },
-                services: {
-                    buildPipelines: {
-                        items: [
-                            {
-                                'ocid': 'ocid1.devopsbuildpipeline.oc1.iad.amaaaaaabnqp5kqa4fpld5uqchwdhb4wjyvtptx6kyvriy2ln6u25nagryvq',
-                                'displayName': 'Devbuild (fat JAR)'
-                            },
-                            {
-                                'ocid': 'ocid1.devopsbuildpipeline.oc1.iad.amaaaaaabnqp5kqabpfmt3l47ej4m6c53mtyl7ziqbhhktbp5em4tt6x33rq',
-                                'displayName': 'Build Native Image'
-                            }
-                        ]
-                    },
-                    deploymentPipelines: {
-                        items: [
-                        ]
-                    },
-                    projectArtifacts: {
-                        items: [
-                            {
-                                'ocid': 'ocid1.devopsdeployartifact.oc1.iad.amaaaaaabnqp5kqascwjldbleuodzzzkf5xnyytriolhqi4rkoy64zwtkkta',
-                                'displayName': 'Last Successful Devbuild (fat JAR)'
-                            }
-                        ]
-                    },
-                    containerRepository: {
-                        items: [
-                            {
-                                'ocid': 'ocid1.containerrepo.oc1.iad.0.cloudnative-devrel.aaaaaaaakxiqxm635nn3isqyawmbyhkg4bebfyai6afscegnekbxtuh3ubya',
-                                'displayName': 'MicronautMavenApp'
-                            }
-                        ]
-                    },
-                    knowledgeBases: {
-                        settings: {
-                            'abc': 'defgh'
-                        },
-                        items: [
-                            {
-                                'ocid': 'ocid1.admknowledgebase.oc1.iad.amaaaaaabnqp5kqal7yik7wznbcunzgjvyheq466qr2pv3mc4dric3ztisoq',
-                                'displayName': 'Vulnerability Audits'
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        // {
-        //     type: 'oci',
-        //     name: 'Another OCI Services',
-        //     data: {
-        //         version: '1.0',
-        //         authentication: {
-        //             type: 'configFile',
-        //             path: 'default',
-        //             profile: 'default'
-        //         }
-        //     }
-        // }
-    ]
-    storeCloudServices(folder.uri.fsPath, cloudServices, true);
 }
 
 export function storeCloudSupportData(cloudSupport: model.CloudSupport, folders: string[], servicesData: any[]) {
@@ -199,7 +119,7 @@ function storeCloudServices(folder: string, cloudServices: any[], overwriteExist
     store(folder, configuration, overwriteExisting);
 }
 
-function store(folder: string, configuration: any, overwriteExisting: boolean) {
+export function store(folder: string, configuration: any, overwriteExisting: boolean) {
     const configurationFolder = path.join(folder, VSCODE_METADATA_FOLDER);
     if (!fs.existsSync(configurationFolder)) {
         fs.mkdirSync(configurationFolder);

@@ -5,6 +5,9 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
+import * as vscode from 'vscode';
 import * as common from 'oci-common';
 import * as dialogs from '../dialogs';
 import * as dataSupport from './dataSupport';
@@ -38,10 +41,7 @@ export function create(data: any, _dataChanged?: dataSupport.DataChanged): Authe
     if (typeof profile !== 'string') {
         return new Authentication(undefined, 'config file profile missing');
     }
-    if (profile !== CONFIG_FILE_PROFILE_DEFAULT) {
-        return new Authentication(undefined, `unsupported config file profile: ${profile}`);
-    }
-    return createDefault();
+    return createCustom(undefined, profile === CONFIG_FILE_PROFILE_DEFAULT ? undefined : profile);
 }
 
 export function createDefault(): Authentication {
@@ -52,6 +52,69 @@ export function createDefault(): Authentication {
         return new Authentication(undefined, dialogs.getErrorMessage('Failed to initialize OCI authentication', err));
     }
     return new Authentication(provider);
+}
+
+export function createCustom(configFile: string | undefined, profile: string | undefined): Authentication {
+    let provider: common.ConfigFileAuthenticationDetailsProvider;
+    try {
+        provider = new common.ConfigFileAuthenticationDetailsProvider(configFile, profile);
+    } catch (err) {
+        return new Authentication(undefined, dialogs.getErrorMessage('Failed to initialize OCI authentication', err));
+    }
+    return new Authentication(provider);
+}
+
+export async function resolve(): Promise<Authentication | undefined> {
+    try {
+        const defaultConfig = getDefaultConfigFile();
+        if (!fs.existsSync(defaultConfig)) {
+            return new Authentication(undefined, `Required config file missing: ${defaultConfig}.`);
+        }
+        const profiles = listProfiles(defaultConfig);
+        if (profiles.length) {
+            let provider: common.ConfigFileAuthenticationDetailsProvider;
+            if (profiles.length === 1 && profiles[0] === common.ConfigFileReader.DEFAULT_PROFILE_NAME) {
+                provider = new common.ConfigFileAuthenticationDetailsProvider(defaultConfig);
+            } else {
+                const choices: dialogs.QuickPickObject[] = [];
+                for (const profile of profiles) {
+                    choices.push(new dialogs.QuickPickObject(profile, undefined, undefined));
+                }
+                const selected = await vscode.window.showQuickPick(choices, {
+                    placeHolder: 'Select Profile'
+                });
+                if (!selected) {
+                    return undefined;
+                }
+                provider = new common.ConfigFileAuthenticationDetailsProvider(defaultConfig, selected.label);
+            }
+            return new Authentication(provider);
+        } else {
+            return new Authentication(undefined, `No profiles defined in config file ${defaultConfig}.`);
+        }
+    } catch (err) {
+        return new Authentication(undefined, dialogs.getErrorMessage('Failed to initialize OCI authentication', err));
+    }
+}
+
+function getDefaultConfigFile(): string {
+    const defaultPath = common.ConfigFileReader.DEFAULT_FILE_PATH;
+    const expandedPath = common.ConfigFileReader.expandUserHome(defaultPath);
+    const normalizedPath = path.normalize(expandedPath);
+    return normalizedPath;
+}
+
+function listProfiles(configFile: string): string[] {
+    const profiles: string[] = [];
+    const file = fs.readFileSync(configFile).toString();
+    const lines = file.length === 0 ? [] : file.split(/\r?\n/);
+    for (let line of lines) {
+        line = line.trim();
+        if (line.startsWith('[') && line.endsWith(']')) {
+            profiles.push(line.slice(1, -1));
+        }
+    }
+    return profiles;
 }
 
 export class Authentication implements dataSupport.DataProducer {
@@ -80,10 +143,14 @@ export class Authentication implements dataSupport.DataProducer {
     }
 
     getData(): any {
+        if (!this.provider) {
+            throw new Error('Authentication provider not initialized');
+        }
+        const currentProfile = this.provider.getProfileCredentials()?.currentProfile;
         const data = {
             type: AUTH_TYPE_CONFIG_FILE,
             path: CONFIG_FILE_PATH_DEFAULT,
-            profile: CONFIG_FILE_PROFILE_DEFAULT
+            profile: currentProfile ? currentProfile : CONFIG_FILE_PROFILE_DEFAULT
         };
         return data;
     }

@@ -20,7 +20,10 @@ import * as ociDialogs from './ociDialogs';
 // TODO: extract functions shared by deployUtils.ts
 
 export async function importFolders(): Promise<model.ImportResult | undefined> {
-    const authentication = ociAuthentication.createDefault();
+    const authentication = await ociAuthentication.resolve();
+    if (!authentication) {
+        return undefined;
+    }
     const configurationProblem = authentication.getConfigurationProblem();
     if (configurationProblem) {
         dialogs.showErrorMessage(configurationProblem);
@@ -81,6 +84,16 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
 
                 if (folderStorage.storageExists(folder)) {
                     // GCN configuration already exists in the cloud repository
+                    // NOTE: overwriting the OCI authentication for the local profile
+                    // TODO: needs a better approach!
+                    const configuration = folderStorage.read(folder);
+                    const cloudServices: any[] = configuration.cloudServices;
+                    for (const cloudService of cloudServices) {
+                        if (cloudService.type === 'oci') {
+                            cloudService.data[authentication.getDataName()] = authentication.getData();
+                        }
+                    }
+                    folderStorage.store(folder, configuration, true);
                     servicesData.push(undefined);
                 } else {
                     // GCN configuration does not exist in the cloud repository

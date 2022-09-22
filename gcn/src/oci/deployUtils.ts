@@ -24,7 +24,10 @@ import * as sshUtils from './sshUtils';
 export type SaveConfig = (folder: string, config: any) => boolean;
 
 export async function deployFolders(folders: model.DeployFolder[], resourcesPath: string, saveConfig: SaveConfig): Promise<undefined> {
-    const authentication = ociAuthentication.createDefault();
+    const authentication = await ociAuthentication.resolve();
+    if (!authentication) {
+        return undefined;
+    }
     const configurationProblem = authentication.getConfigurationProblem();
     if (configurationProblem) {
         dialogs.showErrorMessage(configurationProblem);
