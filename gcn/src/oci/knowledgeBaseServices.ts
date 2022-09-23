@@ -158,7 +158,7 @@ async function selectAuditKnowledgeBase(oci: ociContext.Context): Promise<string
         // TODO: provide a possibility to create a new knowledge base
         // TODO: provide a possibility to select knowledge bases from different compartments
         const selection = await vscode.window.showQuickPick(choices, {
-            placeHolder: 'Select the Knowledge Base to Perform Project Audits'
+            placeHolder: 'Select the Existing Knowledge Base to Perform Project Audits'
         })
         return selection?.object.id;
     }
@@ -216,25 +216,51 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
             }
         }
     }
-    const choices: dialogs.QuickPickObject[] = [];
+    const existingContentChoices: dialogs.QuickPickObject[] = [];
     for (let i = 0; i < knowledgeBases.length; i++) {
-        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${knowledgeBases[i].displayName}`, undefined, descriptionExists ? descriptions[i] : undefined, knowledgeBases[i]));
+        existingContentChoices.push(new dialogs.QuickPickObject(`$(${ICON}) ${knowledgeBases[i].displayName}`, undefined, descriptionExists ? descriptions[i] : undefined, knowledgeBases[i]));
+    }
+    dialogs.sortQuickPickObjectsByName(existingContentChoices);
+    let existingContentMultiSelect;
+    if (existingContentChoices.length > 1) {
+        const multiSelectExisting = async (): Promise<KnowledgeBase[] | undefined> => {
+            const selection = await vscode.window.showQuickPick(existingContentChoices, {
+                placeHolder: 'Select Existing Knowledge Bases to Add',
+                canPickMany: true
+            });
+            if (selection?.length) {
+                const selected: KnowledgeBase[] = [];
+                for (const sel of selection) {
+                    selected.push(sel.object as KnowledgeBase);
+                }
+                return selected;
+            } else {
+                return undefined;
+            }
+        };
+        existingContentMultiSelect = new dialogs.QuickPickObject('$(arrow-small-right) Add multiple existing knowledge bases...', undefined, undefined, multiSelectExisting);
     }
     // TODO: provide a possibility to create a new knowledge base
     // TODO: provide a possibility to select knowledge bases from different compartments
+    const choices: dialogs.QuickPickObject[] = [];
+    if (existingContentChoices.length) {
+        choices.push(...existingContentChoices);
+        if (existingContentMultiSelect) {
+            choices.push(existingContentMultiSelect);
+        }
+    }
     if (choices.length === 0) {
         vscode.window.showWarningMessage('All knowledge bases already added or no knowledge bases available.')
     } else {
         const selection = await vscode.window.showQuickPick(choices, {
-            placeHolder: 'Select Knowledge Base(s) to Add',
-            canPickMany: true
+            placeHolder: 'Select Existing Knowledge Base to Add'
         })
-        if (selection && selection.length > 0) {
-            const selected: KnowledgeBase[] = [];
-            for (const sel of selection) {
-                selected.push(sel.object as KnowledgeBase);
+        if (selection) {
+            if (typeof selection.object === 'function') {
+                return await selection.object();
+            } else {
+                return [ selection.object ];
             }
-            return selected;
         }
     }
     return undefined;
@@ -464,7 +490,7 @@ class VulnerabilityAuditNode extends nodes.BaseNode implements nodes.ShowReportN
                         } else {
                             this.iconPath = new vscode.ThemeIcon(VulnerabilityAuditNode.ICON, new vscode.ThemeColor('charts.orange'));
                         }
-                        this.tooltip = `${vulnerableArtifactsCount} ${vulnerableArtifactsCount === 1 ? 'vulnerability' : 'vulnerabilities'} found, maximum observed CVSS v2 score: ${maxV2Score}, maximum observed CVSS v3 score: ${maxV3Score}`;
+                        this.tooltip = `${vulnerableArtifactsCount} ${vulnerableArtifactsCount === 1 ? 'vulnerability' : 'vulnerabilities'} found, maximum observed CVSS v2 score: ${maxV2Score ? maxV2Score : '-'}, maximum observed CVSS v3 score: ${maxV3Score ? maxV3Score : '-'}`;
                     }
                     break;
                 }

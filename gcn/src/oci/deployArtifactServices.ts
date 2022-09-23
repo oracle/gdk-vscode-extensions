@@ -119,25 +119,51 @@ async function selectDeployArtifacts(oci: ociContext.Context, ignore: DeployArti
             }
         }
     }
-    const choices: dialogs.QuickPickObject[] = [];
+    const existingContentChoices: dialogs.QuickPickObject[] = [];
     for (let i = 0; i < deployArtifacts.length; i++) {
         const icon = getIconKey(deployArtifacts[i]);
-        choices.push(new dialogs.QuickPickObject(`$(${icon}) ${deployArtifacts[i].displayName}`, undefined, descriptions[i], deployArtifacts[i]));
+        existingContentChoices.push(new dialogs.QuickPickObject(`$(${icon}) ${deployArtifacts[i].displayName}`, undefined, descriptions[i], deployArtifacts[i]));
+    }
+    dialogs.sortQuickPickObjectsByName(existingContentChoices);
+    let existingContentMultiSelect;
+    if (existingContentChoices.length > 1) {
+        const multiSelectExisting = async (): Promise<DeployArtifact[] | undefined> => {
+            const selection = await vscode.window.showQuickPick(existingContentChoices, {
+                placeHolder: 'Select Existing Build Artifacts to Add',
+                canPickMany: true
+            });
+            if (selection?.length) {
+                const selected: DeployArtifact[] = [];
+                for (const sel of selection) {
+                    selected.push(sel.object as DeployArtifact);
+                }
+                return selected;
+            } else {
+                return undefined;
+            }
+        };
+        existingContentMultiSelect = new dialogs.QuickPickObject('$(arrow-small-right) Add multiple existing build artifacts...', undefined, undefined, multiSelectExisting);
     }
     // TODO: provide a possibility to select build artifacts for different code repository / devops project / compartment
+    const choices: dialogs.QuickPickObject[] = [];
+    if (existingContentChoices.length) {
+        choices.push(...existingContentChoices);
+        if (existingContentMultiSelect) {
+            choices.push(existingContentMultiSelect);
+        }
+    }
     if (choices.length === 0) {
         vscode.window.showWarningMessage('All build artifacts already added or no build artifacts available.')
     } else {
         const selection = await vscode.window.showQuickPick(choices, {
-            placeHolder: 'Select Build Artifact(s) to Add',
-            canPickMany: true
+            placeHolder: 'Select Existing Build Artifact to Add'
         })
-        if (selection && selection.length > 0) {
-            const selected: DeployArtifact[] = [];
-            for (const sel of selection) {
-                selected.push(sel.object as DeployArtifact);
+        if (selection) {
+            if (typeof selection.object === 'function') {
+                return await selection.object();
+            } else {
+                return [ selection.object ];
             }
-            return selected;
         }
     }
     return undefined;

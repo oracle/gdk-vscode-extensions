@@ -106,25 +106,51 @@ async function selectArtifactRepositories(oci: ociContext.Context, ignore: Artif
             }
         }
     }
-    const choices: dialogs.QuickPickObject[] = [];
+    const existingContentChoices: dialogs.QuickPickObject[] = [];
     for (let i = 0; i < artifactRepositories.length; i++) {
-        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${artifactRepositories[i].displayName}`, undefined, descriptions[i], artifactRepositories[i]));
+        existingContentChoices.push(new dialogs.QuickPickObject(`$(${ICON}) ${artifactRepositories[i].displayName}`, undefined, descriptions[i], artifactRepositories[i]));
+    }
+    dialogs.sortQuickPickObjectsByName(existingContentChoices);
+    let existingContentMultiSelect;
+    if (existingContentChoices.length > 1) {
+        const multiSelectExisting = async (): Promise<ArtifactRepository[] | undefined> => {
+            const selection = await vscode.window.showQuickPick(existingContentChoices, {
+                placeHolder: 'Select Existing Artifact Repositories to Add',
+                canPickMany: true
+            });
+            if (selection?.length) {
+                const selected: ArtifactRepository[] = [];
+                for (const sel of selection) {
+                    selected.push(sel.object as ArtifactRepository);
+                }
+                return selected;
+            } else {
+                return undefined;
+            }
+        };
+        existingContentMultiSelect = new dialogs.QuickPickObject('$(arrow-small-right) Add multiple existing artifact repositories...', undefined, undefined, multiSelectExisting);
     }
     // TODO: provide a possibility to create a new artifact repository
     // TODO: provide a possibility to select artifact repositories from different compartments
+    const choices: dialogs.QuickPickObject[] = [];
+    if (existingContentChoices.length) {
+        choices.push(...existingContentChoices);
+        if (existingContentMultiSelect) {
+            choices.push(existingContentMultiSelect);
+        }
+    }
     if (choices.length === 0) {
-        vscode.window.showWarningMessage('All container repositories already added or no container repositories available.')
+        vscode.window.showWarningMessage('All artifact repositories already added or no artifact repositories available.')
     } else {
         const selection = await vscode.window.showQuickPick(choices, {
-            placeHolder: 'Select Artifact Repository(s) to Add',
-            canPickMany: true
+            placeHolder: 'Select Existing Artifact Repository to Add'
         })
-        if (selection && selection.length > 0) {
-            const selected: ArtifactRepository[] = [];
-            for (const sel of selection) {
-                selected.push(sel.object as ArtifactRepository);
+        if (selection) {
+            if (typeof selection.object === 'function') {
+                return await selection.object();
+            } else {
+                return [ selection.object ];
             }
-            return selected;
         }
     }
     return undefined;

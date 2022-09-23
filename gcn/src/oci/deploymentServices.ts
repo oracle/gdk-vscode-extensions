@@ -305,7 +305,7 @@ async function selectDeploymentPipelines(oci: ociContext.Context, ignore: Deploy
     if (existingContentChoices.length > 1) {
         const multiSelectExisting = async (): Promise<DeploymentPipeline[] | undefined> => {
             const selection = await vscode.window.showQuickPick(existingContentChoices, {
-                placeHolder: 'Select Existing Deployment Pipeline(s) to Add',
+                placeHolder: 'Select Existing Deployment Pipelines to Add',
                 canPickMany: true
             });
             if (selection?.length) {
@@ -318,7 +318,7 @@ async function selectDeploymentPipelines(oci: ociContext.Context, ignore: Deploy
                 return undefined;
             }
         };
-        existingContentMultiSelect = new dialogs.QuickPickObject('Add multiple existing pipelines at once...', undefined, undefined, multiSelectExisting);
+        existingContentMultiSelect = new dialogs.QuickPickObject('$(arrow-small-right) Add multiple existing pipelines...', undefined, undefined, multiSelectExisting);
     }
     // TODO: don't offer to create the pipeline if already created
     // NOTE: pipelines may be created for various OKE clusters from various compartments, which makes it more complicated
@@ -326,7 +326,7 @@ async function selectDeploymentPipelines(oci: ociContext.Context, ignore: Deploy
     const newDeployment = async (): Promise<DeploymentPipeline[] | undefined> => {
         return createOkeDeploymentPipelines(oci);
     };
-    newContentChoices.push(new dialogs.QuickPickObject(`$(add) New Deployment to OKE`, undefined, 'Create and setup new pipeline to deploy built native executable containers to the OKE', newDeployment));
+    newContentChoices.push(new dialogs.QuickPickObject(`$(add) New Deployment to OKE`, undefined, 'Create and setup new pipeline to deploy built docker native executables to the OKE', newDeployment));
     const choices: dialogs.QuickPickObject[] = [];
     if (newContentChoices.length) {
         if (existingContentChoices.length) {

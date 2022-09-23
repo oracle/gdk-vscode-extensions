@@ -134,26 +134,52 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
             }
         }
     }
-    const choices: dialogs.QuickPickObject[] = [];
+    const existingContentChoices: dialogs.QuickPickObject[] = [];
     for (let i = 0; i < pipelines.length; i++) {
-        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${pipelines[i].displayName}`, undefined, descriptions[i], pipelines[i]));
+        existingContentChoices.push(new dialogs.QuickPickObject(`$(${ICON}) ${pipelines[i].displayName}`, undefined, descriptions[i], pipelines[i]));
     }
-    // TODO: display pipelines for the repository and for the project
+    dialogs.sortQuickPickObjectsByName(existingContentChoices);
+    let existingContentMultiSelect;
+    if (existingContentChoices.length > 1) {
+        const multiSelectExisting = async (): Promise<BuildPipeline[] | undefined> => {
+            const selection = await vscode.window.showQuickPick(existingContentChoices, {
+                placeHolder: 'Select Existing Build Pipelines to Add',
+                canPickMany: true
+            });
+            if (selection?.length) {
+                const selected: BuildPipeline[] = [];
+                for (const sel of selection) {
+                    selected.push(sel.object as BuildPipeline);
+                }
+                return selected;
+            } else {
+                return undefined;
+            }
+        };
+        existingContentMultiSelect = new dialogs.QuickPickObject('$(arrow-small-right) Add multiple existing pipelines...', undefined, undefined, multiSelectExisting);
+    }
     // TODO: provide a possibility to create a new pipeline
+    // TODO: display pipelines for the repository and for the project
     // TODO: provide a possibility to select pipelines from different projects / compartments
+    const choices: dialogs.QuickPickObject[] = [];
+    if (existingContentChoices.length) {
+        choices.push(...existingContentChoices);
+        if (existingContentMultiSelect) {
+            choices.push(existingContentMultiSelect);
+        }
+    }
     if (choices.length === 0) {
         vscode.window.showWarningMessage('All build pipelines already added or no build pipelines available.')
     } else {
         const selection = await vscode.window.showQuickPick(choices, {
-            placeHolder: 'Select Build Pipeline(s) to Add',
-            canPickMany: true
+            placeHolder: 'Select Existing Build Pipeline to Add'
         })
-        if (selection && selection.length > 0) {
-            const selected: BuildPipeline[] = [];
-            for (const sel of selection) {
-                selected.push(sel.object as BuildPipeline);
+        if (selection) {
+            if (typeof selection.object === 'function') {
+                return await selection.object();
+            } else {
+                return [ selection.object ];
             }
-            return selected;
         }
     }
     return undefined;

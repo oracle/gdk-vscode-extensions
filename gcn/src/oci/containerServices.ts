@@ -104,25 +104,51 @@ async function selectContainerRepositories(oci: ociContext.Context, ignore: Cont
             }
         }
     }
-    const choices: dialogs.QuickPickObject[] = [];
+    const existingContentChoices: dialogs.QuickPickObject[] = [];
     for (const containerRepository of containerRepositories) {
-        choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${containerRepository.displayName}`, undefined, undefined, containerRepository));
+        existingContentChoices.push(new dialogs.QuickPickObject(`$(${ICON}) ${containerRepository.displayName}`, undefined, undefined, containerRepository));
+    }
+    dialogs.sortQuickPickObjectsByName(existingContentChoices);
+    let existingContentMultiSelect;
+    if (existingContentChoices.length > 1) {
+        const multiSelectExisting = async (): Promise<ContainerRepository[] | undefined> => {
+            const selection = await vscode.window.showQuickPick(existingContentChoices, {
+                placeHolder: 'Select Existing Container Repositories to Add',
+                canPickMany: true
+            });
+            if (selection?.length) {
+                const selected: ContainerRepository[] = [];
+                for (const sel of selection) {
+                    selected.push(sel.object as ContainerRepository);
+                }
+                return selected;
+            } else {
+                return undefined;
+            }
+        };
+        existingContentMultiSelect = new dialogs.QuickPickObject('$(arrow-small-right) Add multiple existing container repositories...', undefined, undefined, multiSelectExisting);
     }
     // TODO: provide a possibility to create a new container repository
     // TODO: provide a possibility to select container repositories from different compartments
+    const choices: dialogs.QuickPickObject[] = [];
+    if (existingContentChoices.length) {
+        choices.push(...existingContentChoices);
+        if (existingContentMultiSelect) {
+            choices.push(existingContentMultiSelect);
+        }
+    }
     if (choices.length === 0) {
         vscode.window.showWarningMessage('All container repositories already added or no container repositories available.')
     } else {
         const selection = await vscode.window.showQuickPick(choices, {
-            placeHolder: 'Select Container Repository(s) to Add',
-            canPickMany: true
+            placeHolder: 'Select Existing Container Repository to Add'
         })
-        if (selection && selection.length > 0) {
-            const selected: ContainerRepository[] = [];
-            for (const sel of selection) {
-                selected.push(sel.object as ContainerRepository);
+        if (selection) {
+            if (typeof selection.object === 'function') {
+                return await selection.object();
+            } else {
+                return [ selection.object ];
             }
-            return selected;
         }
     }
     return undefined;
