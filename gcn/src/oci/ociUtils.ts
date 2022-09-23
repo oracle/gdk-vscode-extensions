@@ -191,6 +191,13 @@ export async function getTenancy(authenticationDetailsProvider: common.ConfigFil
     return client.getTenancy(request).then(response => response.tenancy);
 }
 
+export async function listRegions(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.models.Region[]> {
+    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: identity.requests.ListRegionsRequest = {
+    };
+    return client.listRegions(request).then(response => response.items);
+}
+
 export async function listCompartments(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.models.Compartment[]> {
     const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: identity.requests.ListCompartmentsRequest = {
@@ -936,6 +943,27 @@ export async function updateDynamicGroup(authenticationDetailsProvider: common.C
     return client.updateDynamicGroup(request).then(response => response.dynamicGroup);
 }
 
+export async function processWithinHomeRegion(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, task: () => Promise<any>): Promise<any> {
+    const homeRegionKey = (await getTenancy(authenticationDetailsProvider)).homeRegionKey;
+    if (!homeRegionKey) {
+        return undefined;
+    }
+    const homeRegion = (await listRegions(authenticationDetailsProvider)).find(region => region.key === homeRegionKey)?.name;
+    if (!homeRegion) {
+        return undefined;
+    }
+    const currentRegion = authenticationDetailsProvider.getRegion().regionId;
+    if (homeRegion === currentRegion) {
+        return task();
+    }
+    try {
+        authenticationDetailsProvider.setRegion(homeRegion);
+        return task();
+    } finally {
+        authenticationDetailsProvider.setRegion(currentRegion);
+    }
+}
+
 export async function getDefaultBuildPipelinesGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean): Promise<identity.models.DynamicGroup | undefined> {
     const tenancy = authenticationDetailsProvider.getTenantId();
     const rule = `ALL {resource.type = 'devopsbuildpipeline', resource.compartment.id = '${compartmentID}'}`;
@@ -943,13 +971,13 @@ export async function getDefaultBuildPipelinesGroup(authenticationDetailsProvide
     if (group) {
         if (group.matchingRule.indexOf(rule) < 0) {
             const len = group.matchingRule.length;
-            await updateDynamicGroup(authenticationDetailsProvider, group.id, { matchingRule: `${group.matchingRule.slice(0, len - 1)}, ${rule}${group.matchingRule.slice(len - 1)}`});
+            await processWithinHomeRegion(authenticationDetailsProvider, () => updateDynamicGroup(authenticationDetailsProvider, group.id, { matchingRule: `${group.matchingRule.slice(0, len - 1)}, ${rule}${group.matchingRule.slice(len - 1)}`}));
         }
         return group;
     }
     if (create) {
         // TODO: why is the created group not returned immediately?
-        await createDynamicGroup(authenticationDetailsProvider, tenancy, DEFAULT_BUILD_PIPELINES_GROUP, 'Default group for build pipelines created from VS Code', `Any {${rule}}`);
+        await processWithinHomeRegion(authenticationDetailsProvider, () => createDynamicGroup(authenticationDetailsProvider, tenancy, DEFAULT_BUILD_PIPELINES_GROUP, 'Default group for build pipelines created from VS Code', `Any {${rule}}`));
         return (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_BUILD_PIPELINES_GROUP)).find(g => DEFAULT_BUILD_PIPELINES_GROUP === g.name);
     }
     return undefined;
@@ -962,13 +990,13 @@ export async function getDefaultDeployPipelinesGroup(authenticationDetailsProvid
     if (group) {
         if (group.matchingRule.indexOf(rule) < 0) {
             const len = group.matchingRule.length;
-            await updateDynamicGroup(authenticationDetailsProvider, group.id, { matchingRule: `${group.matchingRule.slice(0, len - 1)}, ${rule}${group.matchingRule.slice(len - 1)}`});
+            await processWithinHomeRegion(authenticationDetailsProvider, () => updateDynamicGroup(authenticationDetailsProvider, group.id, { matchingRule: `${group.matchingRule.slice(0, len - 1)}, ${rule}${group.matchingRule.slice(len - 1)}`}));
         }
         return group;
     }
     if (create) {
         // TODO: why is the created group not returned immediately?
-        await createDynamicGroup(authenticationDetailsProvider, tenancy, DEFAULT_DEPLOY_PIPELINES_GROUP, 'Default group for deployment pipelines created from VS Code', `Any {${rule}}`);
+        await processWithinHomeRegion(authenticationDetailsProvider, () => createDynamicGroup(authenticationDetailsProvider, tenancy, DEFAULT_DEPLOY_PIPELINES_GROUP, 'Default group for deployment pipelines created from VS Code', `Any {${rule}}`));
         return (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_DEPLOY_PIPELINES_GROUP)).find(g => DEFAULT_DEPLOY_PIPELINES_GROUP === g.name);
     }
     return undefined;
@@ -981,13 +1009,13 @@ export async function getDefaultCodeRepositoriesGroup(authenticationDetailsProvi
     if (group) {
         if (group.matchingRule.indexOf(rule) < 0) {
             const len = group.matchingRule.length;
-            await updateDynamicGroup(authenticationDetailsProvider, group.id, { matchingRule: `${group.matchingRule.slice(0, len - 1)}, ${rule}${group.matchingRule.slice(len - 1)}`});
+            await processWithinHomeRegion(authenticationDetailsProvider, () => updateDynamicGroup(authenticationDetailsProvider, group.id, { matchingRule: `${group.matchingRule.slice(0, len - 1)}, ${rule}${group.matchingRule.slice(len - 1)}`}));
         }
         return group;
     }
     if (create) {
         // TODO: why is the created group not returned immediately?
-        await createDynamicGroup(authenticationDetailsProvider, tenancy, DEFAULT_CODE_REPOSITORIES_GROUP, 'Default group for code repositories created from VS Code', `Any {${rule}}`);
+        await processWithinHomeRegion(authenticationDetailsProvider, () => createDynamicGroup(authenticationDetailsProvider, tenancy, DEFAULT_CODE_REPOSITORIES_GROUP, 'Default group for code repositories created from VS Code', `Any {${rule}}`));
         return (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_CODE_REPOSITORIES_GROUP)).find(g => DEFAULT_CODE_REPOSITORIES_GROUP === g.name);
     }
     return undefined;
@@ -1049,16 +1077,16 @@ export async function getCompartmentAccessPolicy(authenticationDetailsProvider: 
             statements.push(codeRepositoriesGroupRule);
         }
         if (statements.length != policy.statements.length) {
-            await updatePolicy(authenticationDetailsProvider, policy.id, { statements });
+            await processWithinHomeRegion(authenticationDetailsProvider, () => updatePolicy(authenticationDetailsProvider, policy.id, { statements }));
         }
         return policy.id;
     }
     if (create) {
-        await createPolicy(authenticationDetailsProvider, compartmentID, 'Default policy for accessing compartment resources created from VS Code', [
+        await processWithinHomeRegion(authenticationDetailsProvider, () => createPolicy(authenticationDetailsProvider, compartmentID, 'Default policy for accessing compartment resources created from VS Code', [
             buildPipelinesGroupRule,
             deployPipelinesGroupRule,
             codeRepositoriesGroupRule
-        ]);
+        ]));
         return (await listPolicies(authenticationDetailsProvider, compartmentID, DEFAULT_COMPARTMENT_ACCESS_POLICY)).find(g => DEFAULT_COMPARTMENT_ACCESS_POLICY == g.name)?.id;
     }
     return undefined;
