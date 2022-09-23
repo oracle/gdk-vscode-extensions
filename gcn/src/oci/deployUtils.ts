@@ -246,7 +246,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 const description = `Source code repository ${folder.name}`;
                 let codeRepository;
                 try {
-                    codeRepository = await ociUtils.createCodeRepository(provider, deployData.project, repositoryName, 'master', description);
+                    codeRepository = await ociUtils.createCodeRepository(provider, deployData.project, repositoryName, 'master', description, false);
                 } catch (err) {
                     resolve(dialogs.getErrorMessage(`Failed to create source code repository ${repositoryName}`, err));
                     return;
@@ -761,6 +761,8 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     increment,
                     message: `Populating source code repository ${repositoryName}...`
                 });
+                const repositoryId = codeRepository.id;
+                await ociUtils.completion(2000, async () => (await ociUtils.getCodeRepository(provider, repositoryId)).lifecycleState, true);
                 const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir, storage);
                 if (pushErr) {
                     resolve(`Failed to push ${repositoryName}: ${pushErr}`);

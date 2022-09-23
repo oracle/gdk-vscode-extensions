@@ -1208,7 +1208,7 @@ export async function createOkeDeployEnvironment(authenticationDetailsProvider: 
     return client.createDeployEnvironment(request).then(response => response.deployEnvironment);
 }
 
-export async function createCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, repositoryName: string, defaultBranchName: string, description?: string): Promise<devops.models.Repository> {
+export async function createCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, repositoryName: string, defaultBranchName: string, description?: string, waitForCreation?: boolean): Promise<devops.models.Repository> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: devops.models.CreateRepositoryDetails = {
         name: repositoryName,
@@ -1221,7 +1221,7 @@ export async function createCodeRepository(authenticationDetailsProvider: common
         createRepositoryDetails: requestDetails
     };
     const response = await client.createRepository(request);
-    if (response.opcWorkRequestId) {
+    if (waitForCreation && response.opcWorkRequestId) {
         const getWorkRequestRequest: devops.requests.GetWorkRequestRequest = {
             workRequestId: response.opcWorkRequestId
         };
@@ -1469,19 +1469,25 @@ async function createDeployArtifact(authenticationDetailsProvider: common.Config
     return client.createDeployArtifact(request).then(response => response.deployArtifact);
 }
 
-export async function completion(initialPollTime: number, getState: () => Promise<string | undefined>): Promise<string | undefined> {
+export async function completion(initialPollTime: number, getState: () => Promise<string | undefined>, checkFirst?: boolean): Promise<string | undefined> {
     // TODO: use increasing polling time
     const pollTime = initialPollTime;
     let state: string | undefined;
-    do {
-        await delay(pollTime);
-        state = await getState();
-    } while (isRunning(state));
+    if (checkFirst) {
+        while (isRunning(state = await getState())) {
+            await delay(pollTime);
+        }
+    } else {
+        do {
+            await delay(pollTime);
+            state = await getState();
+        } while (isRunning(state));
+    }
     return state;
 }
 
 export function isRunning(state?: string) {
-    return state === 'ACCEPTED' || state === 'IN_PROGRESS' || state === 'CANCELING';
+    return state === 'ACCEPTED' || state === 'IN_PROGRESS' || state === 'CANCELING' || state === 'CREATING';
 }
 
 export function isSuccess(state?: string) {
