@@ -102,11 +102,10 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                     });
                     const services = await importServices(authentication, compartment.ocid, devopsProject.ocid, repository.ocid);
                     servicesData.push(services);
-
-                    // Do not track changes to .vscode/gcn.json
-                    const gcnConfig = folderStorage.getDefaultLocation();
-                    gitUtils.skipWorkTree(folder, gcnConfig);
                 }
+                // Do not track changes to .vscode/gcn.json
+                const gcnConfig = folderStorage.getDefaultLocation();
+                gitUtils.skipWorkTree(folder, gcnConfig);
             }
 
             resolve(undefined);
