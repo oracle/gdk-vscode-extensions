@@ -110,28 +110,60 @@ export async function pushLocalBranch(target: vscode.Uri): Promise<boolean | und
 }
 
 export async function populateNewRepository(address: string, source: string, ...forced: string[]): Promise<string | undefined> {
-    const gitApi = getGitAPI();
-    if (!gitApi) {
-        return 'Cannot access Git support.';
+    const gitPath = getPath();
+    if (!gitPath) {
+        return dialogs.getErrorMessage('Cannot access Git support.');
     }
     try {
-        const repository = await gitApi.init(vscode.Uri.file(source));
-        if (!repository) {
-            dialogs.showErrorMessage(`Cannot initialize Git repository for ${source}`);
-            return undefined;
-        }
-        await repository.addRemote('origin', address);
-        await repository.fetch();
-        await repository.checkout('master');
-        await execute(`${gitApi.git.path} add .`, source);
-        await repository.commit('Initial commit from VS Code');
-        await repository.push();
-        if (forced && forced.length) {
-            const files = forced.join(' ');
-            await execute(`${gitApi.git.path} update-index --skip-worktree  ${files}`, source);
-        }
+        const command = `${gitPath} init`;
+        await execute(command, source);
     } catch (err) {
-        return dialogs.getErrorMessage('Error while populating new repository', err);
+        return dialogs.getErrorMessage('Error while initializing repository', err);
+    }
+    try {
+        const command = `${gitPath} remote add origin ${address}`;
+        await execute(command, source);
+    } catch (err) {
+        return dialogs.getErrorMessage('Error while adding remote repository url', err);
+    }
+    try {
+        const command = `${gitPath} fetch`;
+        await execute(command, source);
+    } catch (err) {
+        return dialogs.getErrorMessage('Error while fetching content of remote repository', err);
+    }
+    try {
+        const command = `${gitPath} checkout master`;
+        await execute(command, source);
+    } catch (err) {
+        return dialogs.getErrorMessage('Error while checking out master branch', err);
+    }
+    try {
+        const command = `${gitPath} add .`;
+        await execute(command, source);
+    } catch (err) {
+        return dialogs.getErrorMessage('Error while adding local sources', err);
+    }
+    try {
+        const command = `${gitPath} commit -m "Initial commit from VS Code"`;
+        await execute(command, source);
+    } catch (err) {
+        return dialogs.getErrorMessage('Error while commiting changes', err);
+    }
+    try {
+        const command = `${gitPath} push`;
+        await execute(command, source);
+    } catch (err) {
+        return dialogs.getErrorMessage('Error while pushing lacal changes to remote repository', err);
+    }
+    if (forced && forced.length > 0) {
+        try {
+            const files = forced.join(' ');
+            const command = `${gitPath} update-index --skip-worktree ${files}`;
+            await execute(command, source);
+        } catch (err) {
+            return dialogs.getErrorMessage('Error while registering files for skipping updates', err);
+        }
     }
     return undefined;
 }
