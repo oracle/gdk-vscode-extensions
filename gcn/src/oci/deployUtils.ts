@@ -95,7 +95,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 message: 'Creating devops project...'
             });
             
-            const projectDescription = 'Graal Cloud Native project deployed from the VS Code';
+            const projectDescription = folders.length === 1 ? `${folders[0].projectInfo.projectType} project deployed from the VS Code`: 'Project deployed from the VS Code';
             while (deployData.project === undefined) {
                 try {
                     deployData.project = (await ociUtils.createDevOpsProject(provider, projectName, deployData.compartment.ocid, deployData.notificationTopic, projectDescription)).id;
