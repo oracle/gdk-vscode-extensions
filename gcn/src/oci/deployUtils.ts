@@ -220,16 +220,23 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 message: `Creating ADM knowledge base for ${projectName}...`
             });
             const knowledgeBaseDescription = `Vulnerability audits for devops project ${projectName}`;
+            
+            let knowledgeCompleted : boolean = false;
+            let knowledgePromise;
             try {
-                deployData.knowledgeBaseOCID = await ociUtils.createKnowledgeBase(provider, deployData.compartment?.ocid || "", projectName, {
+                let workRequestId = await ociUtils.createKnowledgeBase(provider, deployData.compartment?.ocid || "", projectName, {
                     'gcn_tooling_projectOCID': deployData.project,
                     'gcn_tooling_description': knowledgeBaseDescription,
                     'gcn_tooling_usage': 'gcn-adm-audit'
                 });
+                knowledgePromise = ociUtils.admWaitForResourceCompletionStatus(provider, `Knowledge base for project ${projectName}`, workRequestId).
+                    then(ocid => {
+                        deployData.knowledgeBaseOCID = ocid;
+                    }).finally(() => knowledgeCompleted = true);
             } catch (err) {
                 resolve(dialogs.getErrorMessage('Failed to create knowledge base', err));
                 return;
-            }
+           }
 
             for (const deployFolder of folders) {
                 const folder = deployFolder.folder;
@@ -771,6 +778,21 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
 
             }
 
+            if (!deployData.knowledgeBaseOCID) {
+                if (!knowledgeCompleted) {
+                    progress.report({
+                        increment,
+                        message: `Still waiting for ADM knowledge for ${projectName} to be created...`
+                    });
+                }
+                try {
+                    // let also the potential error from the call to be thrown
+                    await knowledgePromise;
+                } catch (err) {
+                    resolve(dialogs.getErrorMessage('Failed to create knowledge base', err));
+                    return;
+                }
+            }
             resolve(undefined);
             return;
         });

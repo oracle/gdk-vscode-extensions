@@ -703,6 +703,15 @@ export async function listNotificationTopics(authenticationDetailsProvider: comm
     return result;
 }
 
+/**
+ * Requests creating a knowledgebase, returns a WorkRequestId that needs to be waited on using admWaitForResourceCompletionStatus
+ * succeeds.
+ * @param authenticationDetailsProvider 
+ * @param compartmentID 
+ * @param projectName 
+ * @param flags 
+ * @returns workRequestID to be waited on
+ */
 export async function createKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, 
     compartmentID: string, projectName: string, flags?: { [key: string]: string } | undefined): Promise<string> {
     const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
@@ -716,9 +725,7 @@ export async function createKnowledgeBase(authenticationDetailsProvider: common.
             freeformTags: flags
         }
     }
-
-    let response = await client.createKnowledgeBase(request);
-    return admWaitForResourceCompletionStatus(authenticationDetailsProvider, `Create knowledge base ${displayName}`, response.opcWorkRequestId);
+    return (await client.createKnowledgeBase(request)).opcWorkRequestId;
 }
 
 export async function getFqnCompartmentName(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<string> {
