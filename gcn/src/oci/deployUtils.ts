@@ -224,7 +224,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
             let knowledgeCompleted : boolean = false;
             let knowledgePromise;
             try {
-                let workRequestId = await ociUtils.createKnowledgeBase(provider, deployData.compartment?.ocid || "", projectName, {
+                const workRequestId = await ociUtils.createKnowledgeBase(provider, deployData.compartment?.ocid || "", projectName, {
                     'gcn_tooling_projectOCID': deployData.project,
                     'gcn_tooling_description': knowledgeBaseDescription,
                     'gcn_tooling_usage': 'gcn-adm-audit'

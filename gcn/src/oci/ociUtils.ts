@@ -719,13 +719,13 @@ export async function createKnowledgeBase(authenticationDetailsProvider: common.
     // PENDING: displayName must match ".*(?:^[a-zA-Z_](-?[a-zA-Z_0-9])*$).*" -- transliterate invalid characters in name
     const displayName = `${projectName}Audits`;
     const request: adm.requests.CreateKnowledgeBaseRequest = {
-        createKnowledgeBaseDetails : {
+        createKnowledgeBaseDetails: {
             compartmentId: compartmentID,
             displayName: displayName,
             freeformTags: flags
         }
     }
-    return (await client.createKnowledgeBase(request)).opcWorkRequestId;
+    return client.createKnowledgeBase(request).then(response => response.opcWorkRequestId);
 }
 
 export async function getFqnCompartmentName(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<string> {
