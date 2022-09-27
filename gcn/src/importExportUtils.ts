@@ -7,6 +7,7 @@
 
 import * as vscode from 'vscode';
 import * as gcnServices from './gcnServices';
+import * as servicesView from './servicesView';
 import * as dialogs from './dialogs';
 import * as folderStorage from './folderStorage';
 import * as projectUtils from './projectUtils';
@@ -14,19 +15,25 @@ import { DeployFolder } from './model';
 
 
 export async function importDevopsProject() {
-    const cloudSupport = await dialogs.selectCloudSupport();
-    if (!cloudSupport) {
-        return;
-    }
+    await servicesView.showWelcomeView('gcn.importInProgress');
+    let folders;
+    try {
+        const cloudSupport = await dialogs.selectCloudSupport();
+        if (!cloudSupport) {
+            return;
+        }
 
-    const importResult = await cloudSupport.importFolders();
-    if (!importResult) {
-        return;
-    }
+        const importResult = await cloudSupport.importFolders();
+        if (!importResult) {
+            return;
+        }
 
-    const folders = importResult.folders;
-    const servicesData = importResult.servicesData;
-    folderStorage.storeCloudSupportData(cloudSupport, folders, servicesData);
+        folders = importResult.folders;
+        const servicesData = importResult.servicesData;
+        folderStorage.storeCloudSupportData(cloudSupport, folders, servicesData);
+    } finally {
+        await servicesView.hideWelcomeView('gcn.importInProgress');
+    }
 
     if (folders.length === 1 && !vscode.workspace.workspaceFolders) {
         vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(folders[0]), false);
@@ -40,31 +47,36 @@ export async function importDevopsProject() {
 }
 
 export async function deployFolders(folders?: gcnServices.FolderData | gcnServices.FolderData[]) {
-    if (folders === undefined) {
-        const selected = await dialogs.selectFolders('Select Folders to Deploy', false);
-        if (!selected) {
-            if (selected === null) {
-                dialogs.showErrorMessage('No folders to deploy.');
+    await servicesView.showWelcomeView('gcn.deployInProgress');
+    try {
+        if (folders === undefined) {
+            const selected = await dialogs.selectFolders('Select Folders to Deploy', false);
+            if (!selected) {
+                if (selected === null) {
+                    dialogs.showErrorMessage('No folders to deploy.');
+                }
+                return;
             }
+            folders = selected;
+        } else if (!Array.isArray(folders)) {
+            folders = [ folders ];
+        } else if (folders.length === 0) {
+            dialogs.showErrorMessage('No folders to deploy.');
             return;
         }
-        folders = selected;
-    } else if (!Array.isArray(folders)) {
-        folders = [ folders ];
-    } else if (folders.length === 0) {
-        dialogs.showErrorMessage('No folders to deploy.');
-        return;
-    }
-    const cloudSupport = await dialogs.selectCloudSupport();
-    if (!cloudSupport) {
-        return;
-    }
+        const cloudSupport = await dialogs.selectCloudSupport();
+        if (!cloudSupport) {
+            return;
+        }
 
-    const deployFolders: DeployFolder[] = [];
-    for (const folder of folders) {
-        const projectInfo = await projectUtils.getProjectInfo(folder.folder);
-        deployFolders.push({ folder: folder.folder, projectInfo });
+        const deployFolders: DeployFolder[] = [];
+        for (const folder of folders) {
+            const projectInfo = await projectUtils.getProjectInfo(folder.folder);
+            deployFolders.push({ folder: folder.folder, projectInfo });
+        }
+        await cloudSupport.deployFolders(deployFolders);
+    } finally {
+        await servicesView.hideWelcomeView('gcn.deployInProgress');
     }
-    await cloudSupport.deployFolders(deployFolders);
     await gcnServices.build();
 }

@@ -11,6 +11,7 @@ import * as fs from 'fs';
 import * as identity from 'oci-identity';
 import * as devops from 'oci-devops';
 import * as gcnServices from '../gcnServices';
+import * as servicesView from '../servicesView';
 import * as dialogs from '../dialogs';
 import * as projectUtils from '../projectUtils';
 import * as ociUtils from './ociUtils';
@@ -18,19 +19,24 @@ import * as ociServices from './ociServices';
 
 
 export async function undeployFolders() {
-    const selected = await dialogs.selectFolders('Select Folders to Undeploy', true, false);
-    if (!selected) {
-        if (selected === null) {
-            vscode.window.showErrorMessage('No folders to undeploy.');
+    await servicesView.showWelcomeView('gcn.undeployInProgress');
+    try {
+        const selected = await dialogs.selectFolders('Select Folders to Undeploy', true, false);
+        if (!selected) {
+            if (selected === null) {
+                vscode.window.showErrorMessage('No folders to undeploy.');
+            }
+            return;
         }
-        return;
-    }
-    for (const folder of selected) {
-        try {
-            await undeployFolder(folder);
-        } catch (err) {
-            dialogs.showErrorMessage(`Failed to undeploy folder ${folder.folder.name}`, err);
+        for (const folder of selected) {
+            try {
+                await undeployFolder(folder);
+            } catch (err) {
+                dialogs.showErrorMessage(`Failed to undeploy folder ${folder.folder.name}`, err);
+            }
         }
+    } finally {
+        await servicesView.hideWelcomeView('gcn.undeployInProgress');
     }
     await gcnServices.build();
 }

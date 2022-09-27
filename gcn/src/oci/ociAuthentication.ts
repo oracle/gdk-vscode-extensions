@@ -81,7 +81,7 @@ export async function resolve(): Promise<Authentication | undefined> {
                     choices.push(new dialogs.QuickPickObject(profile, undefined, undefined));
                 }
                 const selected = await vscode.window.showQuickPick(choices, {
-                    placeHolder: 'Select Profile'
+                    placeHolder: 'Select OCI Profile'
                 });
                 if (!selected) {
                     return undefined;

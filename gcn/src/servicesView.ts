@@ -81,6 +81,16 @@ export function findWorkspaceFolderByNode(node: nodes.BaseNode | undefined): vsc
     return undefined;
 }
 
+export async function showWelcomeView(viewContext: string) {
+    await vscode.commands.executeCommand('setContext', viewContext, true);
+    nodeProvider.hideContent();
+}
+
+export async function hideWelcomeView(viewContext: string) {
+    await vscode.commands.executeCommand('setContext', viewContext, false);
+    nodeProvider.unhideContent();
+}
+
 async function addContent(folder: gcnServices.FolderData | null | undefined, services: model.CloudServices | undefined) {
     if (!services) {
         if (!folder) {
@@ -233,6 +243,7 @@ class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 	readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null> = this._onDidChangeTreeData.event;
 
     private roots: FolderNode[] = [];
+    private contentHidden: boolean = false;
 
     refresh(element?: vscode.TreeItem) {
         if (this.roots.length === 1 && this.roots[0] === element) { // single root node is collapsed
@@ -240,6 +251,16 @@ class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
         }
         this._onDidChangeTreeData.fire(element);
 	}
+
+    hideContent() {
+        this.contentHidden = true;
+        this._onDidChangeTreeData.fire(undefined);
+    }
+
+    unhideContent() {
+        this.contentHidden = false;
+        this._onDidChangeTreeData.fire(undefined);
+    }
 
     setRoots(roots: FolderNode[]) {
         this.roots = roots;
@@ -251,6 +272,9 @@ class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 	}
 
 	getChildren(element?: vscode.TreeItem): vscode.ProviderResult<vscode.TreeItem[]> {
+        if (this.contentHidden) {
+            return [];
+        }
         if (!element) {
             return this.roots.length === 1 ? this.roots[0].getChildren() : this.roots; // collapse single root node
         } else {

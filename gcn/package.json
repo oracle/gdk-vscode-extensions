@@ -170,18 +170,33 @@
 		"viewsWelcome": [
 			{
 				"view": "gcn-services",
-				"contents": "Initializing Graal Cloud Native Services...",
+				"contents": "Initializing OCI Services...",
 				"when": "!gcn.servicesInitialized"
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Click the Import From Cloud button to clone an existing cloud folder locally:\n[Import From Cloud](command:gcn.importFromCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
-				"when": "gcn.servicesInitialized && workspaceFolderCount == 0"
+				"contents": "Deploying folder(s) to OCI...",
+				"when": "gcn.servicesInitialized && gcn.deployInProgress"
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Click the Deploy to Cloud button to deploy the current folder(s) to cloud:\n[Deploy to Cloud](command:gcn.deployToCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
-				"when": "gcn.servicesInitialized && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
+				"contents": "Importing folder(s) from OCI...",
+				"when": "gcn.servicesInitialized && gcn.importInProgress"
+			},
+			{
+				"view": "gcn-services",
+				"contents": "Undeploying folder(s) from OCI...",
+				"when": "gcn.servicesInitialized && gcn.undeployInProgress"
+			},
+			{
+				"view": "gcn-services",
+				"contents": "Click the Import From OCI button to clone an existing cloud folder locally:\n[Import From OCI](command:gcn.importFromCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
+				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && workspaceFolderCount == 0"
+			},
+			{
+				"view": "gcn-services",
+				"contents": "Click the Deploy to OCI button to deploy the current folder(s) to cloud:\n[Deploy to OCI](command:gcn.deployToCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
+				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
 			}
 		],
 		"views": {
