@@ -265,26 +265,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 }
 
                 if (codeRepository.sshUrl) {
-                    const r = /ssh:\/\/([^/]+)\//.exec(codeRepository.sshUrl);
-                    if (r && r.length == 2) {
-                        const hostname = r[1];
-                        const autoAccept = sshUtils.isAutoAcceptHostFingerprint();
-                        let success = autoAccept ? 1 : await sshUtils.addCloudKnownHosts(hostname, true);
-                        if (success == -1) {
-                            const disableHosts = await vscode.window.showWarningMessage(
-                                "Do you want to disable SSH known_hosts checking for OCI infrastructure ?\n" +
-                                "This is less secure than adding host keys to known_hosts. The change will affect only connections to SCM OCI services.",
-                                "Yes", "No");
-                            if ("Yes" === disableHosts) {
-                                if (await sshUtils.addAutoAcceptHostFingerprintForCloud()) {
-                                    success = 0;
-                                }
-                            }
-                        }
-                        if (success == -1) {
-                            vscode.window.showWarningMessage("SSH utilities required for host key management are not available. Some Git operations may fail. See https://code.visualstudio.com/docs/remote/troubleshooting#_installing-a-supported-ssh-client for the recommended software.");
-                        }
-                    }
+                    await sshUtils.checkSshConfigured(codeRepository.sshUrl);
                 }
 
                 // --- Create fat JAR artifact

@@ -34,7 +34,6 @@
 		"onCommand:gcn.showWelcomePage",
 		"onCommand:gcn.oci.projectAudit.execute",
 		"onCommand:gcn.createGcnProject",
-		"onCommand:gcn.oci.initializeSshKeys",
 		"onView:gcn-services"
 	],
 	"main": "./dist/extension",
@@ -160,11 +159,6 @@
 			{
 				"command": "gcn.oci.projectAudit.execute",
 				"title": "Run Project Audit",
-				"category": "GCN"
-			},
-			{
-				"command": "gcn.oci.initializeSshKeys",
-				"title": "Initialize SSH Keys",
 				"category": "GCN"
 			},
 			{

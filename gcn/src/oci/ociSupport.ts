@@ -16,7 +16,6 @@ import * as ociServices from './ociServices';
 import * as importUtils from './importUtils';
 import * as deployUtils from './deployUtils';
 import * as undeployUtils from './undeployUtils';
-import * as sshUtils from './sshUtils';
 
 
 const TYPE = 'oci';
@@ -24,9 +23,6 @@ const TYPE = 'oci';
 let RESOURCES_FOLDER: string;
 
 export function create(context: vscode.ExtensionContext): model.CloudSupport {
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.initializeSshKeys', () => {
-		sshUtils.initializeSshKeys();
-	}));
     // TODO: --------------------
     // !!! NOT TO BE RELEASED !!!
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.undeployFromCloud', () => {

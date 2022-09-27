@@ -15,6 +15,7 @@ import * as ociServices from './ociServices';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
 import * as ociDialogs from './ociDialogs';
+import * as sshUtils from './sshUtils';
 
 
 // TODO: extract functions shared by deployUtils.ts
@@ -67,6 +68,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                     message: `Cloning code repository ${repository.name}...`
                 });
                 if (repository.sshUrl) { // TODO: https
+                    await sshUtils.checkSshConfigured(repository.sshUrl);
                     const cloned = await gitUtils.cloneRepository(repository.sshUrl, targetDirectory.fsPath);
                     if (!cloned) {
                         resolve(`Failed to clone repository ${repository.name}.`);

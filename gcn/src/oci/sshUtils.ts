@@ -16,72 +16,75 @@ import * as dialogs from '../dialogs';
 import * as ociUtils from './ociUtils';
 
 
-let sshKeyInitInProgress = false;
-
 const defaultConfigLocation = path.join(os.homedir(), '.ssh', 'config');
 
-export async function initializeSshKeys() {
-    if (!sshKeyInitInProgress) {
-        sshKeyInitInProgress = true;
-        try {
-            await vscode.window.withProgress({
-                location: vscode.ProgressLocation.Notification,
-                title: 'Initializing SSH keys',
-                cancellable: false
-            }, (progress, _token) => {
-                return new Promise<void>(async resolve => {
-                    const fileExists = fs.existsSync(defaultConfigLocation);
-                    if (fileExists) {
-                        const content = fs.readFileSync(defaultConfigLocation);
-                        if (/^Host devops.scmservice.*.oci.oraclecloud.com/mi.test(content.toString())) {
-                            progress.report({ message: 'Done.', increment: 100 });
-                            resolve();
-                            return;
-                        }
+export async function checkSshConfigured(sshUrl: string): Promise<void> {
+    const r = /ssh:\/\/([^/]+)\//.exec(sshUrl);
+    if (r && r.length == 2) {
+        const hostname = r[1];
+        if (await initializeSshKeys()) {
+            const autoAccept = isAutoAcceptHostFingerprint();
+            let success = autoAccept ? 1 : await addCloudKnownHosts(hostname, true);
+            if (success == -1) {
+                const disableHosts = await vscode.window.showWarningMessage(
+                    "Do you want to disable SSH known_hosts checking for OCI infrastructure ?\n" +
+                    "This is less secure than adding host keys to known_hosts. The change will affect only connections to SCM OCI services.",
+                    "Yes", "No");
+                if ("Yes" === disableHosts) {
+                    if (addAutoAcceptHostFingerprintForCloud()) {
+                        success = 0;
                     }
-                    let userName: string | undefined;
-                    let tenancyName: string | undefined;
-                    let identityFile: string | null | undefined;
-                    try {
-                        const provider = new common.ConfigFileAuthenticationDetailsProvider();
-                        userName = (await ociUtils.getUser(provider)).name;
-                        tenancyName = (await ociUtils.getTenancy(provider)).name;
-                        identityFile = common.ConfigFileReader.parseDefault(null).get('key_file');
-                    } catch (err) {
-                        dialogs.showErrorMessage('Failed to read OCI configuration', err);
-                        resolve();
-                        return;
-                    }
-                    const uri = fileExists ? vscode.Uri.file(defaultConfigLocation) : vscode.Uri.parse('untitled:' + defaultConfigLocation);
-                    const editor = await vscode.window.showTextDocument(uri);
-                    if (userName && tenancyName && identityFile) {
-                        const text = `Host devops.scmservice.*.oci.oraclecloud.com\n   User ${userName}@${tenancyName}\n   IdentityFile ${identityFile}\n\n`; 
-                        editor.edit(editBuilder => editBuilder.replace(new vscode.Position(0, 0), text));
-                    } else {
-                        const snippet = new vscode.SnippetString('Host devops.scmservice.*.oci.oraclecloud.com\n');
-                        if (userName && tenancyName) {
-                            snippet.appendText(`   User ${userName}@${tenancyName}\n`);
-                        } else {
-                            snippet.appendPlaceholder('   User <USER_NAME>@<TENANCY_NAME>\n');
-                        }
-                        if (identityFile) {
-                            snippet.appendText(`   IdentityFile ${identityFile}\n\n`)
-                        } else {
-                            snippet.appendPlaceholder('   IdentityFile <PATH_TO_PEM_FILE>\n\n')
-                        }
-                        editor.insertSnippet(snippet, new vscode.Position(0, 0));
-                    }
-                    progress.report({ message: 'Done.', increment: 100 });
-                    resolve();
-                });
-            });
-        } finally {
-            sshKeyInitInProgress = false;
+                }
+            }
+            if (success == -1) {
+                vscode.window.showWarningMessage("SSH utilities required for host key management are not available. Some Git operations may fail. See https://code.visualstudio.com/docs/remote/troubleshooting#_installing-a-supported-ssh-client for the recommended software.");
+            }
         }
     }
 }
 
-export async function sshUtilitiesPresent() : Promise<boolean> {
+async function initializeSshKeys(): Promise<boolean> {
+    const parsed = new ParsedKnownHosts();
+    if (parsed.foundIndex < 0) {
+        parsed.addHostSection();
+    }
+    if (!parsed.userIndex || !parsed.indentityFileIndex) {
+        let userName: string;
+        let tenancyName: string | undefined;
+        let identityFile: string | null | undefined;
+        try {
+            const provider = new common.ConfigFileAuthenticationDetailsProvider();
+            userName = (await ociUtils.getUser(provider)).name;
+            tenancyName = (await ociUtils.getTenancy(provider)).name;
+            identityFile = common.ConfigFileReader.parseDefault(null).get('key_file');
+        } catch (err) {
+            dialogs.showErrorMessage('Failed to read OCI configuration', err);
+            return false;
+        }
+        if (!tenancyName || !identityFile) {
+            dialogs.showErrorMessage('Failed to obtain user, tenancy, and/or identity file from OCI configuration');
+            return false;
+        }
+        if (!parsed.indentityFileIndex) {
+            parsed.addIdentityFileDirective(identityFile);
+        }
+        if (!parsed.userIndex) {
+            parsed.addUserDirective(userName, tenancyName);
+        }
+    }
+    if (parsed.modified) {
+        let ack = await vscode.window.showInformationMessage(`The keys for OCI are missing in SSH configuration. Do you allow to add them to SSH config file ?
+                Various repository operations may fail if the SSH keys are not configured.`, "Yes", "No");
+        if (ack !== "Yes") {
+            return false;
+        }
+        const newContents = parsed.lines?.join(os.EOL);
+        fs.writeFileSync(defaultConfigLocation, newContents);
+    }
+    return true;
+}
+
+async function sshUtilitiesPresent() : Promise<boolean> {
     try {
         let keygen = await which("ssh-keygen");
         let keyscan = await which("ssh-keyscan");
@@ -107,7 +110,7 @@ function outputOf(command : string, stdin? : string) : Promise<string> {
     });
 }
 
-export async function addCloudKnownHosts(hostname : string, ask : boolean) : Promise<number> {
+async function addCloudKnownHosts(hostname : string, ask : boolean) : Promise<number> {
     if (!await sshUtilitiesPresent()) {
         return -1;
     }
@@ -161,8 +164,11 @@ class ParsedKnownHosts {
     foundIndex: number = -1;
     checkHostIPIndex?: number;
     strictHostsIndex?: number;
+    userIndex?: number;
+    indentityFileIndex?: number;
     checkOK = false;
     strictOK = false;
+    modified = false;
 
     constructor() {
         const fileExists = fs.existsSync(defaultConfigLocation);
@@ -186,6 +192,10 @@ class ParsedKnownHosts {
                 } else if (/^\s*StrictHostKeyChecking/i.test(line)) {
                     this.strictHostsIndex = index;
                     this.strictOK = /^\s*StrictHostKeyChecking(\s*=\s*|\s+)(accept-new|no|off)/i.test(line);
+                } else if (/^\s*User/i.test(line)) {
+                    this.userIndex = index;
+                } else if (/^\s*IdentityFile/i.test(line)) {
+                    this.indentityFileIndex = index;
                 } else if (/^(Host|Match)/i.test(line)) {
                     // terminate at the next host
                     break;
@@ -196,6 +206,36 @@ class ParsedKnownHosts {
 
     isDisabled() : boolean {
         return this.strictOK && this.checkOK;
+    }
+
+    addHostSection() {
+        const l : string[] = this.lines || [];
+        let fi = this.foundIndex + 1;
+        l.splice(fi, 0, "Host devops.scmservice.*.oci.oraclecloud.com");
+        this.foundIndex = fi++;
+        if (l.length > fi && l[fi].trim().length) {
+            l.splice(fi, 0, "");
+        }
+        this.lines = l;
+        this.modified = true;
+    }
+
+    addUserDirective(userName: string, tenancyName: string) {
+        const l : string[] = this.lines || [];
+        let fi = this.foundIndex + 1;
+        l.splice(fi, 0, `  User ${userName}@${tenancyName}`);
+        this.userIndex = fi;
+        this.lines = l;
+        this.modified = true;
+    }
+
+    addIdentityFileDirective(identityFile: string) {
+        const l : string[] = this.lines || [];
+        let fi = this.foundIndex + 1;
+        l.splice(fi, 0, `  IdentityFile ${identityFile}`);
+        this.indentityFileIndex = fi;
+        this.lines = l;
+        this.modified = true;
     }
 
     addStrictAndCheckDirectives() {
@@ -223,17 +263,18 @@ class ParsedKnownHosts {
             this.strictOK = true;
         }
         this.lines = l;
+        this.modified = true;
     }
 }
 
-export function isAutoAcceptHostFingerprint() : boolean {
+function isAutoAcceptHostFingerprint() : boolean {
     const parsed = new ParsedKnownHosts();
     return parsed.isDisabled();
 }
 
-export async function addAutoAcceptHostFingerprintForCloud() : Promise<boolean> {
+function addAutoAcceptHostFingerprintForCloud() : boolean {
     const parsed = new ParsedKnownHosts();
-    if (!parsed.foundIndex) {
+    if (parsed.foundIndex < 0) {
         return false;
     }
     if (parsed.isDisabled()) {
@@ -241,8 +282,10 @@ export async function addAutoAcceptHostFingerprintForCloud() : Promise<boolean> 
     }
     
     parsed.addStrictAndCheckDirectives();
-    const newContents = parsed.lines?.join(os.EOL);
-    fs.writeFileSync(defaultConfigLocation, newContents);
+    if (parsed.modified) {
+        const newContents = parsed.lines?.join(os.EOL);
+        fs.writeFileSync(defaultConfigLocation, newContents);
+    }
 
     return true;
 }
