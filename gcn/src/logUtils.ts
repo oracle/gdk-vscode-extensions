@@ -8,9 +8,12 @@
 import * as vscode from 'vscode';
 
 
-const GCN_OUTPUT = 'Graal Cloud Native';
+const GCN_OUTPUT = 'OCI Services';
 
 let LOG_OUTPUT: vscode.OutputChannel | undefined;
+
+// Initialize the Output immediately to be always visible
+getOutput();
 
 export function logError(record: string) {
     getOutput().appendLine(`[error - ${new Date().toISOString()}] ${record}`);
