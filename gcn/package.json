@@ -194,7 +194,7 @@
 			"explorer": [
 				{
 					"id": "gcn-services",
-					"name": "GCN Services",
+					"name": "OCI Services",
 					"icon": "resources/GCN_logo.png"
 				}
 			]
