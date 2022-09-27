@@ -14,6 +14,7 @@ import * as gitUtils from '../gitUtils';
 import * as dockerUtils from '../dockerUtils';
 import * as graalvmUtils from '../graalvmUtils';
 import * as servicesView from '../servicesView';
+import * as logUtils from '../logUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociService from './ociService';
@@ -50,6 +51,7 @@ export function initialize(context: vscode.ExtensionContext) {
 
 export async function importServices(oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
     // TODO: Might return populated instance of Service which internally called importServices()
+    logUtils.logInfo('Importing build pipelines');
     const provider = oci.getProvider();
     const project = oci.getDevOpsProject();
     const repository = oci.getCodeRepository();
@@ -59,6 +61,7 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
         let idx = 0;
         for (const pipeline of pipelines) {
             const displayName = pipeline.displayName ? pipeline.displayName : `Build Pipeline ${idx++}`;
+            logUtils.logInfo(`Importing build pipeline '${displayName}': ${pipeline.id}`);
             items.push({
                 'ocid': pipeline.id,
                 'displayName': displayName
@@ -74,6 +77,7 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
         };
         return result;
     } else {
+        logUtils.logInfo('No build pipeline found in project compartment');
         return undefined;
     }
 }

@@ -11,6 +11,7 @@ import * as model from '../model';
 import * as gitUtils from '../gitUtils';
 import * as folderStorage from '../folderStorage';
 import * as dialogs from '../dialogs';
+import * as logUtils from '../logUtils';
 import * as ociServices from './ociServices';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
@@ -21,6 +22,8 @@ import * as sshUtils from './sshUtils';
 // TODO: extract functions shared by deployUtils.ts
 
 export async function importFolders(): Promise<model.ImportResult | undefined> {
+    logUtils.logInfo('Invoked import from OCI');
+
     const authentication = await ociAuthentication.resolve();
     if (!authentication) {
         return undefined;
@@ -54,6 +57,8 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
         return undefined;
     }
 
+    logUtils.logInfo(`Configured to import devops project '${devopsProject.name}' in compartment '${compartment.name}', ${repositories.length} code repository(s) will be cloned to ${targetDirectory.fsPath}`);
+
     const folders: string[] = [];
     const servicesData: any[] = [];
 
@@ -67,6 +72,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                 progress.report({
                     message: `Cloning code repository ${repository.name}...`
                 });
+                logUtils.logInfo(`Cloning code repository '${repository.name}'`);
                 if (repository.sshUrl) { // TODO: https
                     await sshUtils.checkSshConfigured(repository.sshUrl);
                     const cloned = await gitUtils.cloneRepository(repository.sshUrl, targetDirectory.fsPath);
@@ -88,6 +94,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                     // GCN configuration already exists in the cloud repository
                     // NOTE: overwriting the OCI authentication for the local profile
                     // TODO: needs a better approach!
+                    logUtils.logInfo(`Updating OCI profile in gcn.json in the locally cloned code repository '${repository.name}'`);
                     const configuration = folderStorage.read(folder);
                     const cloudServices: any[] = configuration.cloudServices;
                     for (const cloudService of cloudServices) {
@@ -102,6 +109,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                     progress.report({
                         message: `Importing services for code repository ${repository.name}...`
                     });
+                    logUtils.logInfo(`Importing OCI services and creating gcn.json in the locally cloned code repository '${repository.name}'`);
                     const services = await importServices(authentication, compartment.ocid, devopsProject.ocid, repository.ocid);
                     servicesData.push(services);
                 }
@@ -109,6 +117,8 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                 const gcnConfig = folderStorage.getDefaultLocation();
                 gitUtils.skipWorkTree(folder, gcnConfig);
             }
+
+            logUtils.logInfo('Import from OCI successfully completed');
 
             resolve(undefined);
             return;

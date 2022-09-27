@@ -10,6 +10,7 @@ import * as devops from 'oci-devops';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
 import * as kubernetesUtils from "../kubernetesUtils";
+// import * as logUtils from '../logUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociService from './ociService';
@@ -47,6 +48,8 @@ export function initialize(context: vscode.ExtensionContext) {
 
 export async function importServices(_oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
     // TODO: Might return populated instance of Service which internally called importServices()
+    // TODO: Implement import deployment pipelines
+    // logUtils.logInfo('Importing deployment pipelines');
     return undefined;
 }
 

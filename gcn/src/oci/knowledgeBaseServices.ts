@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import * as adm from 'oci-adm';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
+import * as logUtils from '../logUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociService from './ociService';
@@ -54,11 +55,13 @@ export function initialize(context: vscode.ExtensionContext) {
 
 export async function importServices(oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
     // TODO: Might return populated instance of Service which internally called importServices()
+    logUtils.logInfo('Importing knowledge bases');
     const provider = oci.getProvider();
     const compartment = oci.getCompartment();
     const knowledgeBases = await ociUtils.listKnowledgeBases(provider, compartment);
     if (knowledgeBases && knowledgeBases.length > 0) {
         const knowledgeBase = knowledgeBases[0].id;
+        logUtils.logInfo(`Importing knowledge base ${knowledgeBase}`);
         const result: dataSupport.DataProducer = {
             getDataName: () => DATA_NAME,
             getData: () => {
@@ -71,6 +74,7 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
         };
         return result;
     } else {
+        logUtils.logInfo('No knowledge base found in project compartment');
         return undefined;
     }
 }

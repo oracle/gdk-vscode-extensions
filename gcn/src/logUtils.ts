@@ -9,19 +9,20 @@ import * as vscode from 'vscode';
 
 
 const GCN_OUTPUT = 'OCI Services';
+const LOG_OUTPUT = vscode.window.createOutputChannel(GCN_OUTPUT);
 
-let LOG_OUTPUT: vscode.OutputChannel | undefined;
-
-// Initialize the Output immediately to be always visible
-getOutput();
-
-export function logError(record: string) {
-    getOutput().appendLine(`[error - ${new Date().toISOString()}] ${record}`);
+export function logInfo(record: string) {
+    logRecord('info', record);
 }
 
-function getOutput(): vscode.OutputChannel {
-    if (!LOG_OUTPUT) {
-        LOG_OUTPUT = vscode.window.createOutputChannel(GCN_OUTPUT);
-    }
-    return LOG_OUTPUT;
+export function logWarning(record: string) {
+    logRecord('warning', record);
+}
+
+export function logError(record: string) {
+    logRecord('error', record);
+}
+
+export function logRecord(category: string, record: string) {
+    LOG_OUTPUT.appendLine(`[${new Date().toISOString()}] [${category}] ${record}`);
 }
