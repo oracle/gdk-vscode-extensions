@@ -11,7 +11,7 @@ import * as dialogs from '../dialogs';
 import * as ociUtils from './ociUtils';
 
 
-export async function selectCompartment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<{ ocid: string, name: string } | undefined> {
+export async function selectCompartment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, ignore?: string[]): Promise<{ ocid: string, name: string } | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
     // TODO: add root compartment
     const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
@@ -30,15 +30,17 @@ export async function selectCompartment(authenticationDetailsProvider: common.Co
                     }
                     const choices: dialogs.QuickPickObject[] = [];
                     for (const compartment of compartments) {
-                        let name = compartment.name;
-                        let parent = compartmentsMap[compartment.compartmentId]; // will be undefined for root compartment
-                        while (parent) {
-                            name = `${parent.name}/${name}`;
-                            parent = compartmentsMap[parent.compartmentId];
+                        if (!ignore?.includes(compartment.id)) { // doesn't filter-out root compartment
+                            let name = compartment.name;
+                            let parent = compartmentsMap[compartment.compartmentId]; // will be undefined for root compartment
+                            while (parent) {
+                                name = `${parent.name}/${name}`;
+                                parent = compartmentsMap[parent.compartmentId];
+                            }
+                            const description = compartment.description ? compartment.description : undefined;
+                            const choice = new dialogs.QuickPickObject(name, description, undefined, { ocid: compartment.id, name: name });
+                            choices.push(choice);
                         }
-                        const description = compartment.description ? compartment.description : undefined;
-                        const choice = new dialogs.QuickPickObject(name, description, undefined, { ocid: compartment.id, name: name });
-                        choices.push(choice);
                     }
                     dialogs.sortQuickPickObjectsByName(choices);
                     const tenancy = await ociUtils.getTenancy(authenticationDetailsProvider);
@@ -172,54 +174,4 @@ export async function selectCodeRepositories(authenticationDetailsProvider: comm
     }
 
     return undefined;
-}
-
-export async function selectOkeCluster(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, region: string, skipAllowed: boolean): Promise<string | null | undefined> {
-    const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: 'Reading available OKE clusters...',
-        cancellable: false
-    }, (_progress, _token) => {
-        return new Promise(async resolve => {
-            ociUtils.listClusters(authenticationDetailsProvider, compartmentID).then(clusters => {
-                const choices: dialogs.QuickPickObject[] = [];
-                for (const cluster of clusters) {
-                    if (cluster.name && cluster.id) {
-                        choices.push(new dialogs.QuickPickObject(cluster.name, undefined, undefined, cluster.id));
-                    }
-                }
-                resolve(choices);
-            }).catch(err => {
-                dialogs.showErrorMessage('Failed to read OKE clusters', err);
-                resolve(undefined);
-            });
-        });
-    });
-
-    if (choices === undefined) {
-        return undefined;
-    }
-
-    if (choices.length === 0) {
-        const createOption = 'Quick Create Cluster';
-        const cancelOption = skipAllowed ? 'Skip Deploy to OKE Pipeline Creation' : 'Cancel';
-        const sel = await vscode.window.showWarningMessage('No OKE cluster available.', createOption, cancelOption);
-        if (cancelOption === sel) {
-            return skipAllowed ? null : undefined;
-        }
-        if (createOption === sel) {
-            dialogs.openInBrowser(`https://cloud.oracle.com/containers/clusters/quick?region=${region}`);
-        }
-        return undefined;
-    }
-
-    if (choices.length === 1) {
-        return choices[0].object;
-    }
-
-    const choice = await vscode.window.showQuickPick(choices, {
-        placeHolder: 'Select Target OKE Cluster'
-    });
-
-    return choice ? choice.object : undefined;
 }

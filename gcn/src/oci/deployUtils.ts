@@ -19,6 +19,7 @@ import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
 import * as ociDialogs from './ociDialogs';
 import * as sshUtils from './sshUtils';
+import * as okeUtils from './okeUtils';
 
 
 export type SaveConfig = (folder: string, config: any) => boolean;
@@ -41,7 +42,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
         return undefined;
     }
 
-    deployData.okeCluster = await ociDialogs.selectOkeCluster(provider, deployData.compartment.ocid, provider.getRegion().regionId, true);
+    deployData.okeCluster = await okeUtils.selectOkeCluster(provider, deployData.compartment.ocid, provider.getRegion().regionId, true, deployData.compartment.name, true);
     if (deployData.okeCluster === undefined) {
         return undefined;
     }

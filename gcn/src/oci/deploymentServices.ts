@@ -12,11 +12,11 @@ import * as dialogs from '../dialogs';
 import * as kubernetesUtils from "../kubernetesUtils";
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
-import * as ociDialogs from './ociDialogs';
 import * as ociService from './ociService';
 import * as ociServices  from './ociServices';
 import * as dataSupport from './dataSupport';
 import * as ociNodes from './ociNodes';
+import * as okeUtils from './okeUtils';
 
 
 export const DATA_NAME = 'deploymentPipelines';
@@ -61,7 +61,7 @@ export function findByNode(node: nodes.BaseNode): Service | undefined {
 }
 
 async function createOkeDeploymentPipelines(oci: ociContext.Context): Promise<DeploymentPipeline[] | undefined> {
-    const okeCluster = await ociDialogs.selectOkeCluster(oci.getProvider(), oci.getCompartment(), oci.getProvider().getRegion().regionId, false);
+    const okeCluster = await okeUtils.selectOkeCluster(oci.getProvider(), oci.getCompartment(), oci.getProvider().getRegion().regionId);
     if (!okeCluster) {
         return undefined;
     }
