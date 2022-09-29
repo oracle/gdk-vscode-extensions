@@ -22,7 +22,7 @@ import * as sshUtils from './sshUtils';
 // TODO: extract functions shared by deployUtils.ts
 
 export async function importFolders(): Promise<model.ImportResult | undefined> {
-    logUtils.logInfo('[import] Invoked import from OCI');
+    logUtils.logInfo('[import] Invoked import existing devops project');
 
     const authentication = await ociAuthentication.resolve();
     if (!authentication) {
@@ -118,7 +118,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                 gitUtils.skipWorkTree(folder, gcnConfig);
             }
 
-            logUtils.logInfo('[import] Import from OCI successfully completed');
+            logUtils.logInfo('[import] Existing devops project successfully imported');
 
             resolve(undefined);
             return;

@@ -170,17 +170,17 @@
 		"viewsWelcome": [
 			{
 				"view": "gcn-services",
-				"contents": "Initializing OCI Services...",
+				"contents": "Initializing services...",
 				"when": "!gcn.servicesInitialized"
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Deploying folder(s) to OCI...",
+				"contents": "Creating devops project...",
 				"when": "gcn.servicesInitialized && gcn.deployInProgress"
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Importing folder(s) from OCI...",
+				"contents": "Importing devops project...",
 				"when": "gcn.servicesInitialized && gcn.importInProgress"
 			},
 			{
@@ -190,12 +190,12 @@
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Click the Import From OCI button to clone an existing cloud folder locally:\n[Import From OCI](command:gcn.importFromCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
+				"contents": "Import an existing OCI devops project locally.\n[Import DevOps Project](command:gcn.importFromCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
 				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && workspaceFolderCount == 0"
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Click the Deploy to OCI button to deploy the current folder(s) to cloud:\n[Deploy to OCI](command:gcn.deployToCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
+				"contents": "Create a new OCI devops project from the current folder(s).\n[Create DevOps Project](command:gcn.deployToCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
 				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
 			}
 		],
@@ -203,7 +203,7 @@
 			"explorer": [
 				{
 					"id": "gcn-services",
-					"name": "OCI Services",
+					"name": "OCI DevOps Services",
 					"icon": "resources/GCN_logo.png"
 				}
 			]

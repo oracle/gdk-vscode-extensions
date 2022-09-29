@@ -26,7 +26,7 @@ import * as okeUtils from './okeUtils';
 export type SaveConfig = (folder: string, config: any) => boolean;
 
 export async function deployFolders(folders: model.DeployFolder[], resourcesPath: string, saveConfig: SaveConfig): Promise<undefined> {
-    logUtils.logInfo('[deploy] Invoked deploy to OCI');
+    logUtils.logInfo('[deploy] Invoked create new devops project');
     
     const authentication = await ociAuthentication.resolve();
     if (!authentication) {
@@ -837,7 +837,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
     if (error) {
         dialogs.showErrorMessage(error);
     } else {
-        logUtils.logInfo(`[deploy] Deploy to OCI successfully completed`);
+        logUtils.logInfo(`[deploy] New devops project successfully created`);
     }
 
     return undefined;
