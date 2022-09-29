@@ -10,6 +10,7 @@ import * as cp from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as dialogs from './dialogs';
+import * as logUtils from './logUtils';
 
 function getGitAPI() {
     return vscode.extensions.getExtension('vscode.git')?.exports.getAPI(1);
@@ -50,6 +51,7 @@ export async function cloneSourceRepository(repoPath: string, repoName: string, 
 }
 
 export async function cloneRepository(address: string, target: string): Promise<boolean> {
+    logUtils.logInfo(`[git] Clone repository ${address} to ${target}`);
     const gitPath = getPath();
     if (!gitPath) {
         dialogs.showErrorMessage('Cannot access Git support.');
@@ -66,6 +68,7 @@ export async function cloneRepository(address: string, target: string): Promise<
 }
 
 export function getHEAD(target: vscode.Uri): { name?: string, commit?: string, upstream?: object } | undefined {
+    logUtils.logInfo(`[git] Get head of ${target.fsPath}`);
     const gitApi = getGitAPI();
     if (!gitApi) {
         dialogs.showErrorMessage('Cannot access Git support.');
@@ -80,6 +83,7 @@ export function getHEAD(target: vscode.Uri): { name?: string, commit?: string, u
 }
 
 export function locallyModified(target: vscode.Uri): boolean | undefined {
+    logUtils.logInfo(`[git] Check locally modified ${target.fsPath}`);
     const gitApi = getGitAPI();
     if (!gitApi) {
         dialogs.showErrorMessage('Cannot access Git support.');
@@ -94,6 +98,7 @@ export function locallyModified(target: vscode.Uri): boolean | undefined {
 }
 
 export async function pushLocalBranch(target: vscode.Uri): Promise<boolean | undefined> {
+    logUtils.logInfo(`[git] Push local branch ${target.fsPath}`);
     const gitApi = getGitAPI();
     if (!gitApi) {
         dialogs.showErrorMessage('Cannot access Git support.');
@@ -105,6 +110,7 @@ export async function pushLocalBranch(target: vscode.Uri): Promise<boolean | und
         return undefined;
     }
     try {
+        logUtils.logInfo(`[git] Execute git.publish ${repository}`);
         await vscode.commands.executeCommand('git.publish', [repository]);
         return true;
     } catch (err) {
@@ -114,6 +120,7 @@ export async function pushLocalBranch(target: vscode.Uri): Promise<boolean | und
 }
 
 export async function populateNewRepository(address: string, source: string, ...forced: string[]): Promise<string | undefined> {
+    logUtils.logInfo(`[git] Populate new repository ${address} from ${source}`);
     const gitPath = getPath();
     if (!gitPath) {
         return dialogs.getErrorMessage('Cannot access Git support.');
@@ -172,38 +179,38 @@ export async function populateNewRepository(address: string, source: string, ...
     return undefined;
 }
 
+export async function skipWorkTree(folder: string, entry: string): Promise<void> {
+    logUtils.logInfo(`[git] Skip work tree of ${entry} in ${folder}`);
+    const gitPath = getPath();
+    if (!gitPath) {
+        dialogs.showErrorMessage('Cannot access Git support.');
+        return;
+    }
+    try {
+        const command = `${gitPath} update-index --skip-worktree ${entry}`;
+        await execute(command, folder);
+    } catch (err) {
+        dialogs.showErrorMessage(`Failed to skip work tree of  ${entry}`, err);
+    }
+}
+
 async function execute(command: string, cwd: string): Promise<string> {
-    // console.log(`>>> Executing '${command}' in '${cwd}'`);
+    logUtils.logInfo(`[git] ${cwd}>${command}`);
     return new Promise<string>((resolve, reject) => {
         cp.exec(command, { cwd: cwd }, (error, stdout, _stderr) => {
             if (error) {
-                // console.log('--- Error ---');
-                // console.log(error);
-                // console.log(_stderr);
                 reject(error ?? new Error(_stderr));
             } else {
-                // console.log('--- Done ---');
-                // console.log(stdout);
-                // console.log('...');
-                // console.log(_stderr);
                 resolve(stdout);
             }
         })
     });
 }
 
-export async function skipWorkTree(folder: string, entry: string): Promise<void> {
-    const gitApi = getGitAPI();
-    if (gitApi) {
-        await execute(`${gitApi.git.path} update-index --skip-worktree ${entry}`, folder);
-    } else {
-        dialogs.showErrorMessage('Cannot access Git support.');
-    }
-}
-
 export function addGitIgnoreEntry(folder: string, entry: string) {
+    const gitIgnore = path.join(folder, '.gitignore');    
+    logUtils.logInfo(`[git] Add ${entry} to ${gitIgnore}`);
     entry = entry.replace(/\\/g, '/');
-    const gitIgnore = path.join(folder, '.gitignore');
     if (fs.existsSync(gitIgnore)) {
         const content = fs.readFileSync(gitIgnore).toString();
         const lineEndRegExp = new RegExp('.*(\r?\n)');
