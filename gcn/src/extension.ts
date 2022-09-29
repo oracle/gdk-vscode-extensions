@@ -11,14 +11,16 @@ import * as gcnServices from './gcnServices';
 import * as servicesView from './servicesView';
 import * as welcome from './welcome';
 import * as gcnProjectCreate from './gcnProjectCreate';
+import * as logUtils from './logUtils';
 
 export const CLOUD_SUPPORTS: model.CloudSupport[] = [];
 
 export function activate(context: vscode.ExtensionContext) {
+	logUtils.logInfo('[extension] Activating extension');
+
 	CLOUD_SUPPORTS.push(
-		// require('./oci/ociSupport').create(context),
 		require('./oci/ociSupport').create(context)
-		// TODO: add another cloud implementations here
+		// NOTE: support for another cloud implementations might be registered here
 	);
 	
 	if (vscode.workspace.getConfiguration().get<boolean>('gcn.showWelcomePage')) {
@@ -39,4 +41,5 @@ export function activate(context: vscode.ExtensionContext) {
 
 	gcnServices.build();
 
+	logUtils.logInfo('[extension] Extension successfully activated');
 }
