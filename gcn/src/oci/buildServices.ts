@@ -325,6 +325,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                         }
                         const params = graalvmUtils.getGVMBuildRunParameters(version);
                         const buildName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
+                        logUtils.logInfo(`[build] Starting build '${buildName}' using GraalVM ${version[1]}, Java ${version[0]}`);
                         vscode.window.withProgress({
                             location: vscode.ProgressLocation.Notification,
                             title: `Starting build "${buildName}" using GraalVM ${version[1]}, Java ${version[0]}...`,
@@ -340,6 +341,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                                         }
                                     }
                                     const buildRun = await ociUtils.createBuildRun(this.oci.getProvider(), this.object.ocid, buildName, params, commitInfo);
+                                    logUtils.logInfo(`[build] Build '${buildName}' started`);
                                     resolve(true);
                                     if (buildRun) {
                                         this.object.lastBuildRun = buildRun.id;
@@ -347,16 +349,16 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                                         service?.serviceNodesChanged(this);
                                         this.updateLastRun(buildRun.id, buildRun.lifecycleState, buildRun.displayName ? vscode.window.createOutputChannel(buildRun.displayName) : undefined);
                                         this.showBuildOutput();
-                                        this.updateWhenCompleted(buildRun.id, buildRun.compartmentId);
+                                        this.updateWhenCompleted(buildRun.id, buildRun.compartmentId, buildName);
                                     }
                                 } catch (err) {
-                                    dialogs.showErrorMessage('Failed to start build pipeline', err);
+                                    dialogs.showErrorMessage(`Failed to start build pipeline '${this.object.displayName}'`, err);
                                     resolve(false);
                                 }
                             });
                         })
                     } else {
-                        dialogs.showErrorMessage('Failed to start build pipeline: No local active GraalVM installation detected.');
+                        dialogs.showErrorMessage(`Failed to start build pipeline '${this.object.displayName}': No local active GraalVM installation detected.`);
                     }
                 });
             }
@@ -479,7 +481,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         this.treeChanged(this);
     }
 
-    private async updateWhenCompleted(buildRunId: string, compartmentId?: string) {
+    private async updateWhenCompleted(buildRunId: string, compartmentId?: string, buildName?: string) {
         const groupId = compartmentId ? await ociUtils.getDefaultLogGroup(this.oci.getProvider(), compartmentId) : undefined;
         const logId = groupId ? (await ociUtils.listLogs(this.oci.getProvider(), groupId)).find(item => item.configuration?.source.resource === this.oci.getDevOpsProject())?.id : undefined;
         let deliveredArtifacts: { id: string, type: string }[] | undefined;
@@ -497,6 +499,10 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
             const state = buildRun.lifecycleState;
             if (this.lastRun?.ocid === buildRunId && buildRun) {
                 if (ociUtils.isSuccess(state)) {
+                    if (buildName) {
+                        logUtils.logInfo(`[build] Build '${buildName}' finished: ${state}`);
+                        buildName = undefined; // report the success just once
+                    }
                     deliveredArtifacts = buildRun?.buildOutputs?.deliveredArtifacts?.items.map((artifact: any) => {
                         switch (artifact.artifactType) {
                             case 'GENERIC_ARTIFACT':

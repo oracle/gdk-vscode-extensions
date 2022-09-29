@@ -10,7 +10,7 @@ import * as devops from 'oci-devops';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
 import * as kubernetesUtils from "../kubernetesUtils";
-// import * as logUtils from '../logUtils';
+import * as logUtils from '../logUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociService from './ociService';
@@ -477,6 +477,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
     runPipeline() {
         if (!ociUtils.isRunning(this.lastDeployment?.state)) {
             const deploymentName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
+            logUtils.logInfo(`[deploy] Starting deployment '${deploymentName}'`);
             vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
                 title: `Starting deployment "${deploymentName}"...`,
@@ -507,6 +508,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                             return;
                         }
                         const deployment = await ociUtils.createDeployment(this.oci.getProvider(), this.object.ocid, deploymentName, dockerTag ? [{ name: dockerTagVarName, value: dockerTag }] : undefined);
+                        logUtils.logInfo(`[deploy] Deployment '${deploymentName}' started`);
                         resolve(true);
                         if (deployment) {
                             this.object.lastDeployment = deployment.id;
@@ -514,10 +516,10 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                             service?.serviceNodesChanged(this);
                             this.updateLastDeployment(deployment.id, deployment.lifecycleState, deployment.displayName ? vscode.window.createOutputChannel(deployment.displayName) : undefined);
                             this.showDeploymentOutput();
-                            this.updateWhenCompleted(deployment.id, deployment.compartmentId);
+                            this.updateWhenCompleted(deployment.id, deployment.compartmentId, deploymentName);
                         }
                     } catch (err) {
-                        dialogs.showErrorMessage('Failed to start deployment pipeline', err);
+                        dialogs.showErrorMessage(`Failed to start deployment pipeline '${this.object.displayName}'`, err);
                         resolve(false)
                     }
                 });
@@ -532,6 +534,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async resolve => {
+                logUtils.logInfo(`[deploy] Open deployment '${this.lastDeployment?.deploymentName ? this.lastDeployment.deploymentName : '<unknown>'}' in browser`);
                 try {
                     const kubectl = await kubernetesUtils.getKubectlAPI();
                     if (!kubectl) {
@@ -563,7 +566,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                     }
                     if (!await kubernetesUtils.getDeployment(deploymentName)) {
                         resolve(false);
-                        dialogs.showErrorMessage(`Cannot find deployment ${deploymentName} in the destination OKE cluster.`);
+                        dialogs.showErrorMessage(`Cannot find deployment '${deploymentName}' in the destination OKE cluster.`);
                         return;
                     }
                     // TODO: get remote port number from deployment ?
@@ -572,7 +575,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                     const result = await kubectl.portForward(`deployments/${deploymentName}`, undefined, localPort, remotePort, { showInUI: { location: 'status-bar' } }); 
                     if (!result) {
                         resolve(false);
-                        dialogs.showErrorMessage(`Cannot forward port for the ${deploymentName} deployment.`);
+                        dialogs.showErrorMessage(`Cannot forward port for the '${deploymentName}' deployment.`);
                         return;
                     }
                     vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${localPort}`));
@@ -617,7 +620,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
         this.treeChanged(this);
     }
 
-    private async updateWhenCompleted(deploymentId: string, compartmentId?: string) {
+    private async updateWhenCompleted(deploymentId: string, compartmentId?: string, deploymentName?: string) {
         const groupId = compartmentId ? await ociUtils.getDefaultLogGroup(this.oci.getProvider(), compartmentId) : undefined;
         const logId = groupId ? (await ociUtils.listLogs(this.oci.getProvider(), groupId)).find(item => item.configuration?.source.resource === this.oci.getDevOpsProject())?.id : undefined;
         let lastResults: any[] = [];
@@ -634,6 +637,10 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
             const state = deployment.lifecycleState;
             if (this.lastDeployment?.ocid === deploymentId && deployment) {
                 if (ociUtils.isSuccess(state)) {
+                    if (deploymentName) {
+                        logUtils.logInfo(`[deploy] Deployment '${deploymentName}' finished: ${state}`);
+                        deploymentName = undefined; // report the success just once
+                    }
                     this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output, (await this.getResource()).freeformTags?.gcn_tooling_okeDeploymentName);
                 }
                 if (this.lastDeployment?.output && compartmentId && groupId && logId) {
