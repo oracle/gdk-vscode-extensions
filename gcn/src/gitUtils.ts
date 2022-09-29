@@ -16,7 +16,11 @@ function getGitAPI() {
 }
 
 function getPath(): string | undefined {
-    return getGitAPI()?.git.path;
+    let path: string | undefined = getGitAPI()?.git.path;
+    if (path?.includes(' ')) {
+       path = `"${path}"`;
+    }
+    return path;
 }
 
 export async function cloneSourceRepository(repoPath: string, repoName: string, msg?: string): Promise<vscode.Uri | undefined> {
