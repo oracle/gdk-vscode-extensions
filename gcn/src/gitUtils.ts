@@ -119,7 +119,7 @@ export async function pushLocalBranch(target: vscode.Uri): Promise<boolean | und
     }
 }
 
-export async function populateNewRepository(address: string, source: string, ...forced: string[]): Promise<string | undefined> {
+export async function populateNewRepository(address: string, source: string, ...skipWorkTree: string[]): Promise<string | undefined> {
     logUtils.logInfo(`[git] Populate new repository ${address} from ${source}`);
     const gitPath = getPath();
     if (!gitPath) {
@@ -167,9 +167,9 @@ export async function populateNewRepository(address: string, source: string, ...
     } catch (err) {
         return dialogs.getErrorMessage('Error while pushing lacal changes to remote repository', err);
     }
-    if (forced && forced.length > 0) {
+    if (skipWorkTree && skipWorkTree.length > 0) {
         try {
-            const files = forced.join(' ');
+            const files = skipWorkTree.join(' ');
             const command = `${gitPath} update-index --skip-worktree ${files}`;
             await execute(command, source);
         } catch (err) {

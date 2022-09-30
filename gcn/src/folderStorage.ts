@@ -106,7 +106,7 @@ export function storeCloudSupportData(cloudSupport: model.CloudSupport, folders:
                     data: servicesData[idx]
                 }
             ]
-            storeCloudServices(folders[idx], cloudServices, false);
+            storeCloudServices(folders[idx], cloudServices, true);
         }
     }
 }

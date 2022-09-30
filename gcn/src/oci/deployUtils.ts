@@ -768,7 +768,8 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 const data: any = {
                     version: '1.0'
                 };
-                data[authentication.getDataName()] = authentication.getData();
+                // GR-41403 - save the default profile for upload to OCI
+                data[authentication.getDataName()] = authentication.getData(true);
                 const oci = new ociContext.Context(authentication, deployData.compartment.ocid, deployData.project, codeRepository.id);
                 data[oci.getDataName()] = oci.getData();
                 data.services = {
@@ -810,7 +811,9 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     resolve(`Failed to push source code repository ${repositoryName}: ${pushErr}`);
                     return;
                 }
-
+                // GR-41403 - save the real profile for local usage
+                data[authentication.getDataName()] = authentication.getData();
+                saveConfig(repositoryDir, data);
             }
 
             if (!deployData.knowledgeBaseOCID) {
