@@ -262,7 +262,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 const buildPipelines = [];
                 const deployPipelines = [];
 
-                logUtils.logInfo(`[deploy] Deploying folder ${repositoryDir} to ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                logUtils.logInfo(`[deploy] Deploying folder ${repositoryDir}`);
 
                 // --- Create code repository
                 progress.report({
@@ -802,12 +802,12 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                     message: `Populating source code repository ${repositoryName}...`
                 });
                 const repositoryId = codeRepository.id;
-                logUtils.logInfo(`[deploy] Waiting for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                logUtils.logInfo(`[deploy] Waiting for source code repository ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                 await ociUtils.completion(2000, async () => (await ociUtils.getCodeRepository(provider, repositoryId)).lifecycleState, true);
-                logUtils.logInfo(`[deploy] Populating ${deployData.compartment.name}/${projectName}/${repositoryName} from ${repositoryDir}`);
+                logUtils.logInfo(`[deploy] Populating source code repository ${deployData.compartment.name}/${projectName}/${repositoryName} from ${repositoryDir}`);
                 const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir, storage);
                 if (pushErr) {
-                    resolve(`Failed to push ${repositoryName}: ${pushErr}`);
+                    resolve(`Failed to push source code repository ${repositoryName}: ${pushErr}`);
                     return;
                 }
 
