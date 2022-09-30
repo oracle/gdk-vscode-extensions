@@ -294,8 +294,8 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         const containerRepositories = await ociUtils.listContainerRepositories(authProvider, compartmentId);
         if (containerRepositories) {
             const containerRepositoryNames: string[] = [];
-            const projectInfo = await projectUtils.getProjectInfo(folder.folder);
-            const cloudSubNames = projectUtils.getCloudSpecificSubProjectNames({ folder: folder.folder, projectInfo });
+            const projectFolder = await projectUtils.getProjectFolder(folder.folder);
+            const cloudSubNames = projectUtils.getCloudSpecificSubProjectNames(projectFolder);
             if (repoNames.length > 1) {
                 for (const name of repoNames) {
                     if (cloudSubNames.length) {

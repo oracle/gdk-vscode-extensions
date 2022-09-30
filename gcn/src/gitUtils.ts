@@ -155,6 +155,15 @@ export async function populateNewRepository(address: string, source: string, ...
     } catch (err) {
         return dialogs.getErrorMessage('Error while adding local sources', err);
     }
+    const forcedFiles = skipWorkTree && skipWorkTree.length > 0 ? skipWorkTree.join(' ') : undefined;
+    if (forcedFiles) {
+        try {
+            const command = `${gitPath} add -f ${forcedFiles}`;
+            await execute(command, source);
+        } catch (err) {
+            return dialogs.getErrorMessage('Error while adding forced sources', err);
+        }
+    }
     try {
         const command = `${gitPath} commit -m "Initial commit from VS Code"`;
         await execute(command, source);
@@ -167,10 +176,9 @@ export async function populateNewRepository(address: string, source: string, ...
     } catch (err) {
         return dialogs.getErrorMessage('Error while pushing lacal changes to remote repository', err);
     }
-    if (skipWorkTree && skipWorkTree.length > 0) {
+    if (forcedFiles) {
         try {
-            const files = skipWorkTree.join(' ');
-            const command = `${gitPath} update-index --skip-worktree ${files}`;
+            const command = `${gitPath} update-index --skip-worktree ${forcedFiles}`;
             await execute(command, source);
         } catch (err) {
             return dialogs.getErrorMessage('Error while registering files for skipping updates', err);

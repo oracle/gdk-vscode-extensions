@@ -10,8 +10,6 @@ import * as gcnServices from './gcnServices';
 import * as servicesView from './servicesView';
 import * as dialogs from './dialogs';
 import * as folderStorage from './folderStorage';
-import * as projectUtils from './projectUtils';
-import { DeployFolder } from './model';
 
 
 export async function importDevopsProject() {
@@ -69,12 +67,8 @@ export async function deployFolders(folders?: gcnServices.FolderData | gcnServic
             return;
         }
 
-        const deployFolders: DeployFolder[] = [];
-        for (const folder of folders) {
-            const projectInfo = await projectUtils.getProjectInfo(folder.folder);
-            deployFolders.push({ folder: folder.folder, projectInfo });
-        }
-        await cloudSupport.deployFolders(deployFolders);
+        const workspaceFolders = gcnServices.folderDataToWorkspaceFolders(folders) as vscode.WorkspaceFolder[];
+        await cloudSupport.deployFolders(workspaceFolders);
     } finally {
         await servicesView.hideWelcomeView('gcn.deployInProgress');
     }

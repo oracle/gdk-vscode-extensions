@@ -7,7 +7,6 @@
 
 import * as nodes from './nodes';
 import * as vscode from 'vscode';
-import * as projectUtils from './projectUtils';
 
 
 export class ServicesConfiguration {
@@ -49,7 +48,7 @@ export interface CloudSupport {
 
     importFolders(): Promise<ImportResult | undefined>
 
-    deployFolders(folders: DeployFolder[]): Promise<DeployResult | undefined>
+    deployFolders(folders: vscode.WorkspaceFolder[]): Promise<DeployResult | undefined>
 
     getServices(folder : vscode.WorkspaceFolder, configuration: ServicesConfiguration): CloudServices | undefined;
 
@@ -68,11 +67,6 @@ export interface CloudServices {
 export type ImportResult = {
     folders: string[],
     servicesData: any[]
-}
-
-export type DeployFolder = {
-    folder: vscode.WorkspaceFolder;
-    projectInfo: projectUtils.ProjectInfo;
 }
 
 export type DeployResult = {
