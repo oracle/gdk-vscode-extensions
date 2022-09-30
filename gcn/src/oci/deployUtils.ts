@@ -448,7 +448,7 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                 }
 
                 if (deployFolder.projectInfo.projectType === 'Micronaut') {
-                    logUtils.logInfo(`[deploy] Setting up Micronaut project resources for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                    logUtils.logInfo(`[deploy] Recognized Micronaut project in ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                     // --- Create container repository
                     progress.report({
                         increment,
@@ -591,9 +591,10 @@ export async function deployFolders(folders: model.DeployFolder[], resourcesPath
                         deployPipelines.push({ 'ocid': oke_deployPipeline, 'displayName': oke_deployPipelineName });
                     }
                 } else if (deployFolder.projectInfo.projectType === 'GCN') {
+                    logUtils.logInfo(`[deploy] Recognized GCN project in ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                     for (const subName of projectUtils.getCloudSpecificSubProjectNames(deployFolder)) {
-                        logUtils.logInfo(`[deploy] Setting up GCN ${subName} project resources for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         if (subName !== 'app') {
+                            logUtils.logInfo(`[deploy] Setting up GCN ${subName} project resources for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             // --- Create container repository
                             progress.report({
                                 increment,
