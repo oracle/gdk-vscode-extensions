@@ -47,7 +47,7 @@ export function create(data: any, _dataChanged?: dataSupport.DataChanged): Authe
 export function createDefault(): Authentication {
     let provider: common.ConfigFileAuthenticationDetailsProvider;
     try {
-        provider = new common.ConfigFileAuthenticationDetailsProvider();
+        provider = createProvider();
     } catch (err) {
         return new Authentication(undefined, dialogs.getErrorMessage('Failed to initialize OCI authentication', err));
     }
@@ -57,7 +57,7 @@ export function createDefault(): Authentication {
 export function createCustom(configFile: string | undefined, profile: string | undefined): Authentication {
     let provider: common.ConfigFileAuthenticationDetailsProvider;
     try {
-        provider = new common.ConfigFileAuthenticationDetailsProvider(configFile, profile);
+        provider = createProvider(configFile, profile);
     } catch (err) {
         return new Authentication(undefined, dialogs.getErrorMessage('Failed to initialize OCI authentication', err));
     }
@@ -74,7 +74,7 @@ export async function resolve(): Promise<Authentication | undefined> {
         if (profiles.length) {
             let provider: common.ConfigFileAuthenticationDetailsProvider;
             if (profiles.length === 1 && profiles[0] === common.ConfigFileReader.DEFAULT_PROFILE_NAME) {
-                provider = new common.ConfigFileAuthenticationDetailsProvider(defaultConfig);
+                provider = createProvider(defaultConfig);
             } else {
                 const choices: dialogs.QuickPickObject[] = [];
                 for (const profile of profiles) {
@@ -86,7 +86,7 @@ export async function resolve(): Promise<Authentication | undefined> {
                 if (!selected) {
                     return undefined;
                 }
-                provider = new common.ConfigFileAuthenticationDetailsProvider(defaultConfig, selected.label);
+                provider = createProvider(defaultConfig, selected.label);
             }
             return new Authentication(provider);
         } else {
@@ -94,6 +94,19 @@ export async function resolve(): Promise<Authentication | undefined> {
         }
     } catch (err) {
         return new Authentication(undefined, dialogs.getErrorMessage('Failed to initialize OCI authentication', err));
+    }
+}
+
+function createProvider(configurationFilePath?: string, profile?: string): common.ConfigFileAuthenticationDetailsProvider {
+    const provider = new common.ConfigFileAuthenticationDetailsProvider(configurationFilePath, profile);
+    fixCurrentProfile(provider, profile);
+    return provider;
+}
+
+function fixCurrentProfile(provider: common.ConfigFileAuthenticationDetailsProvider, profile: string | undefined) {
+    const credentials = provider.getProfileCredentials();
+    if (credentials) {
+        credentials.currentProfile = profile ? profile : common.ConfigFileReader.DEFAULT_PROFILE_NAME;
     }
 }
 
@@ -146,11 +159,12 @@ export class Authentication implements dataSupport.DataProducer {
         if (!this.provider) {
             throw new Error('Authentication provider not initialized');
         }
-        const currentProfile = forceDefaults ? undefined : this.provider.getProfileCredentials()?.currentProfile;
+        const currentProfile = this.provider.getProfileCredentials()?.currentProfile;
+        const profile = forceDefaults || currentProfile === common.ConfigFileReader.DEFAULT_PROFILE_NAME ? undefined : currentProfile;
         const data = {
             type: AUTH_TYPE_CONFIG_FILE,
             path: CONFIG_FILE_PATH_DEFAULT,
-            profile: currentProfile ? currentProfile : CONFIG_FILE_PROFILE_DEFAULT
+            profile: profile ? profile : CONFIG_FILE_PROFILE_DEFAULT
         };
         return data;
     }
