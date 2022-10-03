@@ -27,6 +27,13 @@ export type SaveConfig = (folder: string, config: any) => boolean;
 export async function deployFolders(folders: vscode.WorkspaceFolder[], resourcesPath: string, saveConfig: SaveConfig): Promise<undefined> {
     logUtils.logInfo('[deploy] Invoked create new devops project');
     
+    const nblsOK = await projectUtils.checkNBLS();
+    if (!nblsOK) {
+        dialogs.showErrorMessage('Obsolete project support detected. Try to update the Language Server for Java by Apache NetBeans extension to the latest version.');
+        logUtils.logInfo('[deploy] Obsolete project support detected. Try to update the Language Server for Java by Apache NetBeans extension to the latest version.');
+        return undefined;
+    }
+
     const authentication = await ociAuthentication.resolve();
     if (!authentication) {
         return undefined;
@@ -308,7 +315,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 }
 
                 if (codeRepository.sshUrl) {
-                    await sshUtils.checkSshConfigured(codeRepository.sshUrl);
+                    await sshUtils.checkSshConfigured(provider, codeRepository.sshUrl);
                 }
 
                 // --- Generate fat JAR build spec

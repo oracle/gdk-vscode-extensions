@@ -74,7 +74,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                 });
                 logUtils.logInfo(`[import] Cloning code repository '${repository.name}'`);
                 if (repository.sshUrl) { // TODO: https
-                    await sshUtils.checkSshConfigured(repository.sshUrl);
+                    await sshUtils.checkSshConfigured(provider, repository.sshUrl);
                     const cloned = await gitUtils.cloneRepository(repository.sshUrl, targetDirectory.fsPath);
                     if (!cloned) {
                         resolve(`Failed to clone repository ${repository.name}.`);

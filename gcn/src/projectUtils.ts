@@ -15,6 +15,11 @@ const NATIVE_BUILD = 'native-build';
 
 // TODO: implement correctly for Maven/Gradle projects
 
+export async function checkNBLS(): Promise<boolean> {
+    const commands = await vscode.commands.getCommands();
+    return commands.includes(GET_PROJECT_INFO) && commands.includes(GET_PROJECT_ARTIFACTS);
+}
+
 export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<ProjectFolder> {
     const infos: any[] = await vscode.commands.executeCommand(GET_PROJECT_INFO, folder.uri.toString(), { projectStructure: true });
     if (infos?.length && infos[0]) {

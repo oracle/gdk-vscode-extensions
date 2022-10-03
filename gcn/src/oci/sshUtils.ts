@@ -18,11 +18,11 @@ import * as ociUtils from './ociUtils';
 
 const defaultConfigLocation = path.join(os.homedir(), '.ssh', 'config');
 
-export async function checkSshConfigured(sshUrl: string): Promise<void> {
+export async function checkSshConfigured(provider: common.ConfigFileAuthenticationDetailsProvider, sshUrl: string): Promise<void> {
     const r = /ssh:\/\/([^/]+)\//.exec(sshUrl);
     if (r && r.length == 2) {
         const hostname = r[1];
-        if (await initializeSshKeys()) {
+        if (await initializeSshKeys(provider)) {
             const autoAccept = isAutoAcceptHostFingerprint();
             let success = autoAccept ? 1 : await addCloudKnownHosts(hostname, true);
             if (success == -1) {
@@ -43,35 +43,34 @@ export async function checkSshConfigured(sshUrl: string): Promise<void> {
     }
 }
 
-async function initializeSshKeys(): Promise<boolean> {
+async function initializeSshKeys(provider: common.ConfigFileAuthenticationDetailsProvider): Promise<boolean> {
     const parsed = new ParsedKnownHosts();
     if (parsed.foundIndex < 0) {
         parsed.addHostSection();
     }
-    if (!parsed.userIndex || !parsed.indentityFileIndex) {
-        let userName: string;
-        let tenancyName: string | undefined;
-        let identityFile: string | null | undefined;
-        try {
-            const provider = new common.ConfigFileAuthenticationDetailsProvider();
-            userName = (await ociUtils.getUser(provider)).name;
-            tenancyName = (await ociUtils.getTenancy(provider)).name;
-            identityFile = common.ConfigFileReader.parseDefault(null).get('key_file');
-        } catch (err) {
-            dialogs.showErrorMessage('Failed to read OCI configuration', err);
-            return false;
-        }
-        if (!tenancyName || !identityFile) {
-            dialogs.showErrorMessage('Failed to obtain user, tenancy, and/or identity file from OCI configuration');
-            return false;
-        }
-        if (!parsed.indentityFileIndex) {
-            parsed.addIdentityFileDirective(identityFile);
-        }
-        if (!parsed.userIndex) {
-            parsed.addUserDirective(userName, tenancyName);
-        }
+    const credentials = provider.getProfileCredentials();
+    const configurations = credentials ? credentials.configurationsByProfile.get(credentials.currentProfile) : undefined;
+    if (!configurations) {
+        dialogs.showErrorMessage('Failed to get OCI profile configuration');
+        return false;
     }
+    let userName: string;
+    let tenancyName: string | undefined;
+    let identityFile: string | null | undefined;
+    try {
+        userName = (await ociUtils.getUser(provider, configurations.get('user'))).name;
+        tenancyName = (await ociUtils.getTenancy(provider, configurations.get('tenancy'))).name;
+        identityFile = configurations.get('key_file');
+    } catch (err) {
+        dialogs.showErrorMessage('Failed to read OCI profile configuration', err);
+        return false;
+    }
+    if (!tenancyName || !identityFile) {
+        dialogs.showErrorMessage('Failed to obtain user, tenancy, and/or identity file from OCI profile configuration');
+        return false;
+    }
+    parsed.addOrUpdateIdentityFileDirective(identityFile);
+    parsed.addOrUpdateUserDirective(userName, tenancyName);
     if (parsed.modified) {
         let ack = await vscode.window.showInformationMessage(`The keys for OCI are missing in SSH configuration. Do you allow to add them to SSH config file ?
                 Various repository operations may fail if the SSH keys are not configured.`, "Yes", "No");
@@ -220,22 +219,42 @@ class ParsedKnownHosts {
         this.modified = true;
     }
 
-    addUserDirective(userName: string, tenancyName: string) {
+    addOrUpdateUserDirective(userName: string, tenancyName: string) {
         const l : string[] = this.lines || [];
-        let fi = this.foundIndex + 1;
-        l.splice(fi, 0, `  User ${userName}@${tenancyName}`);
-        this.userIndex = fi;
-        this.lines = l;
-        this.modified = true;
+        if (this.userIndex) {
+            let s = l[this.userIndex];
+            const text = `  User ${userName}@${tenancyName}`;
+            if (text.trim() !== s.trim()) {
+                l[this.userIndex] = text;
+                this.lines = l;
+                this.modified = true;
+            }
+        } else {
+            let fi = this.foundIndex + 1;
+            l.splice(fi, 0, `  User ${userName}@${tenancyName}`);
+            this.userIndex = fi;
+            this.lines = l;
+            this.modified = true;
+        }
     }
 
-    addIdentityFileDirective(identityFile: string) {
+    addOrUpdateIdentityFileDirective(identityFile: string) {
         const l : string[] = this.lines || [];
-        let fi = this.foundIndex + 1;
-        l.splice(fi, 0, `  IdentityFile ${identityFile}`);
-        this.indentityFileIndex = fi;
-        this.lines = l;
-        this.modified = true;
+        if (this.indentityFileIndex) {
+            let s = l[this.indentityFileIndex];
+            const text = `  IdentityFile ${identityFile}`;
+            if (text.trim() !== s.trim()) {
+                l[this.indentityFileIndex] = text;
+                this.lines = l;
+                this.modified = true;
+            }
+        } else {
+            let fi = this.foundIndex + 1;
+            l.splice(fi, 0, `  IdentityFile ${identityFile}`);
+            this.indentityFileIndex = fi;
+            this.lines = l;
+            this.modified = true;
+        }
     }
 
     addStrictAndCheckDirectives() {

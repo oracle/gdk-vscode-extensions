@@ -175,18 +175,18 @@ export async function devopsWaitForResourceCompletionStatus(
     return requestState.resources[0].identifier;
 }
 
-export async function getUser(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.models.User> {
+export async function getUser(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, userID?: string): Promise<identity.models.User> {
     const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: identity.requests.GetUserRequest = {
-        userId: authenticationDetailsProvider.getUser()
+        userId: userID ? userID : authenticationDetailsProvider.getUser()
     };
     return client.getUser(request).then(response => response.user);
 }
 
-export async function getTenancy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.models.Tenancy> {
+export async function getTenancy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, tenantID?: string): Promise<identity.models.Tenancy> {
     const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: identity.requests.GetTenancyRequest = {
-        tenancyId: authenticationDetailsProvider.getTenantId()
+        tenancyId: tenantID ? tenantID : authenticationDetailsProvider.getTenantId()
     };
     return client.getTenancy(request).then(response => response.tenancy);
 }
