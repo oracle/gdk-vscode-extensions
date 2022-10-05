@@ -10,6 +10,7 @@ import * as devops from 'oci-devops';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
 import * as kubernetesUtils from "../kubernetesUtils";
+import * as projectUtils from '../projectUtils';
 import * as logUtils from '../logUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
@@ -63,7 +64,7 @@ export function findByNode(node: nodes.BaseNode): Service | undefined {
     return service instanceof Service ? service as Service : undefined;
 }
 
-async function createOkeDeploymentPipelines(oci: ociContext.Context): Promise<DeploymentPipeline[] | undefined> {
+async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vscode.WorkspaceFolder): Promise<DeploymentPipeline[] | undefined> {
     const okeCluster = await okeUtils.selectOkeCluster(oci.getProvider(), oci.getCompartment(), oci.getProvider().getRegion().regionId);
     if (!okeCluster) {
         return undefined;
@@ -78,7 +79,8 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context): Promise<De
                 try {
                     const project = await ociUtils.getDevopsProject(oci.getProvider(), oci.getDevOpsProject());
                     const repositoryName = (await ociUtils.getCodeRepository(oci.getProvider(), oci.getCodeRepository())).name || project.name;
-                    resolve([ project.name, repositoryName ]);
+                    const projectFolder = await projectUtils.getProjectFolder(folder);
+                    resolve([ project.name, projectFolder.projectType, repositoryName ]);
                     return;
                 } catch (err) {
                     resolve(undefined);
@@ -89,11 +91,12 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context): Promise<De
         })
     }
     const info = await getProjectAndRepositoryName(oci);
-    if (info?.length !== 2) {
+    if (info?.length !== 3) {
         return undefined;
     }
     const projectName = info[0];
-    const repositoryName = info[1];
+    const projectType = info[1];
+    const repositoryName = info[2];
 
     async function listDeployArtifacts(oci: ociContext.Context): Promise<devops.models.DeployArtifactSummary[] | undefined> {
         return await vscode.window.withProgress({
@@ -216,8 +219,8 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context): Promise<De
             return new Promise(async (resolve) => {
                 let oke_deployPipeline;
                 try {
-                    const oke_deployPipelineName = 'Deploy OCI Docker Native Image to OKE';
-                    const oke_deployPipelineDescription = `Deployment pipeline to deploy docker native executable for OCI & devops project ${projectName} & repository ${repositoryName} to OKE`;
+                    const oke_deployPipelineName = `Deploy ${projectType === 'GCN' ? 'OCI ' : ''}Docker Native Image to OKE`;
+                    const oke_deployPipelineDescription = `Deployment pipeline to deploy docker native executable for ${projectType === 'GCN' ? 'OCI & ' : ''}devops project ${projectName} & repository ${repositoryName} to OKE`;
                     const tags: { [key:string]: string } = {
                         'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()
                     };
@@ -230,14 +233,14 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context): Promise<De
                     }], tags));
                 } catch (err) {
                     resolve(undefined);
-                    dialogs.showErrorMessage('Failed to create deployment to OKE pipeline for oci docker native executable', err);
+                    dialogs.showErrorMessage(`Failed to create ${projectType === 'GCN' ? 'oci ' : ''}docker native executables deployment to OKE pipeline for ${repositoryName}`, err);
                     return;
                 }
                 try {
                     await ociUtils.createDeployToOkeStage(oci.getProvider(), oke_deployPipeline.id, okeClusterEnvironment, deployConfigArtifact);
                 } catch (err) {
                     resolve(undefined);
-                    dialogs.showErrorMessage('Failed to create deployment to OKE stage for oci docker native executable', err);
+                    dialogs.showErrorMessage(`Failed to create ${projectType === 'GCN' ? 'oci ' : ''}docker native executables deployment to OKE stage for ${repositoryName}`, err);
                     return;
                 }
                 resolve(oke_deployPipeline);
@@ -251,7 +254,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context): Promise<De
     return undefined;
 }
 
-async function selectDeploymentPipelines(oci: ociContext.Context, ignore: DeploymentPipeline[]): Promise<DeploymentPipeline[] | undefined> {
+async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode.WorkspaceFolder, ignore: DeploymentPipeline[]): Promise<DeploymentPipeline[] | undefined> {
     function shouldIgnore(ocid: string) {
         for (const item of ignore) {
             if (item.ocid === ocid) {
@@ -327,7 +330,7 @@ async function selectDeploymentPipelines(oci: ociContext.Context, ignore: Deploy
     // NOTE: pipelines may be created for various OKE clusters from various compartments, which makes it more complicated
     const newContentChoices: dialogs.QuickPickObject[] = [];
     const newDeployment = async (): Promise<DeploymentPipeline[] | undefined> => {
-        return createOkeDeploymentPipelines(oci);
+        return createOkeDeploymentPipelines(oci, folder);
     };
     newContentChoices.push(new dialogs.QuickPickObject(`$(add) New Deployment to OKE`, undefined, 'Create and setup new pipeline to deploy built docker native executables to the OKE', newDeployment));
     const choices: dialogs.QuickPickObject[] = [];
@@ -372,7 +375,7 @@ class Service extends ociService.Service {
     async addContent() {
         if (this.treeChanged) {
             const displayed = this.itemsData ? this.itemsData as DeploymentPipeline[] : [];
-            const selected = await selectDeploymentPipelines(this.oci, displayed);
+            const selected = await selectDeploymentPipelines(this.oci, this.folder, displayed);
             if (selected) {
                 const added: nodes.BaseNode[] = [];
                 for (const pipeline of selected) {
