@@ -343,7 +343,7 @@ class Service extends ociService.Service {
             return;
         }
         vscode.commands.executeCommand('nbls.gcn.projectAudit.display', this.folder.uri.toString(), auditsKnowledgeBase, 
-                                        this.oci.getCompartment(), this.oci.getDevOpsProject());
+                                        this.oci.getCompartment(), this.oci.getDevOpsProject(), true);
         const prjs: any[] = await vscode.commands.executeCommand('nbls.project.info', this.folder.uri.toString(), { recursive : true, projectStructure : true });
 
         if (prjs.length < 2) {
@@ -351,7 +351,7 @@ class Service extends ociService.Service {
         }
         for (let i of prjs.slice(1)) {
             vscode.commands.executeCommand('nbls.gcn.projectAudit.display', i.projectDirectory, auditsKnowledgeBase, 
-            this.oci.getCompartment(), this.oci.getDevOpsProject());
+            this.oci.getCompartment(), this.oci.getDevOpsProject(), true);
         }
     }
 
