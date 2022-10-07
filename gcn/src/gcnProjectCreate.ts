@@ -316,8 +316,8 @@ function getClouds() {
     for (let i = 0; i < items.length; i++) {
         let v = items[i];
         ret.push({
-            label: v.getTitle().$as('string') as string,
-            value: v.getName().$as('string') as string
+            label: v.getLabel().$as('string') as string,
+            value: v.getValueName().$as('string') as string
         });
     }
     return ret;
@@ -329,8 +329,8 @@ function getServices(): ValueAndLabel[] {
     for (let i = 0; i < ss.length; i++) {
         const item = ss[i];
         ret.push({
-            label: item.getTitle().$as('string'),
-            value: item.getName().$as('string'),
+            label: item.getLabel().$as('string'),
+            value: item.getValueName().$as('string'),
         })
     }
     return ret;

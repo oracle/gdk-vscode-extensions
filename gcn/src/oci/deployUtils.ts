@@ -483,7 +483,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 if (folder.projectType === 'GCN') {
                     logUtils.logInfo(`[deploy] Recognized GCN project in ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                     for (const subName of projectUtils.getCloudSpecificSubProjectNames(folder)) {
-                        if (subName !== 'app') {
+                        if (subName !== 'lib' && subName !== 'app') {
                             logUtils.logInfo(`[deploy] Setting up GCN ${subName} project resources for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
 
                             // --- Create container repository
