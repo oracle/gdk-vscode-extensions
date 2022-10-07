@@ -73,11 +73,11 @@ export async function selectName(title: string, currentName: string | undefined,
     return selected;
 }
 
-export async function selectFolder(caption: string | undefined = undefined, serviceFolder: boolean = true): Promise<gcnServices.FolderData | null | undefined> {
+export async function selectFolder(caption: string | undefined = undefined, serviceFolder: boolean | null = true): Promise<gcnServices.FolderData | null | undefined> {
     const choices: QuickPickObject[] = [];
     const folderData = gcnServices.getFolderData();
     for (const folder of folderData) {
-        if (serviceFolder && folder.services.length > 0 || !serviceFolder && folder.services.length === 0) {
+        if (serviceFolder === null || serviceFolder && folder.services.length > 0 || !serviceFolder && folder.services.length === 0) {
             const choice = new QuickPickObject(folder.folder.name, undefined, undefined, folder);
             choices.push(choice);
         }

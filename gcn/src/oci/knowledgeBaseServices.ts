@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as common from 'oci-common';
 import * as adm from 'oci-adm';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
@@ -16,6 +17,8 @@ import * as ociService from './ociService';
 import * as ociServices  from './ociServices';
 import * as dataSupport from './dataSupport';
 import * as ociNodes from './ociNodes';
+import * as ociDialogs from './ociDialogs';
+import * as ociAuthentication from './ociAuthentication';
 
 
 export const DATA_NAME = 'knowledgeBases';
@@ -33,15 +36,33 @@ type VulnerabilityAudit = {
 }
 
 export function initialize(context: vscode.ExtensionContext) {
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.projectAudit.execute', (...params: any[]) => {
-        const path = params[0]?.uri;
-        if (path) {
-            const uri = vscode.Uri.parse(path);
-            getFolderAuditsService(uri).then(service => {
-                if (service) {
-                    service.executeProjectAudit(uri);
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.projectAudit.execute', async (...params: any[]) => {
+        let uri: vscode.Uri;
+        if (params[0]?.uri) {
+            uri = vscode.Uri.parse(params[0]?.uri);
+            logUtils.logInfo(`[audit] Invoked Audit for folder ${uri.fsPath}`);
+        } else {
+            logUtils.logInfo(`[audit] Invoked Audit without folder context, selecting folder`);
+            const folder = await dialogs.selectFolder('Select Folder For Which To Perform The Audit', null);
+            if (!folder) {
+                if (folder === null) {
+                    logUtils.logInfo(`[audit] No folders open`);
+                    vscode.window.showWarningMessage('No folders open');
                 }
-            });
+                return;
+            }
+            uri = folder.folder.uri;
+        }
+        logUtils.logInfo(`[audit] Resolving OCI service for audit of folder ${uri.fsPath}`);
+        const service = await getFolderAuditsService(uri);
+        if (service) {
+            // Executing for a deployed folder
+            logUtils.logInfo(`[audit] Executing audit of deployed folder ${uri.fsPath}`);
+            service.executeProjectAudit(uri);
+        } else if (service === null) {
+            // Executing for a not deployed folder
+            logUtils.logInfo(`[audit] Executing audit of not deployed folder ${uri.fsPath}`);
+            executeFolderAudit(uri);
         }
     }));
 
@@ -51,6 +72,82 @@ export function initialize(context: vscode.ExtensionContext) {
     ociNodes.registerOpenInConsoleNode(KnowledgeBaseNode.CONTEXT);
     nodes.registerShowReportNode(VulnerabilityAuditNode.CONTEXT);
     ociNodes.registerOpenInConsoleNode(VulnerabilityAuditNode.CONTEXT);
+}
+
+async function executeFolderAudit(uri: vscode.Uri) {
+    logUtils.logInfo(`[audit] Invoked generic audit of a not deployed folder ${uri.fsPath}`);
+    // TODO: read a previously used KB from a persistent storage?
+    const authentication = await ociAuthentication.resolve();
+    if (!authentication) {
+        return undefined;
+    }
+    const configurationProblem = authentication.getConfigurationProblem();
+    if (configurationProblem) {
+        dialogs.showErrorMessage(configurationProblem);
+        return undefined;
+    }
+    const provider = authentication.getProvider();
+
+    const compartment = await ociDialogs.selectCompartment(provider);
+    if (!compartment) {
+        return undefined;
+    }
+
+    logUtils.logInfo(`[audit] Configured to audit folder using a shared knowledge base in compartment ${compartment.name}`);
+    const auditsKnowledgeBase = await getSharedKnowledgeBase(provider, compartment.ocid, compartment.name);
+    if (!auditsKnowledgeBase) {
+        return undefined;
+    }
+
+    const nblsReady = (await vscode.commands.getCommands(true)).includes('nbls.gcn.projectAudit.execute');
+    if (!nblsReady) {
+        dialogs.showErrorMessage('Required Language Server is not ready.');
+        return undefined;
+    }
+
+    logUtils.logInfo(`[audit] Executing generic audit of folder ${uri.fsPath}`);
+    return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri.toString(), auditsKnowledgeBase, compartment.ocid, undefined);
+}
+
+async function getSharedKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, compartmentName: string): Promise<string | undefined> {
+    logUtils.logInfo(`[audit] Listing existing knowledge bases in compartment ${compartmentName}`);
+    return vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: `Resolving audits knowledge base for compartment ${compartmentName}`,
+        cancellable: false
+    }, (_progress, _token) => {
+        return new Promise<string | undefined>(async resolve => {
+            try {
+                const knowledgeBases = await ociUtils.listKnowledgeBases(authenticationDetailsProvider, compartmentID);
+                for (const knowledgeBase of knowledgeBases) {
+                    if (knowledgeBase.freeformTags?.gcn_tooling_usage === 'gcn-shared-adm-audits') {
+                        logUtils.logInfo(`[audit] Found existing shared audits knowledge base '${knowledgeBase.displayName}' in compartment ${compartmentName}`);
+                        resolve(knowledgeBase.id);
+                        return;
+                    }
+                }
+                logUtils.logInfo(`[audit] Shared audits knowledge base not found in compartment ${compartmentName}`);
+                const kb = await createSharedKnowledgeBase(authenticationDetailsProvider, compartmentID, compartmentName);
+                logUtils.logInfo(`[audit] Created shared audits knowledge base in compartment ${compartmentName}`);
+                resolve(kb);
+                return;
+            } catch (err) {
+                dialogs.showErrorMessage(`Failed to search knowledge bases in compartment ${compartmentName}`, err);
+                resolve(undefined);
+                return;
+            };
+        });
+    });
+}
+
+async function createSharedKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, compartmentName: string): Promise<string> {
+    logUtils.logInfo(`[audit] Creating shared audits knowledge base in compartment ${compartmentName}`);
+    const workRequestId = await ociUtils.createKnowledgeBase(authenticationDetailsProvider, compartmentID, 'Generic', {
+        'gcn_tooling_description': `Shared knowledge base for generic audits within compartment ${compartmentName}`,
+        'gcn_tooling_usage': 'gcn-shared-adm-audits'
+    });
+    logUtils.logInfo(`[audit] Waiting to complete creation of shared audits knowledge base in compartment ${compartmentName}`);
+    return ociUtils.admWaitForResourceCompletionStatus(authenticationDetailsProvider, `Shared audits knowledge base for compartment ${compartmentName}`, workRequestId);
 }
 
 export async function importServices(oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
@@ -104,14 +201,14 @@ export function findByFolder(folder: vscode.Uri): Service[] | undefined {
     return kbServices;
 }
 
-async function getFolderAuditsService(folder: vscode.Uri): Promise<Service | undefined> {
+async function getFolderAuditsService(folder: vscode.Uri): Promise<Service | null | undefined> {
     let wsf = vscode.workspace.getWorkspaceFolder(folder);
     if (!wsf) {
-        return;
+        return null;
     }
     const services = findByFolder(wsf.uri);
     if (!services || services.length === 0) {
-        return undefined;
+        return null;
     }
     for (const service of services) {
         if (service.getAuditsKnowledgeBase()) {
