@@ -40,7 +40,7 @@ steps:
     name: "Install GraalVM EE - JDK and Native Image"
     timeoutInSeconds: 300
     command: |
-      if [ ! -n "${GRAALVM_VERSION}" ]; then export GRAALVM_VERSION=21; fi
+      if [ ! -n "${GRAALVM_VERSION}" ]; then export GRAALVM_VERSION=22; fi
       if [ ! -n "${JAVA_VERSION}" ]; then export JAVA_VERSION=17; fi
       echo "GRAALVM_VERSION: ${GRAALVM_VERSION}, Java Version: ${JAVA_VERSION}"
       yum -y install graalvm${GRAALVM_VERSION}-ee-${JAVA_VERSION}-native-image
