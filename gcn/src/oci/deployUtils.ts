@@ -78,7 +78,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
             const buildCommands = new Map();
             const niBuildCommands = new Map();
             for (const folder of folders) {
+                logUtils.logInfo(`[deploy] Getting project information for folder ${folder.uri.fsPath}`);
                 const projectFolder = await projectUtils.getProjectFolder(folder);
+                logUtils.logInfo(`[deploy] Folder ${folder.uri.fsPath} identified as project of type ${projectFolder.projectType} with build system ${projectFolder.buildSystem}`);
                 projectFolders.push(projectFolder);
                 totalSteps += 3; // code repository, cloud services config, populating code repository
                 if (projectFolder.projectType === 'GCN') {
