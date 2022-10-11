@@ -30,12 +30,19 @@ export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<
         for(const sub of infos[0].subprojects) {
             const subInfos: any[] = await vscode.commands.executeCommand(GET_PROJECT_INFO, sub);
             if (subInfos?.length && subInfos[0]) {
-                const name: string = subInfos[0].displayName; // TODO: non deterministic displayName returned
+                let name: string = subInfos[0].displayName; // TODO: non deterministic displayName returned
                 let idx = name.lastIndexOf(path.sep);
                 if (idx < 0) {
                     idx = name.lastIndexOf(':');
                 }
-                subprojects.push({ name: idx < 0 ? name : name.slice(idx + 1), uri: sub } );
+                if (idx >= 0) {
+                    name = name.slice(idx + 1);
+                }
+                idx = name.lastIndexOf('[');
+                if (idx >= 0) {
+                    name = name.slice(0, idx);
+                }
+                subprojects.push({ name: name.trim(), uri: sub } );
             }
         }
         // TODO: add better check for supported projects
