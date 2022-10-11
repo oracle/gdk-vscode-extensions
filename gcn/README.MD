@@ -75,7 +75,9 @@ Once you have access to OCI, you can continue and click **Create DevOps Project*
 
 ### <a name='create-devops-project'></a>Create DevOps Project
 1. Open **OCI DEVOPS SERVICES** panel in VSCode Explorer and click Create DevOps Project button 
+
 ![devops-ci-jobs.png](images/create_devops_prj.png)
+
 2. You will be guided through several steps to push the project from local system in OCI DevOps project:
     1. Select your comparment on OCI
     2. Confirm project name on OCI DevOps, this must be unique per tenancy
