@@ -1,11 +1,32 @@
 # Graal Cloud Native Tools for VS Code
-## *** Technology Preview ***
+*** **Technology Preview** ***
+<!-- vscode-markdown-toc -->
+
+* [GCN Projects Generation Wizard](#gcn-projects-generation-wizard)
+* [OCI DevOps Services](#oci-devops-services)
+    * [Create DevOps Project](#create-devops-project)
+    * [Default Pipelines Setup](#default-pipelines-setup)
+* [OCI Kubernetes deployment with OKE](#oci-kubernetes-deployment-with-oke)
+* [Project Dependencies Vulnerability Audits](#project-dependencies-vulnerability-audits)
+* [Adding more OCI DevOps Services](#adding-more-oci-devops-services)
+* [Proxy Setup](#proxy-setup)
+* [Provide Feedback or Seek Help](#provide-feedback-or-seek-help)
+    * [Privacy Policy](#privacy-policy)
+
+<!-- vscode-markdown-toc-config
+	numbering=false
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
+
+
+
 
 Graal Cloud Native Tools extension provides support for Oracle Cloud Infrastructure’s DevOps service in VS Code with generation of build and deployment pipelines along with source code management to make it easy to transition from local development to cloud-based development and deployment. 
 The initial release of the extension supports Micronaut and Spring Boot applications with modules for several core cloud services including Object Storage, Authentication, Secret Management, Streaming, etc. 
 The GCN extension comes with a project generation wizard to build and configure Micronaut and GCN applications.
 
-### Prerequisites:
+### <a name='prerequisites:'></a>Prerequisites:
 
 - [Extension Pack for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack) Microsoft extension
 - [Kubernetes](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools) Microsoft extension
@@ -14,7 +35,7 @@ The GCN extension comes with a project generation wizard to build and configure 
 
 Once Graal Cloud Native Tools and accompanying extensions are installed, notice **Gr** (stands for GraalVM) in the Activity Bar on the left, and the new **DATABASES** and **OCI DEVOPS SERVICES** panels in the Explorer.
 
-## GCN Projects Generation Wizard 
+## <a name='gcn-projects-generation-wizard'></a>GCN Projects Generation Wizard 
 ​
 The extension provides the GCN project creation wizard. The wizard supports generating different types of Micronaut applications including serverless applications and gateway functions.
 
@@ -39,7 +60,7 @@ The extension provides the GCN project creation wizard. The wizard supports gene
 3. Finally, you are asked to select the destination directory on your local disk and whether to open the created project in a new window or add it to the current workspace. The project is created and open in the VS Code window.
 
 ​
-## OCI DevOps Services
+## <a name='oci-devops-services'></a>OCI DevOps Services
 ​
 Graal Cloud Native Tools enable support for the core [Oracle Cloud Infrastructure (OCI)](https://www.oracle.com/cloud/) services in VS Code including Object Storage, Authentication, Secret Management, Streaming, etc. You can create build and deployment pipelines along with source code management to easy transmit from local to cloud-based development and deployment directly using the **OCI DEVOPS SERVICES** panel:
 ​
@@ -52,7 +73,7 @@ To start using OCI DevOps Services, you need to:
 
 Once you have access to OCI, you can continue and click **Create DevOps Project** to create a pipeline that will build and deploy your project in OCI automatically.
 
-### Create DevOps Project
+### <a name='create-devops-project'></a>Create DevOps Project
 1. Open **OCI DEVOPS SERVICES** panel in VSCode Explorer and click Create DevOps Project button 
 ![devops-ci-jobs.png](images/create_devops_prj.png)
 2. You will be guided through several steps to push the project from local system in OCI DevOps project:
@@ -71,7 +92,7 @@ Once you have access to OCI, you can continue and click **Create DevOps Project*
  Once you create a DevOps project, the following jobs become available from VS Code:
 
 ![devops-ci-jobs.png](images/devops-ci-jobs.png)
-### Default Pipelines Setup
+### <a name='default-pipelines-setup'></a>Default Pipelines Setup
 * **Build Fat JAR**: to package the application with Gradle/Maven and create a runnable JAR file
 * **Build Native Image**: to package the application with Gradle/Maven and generate a native executable using GraalVM Native Image
 * **Build OCI Docker Native Image**: to package the application and build a native executable in a Docker container
@@ -79,7 +100,7 @@ Once you have access to OCI, you can continue and click **Create DevOps Project*
 
 Build specs for each pipeline are stored in *project_folder*/.gcn/
 
-## OCI Kubernetes deployment with OKE
+## <a name='oci-kubernetes-deployment-with-oke'></a>OCI Kubernetes deployment with OKE
 When **Build OCI Docker Native Image** pipeline succeeds and build is available it can be deployed to OKE using **Deploy OCI Docker Native Image to OKE** deployment pipeline. It will deploy the application into OKE and run it. When complete the application can be tested in a browser by selecting action **Open in Browser** for Deploy pipeline
 
 ![Open OKE application in local browser](images/oke_test_app.png)
@@ -88,7 +109,7 @@ It will perform **kubectl** port forwarding from OKE to localhost and is indicat
 
 Browser windows opens with given url for application running in OKE.
 
-## Project Dependencies Vulnerability Audits
+## <a name='project-dependencies-vulnerability-audits'></a>Project Dependencies Vulnerability Audits
 The extension also performs Project audits for vulnerabilities in 3rd party project libraries, supported project types are Maven and Gradle. Project Audits requires OCI account (**.oci/config** file) and use OCI ADM Knowledgebase which retrieves data from nvd.nist.gov database.
 Just select **Run Project Audit** action in Java Projects panel to check for vulnerabilities in opened project. If project contains vulnerable dependency it is shown in PROBLEMS view. 
 
@@ -96,17 +117,19 @@ Just select **Run Project Audit** action in Java Projects panel to check for vul
 
 History of Projects audit can be displayed in OCI DevOps Services panel
 
-## Adding more OCI DevOps Services
+## <a name='adding-more-oci-devops-services'></a>Adding more OCI DevOps Services
 The **OCI DEVOPS SERVICES** feature is not limitted by the four jobs listed in the previous step. There are many more: you can add an existing build pipeline, a build artifact, or a container registry, etc.:
 
 ![more-ci-jobs.png](images/more-ci-jobs.png)
 
+## <a name='proxy-setup'></a>Proxy Setup
+When working behind firewall many tools incl. VSCode itself, Maven, Gradle, kubectl and Docker (if used) require setting up proxy configuration. It needs to be setup for these tools individually and should not be forgotten to reset when not working using proxy.
 
-### Provide Feedback or Seek Help
+## <a name='provide-feedback-or-seek-help'></a>Provide Feedback or Seek Help
 
 * [Request a feature](https://github.com/graalvm/vscode-extensions/issues/new?labels=enhancement)
 * [File a bug](https://github.com/graalvm/vscode-extensions/issues/new?labels=bug)
 
-### Privacy Policy
+### <a name='privacy-policy'></a>Privacy Policy
 
 Read the [Oracle Privacy Policy](https://www.oracle.com/legal/privacy/privacy-policy.html) to learn more.
