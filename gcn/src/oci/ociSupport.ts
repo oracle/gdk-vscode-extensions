@@ -15,7 +15,6 @@ import * as dataSupport from './dataSupport';
 import * as ociServices from './ociServices';
 import * as importUtils from './importUtils';
 import * as deployUtils from './deployUtils';
-import * as undeployUtils from './undeployUtils';
 
 
 const TYPE = 'oci';
@@ -23,13 +22,6 @@ const TYPE = 'oci';
 let RESOURCES_FOLDER: string;
 
 export function create(context: vscode.ExtensionContext): model.CloudSupport {
-    // TODO: --------------------
-    // !!! NOT TO BE RELEASED !!!
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.undeployFromCloud', () => {
-        undeployUtils.undeployFolders();
-	}));
-    // !!! NOT TO BE RELEASED !!!
-    // --------------------------
     RESOURCES_FOLDER = path.join(context.extensionPath, 'resources', 'oci');
     ociServices.initialize(context);
     return new OciSupport();

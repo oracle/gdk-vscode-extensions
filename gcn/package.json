@@ -34,6 +34,9 @@
 		"onCommand:gcn.showWelcomePage",
 		"onCommand:gcn.oci.projectAudit.execute",
 		"onCommand:gcn.createGcnProject",
+		"onCommand:gcn.importFromCloud",
+		"onCommand:gcn.deployToCloud",
+		"onCommand:gcn.undeployFromCloud",
 		"onView:gcn-services"
 	],
 	"main": "./dist/extension",
@@ -57,8 +60,8 @@
 		},
 		"commands": [
 			{
-				"command": "gcn.oci.undeployFromCloud",
-				"title": "Undeploy Opened Folders",
+				"command": "gcn.undeployFromCloud",
+				"title": "Undeploy Open Folders",
 				"category": "GCN"
 			},
 			{
@@ -68,8 +71,14 @@
 			},
 			{
 				"command": "gcn.deployToCloud",
-				"title": "Deploy to Cloud",
+				"title": "Create DevOps Project",
 				"icon": "$(cloud-upload)",
+				"category": "GCN"
+			},
+			{
+				"command": "gcn.importFromCloud",
+				"title": "Import DevOps Project",
+				"icon": "$(cloud-download)",
 				"category": "GCN"
 			},
 			{
@@ -211,10 +220,6 @@
 		"menus": {
 			"commandPalette": [
 				{
-					"command": "gcn.deployToCloud",
-					"when": "false"
-				},
-				{
 					"command": "gcn.addContent",
 					"when": "false"
 				},
@@ -275,13 +280,13 @@
 			"view/title": [
 				{
 					"command": "gcn.deployToCloud",
-					"when": "view == gcn-services && gcn.servicesInitialized && gcn.globalDeployAction && nbJavaLSReady",
+					"when": "view == gcn-services && gcn.servicesInitialized && gcn.globalDeployAction && nbJavaLSReady && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
 					"group": "navigation@1"
 				},
 				{
 					"command": "gcn.addContent",
-					"when": "view == gcn-services && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1",
-					"group": "navigation@1"
+					"when": "view == gcn-services && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
+					"group": "navigation@3"
 				}
 			],
 			"view/item/context": [

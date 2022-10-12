@@ -11,7 +11,6 @@ import * as fs from 'fs';
 import * as identity from 'oci-identity';
 import * as devops from 'oci-devops';
 import * as gcnServices from '../gcnServices';
-import * as servicesView from '../servicesView';
 import * as dialogs from '../dialogs';
 import * as projectUtils from '../projectUtils';
 import * as logUtils from '../logUtils';
@@ -29,30 +28,23 @@ export async function undeployFolders() {
         return;
     }
 
-    await servicesView.showWelcomeView('gcn.undeployInProgress');
-
-    try {
-        const selected = await dialogs.selectFolders('Select Folders to Undeploy', true, false);
-        if (!selected) {
-            if (selected === null) {
-                vscode.window.showErrorMessage('No folders to undeploy.');
-            }
-            return;
+    const selected = await dialogs.selectFolders('Select Folders to Undeploy', true, false);
+    if (!selected) {
+        if (selected === null) {
+            vscode.window.showErrorMessage('No folders to undeploy.');
         }
-        logUtils.logInfo(`[undeploy] Configured to undeploy ${selected.length} folder(s)`);
-        for (const folder of selected) {
-            try {
-                logUtils.logInfo(`[undeploy] Undeploying folder ${folder.folder.uri.fsPath}`);
-                await undeployFolder(folder);
-                logUtils.logInfo(`[undeploy] Folder ${folder.folder.uri.fsPath} successfully undeployed`);
-            } catch (err) {
-                dialogs.showErrorMessage(`Failed to undeploy folder ${folder.folder.name}`, err);
-            }
-        }
-    } finally {
-        await servicesView.hideWelcomeView('gcn.undeployInProgress');
+        return;
     }
-    await gcnServices.build();
+    logUtils.logInfo(`[undeploy] Configured to undeploy ${selected.length} folder(s)`);
+    for (const folder of selected) {
+        try {
+            logUtils.logInfo(`[undeploy] Undeploying folder ${folder.folder.uri.fsPath}`);
+            await undeployFolder(folder);
+            logUtils.logInfo(`[undeploy] Folder ${folder.folder.uri.fsPath} successfully undeployed`);
+        } catch (err) {
+            dialogs.showErrorMessage(`Failed to undeploy folder ${folder.folder.name}`, err);
+        }
+    }
 }
 
 export async function undeployFolder(folder: gcnServices.FolderData) {

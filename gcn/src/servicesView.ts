@@ -28,6 +28,13 @@ export function initialize(context: vscode.ExtensionContext) {
             importExportUtils.deployFolders();
         }
 	}));
+    // TODO: --------------------
+    // ??? NOT TO BE RELEASED ???
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.undeployFromCloud', () => {
+        importExportUtils.undeployFolders();
+	}));
+    // ??? NOT TO BE RELEASED ???
+    // --------------------------
     context.subscriptions.push(vscode.commands.registerCommand('gcn.addContent', (...params: any[]) => {
         if (params[0]) {
             (params[0] as nodes.AddContentNode).addContent();
