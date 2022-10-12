@@ -14,7 +14,7 @@ import * as ons from 'oci-ons';
 import * as logging from 'oci-logging';
 import * as loggingsearch from 'oci-loggingsearch';
 import * as genericartifactscontent from 'oci-genericartifactscontent';
-import { containerengine } from 'oci-sdk';
+import { containerengine, objectstorage } from 'oci-sdk';
 
 
 const DEFAULT_NOTIFICATION_TOPIC = 'NotificationTopic';
@@ -189,6 +189,14 @@ export async function getTenancy(authenticationDetailsProvider: common.ConfigFil
         tenancyId: tenantID ? tenantID : authenticationDetailsProvider.getTenantId()
     };
     return client.getTenancy(request).then(response => response.tenancy);
+}
+
+export async function getObjectStorageNamespace(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID?: string): Promise<string> {
+    const client = new objectstorage.ObjectStorageClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: objectstorage.requests.GetNamespaceRequest = {
+        compartmentId: compartmentID
+    };
+    return client.getNamespace(request).then(response => response.value);
 }
 
 export async function listRegions(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider): Promise<identity.models.Region[]> {

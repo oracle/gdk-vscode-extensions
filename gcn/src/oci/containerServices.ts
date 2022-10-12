@@ -320,13 +320,13 @@ class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource 
         }, async () => {
             try {
                 const regionKey = this.oci.getProvider().getRegion().regionCode;
-                const tenancyNamespace = (await ociUtils.getTenancy(this.oci.getProvider())).name;
-                if (tenancyNamespace) {
+                const namespace = await ociUtils.getObjectStorageNamespace(this.oci.getProvider());
+                if (namespace) {
                     const resource = await this.getResource();
                     const repositoryName = resource.repositoryName;
                     const version = resource.version;
                     if (version) {
-                        const target = `${regionKey}.ocir.io/${tenancyNamespace}/${repositoryName}:${version}`; // https://docs.oracle.com/en-us/iaas/Content/Registry/Tasks/registrypullingimagesusingthedockercli.htm
+                        const target = `${regionKey}.ocir.io/${namespace}/${repositoryName}:${version}`; // https://docs.oracle.com/en-us/iaas/Content/Registry/Tasks/registrypullingimagesusingthedockercli.htm
                         return target;
                     } else {
                         return new Error('Failed to resolve docker pull command - unknown image version.');

@@ -472,13 +472,13 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     buildPipelines.push({ 'ocid': nibuildPipeline, 'displayName': nibuildPipelineName });
                 }
 
-                let tenancy: string | undefined;
+                let namesapce: string | undefined;
                 try {
-                    logUtils.logInfo(`[deploy] Resolving tenancy name`);
-                    tenancy = (await ociUtils.getTenancy(provider)).name;
+                    logUtils.logInfo(`[deploy] Resolving object storage namespace`);
+                    namesapce = await ociUtils.getObjectStorageNamespace(provider);
                 } catch (err) {}
-                if (!tenancy) {
-                    resolve(`Failed to create docker native executables pipeline for ${repositoryName} - cannot resolve tenancy name.`);
+                if (!namesapce) {
+                    resolve(`Failed to create docker native executables pipeline for ${repositoryName} - cannot resolve object storage namespace.`);
                     return;
                 }
 
@@ -544,7 +544,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     increment,
                                     message: `Creating ${subName} docker native executable artifact for ${repositoryName}...`
                                 });
-                                const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${tenancy}/${containerRepository.displayName}:\${DOCKER_TAG}`;
+                                const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${namesapce}/${containerRepository.displayName}:\${DOCKER_TAG}`;
                                 const docker_nibuildArtifactDescription = `Docker native executable artifact for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}`;
                                 let docker_nibuildArtifact;
                                 try {
@@ -706,7 +706,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             increment,
                             message: `Creating docker native executable artifact for ${repositoryName}...`
                         });
-                        const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${tenancy}/${containerRepository.displayName}:\${DOCKER_TAG}`;
+                        const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${namesapce}/${containerRepository.displayName}:\${DOCKER_TAG}`;
                         const docker_nibuildArtifactDescription = `Docker native executable artifact for devops project ${projectName} & repository ${repositoryName}`;
                         let docker_nibuildArtifact;
                         try {
