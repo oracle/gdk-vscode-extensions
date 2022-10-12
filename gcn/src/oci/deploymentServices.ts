@@ -219,7 +219,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
             return new Promise(async (resolve) => {
                 let oke_deployPipeline;
                 try {
-                    const oke_deployPipelineName = `Deploy ${projectType === 'GCN' ? 'OCI ' : ''}Docker Native Image to OKE`;
+                    const oke_deployPipelineName = `Deploy ${projectType === 'GCN' ? 'OCI ' : ''}Docker Native Executable to OKE`;
                     const oke_deployPipelineDescription = `Deployment pipeline to deploy docker native executable for ${projectType === 'GCN' ? 'OCI & ' : ''}devops project ${projectName} & repository ${repositoryName} to OKE`;
                     const tags: { [key:string]: string } = {
                         'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()

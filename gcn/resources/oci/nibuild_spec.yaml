@@ -49,7 +49,7 @@ steps:
       export PATH=${JAVA_HOME}/bin:${PATH}
       echo "Updated PATH: ${PATH}"
   - type: Command
-    name: "Build application native image"
+    name: "Build application native executable"
     timeoutInSeconds: 3600
     command: |
       echo "Executing build command: {{{project_build_command}}}"

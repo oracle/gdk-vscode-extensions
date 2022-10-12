@@ -60,7 +60,7 @@ steps:
       export DOCKER_TAG=`echo ${OCI_BUILD_RUN_ID} | rev | cut -c 1-7`
       echo "DOCKER_TAG: ${DOCKER_TAG}"
   - type: Command
-    name: "Build application native image"
+    name: "Build application native executable"
     command: |
       echo "Executing build command: {{{project_build_command}}}"
       {{{project_build_command}}}

@@ -108,7 +108,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         niBuildCommands.set(projectFolder, niBuildCommand);
                     }
                     if (!buildCommand && !niBuildCommand) {
-                        resolve(`Cannot deploy unsupported project without build or native image build command specified: ${folder.name}`);
+                        resolve(`Cannot deploy unsupported project without build or native executable build command specified: ${folder.name}`);
                         return;
                     }
                 }
@@ -444,8 +444,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         increment,
                         message: `Creating build pipeline for native executables of ${repositoryName}...`
                     });
-                    const nibuildPipelineName = 'Build Native Image';
-                    const nibuildPipelineDescription = `Build pipeline to build native image executable for devops project ${projectName} & repository ${repositoryName}`;
+                    const nibuildPipelineName = 'Build Native Executable';
+                    const nibuildPipelineDescription = `Build pipeline to build native executable for devops project ${projectName} & repository ${repositoryName}`;
                     let nibuildPipeline;
                     try {
                         logUtils.logInfo(`[deploy] Creating build pipeline for native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
@@ -560,7 +560,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     increment,
                                     message: `Creating build pipeline for ${subName} docker native executable of ${repositoryName}...`
                                 });
-                                const docker_nibuildPipelineName = `Build ${subName.toUpperCase()} Docker Native Image`;
+                                const docker_nibuildPipelineName = `Build ${subName.toUpperCase()} Docker Native Executable`;
                                 const docker_nibuildPipelineDescription = `Build pipeline to build docker native executable for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}`;
                                 let docker_nibuildPipeline;
                                 try {
@@ -623,7 +623,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             increment,
                                             message: `Creating deployment to OKE pipeline for ${subName} docker native executables of ${repositoryName}...`
                                         });
-                                        const oke_deployPipelineName = 'Deploy OCI Docker Native Image to OKE';
+                                        const oke_deployPipelineName = 'Deploy OCI Docker Native Executable to OKE';
                                         const oke_deployPipelineDescription = `Deployment pipeline to deploy docker native executable for OCI & devops project ${projectName} & repository ${repositoryName} to OKE`;
                                         let oke_deployPipeline;
                                         try {
@@ -722,7 +722,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             increment,
                             message: `Creating build pipeline for docker native executable of ${repositoryName}...`
                         });
-                        const docker_nibuildPipelineName = 'Build Docker Native Image';
+                        const docker_nibuildPipelineName = 'Build Docker Native Executable';
                         const docker_nibuildPipelineDescription = `Build pipeline to build docker native executable for devops project ${projectName} & repository ${repositoryName}`;
                         let docker_nibuildPipeline;
                         try {
@@ -783,7 +783,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 increment,
                                 message: `Creating deployment to OKE pipeline for docker native executables of ${repositoryName}...`
                             });
-                            const oke_deployPipelineName = 'Deploy Docker Native Image to OKE';
+                            const oke_deployPipelineName = 'Deploy Docker Native Executable to OKE';
                             const oke_deployPipelineDescription = `Deployment pipeline to deploy docker native executable for devops project ${projectName} & repository ${repositoryName} to OKE`;
                             let oke_deployPipeline;
                             try {

@@ -116,7 +116,7 @@ export async function getProjectBuildNativeExecutableCommand(folder: ProjectFold
             }
             return `chmod 777 ./mvnw && ./mvnw install -pl ${appName} -am --no-transfer-progress -Dpackaging=native-image -DskipTests`;
         }
-        return await vscode.window.showInputBox({ title: 'Provide Command to Build Native Image for Project', value: 'mvn install -Dpackaging=native-image'});
+        return await vscode.window.showInputBox({ title: 'Provide Command to Build Native Executable for Project', value: 'mvn install -Dpackaging=native-image'});
     }
     if (isGradle(folder)) {
         if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {
@@ -125,7 +125,7 @@ export async function getProjectBuildNativeExecutableCommand(folder: ProjectFold
         if (folder.projectType === 'GCN') {
             return `chmod 777 ./gradlew && ./gradlew ${subfolder || 'oci'}:nativeCompile -x test`;
         }
-        return await vscode.window.showInputBox({ title: 'Provide Command to Build Native Image for Project', value: 'gradle nativeCompile'});
+        return await vscode.window.showInputBox({ title: 'Provide Command to Build Native Executable for Project', value: 'gradle nativeCompile'});
     }
     return undefined;
 }
