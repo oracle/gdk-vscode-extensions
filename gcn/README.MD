@@ -96,14 +96,14 @@ Once you have access to OCI, you can continue and click **Create DevOps Project*
 ![devops-ci-jobs.png](images/devops-ci-jobs.png)
 ### <a name='default-pipelines-setup'></a>Default Pipelines Setup
 * **Build Fat JAR**: to package the application with Gradle/Maven and create a runnable JAR file
-* **Build Native Image**: to package the application with Gradle/Maven and generate a native executable using GraalVM Native Image
-* **Build OCI Docker Native Image**: to package the application and build a native executable in a Docker container
-* **Deploy OCI Docker Native Image to OKE**: to package the application, build a native executable in a Docker container and deploy to OKE
+* **Build Native Executable**: to package the application with Gradle/Maven and generate a native executable using GraalVM Native Image
+* **Build OCI Docker Native Executable**: to package the application and build a native executable in a Docker container
+* **Deploy OCI Docker Native Executable to OKE**: to package the application, build a native executable in a Docker container and deploy to OKE
 
 Build specs for each pipeline are stored in *project_folder*/.gcn/
 
 ## <a name='oci-kubernetes-deployment-with-oke'></a>OCI Kubernetes deployment with OKE
-When **Build OCI Docker Native Image** pipeline succeeds and build is available it can be deployed to OKE using **Deploy OCI Docker Native Image to OKE** deployment pipeline. It will deploy the application into OKE and run it. When complete the application can be tested in a browser by selecting action **Open in Browser** for Deploy pipeline
+When **Build OCI Docker Native Executable** pipeline succeeds and build is available it can be deployed to OKE using **Deploy OCI Docker Native Executable to OKE** deployment pipeline. It will deploy the application into OKE and run it. When complete the application can be tested in a browser by selecting action **Open in Browser** for Deploy pipeline
 
 ![Open OKE application in local browser](images/oke_test_app.png)
 
