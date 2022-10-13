@@ -13,15 +13,12 @@
 	<div class="welcomePageContainer">
 		<div class="welcomePage" role="document">
 
-			<div class="banner" style="background-image: url('{{imgsUri}}/gcnBanner.png')"> <!-- NOTE: Expanding {{imgsUri}} doesn't work in .css, defined inline in .html -->
-				<h1 class="caption">Graal Cloud Native</h1>
-				<p class="banner-section">
-					Graal Cloud Native (GCN) is a full stack framework for building portable cloud-native</br>
-					applications using the Java ecosystem on top of managed services in the public cloud.
-				</p>
-				<p class="banner-section">
-					<a href='https://developer.oracle.com/java/graalvm/cloud-native/'><button class="banner-button vscode-font" id="showGCNPage">Learn More</button></a>
-				</p>
+			<div class="title">
+				<h1>Graal Cloud Native Tools</h1>
+			</div>
+
+			<div class="subtitle">
+				<h2>Technology Preview For Internal Testing</h2>
 			</div>
 
 			<div class="content">
@@ -34,44 +31,33 @@
 						</ul>
 					</div>
 					<div class="section">
-						<h2 class="caption">OCI Support</h2>
-						<ul class="list">
-							<li><a href="https://www.oracle.com/cloud/free/" title="Create Oracle Cloud account">1. Create Oracle Cloud account</a></li>
-							<li><a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm" title="Configure cloud access">2. Create .oci/config cloud access configuration</a></li>
-							<li><a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/cliconcepts.htm" title="OCI CLI (Command Line Interface)">3. Install OCI CLI</a> needed to configure access to <a href="https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingclusterusingoke_topic-Using_the_Console_to_create_a_Quick_Cluster_with_Default_Settings.htm#create-quick-cluster">OKE</a></li>
-						</ul>
-					</div>
-					<div class="section">
-						<h2 class="caption">Tools to work with OCI DevOps</h2>
-						<p>GCN development utilizes several services in OCI DevOps. To access these service following tools should be installed on development machine:</p>
-						<ul class="list">
-							<li>- Git - required for Git source code operations</li>
-							<li>- Docker - necessary when working locally with Docker images built by OCI pipeline</li>
-							<li>- Kubectl - used to access OCI applications deployed to OKE Kubernetes form local machine</li>
+						<h2 class="caption">Help</h2>
+						<ul>
+							<li><a href="vscode:extension/oracle-labs-graalvm.gcn" title="Open extension documentation">Extension documentation</a></li>
+							<li><a href="https://github.com/graalvm/vscode-extensions/issues/new?labels=enhancement" title="File a new feature request">Request a feature</a></li>
+							<li><a href="https://github.com/graalvm/vscode-extensions/issues/new?labels=bug" title="File a new bug report">File a bug</a></li>
+							<li><a href="https://github.com/oracle/graal/discussions" title="Provide us with a feedback">Send feedback</a></li>
 						</ul>
 					</div>
 				</div>
 
 				<div class="docs">
 					<div class="section">
-						<h2 class="caption">Help</h2>
-						<div class="list">
-							<div class="item">
-								<a class="button" href="https://developer.oracle.com/java/graalvm/cloud-native/?ytid=p-t5nTLEwO8" title="Introduction to GraalVM & Micronaut® for Oracle Cloud">
-									<h3 class="caption">Get Started with Graal Cloud Native</h3>
-									<span class="detail">Introduction to GraalVM & Micronaut® for Oracle Cloud</span>
-								</a>
-							</div>
-							<div class="item">
-								<div class="panel">
-									<!--h3 class="caption">Extension</h3-->
-									<a href="vscode:extension/oracle-labs-graalvm.gcn" title="Open extension documentation">Extension documentation</a>
-									<a href="https://github.com/graalvm/vscode-extensions/issues/new?labels=enhancement" title="File a new feature request">Request a feature</a>
-									<a href="https://github.com/graalvm/vscode-extensions/issues/new?labels=bug" title="File a new bug report">File a bug</a>
-									<a href="https://github.com/oracle/graal/discussions" title="Provide us with a feedback">Send feedback</a>
-								</div>
-							</div>
-						</div>
+						<h2 class="caption">Prerequisites</h2>
+						<ul>
+							<li>• Git - required for core functionality</li>
+							<li>• Kubectl - used to access applications deployed to OKE</li>
+							<li>• Docker - used to pull the built docker images locally</li>
+						</ul>
+					</div>
+					<div class="section">
+						<h2 class="caption">Setup</h2>
+						<ol>
+							<li>1. <a href="https://www.oracle.com/cloud/free/" title="Create Oracle Cloud account">Create Oracle Cloud account</a> (free tier supported)</li>
+							<li>2. <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm" title="Configure cloud access">Create .oci/config</a> cloud access configuration</li>
+							<li>3. <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/cliconcepts.htm" title="OCI CLI (Command Line Interface)">Install OCI CLI</a> needed for the <a href="https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingclusterusingoke_topic-Using_the_Console_to_create_a_Quick_Cluster_with_Default_Settings.htm#create-quick-cluster">OKE</a> local access</li>
+							<li><b>!!</b> If behind a proxy, configure all the tooling accordingly</li>
+						</ol>
 					</div>
 				</div>
 

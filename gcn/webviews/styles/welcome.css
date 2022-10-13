@@ -26,6 +26,7 @@ body, html {
 .welcomePage .content {
 	display: flex;
 	flex-flow: row;
+	padding-top: 15px;
 }
 
 .welcomePage .content .section {
@@ -44,11 +45,51 @@ body, html {
 	overflow: hidden;
 }
 
-@media (max-height:500px) {
-	.welcomePage .banner {
+@media (max-height:450px) {
+	.welcomePage .title {
 		display: none;
-		background-image: none;
 	}
+	.welcomePage .subtitle {
+		display: none;
+	}
+}
+
+.welcomePage .title {
+	margin-top: 1em;
+}
+
+.welcomePage .subtitle {
+	margin-bottom: .8em;
+}
+
+.welcomePage .title h1 {
+	padding: 0;
+	margin: 0;
+	border: none;
+	font-weight: normal;
+	font-size: 3.6em;
+	white-space: nowrap;
+}
+
+.welcomePage .subtitle h2 {
+	color: var(--vscode-disabledForeground);
+	/* font-weight: bolder; */
+	font-weight: 200;
+	padding: 0;
+	margin: 0;
+	border: none;
+	font-size: 2.6em;
+	line-height: initial;
+	white-space: nowrap;
+}
+
+.welcomePage h2 {
+	font-weight: 200;
+	margin-top: 17px;
+	margin-bottom: 5px;
+	font-size: 1.9em;
+	white-space: nowrap;
+	line-height: initial;
 }
 
 .welcomePage .banner {
@@ -87,6 +128,25 @@ body, html {
 }
 
 .welcomePage .links li {
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.welcomePage .docs ul {
+	margin: 0;
+	font-size: 1.3em;
+	padding: 0;
+}
+
+.welcomePage .docs ol {
+	margin: 0;
+	font-size: 1.3em;
+	padding: 0;
+}
+
+.welcomePage .docs li {
 	min-width: 0;
 	white-space: nowrap;
 	overflow: hidden;
@@ -241,25 +301,6 @@ body, html {
 	outline-offset: -1px;
 	outline-color: var(--vscode-focusBorder);
 }
-
-.welcomePage h1 {
-	padding: 0;
-	margin: 0;
-	margin-bottom: 15px;
-	border: none;
-	font-weight: normal;
-	font-size: 3.6em;
-	white-space: nowrap;
-}
-
-.welcomePage h2 {
-	font-weight: 200;
-	margin-top: 17px;
-	margin-bottom: 5px;
-	font-size: 1.9em;
-	line-height: initial;
-}
-
 
 .vscode-dark .welcomePage .docs .item .panel {
 	color: var(--vscode-foreground);
