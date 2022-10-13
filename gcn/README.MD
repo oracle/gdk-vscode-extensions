@@ -125,7 +125,11 @@ The **OCI DEVOPS SERVICES** feature is not limitted by the four jobs listed in t
 ![more-ci-jobs.png](images/more-ci-jobs.png)
 
 ## <a name='proxy-setup'></a>Proxy Setup
-When working behind firewall many tools incl. VSCode itself, Maven, Gradle, kubectl and Docker (if used) require setting up proxy configuration. It needs to be setup for these tools individually and should not be forgotten to reset when not working using proxy.
+When working behind firewall over proxy then VSCode Proxy has to be set ON. In VSCode **Settings** set **Http: Proxy Support** to **ON**. Subsequently when working without proxy set this **OFF**.
+
+![HTTP Proxy in VSCode](images/proxy.png)
+
+Many tools used to work on Java projects like Maven, Gradle, kubectl and Docker (if used) could require setting up proxy configuration. 
 
 ## <a name='provide-feedback-or-seek-help'></a>Provide Feedback or Seek Help
 
