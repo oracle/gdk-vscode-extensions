@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as dialogs from './dialogs';
 
 
 export type TreeChanged = (treeItem?: vscode.TreeItem) => void;
@@ -200,8 +201,8 @@ export class AsyncNode extends ChangeableNode {
                 this.setChildren(children);
                 this.treeChanged(this);
             }).catch(err => {
-                console.log('>>> Error in async computeChildren()');
-                console.log(err);
+                const nodeText = this.label ? this.label : this.description;
+                dialogs.showErrorMessage(`Failed to expand node ${nodeText}`, err);
                 this.setChildren([ new NoItemsNode() ]);
                 this.treeChanged(this);
             });
