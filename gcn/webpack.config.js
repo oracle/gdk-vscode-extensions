@@ -3,6 +3,7 @@
 'use strict';
 
 const path = require('path');
+const webpack = require('webpack');
 
 /**@type {import('webpack').Configuration}*/
 const config = {
@@ -74,7 +75,7 @@ const devConf = {
             }
         },
         symlinks: false,
-        cacheWithContext: false
+        cacheWithContext: false,
     },
     module: {
         rules: [{
@@ -87,17 +88,32 @@ const devConf = {
                     transpileOnly: true, // https://github.com/TypeStrong/ts-loader#faster-builds
                 }
             }]
-        }]
+        }],
+        noParse: path.resolve(__dirname, 'lib', 'gcn.ui.api.js')
+    },
+    optimization: { 
+        minimize: false
+    },
+    plugins: [
+        new webpack.AutomaticPrefetchPlugin()
+    ],
+    cache: {
+        type: 'filesystem',
+        buildDependencies: {
+            // This makes all dependencies of this file - build dependencies
+            config: [__filename],
+            // By default webpack and loaders are build dependencies
+        },
     },
 }
 // https://webpack.js.org/configuration/mode/#mode-none
 module.exports = (env, argv) => {
     if (argv.mode === 'development') {
-      return devConf;
+        return devConf;
     }
-  
+
     if (argv.mode === 'production') {
         return config;
     }
     return config;
-  };
+};
