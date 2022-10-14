@@ -26,6 +26,7 @@ import * as ociNodes from './ociNodes';
 export const DATA_NAME = 'buildPipelines';
 
 const ICON = 'play-circle';
+const ICON_IN_PROGRESS = 'gear~spin';
 
 type BuildPipeline = {
     ocid: string,
@@ -247,6 +248,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
     private object: BuildPipeline;
     private oci: ociContext.Context;
     private lastRun?: { ocid: string, state?: string, output?: vscode.OutputChannel, deliveredArtifacts?: { id: string, type: string }[] };
+    private showSucceededFlag: boolean = false;
 
     constructor(object: BuildPipeline, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
         super(object.displayName, undefined, BuildPipelineNode.CONTEXTS[0], undefined, undefined, treeChanged);
@@ -347,6 +349,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                                         this.object.lastBuildRun = buildRun.id;
                                         const service = findByNode(this);
                                         service?.serviceNodesChanged(this);
+                                        this.showSucceededFlag = true;
                                         this.updateLastRun(buildRun.id, buildRun.lifecycleState, buildRun.displayName ? vscode.window.createOutputChannel(buildRun.displayName) : undefined);
                                         this.showBuildOutput();
                                         this.updateWhenCompleted(buildRun.id, buildRun.compartmentId, buildName);
@@ -463,7 +466,8 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
             case 'ACCEPTED':
             case 'IN_PROGRESS':
             case 'CANCELING':
-                this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.yellow'));
+                // this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.yellow'));
+                this.iconPath = new vscode.ThemeIcon(ICON_IN_PROGRESS, new vscode.ThemeColor('charts.yellow'));
                 this.contextValue = BuildPipelineNode.CONTEXTS[1];
                 break;
             case 'SUCCEEDED':
@@ -478,7 +482,31 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                 this.iconPath = new vscode.ThemeIcon(ICON);
                 this.contextValue = BuildPipelineNode.CONTEXTS[0];
         }
+        this.updateStateLabel(state);
         this.treeChanged(this);
+    }
+
+    private updateStateLabel(state?: string) {
+        switch (state) {
+            case 'ACCEPTED':
+                this.description = 'starting...';
+                break;
+            case 'IN_PROGRESS':
+                this.description = 'in progress...';
+                break;
+            case 'CANCELING':
+                this.description = 'canceling...';
+                break;
+            case 'SUCCEEDED':
+                this.description = this.showSucceededFlag ? 'completed' : undefined; // do not display 'completed' for runs completed in previous VS Code session
+                break;
+            case 'FAILED':
+                this.description = 'failed';
+                break;
+            default:
+                this.description = undefined;
+        }
+        this.updateAppearance();
     }
 
     private async updateWhenCompleted(buildRunId: string, compartmentId?: string, buildName?: string) {
@@ -514,6 +542,10 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                         }
                     }).filter(value => value.type);
                     this.updateLastRun(buildRunId, state, this.lastRun?.output, deliveredArtifacts);
+                } else {
+                    this.showSucceededFlag = true;
+                    this.updateStateLabel(state);
+                    this.treeChanged(this);
                 }
                 if (this.lastRun?.output && compartmentId && groupId && logId) {
                     const timeStart = buildRun.buildRunProgress?.timeStarted;

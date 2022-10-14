@@ -24,6 +24,7 @@ import * as okeUtils from './okeUtils';
 export const DATA_NAME = 'deploymentPipelines';
 
 const ICON = 'rocket';
+const ICON_IN_PROGRESS = 'gear~spin';
 
 type DeploymentPipeline = {
     ocid: string,
@@ -424,6 +425,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
     private object: DeploymentPipeline;
     private oci: ociContext.Context;
     private lastDeployment?: { ocid: string, state?: string, output?: vscode.OutputChannel, deploymentName?: string };
+    private showSucceededFlag: boolean = false;
 
     constructor(object: DeploymentPipeline, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
         super(object.displayName, undefined, DeploymentPipelineNode.CONTEXTS[0], undefined, undefined, treeChanged);
@@ -517,6 +519,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                             this.object.lastDeployment = deployment.id;
                             const service = findByNode(this);
                             service?.serviceNodesChanged(this);
+                            this.showSucceededFlag = true;
                             this.updateLastDeployment(deployment.id, deployment.lifecycleState, deployment.displayName ? vscode.window.createOutputChannel(deployment.displayName) : undefined);
                             this.showDeploymentOutput();
                             this.updateWhenCompleted(deployment.id, deployment.compartmentId, deploymentName);
@@ -605,7 +608,8 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
             case 'ACCEPTED':
             case 'IN_PROGRESS':
             case 'CANCELING':
-                this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.yellow'));
+                // this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.yellow'));
+                this.iconPath = new vscode.ThemeIcon(ICON_IN_PROGRESS, new vscode.ThemeColor('charts.yellow'));
                 this.contextValue = DeploymentPipelineNode.CONTEXTS[1];
                 break;
             case 'SUCCEEDED':
@@ -620,7 +624,31 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                 this.iconPath = new vscode.ThemeIcon(ICON);
                 this.contextValue = DeploymentPipelineNode.CONTEXTS[0];
         }
+        this.updateStateLabel(state);
         this.treeChanged(this);
+    }
+
+    private updateStateLabel(state?: string) {
+        switch (state) {
+            case 'ACCEPTED':
+                this.description = 'starting...';
+                break;
+            case 'IN_PROGRESS':
+                this.description = 'in progress...';
+                break;
+            case 'CANCELING':
+                this.description = 'canceling...';
+                break;
+            case 'SUCCEEDED':
+                this.description = this.showSucceededFlag ? 'completed' : undefined; // do not display 'completed' for runs completed in previous VS Code session
+                break;
+            case 'FAILED':
+                this.description = 'failed';
+                break;
+            default:
+                this.description = undefined;
+        }
+        this.updateAppearance();
     }
 
     private async updateWhenCompleted(deploymentId: string, compartmentId?: string, deploymentName?: string) {
@@ -645,6 +673,10 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                         deploymentName = undefined; // report the success just once
                     }
                     this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output, (await this.getResource()).freeformTags?.gcn_tooling_okeDeploymentName);
+                } else {
+                    this.showSucceededFlag = true;
+                    this.updateStateLabel(state);
+                    this.treeChanged(this);
                 }
                 if (this.lastDeployment?.output && compartmentId && groupId && logId) {
                     const timeStart = deployment.deploymentExecutionProgress?.timeStarted;
