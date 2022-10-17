@@ -21,10 +21,10 @@ import * as ociServices from './ociServices';
 export async function undeployFolders() {
     logUtils.logInfo('[undeploy] Invoked undeploy folders');
 
-    const nblsOK = await projectUtils.checkNBLS();
-    if (!nblsOK) {
-        dialogs.showErrorMessage('Obsolete project support detected. Try to update the Language Server for Java by Apache NetBeans extension to the latest version.');
-        logUtils.logInfo('[undeploy] Obsolete project support detected. Try to update the Language Server for Java by Apache NetBeans extension to the latest version.');
+    const nblsErr = await projectUtils.checkNBLS();
+    if (nblsErr) {
+        dialogs.showErrorMessage(nblsErr);
+        logUtils.logInfo(`[undeploy] ${nblsErr}`);
         return;
     }
 

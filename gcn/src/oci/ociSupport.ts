@@ -18,16 +18,19 @@ import * as deployUtils from './deployUtils';
 
 
 const TYPE = 'oci';
-
+const DEPLOY_DATA = 'deployData';
 let RESOURCES_FOLDER: string;
 
 export function create(context: vscode.ExtensionContext): model.CloudSupport {
     RESOURCES_FOLDER = path.join(context.extensionPath, 'resources', 'oci');
     ociServices.initialize(context);
-    return new OciSupport();
+    return new OciSupport(context);
 }
 
 class OciSupport implements model.CloudSupport {
+
+    constructor(readonly context: vscode.ExtensionContext) {
+    }
 
     getName(): string {
         return 'OCI'
@@ -50,7 +53,14 @@ class OciSupport implements model.CloudSupport {
             folderStorage.storeCloudSupportData(this, [ folder ], [ config ]);
             return true;
         }
-        return deployUtils.deployFolders(folders, RESOURCES_FOLDER, saveConfig);
+        const dump: deployUtils.DumpDeployData = (data?: any) => {
+            const value = this.context.workspaceState.get(DEPLOY_DATA);
+            if (data !== null) {
+                this.context.workspaceState.update(DEPLOY_DATA, data);
+            }
+            return value;
+        }
+        return deployUtils.deployFolders(folders, RESOURCES_FOLDER, saveConfig, dump);
     }
 
     getServices(folder: vscode.WorkspaceFolder, configuration: model.ServicesConfiguration): model.CloudServices | undefined {

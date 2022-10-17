@@ -64,7 +64,7 @@ export function createCustom(configFile: string | undefined, profile: string | u
     return new Authentication(provider);
 }
 
-export async function resolve(): Promise<Authentication | undefined> {
+export async function resolve(profile?: string): Promise<Authentication | undefined> {
     try {
         const defaultConfig = getDefaultConfigFile();
         if (!fs.existsSync(defaultConfig)) {
@@ -75,10 +75,12 @@ export async function resolve(): Promise<Authentication | undefined> {
             let provider: common.ConfigFileAuthenticationDetailsProvider;
             if (profiles.length === 1 && profiles[0] === common.ConfigFileReader.DEFAULT_PROFILE_NAME) {
                 provider = createProvider(defaultConfig);
+            } else if (profile && profiles.includes(profile)) {
+                provider = createProvider(defaultConfig, profile);
             } else {
                 const choices: dialogs.QuickPickObject[] = [];
-                for (const profile of profiles) {
-                    choices.push(new dialogs.QuickPickObject(profile, undefined, undefined));
+                for (const p of profiles) {
+                    choices.push(new dialogs.QuickPickObject(p, undefined, undefined));
                 }
                 const selected = await vscode.window.showQuickPick(choices, {
                     placeHolder: 'Select OCI Profile'

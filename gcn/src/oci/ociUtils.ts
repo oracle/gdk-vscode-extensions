@@ -337,6 +337,14 @@ export async function deleteBuildPipeline(authenticationDetailsProvider: common.
     }
 }
 
+export async function getBuildPipelineStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineStageID: string): Promise<devops.models.BuildPipelineStage> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: devops.requests.GetBuildPipelineStageRequest = {
+        buildPipelineStageId: pipelineStageID
+    };
+    return client.getBuildPipelineStage(request).then(response => response.buildPipelineStage);
+}
+
 export async function listBuildPipelineStages(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string): Promise<devops.models.BuildPipelineStageSummary[]> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: devops.requests.ListBuildPipelineStagesRequest = {
@@ -788,6 +796,16 @@ export async function getOrCreateNotificationTopic(authenticationDetailsProvider
     return createCompartmentNotificationTopic(authenticationDetailsProvider, compartmentID, description).then(response => response.topicId);
 }
 
+export async function getCluster(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, clusterID: string): Promise<containerengine.models.Cluster> {
+    const client = new containerengine.ContainerEngineClient({
+        authenticationDetailsProvider: authenticationDetailsProvider
+    });
+    const request: containerengine.requests.GetClusterRequest = {
+        clusterId: clusterID,
+    };
+    return client.getCluster(request).then(response => response.cluster);
+}
+
 export async function listClusters(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<containerengine.models.ClusterSummary[]> {
     const client = new containerengine.ContainerEngineClient({
         authenticationDetailsProvider: authenticationDetailsProvider
@@ -1132,6 +1150,14 @@ export async function listLogsByProject(authenticationDetailsProvider: common.Co
     return value;
 }
 
+export async function getLog(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, logId : string, logGroupID: string): Promise<logging.models.Log> {
+    const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    return client.getLog({
+        logGroupId : logGroupID,
+        logId : logId
+    }).then(response => response.log);
+}
+
 export async function deleteLog(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, logId : string, logGroupID: string, wait : boolean = false) {
     const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     // console.log(`> deleteLog ${logId}`);
@@ -1144,7 +1170,7 @@ export async function deleteLog(authenticationDetailsProvider: common.ConfigFile
     }
 }
 
-export async function createProjectLog(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, logGroupID: string, projectID: string, projectName: string) {
+export async function createProjectLog(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, logGroupID: string, projectID: string, projectName: string): Promise<string | undefined> {
     const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: logging.models.CreateLogDetails = {
         displayName: `${projectName}Log`,
@@ -1169,13 +1195,7 @@ export async function createProjectLog(authenticationDetailsProvider: common.Con
         logGroupId: logGroupID,
         createLogDetails: requestDetails
     };
-    const response = await client.createLog(request);
-    if (response.opcWorkRequestId) {
-        const getWorkRequestRequest: logging.requests.GetWorkRequestRequest = {
-            workRequestId: response.opcWorkRequestId
-        };
-        await completion(2000, async () => (await client.getWorkRequest(getWorkRequestRequest)).workRequest.status);
-    }
+    return client.createLog(request).then(response => response.opcWorkRequestId);
 }
 
 export async function createArtifactsRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, projectName: string, flags? : { [key:string] : string } | undefined): Promise<artifacts.models.Repository> {
@@ -1223,7 +1243,7 @@ export async function createOkeDeployEnvironment(authenticationDetailsProvider: 
     return client.createDeployEnvironment(request).then(response => response.deployEnvironment);
 }
 
-export async function createCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, repositoryName: string, defaultBranchName: string, description?: string, waitForCreation?: boolean): Promise<devops.models.Repository> {
+export async function createCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, repositoryName: string, defaultBranchName: string, description?: string): Promise<{ repository: devops.models.Repository, workRequestId: string }> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: devops.models.CreateRepositoryDetails = {
         name: repositoryName,
@@ -1235,14 +1255,9 @@ export async function createCodeRepository(authenticationDetailsProvider: common
     const request: devops.requests.CreateRepositoryRequest = {
         createRepositoryDetails: requestDetails
     };
-    const response = await client.createRepository(request);
-    if (waitForCreation && response.opcWorkRequestId) {
-        const getWorkRequestRequest: devops.requests.GetWorkRequestRequest = {
-            workRequestId: response.opcWorkRequestId
-        };
-        await completion(2000, async () => (await client.getWorkRequest(getWorkRequestRequest)).workRequest.status);
-    }
-    return response.repository;
+    return client.createRepository(request).then(response => {
+        return { repository: response.repository, workRequestId: response.opcWorkRequestId };
+    });
 }
 
 export async function createBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, displayName: string, description?: string, tags?: { [key:string]: string }): Promise<devops.models.BuildPipeline> {
@@ -1360,6 +1375,14 @@ export async function createDeployToOkeStage(authenticationDetailsProvider: comm
         createDeployStageDetails: requestDetails
     };
     return client.createDeployStage(request).then(response => response.deployStage);
+}
+
+export async function getDeployStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, deployStageID: string): Promise<devops.models.DeployStage> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: devops.requests.GetDeployStageRequest = {
+        deployStageId: deployStageID
+    };
+    return client.getDeployStage(request).then(response => response.deployStage);
 }
 
 export async function listBuildRuns(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, buildPipelineID: string, limit: number | undefined = 10): Promise<devops.models.BuildRunSummary[]> {
@@ -1503,6 +1526,10 @@ export async function completion(initialPollTime: number, getState: () => Promis
 
 export function isRunning(state?: string) {
     return state === 'ACCEPTED' || state === 'IN_PROGRESS' || state === 'CANCELING' || state === 'CREATING';
+}
+
+export function isUp(state?: string) {
+    return state === 'ACTIVE' || state === 'CREATING';
 }
 
 export function isSuccess(state?: string) {

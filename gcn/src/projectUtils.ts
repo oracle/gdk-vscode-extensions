@@ -10,6 +10,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as xml2js from 'xml2js';
+import * as semver from 'semver';
 
 const GET_PROJECT_INFO = 'nbls.project.info';
 const GET_PROJECT_ARTIFACTS = 'nbls.gcn.project.artifacts';
@@ -17,9 +18,19 @@ const NATIVE_BUILD = 'native-build';
 
 // TODO: implement correctly for Maven/Gradle projects
 
-export async function checkNBLS(): Promise<boolean> {
-    const commands = await vscode.commands.getCommands();
-    return commands.includes(GET_PROJECT_INFO) && commands.includes(GET_PROJECT_ARTIFACTS);
+export async function checkNBLS(): Promise<string | undefined> {
+    const version = vscode.extensions.getExtension('asf.apache-netbeans-java')?.packageJSON.version;
+    if (!version || semver.lt(version, '15.0.301')) {
+        return 'Obsolete project support detected. Try to update the Language Server for Java by Apache NetBeans extension to the latest version.'
+    }
+    for (let i = 0; i < 5; i++) {
+        const commands = await vscode.commands.getCommands();
+        if (commands.includes(GET_PROJECT_INFO) && commands.includes(GET_PROJECT_ARTIFACTS)) {
+            return undefined;
+        }
+        await delay(1000);
+    }
+    return 'Project support nat available. Check whether the Language Server for Java by Apache NetBeans extension is active and initialized.'
 }
 
 export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<ProjectFolder> {
@@ -269,4 +280,8 @@ function isGradle(folder: ProjectFolder) {
         return folder.buildSystem === 'Gradle';
     }
     return fs.existsSync(path.join(folder.uri.fsPath, 'gradlew'));
+}
+
+function delay(ms: number) {
+    return new Promise( resolve => setTimeout(resolve, ms) );
 }
