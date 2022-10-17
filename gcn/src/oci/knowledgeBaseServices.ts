@@ -76,10 +76,23 @@ export function initialize(context: vscode.ExtensionContext) {
 
 async function executeFolderAudit(uri: vscode.Uri) {
     logUtils.logInfo(`[audit] Invoked generic audit of a not deployed folder ${uri.fsPath}`);
-    // TODO: read a previously used KB from a persistent storage?
-    const authentication = await ociAuthentication.resolve();
-    if (!authentication) {
-        return undefined;
+
+    const gcnConfiguration = vscode.workspace.getConfiguration('gcn');
+    let profile: string | undefined = gcnConfiguration.get('sharedKnowledgeBaseProfile', undefined);
+    let authentication;
+    if (profile) {
+        logUtils.logInfo(`[audit] Using saved profile ${profile}`);
+        authentication = ociAuthentication.createCustom(undefined, profile);
+    } else {
+        logUtils.logInfo(`[audit] No profile selected yet`);
+        authentication = await ociAuthentication.resolve();
+        if (!authentication) {
+            return undefined;
+        } else if (!authentication.getConfigurationProblem()) {
+            profile = authentication.getProfile();
+            logUtils.logInfo(`[audit] Saving selected profile ${profile}`);
+            await gcnConfiguration.update('sharedKnowledgeBaseProfile', profile, true);
+        }
     }
     const configurationProblem = authentication.getConfigurationProblem();
     if (configurationProblem) {
@@ -88,17 +101,26 @@ async function executeFolderAudit(uri: vscode.Uri) {
     }
     const provider = authentication.getProvider();
 
-    const compartment = await ociDialogs.selectCompartment(provider);
-    if (!compartment) {
-        return undefined;
+    let auditsKnowledgeBase: string | undefined = gcnConfiguration.get('sharedKnowledgeBaseOcid', undefined);
+    if (auditsKnowledgeBase) {
+        logUtils.logInfo(`[audit] Using saved knowledge base ${auditsKnowledgeBase}`);
+    } else {
+        logUtils.logInfo(`[audit] No knowledge base selected yet`);
+        const compartment = await ociDialogs.selectCompartment(provider);
+        if (!compartment) {
+            return undefined;
+        }
+        logUtils.logInfo(`[audit] Resolving knowledge base in selected compartment ${compartment.name} (${compartment.ocid})`);
+        auditsKnowledgeBase = await getSharedKnowledgeBase(provider, compartment.ocid, compartment.name);
+        if (!auditsKnowledgeBase) {
+            return undefined;
+        } else {
+            logUtils.logInfo(`[audit] Saving resolved knowledge base ${auditsKnowledgeBase}`);
+            await gcnConfiguration.update('sharedKnowledgeBaseOcid', auditsKnowledgeBase, true);
+        }
     }
 
-    logUtils.logInfo(`[audit] Configured to audit folder using a shared knowledge base in compartment ${compartment.name}`);
-    const auditsKnowledgeBase = await getSharedKnowledgeBase(provider, compartment.ocid, compartment.name);
-    if (!auditsKnowledgeBase) {
-        return undefined;
-    }
-
+    logUtils.logInfo(`[audit] Resolving NBLS project audit command`);
     const nblsReady = (await vscode.commands.getCommands(true)).includes('nbls.gcn.projectAudit.execute');
     if (!nblsReady) {
         dialogs.showErrorMessage('Required Language Server is not ready.');
@@ -106,7 +128,7 @@ async function executeFolderAudit(uri: vscode.Uri) {
     }
 
     logUtils.logInfo(`[audit] Executing generic audit of folder ${uri.fsPath}`);
-    return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri.toString(), auditsKnowledgeBase, compartment.ocid, undefined);
+    return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri.toString(), auditsKnowledgeBase, 'compartment', undefined);
 }
 
 async function getSharedKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, compartmentName: string): Promise<string | undefined> {

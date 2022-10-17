@@ -50,6 +50,18 @@
 					"default": true,
 					"description": "Show Graal Cloud Native page on extension activation"
 				},
+				"gcn.sharedKnowledgeBaseOcid": {
+					"type": "string",
+					"default": "",
+					"description": "OCID of the shared knowledge base for audits",
+					"scope": "machine"
+				},
+				"gcn.sharedKnowledgeBaseProfile": {
+					"type": "string",
+					"default": "",
+					"description": "Profile to access the shared knowledge base for audits",
+					"scope": "machine"
+				},
 				"gcn.home": {
 					"type": "string",
 					"default": "",

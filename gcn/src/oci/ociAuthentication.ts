@@ -157,6 +157,14 @@ export class Authentication implements dataSupport.DataProducer {
         return DATA_NAME;
     }
 
+    getProfile(): string {
+        if (!this.provider) {
+            throw new Error('Authentication provider not initialized');
+        }
+        const currentProfile = this.provider.getProfileCredentials()?.currentProfile;
+        return currentProfile ? currentProfile : common.ConfigFileReader.DEFAULT_PROFILE_NAME;
+    }
+
     getData(forceDefaults: boolean = false): any {
         if (!this.provider) {
             throw new Error('Authentication provider not initialized');
