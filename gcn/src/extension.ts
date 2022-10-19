@@ -34,12 +34,12 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.window.registerTreeDataProvider('gcn-services', servicesView.nodeProvider));
 
 	context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(async () => {
-		await gcnServices.build();
+		await gcnServices.build(context.workspaceState);
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand("gcn.createGcnProject", () => gcnProjectCreate.createProject(context)));
 
-	gcnServices.build();
+	gcnServices.build(context.workspaceState);
 
 	logUtils.logInfo('[extension] Extension successfully activated');
 }

@@ -23,15 +23,15 @@ export function initialize(context: vscode.ExtensionContext) {
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('gcn.deployToCloud', (...params: any[]) => {
         if (params[0]) {
-            (params[0] as nodes.DeployNode).deploy();
+            (params[0] as nodes.DeployNode).deploy(context.workspaceState);
         } else {
-            importExportUtils.deployFolders();
+            importExportUtils.deployFolders(context.workspaceState);
         }
 	}));
     // TODO: --------------------
     // ??? NOT TO BE RELEASED ???
     context.subscriptions.push(vscode.commands.registerCommand('gcn.undeployFromCloud', () => {
-        importExportUtils.undeployFolders();
+        importExportUtils.undeployFolders(context.workspaceState);
 	}));
     // ??? NOT TO BE RELEASED ???
     // --------------------------
@@ -178,8 +178,8 @@ class FolderNode extends nodes.BaseNode implements nodes.DeployNode, nodes.AddCo
         return this.folder;
     }
 
-    deploy() {
-        importExportUtils.deployFolders(this.folder);
+    deploy(workspaceState: vscode.Memento) {
+        importExportUtils.deployFolders(workspaceState, this.folder);
     }
 
     addContent() {

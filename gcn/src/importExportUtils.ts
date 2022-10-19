@@ -53,12 +53,21 @@ export async function importDevopsProject() {
     }
 }
 
-export async function deployFolders(folders?: gcnServices.FolderData | gcnServices.FolderData[]) {
+export async function deployFolders(workspaceState: vscode.Memento, folders?: gcnServices.FolderData | gcnServices.FolderData[]) {
     if (!anotherOperationInProgress()) {
         deployInProgress = true;
         await servicesView.showWelcomeView('gcn.deployInProgress');
+        const dump = gcnServices.dumpDeployData(workspaceState);
         try {
-            if (folders === undefined) {
+            const deployData = dump(null) || {};
+            if (deployData?.folders) {
+                folders = [];
+                for (let folder of gcnServices.getFolderData()) {
+                    if (deployData.folders.includes(folder.folder.name)) {
+                        folders.push(folder);
+                    }
+                }
+            } else if (folders === undefined) {
                 const selected = await dialogs.selectFolders('Select Folders to Deploy', false);
                 if (!selected) {
                     if (selected === null) {
@@ -77,28 +86,58 @@ export async function deployFolders(folders?: gcnServices.FolderData | gcnServic
             if (!cloudSupport) {
                 return;
             }
-
             const workspaceFolders = gcnServices.folderDataToWorkspaceFolders(folders) as vscode.WorkspaceFolder[];
-            await cloudSupport.deployFolders(workspaceFolders);
+            deployData.folders = workspaceFolders.map(folder => folder.name);
+            dump(deployData);
+            await cloudSupport.deployFolders(workspaceFolders, dump);
         } finally {
             await servicesView.hideWelcomeView('gcn.deployInProgress');
+            if (dump(null)) {
+                await servicesView.showWelcomeView('gcn.deployFailed');
+            } else {
+                await servicesView.hideWelcomeView('gcn.deployFailed');
+            }
             deployInProgress = false;
         }
-        await gcnServices.build();
+        await gcnServices.build(workspaceState);
     }
 }
 
-export async function undeployFolders() {
+export async function undeployFolders(workspaceState: vscode.Memento) {
     if (!anotherOperationInProgress()) {
         undeployInProgress = true;
         await servicesView.showWelcomeView('gcn.undeployInProgress');
+        const dump = gcnServices.dumpDeployData(workspaceState);
         try {
-            await undeployUtils.undeployFolders();
+            const deployData = dump(null);
+            if (deployData) {
+                const folders = [];
+                for (let folder of gcnServices.getFolderData()) {
+                    if (deployData.folders.includes(folder.folder.name)) {
+                        folders.push(folder);
+                    }
+                }
+                await undeployUtils.undeploy(folders, deployData, dump);
+            } else {
+                const selected = await dialogs.selectFolders('Select Folders to Undeploy', true, false);
+                if (!selected) {
+                    if (selected === null) {
+                        vscode.window.showErrorMessage('No folders to undeploy.');
+                    }
+                    return;
+                }
+                await undeployUtils.undeployFolders(selected);
+            }
         } finally {
             await servicesView.hideWelcomeView('gcn.undeployInProgress');
+            if (dump(null)) {
+                await servicesView.showWelcomeView('gcn.deployFailed');
+            } else {
+                await servicesView.hideWelcomeView('gcn.deployFailed');
+            }
             undeployInProgress = false;
         }
-        await gcnServices.build();
+        await gcnServices.build(workspaceState);
     }
 }
 

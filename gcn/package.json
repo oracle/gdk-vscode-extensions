@@ -212,12 +212,17 @@
 			{
 				"view": "gcn-services",
 				"contents": "Import an existing OCI devops project locally.\n[Import DevOps Project](command:gcn.importFromCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
-				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && workspaceFolderCount == 0"
+				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed && workspaceFolderCount == 0"
 			},
 			{
 				"view": "gcn-services",
 				"contents": "Create a new OCI devops project from the current folder(s).\n[Create DevOps Project](command:gcn.deployToCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
-				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
+				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
+			},
+			{
+				"view": "gcn-services",
+				"contents": "Previous creation of a new OCI devops project failed. Check the failure, resolve the problem and continue with:\n[Resume DevOps Project Creation](command:gcn.deployToCloud)\n[Delete Created DevOps Project Parts](command:gcn.undeployFromCloud)\n\n",
+				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && gcn.deployFailed"
 			}
 		],
 		"views": {

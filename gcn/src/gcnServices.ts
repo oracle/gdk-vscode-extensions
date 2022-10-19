@@ -13,6 +13,8 @@ import * as folderStorage from './folderStorage';
 import * as servicesView from './servicesView';
 
 
+const DEPLOY_DATA = 'deployData';
+
 export type FolderData = {
     folder: vscode.WorkspaceFolder;
     configurations: model.ServicesConfiguration[];
@@ -21,7 +23,7 @@ export type FolderData = {
 
 let folderData: FolderData[];
 
-export async function build() {
+export async function build(workspaceState: vscode.Memento) {
     await vscode.commands.executeCommand('setContext', 'gcn.servicesInitialized', false);
     await vscode.commands.executeCommand('setContext', 'gcn.serviceFoldersCount', -1);
 
@@ -67,6 +69,8 @@ export async function build() {
 
     await vscode.commands.executeCommand('setContext', 'gcn.serviceFoldersCount', serviceFoldersCount);
     await vscode.commands.executeCommand('setContext', 'gcn.servicesInitialized', true);
+    const dump = dumpDeployData(workspaceState);
+    await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', dump(null) !== undefined);
 }
 
 function getCloudSupport(configuration: model.ServicesConfiguration): model.CloudSupport | undefined {
@@ -110,6 +114,16 @@ export function folderDataToWorkspaceFolders(folderData: FolderData | FolderData
         return folders;
     } else {
         return folderData.folder;
+    }
+}
+
+export function dumpDeployData(workspaceState: vscode.Memento): model.DumpDeployData {
+    return (data?: any) => {
+        const value = workspaceState.get(DEPLOY_DATA);
+        if (data !== null) {
+            workspaceState.update(DEPLOY_DATA, data);
+        }
+        return value;
     }
 }
 

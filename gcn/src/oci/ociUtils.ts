@@ -256,9 +256,12 @@ export async function getDevopsProject(authenticationDetailsProvider: common.Con
     return client.getProject(request).then(response => response.project);
 }
 
-export async function deleteDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectId: string) {
+export async function deleteDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectId: string, wait: boolean = false) {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    client.deleteProject({ projectId: projectId });
+    const response = client.deleteProject({ projectId: projectId });
+    if (wait) {
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting project", (await response).opcWorkRequestId);
+    }
 }
 
 export async function listCodeRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.models.RepositorySummary[]> {
@@ -300,9 +303,12 @@ export async function getCodeRepository(authenticationDetailsProvider: common.Co
     return client.getRepository(request).then(response => response.repository);
 }
 
-export async function deleteCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repo: string) {
+export async function deleteCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repo: string, wait: boolean = false) {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    client.deleteRepository({ repositoryId: repo });
+    const response = client.deleteRepository({ repositoryId: repo });
+    if (wait) {
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting repository", (await response).opcWorkRequestId);
+    }
 }
 
 export async function getBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string): Promise<devops.models.BuildPipeline> {
@@ -483,7 +489,7 @@ export async function getArtifactRepository(authenticationDetailsProvider: commo
     return client.getRepository(request).then(response => response.repository);
 }
 
-export async function deleteArtifactsRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string) {
+export async function deleteArtifactsRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string, wait : boolean = false) {
     const items = await listGenericArtifacts(authenticationDetailsProvider, compartmentID, repositoryID);
     const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     if (items) {
@@ -494,7 +500,10 @@ export async function deleteArtifactsRepository(authenticationDetailsProvider: c
             await client.deleteGenericArtifact(request);
         }
     }
-    client.deleteRepository({ repositoryId: repositoryID });
+    const response = client.deleteRepository({ repositoryId: repositoryID });
+    if (wait) {
+        await response;
+    }
 }
 
 export async function listGenericArtifacts(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string, artifactPath?: string): Promise<artifacts.models.GenericArtifactSummary[]> {
@@ -589,9 +598,12 @@ export async function getContainerRepository(authenticationDetailsProvider: comm
     return client.getContainerRepository(request).then(response => response.containerRepository);
 }
 
-export async function deleteContainerRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string) {
+export async function deleteContainerRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string, wait: boolean = false) {
     const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    client.deleteContainerRepository({ repositoryId : repositoryID});
+    const response = client.deleteContainerRepository({ repositoryId : repositoryID});
+    if (wait) {
+        await response;
+    }
 }
 
 export async function listContainerImages(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string): Promise<artifacts.models.ContainerImageSummary[]> {
@@ -635,12 +647,15 @@ export async function listDeployEnvironments(authenticationDetailsProvider: comm
     return result;
 }
 
-export async function deleteDeployEnvironment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, envID: string) {
+export async function deleteDeployEnvironment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, envID: string, wait: boolean = false) {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: devops.requests.DeleteDeployEnvironmentRequest = {
         deployEnvironmentId: envID
     };
-    client.deleteDeployEnvironment(request);
+    const response = client.deleteDeployEnvironment(request);
+    if (wait) {
+        await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy environment", (await response).opcWorkRequestId);
+    }
 }
 
 export async function listKnowledgeBases(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<adm.models.KnowledgeBaseSummary[]> {
@@ -671,7 +686,7 @@ export async function deleteKnowledgeBase(authenticationDetailsProvider: common.
     const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     let response = client.deleteKnowledgeBase({ knowledgeBaseId : knowledgeId});
     if (wait) {
-        admWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting knowledge base", (await response).opcWorkRequestId);
+        await admWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting knowledge base", (await response).opcWorkRequestId);
     }
 }    
 

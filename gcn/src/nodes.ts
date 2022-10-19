@@ -12,7 +12,7 @@ import * as dialogs from './dialogs';
 export type TreeChanged = (treeItem?: vscode.TreeItem) => void;
 
 export interface DeployNode {
-    deploy(): void;
+    deploy(workspaceState: vscode.Memento): void;
 }
 
 const DEPLOY_NODES: string[] = [];
