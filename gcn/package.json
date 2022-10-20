@@ -221,7 +221,7 @@
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Previous creation of a new OCI devops project failed. Check the failure, resolve the problem and continue with:\n[Resume DevOps Project Creation](command:gcn.deployToCloud)\n[Delete Created DevOps Project Parts](command:gcn.undeployFromCloud)\n\n",
+				"contents": "Previous creation of a new OCI devops project failed. Check the failure, resolve the problem and continue with:\n[Resume DevOps Project Creation](command:gcn.deployToCloud)\n[Delete Partially Created DevOps Project](command:gcn.undeployFromCloud)\n\n",
 				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && gcn.deployFailed"
 			}
 		],

@@ -364,7 +364,7 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                             dump(deployData);
                         }
                     }
-                    const folder = folders.find(f => f.folder.name === repositoryName);
+                    const folder = folders.find(f => removeSpaces(f.folder.name) === repositoryName);
                     if (folder) {
                         const folderPath = folder.folder.uri.fsPath;
                         const gcnPath = path.join(folderPath, '.vscode', 'gcn.json');
@@ -811,4 +811,8 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
 
         return p;
     });
+}
+
+function removeSpaces(name: string): string {
+    return name.replace(/\s+/g, '_');
 }

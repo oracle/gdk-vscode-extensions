@@ -39,6 +39,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
     const authentication = await ociAuthentication.resolve(deployData.profile);
     if (!authentication) {
+        dump();
         return undefined;
     }
     const configurationProblem = authentication.getConfigurationProblem();
@@ -62,6 +63,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
     if (!deployData.compartment) {
         deployData.compartment = await ociDialogs.selectCompartment(provider);
         if (!deployData.compartment) {
+            dump();
             return undefined;
         }
     }
@@ -79,6 +81,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
     if (!deployData.okeCluster) {
         deployData.okeCluster = await okeUtils.selectOkeCluster(provider, deployData.compartment.ocid, provider.getRegion().regionId, true, deployData.compartment.name, true);
         if (deployData.okeCluster === undefined) {
+            dump();
             return undefined;
         }
     }
@@ -95,9 +98,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
         }
     }
     if (!deployData.project) {
-        selectedName = await selectProjectName(folders.length === 1 ? folders[0].name : undefined);
+        selectedName = await selectProjectName(folders.length === 1 ? removeSpaces(folders[0].name) : undefined);
     }
     if (!selectedName) {
+        dump();
         return undefined;
     }
     let projectName = selectedName;
@@ -195,6 +199,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             logUtils.logInfo(`[deploy] Project name '${projectName}' already exists in the tenancy`);
                             const newName = await selectProjectName(projectName);
                             if (!newName) {
+                                dump();
                                 resolve(undefined);
                                 return;
                             }
@@ -433,7 +438,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
             for (const folder of projectFolders) {
                 const repositoryDir = folder.uri.fsPath;
-                const repositoryName = folder.name; // TODO: repositoryName should be unique within the devops project
+                const repositoryName = removeSpaces(folder.name); // TODO: repositoryName should be unique within the devops project
                 const buildPipelines = [];
                 const deployPipelines = [];
                 if (!deployData.repositories) {
@@ -475,7 +480,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         increment,
                         message: `Creating source code repository ${repositoryName}...`
                     });
-                    const description = `Source code repository ${folder.name}`;
+                    const description = `Source code repository ${repositoryName}`;
                     try {
                         logUtils.logInfo(`[deploy] Creating source code repository ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const repo = await ociUtils.createCodeRepository(provider, deployData.project.ocid, repositoryName, 'master', description);
@@ -1560,10 +1565,11 @@ async function selectProjectName(suggestedName?: string): Promise<string | undef
         value: suggestedName,
         validateInput: input => validateProjectName(input),
     });
-    if (projectName) {
-        projectName = projectName.replace(/\s+/g, '');
-    }
-    return projectName;
+    return projectName ? removeSpaces(projectName) : projectName;
+}
+
+function removeSpaces(name: string): string {
+    return name.replace(/\s+/g, '_');
 }
 
 function expandTemplate(templatesStorage: string, template: string, args: { [key:string] : string }, folder?: vscode.WorkspaceFolder, name?: string): string | undefined {
