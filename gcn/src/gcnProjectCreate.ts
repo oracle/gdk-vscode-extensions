@@ -86,13 +86,13 @@ declare var AotjsVM: any;
 var gcnApi: any = undefined;
 
 async function initialize(): Promise<any> {
-    if (gcnApi) {
-        return new Promise((resolve, _reject) => { resolve(gcnApi); });
-    } else {
-        AotjsVM.run([]).then((vm: any) => {
-            return gcnApi = vm.exports.gcn.ui.API;
-        });
+    const graalVMExt = vscode.extensions.getExtension('oracle-labs-graalvm.graalvm');
+    if (graalVMExt && !graalVMExt.isActive) {
+        await graalVMExt.activate();
     }
+    return gcnApi ? Promise.resolve(gcnApi) : AotjsVM.run([]).then((vm: any) => {
+        return gcnApi = vm.exports.gcn.ui.API;
+    });
 }
 
 const OPEN_IN_NEW_WINDOW = 'Open in new window';
@@ -101,7 +101,6 @@ const ADD_TO_CURRENT_WORKSPACE = 'Add to current workspace';
 
 export async function createProject(context: vscode.ExtensionContext): Promise<void> {
     var options: CreateOptions | undefined;
-    await initialize();
     options = await initialize().then(() => {
         return selectCreateOptions();
     });
@@ -498,7 +497,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			totalSteps: totalSteps(state),
 			value: state.projectName || 'demo',
 			prompt: 'Provide project name',
-			validate: () => Promise.resolve(undefined),
+			validate: (value: string) => Promise.resolve((/^[a-z_][a-z0-9_]*(-[a-z_][a-z0-9_]*)*$/.test(value)) ? undefined : 'Invalid project name'),
 			shouldResume: () => Promise.resolve(false)
 		});
 		return (input: dialogs.MultiStepInput) => basePackage(input, state);
@@ -511,7 +510,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			totalSteps: totalSteps(state),
 			value: state.basePackage || 'com.example',
 			prompt: 'Provide base package',
-			validate: () => Promise.resolve(undefined),
+			validate: (value: string) => Promise.resolve((/^[a-z_][a-z0-9_]*(\.[a-z0-9_]+)*$/.test(value)) ? undefined : 'Invalid base package'),
 			shouldResume: () => Promise.resolve(false)
 		});
 		return (input: dialogs.MultiStepInput) => pickLanguage(input, state);
