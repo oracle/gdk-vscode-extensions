@@ -19,6 +19,7 @@ import * as dataSupport from './dataSupport';
 import * as ociNodes from './ociNodes';
 import * as ociDialogs from './ociDialogs';
 import * as ociAuthentication from './ociAuthentication';
+import * as path from 'path';
 
 
 export const DATA_NAME = 'knowledgeBases';
@@ -43,6 +44,8 @@ export function initialize(context: vscode.ExtensionContext) {
         if (params[0]?.uri) {
             uri = vscode.Uri.parse(params[0].uri);
             logUtils.logInfo(`[audit] Invoked Audit for folder ${uri.fsPath}`);
+        } else if (vscode.window.activeTextEditor?.document?.uri) {
+            uri = vscode.window.activeTextEditor.document.uri;
         } else {
             logUtils.logInfo(`[audit] Invoked Audit without folder context, selecting folder`);
             const folder = await dialogs.selectFolder(ACTION_NAME, 'Select folder for which to perform the audit', null);
@@ -122,7 +125,7 @@ async function executeFolderAudit(uri: vscode.Uri) {
         }
     }
 
-    logUtils.logInfo(`[audit] Resolving NBLS project audit command`);
+    logUtils.logInfo(`[audit] Resolving NBLS project audit command`);    
     const nblsReady = (await vscode.commands.getCommands(true)).includes('nbls.gcn.projectAudit.execute');
     if (!nblsReady) {
         dialogs.showErrorMessage('Required Language Server is not ready.');
@@ -130,7 +133,27 @@ async function executeFolderAudit(uri: vscode.Uri) {
     }
 
     logUtils.logInfo(`[audit] Executing generic audit of folder ${uri.fsPath}`);
-    return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri.toString(), auditsKnowledgeBase, 'compartment', undefined);
+    return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri.toString(), auditsKnowledgeBase, { auditName: folderName2AuditName(uri)});
+}
+
+function folderName2AuditName(uri : vscode.Uri) : string {
+    const parts = uri.fsPath.split(path.sep);
+    let folderName = parts.pop();
+    if (folderName?.length == 0) {
+        folderName = parts.pop();
+    }
+    const d = new Date();
+    const auditName = `${folderName}_${d.getFullYear()}${pad2(d.getMonth())}${pad2(d.getDay())}_${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}_${d.getMilliseconds()}`
+    return auditName;
+}
+
+function pad2(n : number) : string {
+    let s : string = n.toString();
+    if (s.length < 2) {
+        return '0' + s;
+    } else {
+        return s;
+    }
 }
 
 async function getSharedKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, compartmentName: string): Promise<string | undefined> {
@@ -455,9 +478,7 @@ class Service extends ociService.Service {
         }
 
         return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri.toString(), 
-            auditsKnowledgeBase, 
-            this.oci.getCompartment(), 
-            this.oci.getDevOpsProject()
+            auditsKnowledgeBase
         )
     }
 
