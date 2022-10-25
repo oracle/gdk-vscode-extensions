@@ -13,8 +13,6 @@ import * as folderStorage from './folderStorage';
 import * as servicesView from './servicesView';
 
 
-const DEPLOY_DATA = 'deployData';
-
 export type FolderData = {
     folder: vscode.WorkspaceFolder;
     configurations: model.ServicesConfiguration[];
@@ -63,7 +61,7 @@ export async function build(workspaceState: vscode.Memento) {
         }
     }
 
-    await servicesView.build(folderData);
+    await servicesView.build(folderData, (folder: FolderData) => dumpDeployData(workspaceState, folder));
 
     await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', folders && folders.length - serviceFoldersCount > 1);
 
@@ -117,11 +115,12 @@ export function folderDataToWorkspaceFolders(folderData: FolderData | FolderData
     }
 }
 
-export function dumpDeployData(workspaceState: vscode.Memento): model.DumpDeployData {
+export function dumpDeployData(workspaceState: vscode.Memento, folders?: FolderData | FolderData[]): model.DumpDeployData {
+    const key = `deployData:${folders ? Array.isArray(folders) ? folders.map(f => f.folder.name).join(':') : folders.folder.name : ''}`;
     return (data?: any) => {
-        const value = workspaceState.get(DEPLOY_DATA);
+        const value = workspaceState.get(key);
         if (data !== null) {
-            workspaceState.update(DEPLOY_DATA, data);
+            workspaceState.update(key, data);
         }
         return value;
     }

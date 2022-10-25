@@ -77,6 +77,12 @@
 				"category": "GCN"
 			},
 			{
+				"command": "gcn.undeployPartialFromCloud",
+				"title": "Delete Partially Created DevOps Project",
+				"icon": "$(trash)",
+				"category": "GCN"
+			},
+			{
 				"command": "gcn.showWelcomePage",
 				"title": "Show Graal Cloud Native Page",
 				"category": "GCN"
@@ -84,6 +90,12 @@
 			{
 				"command": "gcn.deployToCloud",
 				"title": "Create DevOps Project",
+				"icon": "$(cloud-upload)",
+				"category": "GCN"
+			},
+			{
+				"command": "gcn.resumeDeployToCloud",
+				"title": "Resume DevOps Project Creation",
 				"icon": "$(cloud-upload)",
 				"category": "GCN"
 			},
@@ -221,8 +233,8 @@
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Previous creation of a new OCI devops project failed. Check the failure, resolve the problem and continue with:\n[Resume DevOps Project Creation](command:gcn.deployToCloud)\n[Delete Partially Created DevOps Project](command:gcn.undeployFromCloud)\n\n",
-				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && gcn.deployFailed"
+				"contents": "Previous creation of a new OCI devops project failed. Check the failure, resolve the problem and continue with:\n[Resume DevOps Project Creation](command:gcn.resumeDeployToCloud)\n[Delete Partially Created DevOps Project](command:gcn.undeployPartialFromCloud)\n\n",
+				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && gcn.deployFailed && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
 			}
 		],
 		"views": {
@@ -236,6 +248,14 @@
 		},
 		"menus": {
 			"commandPalette": [
+				{
+					"command": "gcn.resumeDeployToCloud",
+					"when": "false"
+				},
+				{
+					"command": "gcn.undeployPartialFromCloud",
+					"when": "false"
+				},
 				{
 					"command": "gcn.addContent",
 					"when": "false"
@@ -311,6 +331,16 @@
 					"command": "gcn.deployToCloud",
 					"when": "viewItem in gcn.deployToCloudNodes && nbJavaLSReady",
 					"group": "inline@1"
+				},
+				{
+					"command": "gcn.resumeDeployToCloud",
+					"when": "viewItem == gcn.oci.folderNode-failed && nbJavaLSReady",
+					"group": "inline@1"
+				},
+				{
+					"command": "gcn.undeployPartialFromCloud",
+					"when": "viewItem == gcn.oci.folderNode-failed && nbJavaLSReady",
+					"group": "inline@2"
 				},
 				{
 					"command": "gcn.addContent",

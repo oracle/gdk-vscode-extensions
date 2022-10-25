@@ -28,6 +28,20 @@ export function initialize(context: vscode.ExtensionContext) {
             importExportUtils.deployFolders(context.workspaceState);
         }
 	}));
+	context.subscriptions.push(vscode.commands.registerCommand('gcn.resumeDeployToCloud', (...params: any[]) => {
+        if (params[0]) {
+            (params[0] as nodes.DeployNode).deploy(context.workspaceState);
+        } else {
+            importExportUtils.deployFolders(context.workspaceState);
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.undeployPartialFromCloud', (...params: any[]) => {
+        if (params[0]) {
+            (params[0] as nodes.DeployNode).undeploy(context.workspaceState);
+        } else {
+            importExportUtils.undeployFolders(context.workspaceState);
+        }
+	}));
     // TODO: --------------------
     // ??? NOT TO BE RELEASED ???
     context.subscriptions.push(vscode.commands.registerCommand('gcn.undeployFromCloud', () => {
@@ -114,7 +128,7 @@ async function addContent(folder: gcnServices.FolderData | null | undefined, ser
     services.addContent();
 }
 
-export async function build(folders: gcnServices.FolderData[]) {
+export async function build(folders: gcnServices.FolderData[], dumpDeployData?: (folder: gcnServices.FolderData) => model.DumpDeployData) {
     const folderNodes: FolderNode[] = [];
     if (folders.length > 0) {
         const treeChanged: nodes.TreeChanged = (treeItem?: vscode.TreeItem) => {
@@ -140,7 +154,12 @@ export async function build(folders: gcnServices.FolderData[]) {
             if (folders.length > 1) {
                 const children = folderNode.getChildren();
                 if (children && children.length === 0) {
-                    folderNode.setChildren([ new NotDeployedNode() ]);
+                    if (dumpDeployData && dumpDeployData(folder)(null)) {
+                        folderNode.setChildren([ new PartiallyDeployedNode() ]);
+                        folderNode.contextValue = FolderNode.CONTEXTS[2];
+                    } else {
+                        folderNode.setChildren([ new NotDeployedNode() ]);
+                    }
                 }
             }
             folderNodes.push(folderNode);
@@ -154,7 +173,8 @@ class FolderNode extends nodes.BaseNode implements nodes.DeployNode, nodes.AddCo
     private static readonly DATA_NAME = 'folderNode';
     static readonly CONTEXTS = [
         `gcn.oci.${FolderNode.DATA_NAME}`, // default
-        `gcn.oci.${FolderNode.DATA_NAME}-empty`
+        `gcn.oci.${FolderNode.DATA_NAME}-empty`,
+        `gcn.oci.${FolderNode.DATA_NAME}-failed`
     ];
 
     private folder: gcnServices.FolderData;
@@ -180,6 +200,10 @@ class FolderNode extends nodes.BaseNode implements nodes.DeployNode, nodes.AddCo
 
     deploy(workspaceState: vscode.Memento) {
         importExportUtils.deployFolders(workspaceState, this.folder);
+    }
+
+    undeploy(workspaceState: vscode.Memento) {
+        importExportUtils.undeployFolders(workspaceState, this.folder);
     }
 
     addContent() {
@@ -240,6 +264,15 @@ class NotDeployedNode extends nodes.TextNode {
 
     constructor() {
         super('<not deployed to cloud>');
+    }
+
+}
+
+class PartiallyDeployedNode extends nodes.TextNode {
+
+    constructor() {
+        super('<deploy to cloud failed>');
+        this.iconPath = new vscode.ThemeIcon('error', new vscode.ThemeColor('charts.red'));
     }
 
 }

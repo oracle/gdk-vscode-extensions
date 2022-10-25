@@ -57,7 +57,7 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: gc
     if (!anotherOperationInProgress()) {
         deployInProgress = true;
         await servicesView.showWelcomeView('gcn.deployInProgress');
-        const dump = gcnServices.dumpDeployData(workspaceState);
+        const dump = gcnServices.dumpDeployData(workspaceState, folders);
         try {
             const deployData = dump(null) || {};
             if (deployData?.folders) {
@@ -93,9 +93,9 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: gc
         } finally {
             await servicesView.hideWelcomeView('gcn.deployInProgress');
             if (dump(null)) {
-                await servicesView.showWelcomeView('gcn.deployFailed');
+                await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', true);
             } else {
-                await servicesView.hideWelcomeView('gcn.deployFailed');
+                await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', false);
             }
             deployInProgress = false;
         }
@@ -103,11 +103,11 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: gc
     }
 }
 
-export async function undeployFolders(workspaceState: vscode.Memento) {
+export async function undeployFolders(workspaceState: vscode.Memento, folders?: gcnServices.FolderData | gcnServices.FolderData[]) {
     if (!anotherOperationInProgress()) {
         undeployInProgress = true;
         await servicesView.showWelcomeView('gcn.undeployInProgress');
-        const dump = gcnServices.dumpDeployData(workspaceState);
+        const dump = gcnServices.dumpDeployData(workspaceState, folders);
         try {
             const deployData = dump(null);
             if (deployData) {
@@ -131,9 +131,9 @@ export async function undeployFolders(workspaceState: vscode.Memento) {
         } finally {
             await servicesView.hideWelcomeView('gcn.undeployInProgress');
             if (dump(null)) {
-                await servicesView.showWelcomeView('gcn.deployFailed');
+                await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', true);
             } else {
-                await servicesView.hideWelcomeView('gcn.deployFailed');
+                await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', false);
             }
             undeployInProgress = false;
         }

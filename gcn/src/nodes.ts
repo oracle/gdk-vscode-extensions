@@ -13,6 +13,7 @@ export type TreeChanged = (treeItem?: vscode.TreeItem) => void;
 
 export interface DeployNode {
     deploy(workspaceState: vscode.Memento): void;
+    undeploy(workspaceState: vscode.Memento): void;
 }
 
 const DEPLOY_NODES: string[] = [];
