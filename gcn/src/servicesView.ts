@@ -128,9 +128,9 @@ async function addContent(folder: gcnServices.FolderData | null | undefined, ser
     services.addContent();
 }
 
-export async function build(folders: gcnServices.FolderData[], dumpDeployData?: (folder: gcnServices.FolderData) => model.DumpDeployData) {
+export async function build(folders: gcnServices.FolderData[], deployedFoldersCount: number, servicesInitialized: boolean, dumpDeployData?: (folder: gcnServices.FolderData) => model.DumpDeployData) {
     const folderNodes: FolderNode[] = [];
-    if (folders.length > 0) {
+    if (servicesInitialized && folders.length > 0 && deployedFoldersCount > 0) {
         const treeChanged: nodes.TreeChanged = (treeItem?: vscode.TreeItem) => {
             nodeProvider.refresh(treeItem);
         }
@@ -263,7 +263,7 @@ class NoServicesNode extends nodes.TextNode {
 class NotDeployedNode extends nodes.TextNode {
 
     constructor() {
-        super('<not deployed to cloud>');
+        super('<not deployed to OCI>');
     }
 
 }
@@ -271,7 +271,7 @@ class NotDeployedNode extends nodes.TextNode {
 class PartiallyDeployedNode extends nodes.TextNode {
 
     constructor() {
-        super('<deploy to cloud failed>');
+        super('<deploy to OCI failed>');
         this.iconPath = new vscode.ThemeIcon('error', new vscode.ThemeColor('charts.red'));
     }
 

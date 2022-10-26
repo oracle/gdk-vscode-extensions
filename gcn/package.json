@@ -1,7 +1,7 @@
 {
 	"name": "gcn",
-	"displayName": "Graal Cloud Native Tools",
-	"description": "Graal Cloud Native tools for the VS Code",
+	"displayName": "OCI Services for GCN",
+	"description": "Oracle Cloud Infrastructure services for Graal Cloud Native",
 	"version": "0.0.1",
 	"preview": true,
 	"license": "SEE LICENSE IN LICENSE.txt",
@@ -27,7 +27,8 @@
 	],
 	"keywords": [
 		"java",
-		"cloud",
+		"oci",
+		"gcn",
 		"native image"
 	],
 	"activationEvents": [
@@ -43,12 +44,12 @@
 	"contributes": {
 		"configuration": {
 			"type": "object",
-			"title": "Graal Cloud Native",
+			"title": "OCI Services for GCN",
 			"properties": {
 				"gcn.showWelcomePage": {
 					"type": "boolean",
 					"default": true,
-					"description": "Show Graal Cloud Native page on extension activation"
+					"description": "Show OCI Services for GCN page on extension activation"
 				},
 				"gcn.sharedKnowledgeBaseOcid": {
 					"type": "string",
@@ -73,131 +74,131 @@
 		"commands": [
 			{
 				"command": "gcn.undeployFromCloud",
-				"title": "Undeploy Open Folders",
-				"category": "GCN"
+				"title": "Undeploy From OCI",
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.undeployPartialFromCloud",
-				"title": "Delete Partially Created DevOps Project",
+				"title": "Revert Partial Deploy To OCI",
 				"icon": "$(trash)",
 				"category": "GCN"
 			},
 			{
 				"command": "gcn.showWelcomePage",
-				"title": "Show Graal Cloud Native Page",
-				"category": "GCN"
+				"title": "Show OCI Services for GCN Page",
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.deployToCloud",
-				"title": "Create DevOps Project",
+				"title": "Deploy To OCI",
 				"icon": "$(cloud-upload)",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.resumeDeployToCloud",
-				"title": "Resume DevOps Project Creation",
+				"title": "Resume Deploy To OCI",
 				"icon": "$(cloud-upload)",
 				"category": "GCN"
 			},
 			{
 				"command": "gcn.importFromCloud",
-				"title": "Import DevOps Project",
+				"title": "Import From OCI",
 				"icon": "$(cloud-download)",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.addContent",
 				"title": "Add Content...",
 				"icon": "$(add)",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.oci.openInBrowser",
 				"title": "Open in Browser",
 				"icon": "$(link-external)",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.oci.openInConsole",
 				"title": "Open in Cloud Console",
 				"icon": "$(globe)",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.renameNode",
 				"title": "Rename",
 				"icon": "$(edit)",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.removeNode",
 				"title": "Remove",
 				"icon": "$(remove-close)",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.showReport",
 				"title": "Show Report",
 				"icon": "$(output)",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.reloadNode",
 				"title": "Reload",
 				"icon": "$(refresh)",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.oci.runBuildPipeline",
 				"title": "Run Build Pipeline",
 				"icon": "$(run)",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.oci.runDeployPipeline",
 				"title": "Run Deployment Pipeline",
 				"icon": "$(run)",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.oci.getBuildArtifact",
 				"title": "Get Build Artifact(s)",
 				"icon": "$(cloud-download)",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.oci.downloadGenericArtifact",
 				"title": "Download Artifact",
 				"icon": "$(cloud-download)",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.oci.downloadLatestGenericArtifact",
 				"title": "Download Latest Artifact",
 				"icon": "$(cloud-download)",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.oci.pullDockerImage",
 				"title": "Pull Docker Image",
 				"icon": "$(cloud-download)",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.oci.pullLatestDockerImage",
 				"title": "Pull Latest Docker Image",
 				"icon": "$(cloud-download)",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.oci.projectAudit.execute",
 				"title": "Run Project Audit",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.createGcnProject",
 				"title": "Create GCN Project",
-				"category": "GCN"
+				"category": "OCI for GCN"
 			}
 		],
 		"viewsWelcome": [
@@ -208,32 +209,32 @@
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Creating devops project...",
+				"contents": "Deploy to OCI in progress...",
 				"when": "gcn.servicesInitialized && gcn.deployInProgress"
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Importing devops project...",
+				"contents": "Import from OCI in progress...",
 				"when": "gcn.servicesInitialized && gcn.importInProgress"
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Undeploying folder(s) from OCI...",
+				"contents": "Undeploy from OCI in progress...",
 				"when": "gcn.servicesInitialized && gcn.undeployInProgress"
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Import an existing OCI devops project locally.\n[Import DevOps Project](command:gcn.importFromCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
+				"contents": "Import existing folder(s) from OCI, including remote build & deploy image functionality.\n[Import From OCI](command:gcn.importFromCloud)\n\nLearn more about [Oracle Cloud Infrastructure](https://www.oracle.com/cloud) and [Graal Cloud Native](https://developer.oracle.com/languages/graalvm/graal-cloud-native.html).",
 				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed && workspaceFolderCount == 0"
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Create a new OCI devops project from the current folder(s).\n[Create DevOps Project](command:gcn.deployToCloud)\n\nTo learn more about the Graal Cloud Native framework [read the docs](https://developer.oracle.com/java/graalvm/cloud-native/).",
+				"contents": "Deploy the folder(s) to OCI to enable remote build & deploy image functionality.\n[Deploy To OCI](command:gcn.deployToCloud)\n\nLearn more about [Oracle Cloud Infrastructure](https://www.oracle.com/cloud) and [Graal Cloud Native](https://developer.oracle.com/languages/graalvm/graal-cloud-native.html).",
 				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Previous creation of a new OCI devops project failed. Check the failure, resolve the problem and continue with:\n[Resume DevOps Project Creation](command:gcn.resumeDeployToCloud)\n[Delete Partially Created DevOps Project](command:gcn.undeployPartialFromCloud)\n\n",
+				"contents": "Previous deployment to OCI failed. Check the failure, resolve the problem and continue with:\n[Resume Deploy To OCI](command:gcn.resumeDeployToCloud)\n[Delete Partial Deployment](command:gcn.undeployPartialFromCloud)\n\n",
 				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && gcn.deployFailed && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
 			}
 		],
@@ -241,7 +242,7 @@
 			"explorer": [
 				{
 					"id": "gcn-services",
-					"name": "OCI DevOps Services",
+					"name": "OCI Services",
 					"icon": "resources/GCN_logo.png"
 				}
 			]
@@ -317,7 +318,7 @@
 			"view/title": [
 				{
 					"command": "gcn.deployToCloud",
-					"when": "view == gcn-services && gcn.servicesInitialized && gcn.globalDeployAction && nbJavaLSReady && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
+					"when": "view == gcn-services && gcn.servicesInitialized && gcn.globalDeployAction && nbJavaLSReady && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed",
 					"group": "navigation@1"
 				},
 				{

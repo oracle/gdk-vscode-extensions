@@ -89,17 +89,20 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: gc
             const workspaceFolders = gcnServices.folderDataToWorkspaceFolders(folders) as vscode.WorkspaceFolder[];
             deployData.folders = workspaceFolders.map(folder => folder.name);
             dump(deployData);
-            await cloudSupport.deployFolders(workspaceFolders, dump);
+            const deployed = await cloudSupport.deployFolders(workspaceFolders, dump);
+            if (deployed) {
+                await gcnServices.build(workspaceState);
+            }
         } finally {
             await servicesView.hideWelcomeView('gcn.deployInProgress');
             if (dump(null)) {
                 await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', true);
+                await gcnServices.build(workspaceState);
             } else {
                 await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', false);
             }
             deployInProgress = false;
         }
-        await gcnServices.build(workspaceState);
     }
 }
 

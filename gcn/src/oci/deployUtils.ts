@@ -25,14 +25,14 @@ import * as okeUtils from './okeUtils';
 
 export type SaveConfig = (folder: string, config: any) => boolean;
 
-export async function deployFolders(folders: vscode.WorkspaceFolder[], resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData): Promise<undefined> {
+export async function deployFolders(folders: vscode.WorkspaceFolder[], resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData): Promise<boolean> {
     logUtils.logInfo('[deploy] Invoked create new devops project');
     
     const nblsErr = await projectUtils.checkNBLS();
     if (nblsErr) {
         dialogs.showErrorMessage(nblsErr);
         logUtils.logInfo(`[deploy] ${nblsErr}`);
-        return undefined;
+        return false;
     }
 
     const deployData: any = dump(null) || {};
@@ -40,12 +40,12 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
     const authentication = await ociAuthentication.resolve(deployData.profile);
     if (!authentication) {
         dump();
-        return undefined;
+        return false;
     }
     const configurationProblem = authentication.getConfigurationProblem();
     if (configurationProblem) {
         dialogs.showErrorMessage(configurationProblem);
-        return undefined;
+        return false;
     }
     const provider = authentication.getProvider();
     deployData.profile = provider.getProfileCredentials()?.currentProfile;
@@ -64,7 +64,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
         deployData.compartment = await ociDialogs.selectCompartment(provider);
         if (!deployData.compartment) {
             dump();
-            return undefined;
+            return false;
         }
     }
 
@@ -82,7 +82,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
         deployData.okeCluster = await okeUtils.selectOkeCluster(provider, deployData.compartment.ocid, provider.getRegion().regionId, true, deployData.compartment.name, true);
         if (deployData.okeCluster === undefined) {
             dump();
-            return undefined;
+            return false;
         }
     }
 
@@ -102,7 +102,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
     }
     if (!selectedName) {
         dump();
-        return undefined;
+        return false;
     }
     let projectName = selectedName;
 
@@ -1533,11 +1533,11 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
     if (error) {
         dialogs.showErrorMessage(error);
         logUtils.logInfo(`[deploy] Failed: ${error}`);
+        return false;
     } else {
         logUtils.logInfo(`[deploy] New devops project successfully created`);
+        return true;
     }
-
-    return undefined;
 }
 
 async function selectProjectName(suggestedName?: string): Promise<string | undefined> {

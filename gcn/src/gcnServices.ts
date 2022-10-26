@@ -28,7 +28,7 @@ export async function build(workspaceState: vscode.Memento) {
     await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', false);
 
     folderData = [];
-    await servicesView.build(folderData);
+    await servicesView.build(folderData, -1, false);
 
     let serviceFoldersCount = 0;
 
@@ -61,9 +61,9 @@ export async function build(workspaceState: vscode.Memento) {
         }
     }
 
-    await servicesView.build(folderData, (folder: FolderData) => dumpDeployData(workspaceState, folder));
+    await servicesView.build(folderData, serviceFoldersCount, true, (folder: FolderData) => dumpDeployData(workspaceState, folder));
 
-    await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', folders && folders.length - serviceFoldersCount > 1);
+    await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', folders && folders.length > serviceFoldersCount);
 
     await vscode.commands.executeCommand('setContext', 'gcn.serviceFoldersCount', serviceFoldersCount);
     await vscode.commands.executeCommand('setContext', 'gcn.servicesInitialized', true);

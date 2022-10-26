@@ -31,7 +31,7 @@ export class WelcomePanel {
 	}
 
 	private constructor(context: vscode.ExtensionContext) {
-		this._panel = vscode.window.createWebviewPanel(WelcomePanel.viewType, 'Graal Cloud Native',
+		this._panel = vscode.window.createWebviewPanel(WelcomePanel.viewType, 'OCI Services for GCN',
 			{ viewColumn: vscode.ViewColumn.One, preserveFocus: true },
 			{
 				enableCommandUris: true,

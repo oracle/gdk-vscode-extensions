@@ -8,7 +8,7 @@
 import * as vscode from 'vscode';
 
 
-const GCN_OUTPUT = 'OCI DevOps Services';
+const GCN_OUTPUT = 'OCI Services for GCN';
 const LOG_OUTPUT = vscode.window.createOutputChannel(GCN_OUTPUT);
 
 export function logInfo(record: string) {
