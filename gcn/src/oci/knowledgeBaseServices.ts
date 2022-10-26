@@ -39,7 +39,7 @@ export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.projectAudit.execute', async (...params: any[]) => {
         let uri: vscode.Uri;
         if (params[0]?.uri) {
-            uri = vscode.Uri.parse(params[0]?.uri);
+            uri = vscode.Uri.parse(params[0].uri);
             logUtils.logInfo(`[audit] Invoked Audit for folder ${uri.fsPath}`);
         } else {
             logUtils.logInfo(`[audit] Invoked Audit without folder context, selecting folder`);

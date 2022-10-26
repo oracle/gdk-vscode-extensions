@@ -22,57 +22,53 @@ export function initialize(context: vscode.ExtensionContext) {
 		importExportUtils.importDevopsProject();
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('gcn.deployToCloud', (...params: any[]) => {
-        if (params[0]) {
+        if (params[0]?.deploy) {
             (params[0] as nodes.DeployNode).deploy(context.workspaceState);
         } else {
             importExportUtils.deployFolders(context.workspaceState);
         }
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('gcn.resumeDeployToCloud', (...params: any[]) => {
-        if (params[0]) {
+        if (params[0]?.deploy) {
             (params[0] as nodes.DeployNode).deploy(context.workspaceState);
         } else {
             importExportUtils.deployFolders(context.workspaceState);
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('gcn.undeployPartialFromCloud', (...params: any[]) => {
-        if (params[0]) {
+        if (params[0]?.undeploy) {
             (params[0] as nodes.DeployNode).undeploy(context.workspaceState);
         } else {
             importExportUtils.undeployFolders(context.workspaceState);
         }
 	}));
-    // TODO: --------------------
-    // ??? NOT TO BE RELEASED ???
     context.subscriptions.push(vscode.commands.registerCommand('gcn.undeployFromCloud', () => {
         importExportUtils.undeployFolders(context.workspaceState);
 	}));
-    // ??? NOT TO BE RELEASED ???
-    // --------------------------
     context.subscriptions.push(vscode.commands.registerCommand('gcn.addContent', (...params: any[]) => {
-        if (params[0]) {
+        if (params[0]?.addContent) {
             (params[0] as nodes.AddContentNode).addContent();
         } else {
             addContent(undefined, undefined);
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('gcn.renameNode', (...params: any[]) => {
-        if (params[0]) {
+        if (params[0]?.rename) {
             (params[0] as nodes.RenameableNode).rename();
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('gcn.removeNode', (...params: any[]) => {
-        if (params[0]) {
+        if (params[0]?.remove) {
             (params[0] as nodes.RemovableNode).remove();
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('gcn.reloadNode', (...params: any[]) => {
-        if (params[0]) {
+        if (params[0]?.reload) {
             (params[0] as nodes.ReloadableNode).reload();
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('gcn.showReport', (...params: any[]) => {
-        if (params[0]) {
+        if (params[0]?.showReport) {
             (params[0] as nodes.ShowReportNode).showReport();
         }
 	}));

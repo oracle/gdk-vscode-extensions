@@ -33,12 +33,12 @@ type DeployArtifact = {
 
 export function initialize(context: vscode.ExtensionContext): void {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.downloadLatestGenericArtifact', (...params: any[]) => {
-        if (params[0]) {
+        if (params[0]?.download) {
             (params[0] as GenericDeployArtifactNode).download();
         }
     }));
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.pullLatestDockerImage', (...params: any[]) => {
-        if (params[0]) {
+        if (params[0]?.pull) {
             (params[0] as OcirDeployArtifactNode).pull();
         }
     }));

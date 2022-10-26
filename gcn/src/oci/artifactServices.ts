@@ -34,7 +34,7 @@ type GenericArtifact = {
 
 export function initialize(context: vscode.ExtensionContext): void {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.downloadGenericArtifact', (...params: any[]) => {
-        if (params[0]) {
+        if (params[0]?.download) {
             (params[0] as GenericArtifactNode).download();
         }
     }));

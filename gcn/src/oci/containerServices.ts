@@ -35,7 +35,7 @@ type ContainerImage = {
 
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.pullDockerImage', (...params: any[]) => {
-        if (params[0]) {
+        if (params[0]?.pull) {
             (params[0] as ContainerImageNode).pull();
         }
     }));

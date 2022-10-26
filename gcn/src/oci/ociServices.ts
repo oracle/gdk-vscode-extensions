@@ -28,7 +28,7 @@ export const DATA_NAME = 'services';
 
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openInConsole', (...params: any[]) => {
-        if (params[0]) {
+        if (params[0]?.getAddress) {
             ociNodes.openInConsole(params[0] as ociNodes.CloudConsoleItem);
         }
 	}));
