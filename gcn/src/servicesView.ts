@@ -124,7 +124,7 @@ async function addContent(folder: gcnServices.FolderData | null | undefined, ser
     services.addContent();
 }
 
-export async function build(folders: gcnServices.FolderData[], deployedFoldersCount: number, servicesInitialized: boolean, deployFailed: boolean, dumpDeployData?: (folder: gcnServices.FolderData) => model.DumpDeployData) {
+export async function build(folders: gcnServices.FolderData[], deployedFoldersCount: number, servicesInitialized: boolean, deployFailed: boolean, dumpDeployData?: (folder: string) => model.DumpDeployData) {
     const folderNodes: FolderNode[] = [];
     if (servicesInitialized && !deployFailed && folders.length > 0 && deployedFoldersCount > 0) {
         const treeChanged: nodes.TreeChanged = (treeItem?: vscode.TreeItem) => {
@@ -150,7 +150,7 @@ export async function build(folders: gcnServices.FolderData[], deployedFoldersCo
             if (folders.length > 1) {
                 const children = folderNode.getChildren();
                 if (children && children.length === 0) {
-                    if (dumpDeployData && dumpDeployData(folder)(null)) {
+                    if (dumpDeployData && dumpDeployData(folder.folder.name)(null)) {
                         folderNode.setChildren([ new PartiallyDeployedNode() ]);
                         folderNode.contextValue = FolderNode.CONTEXTS[2];
                     } else {

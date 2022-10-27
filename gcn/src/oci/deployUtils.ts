@@ -37,10 +37,6 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
     const deployData: any = dump(null) || {};
 
-    if (!deployData.folders) {
-        deployData.folders = folders.map(folder => folder.name);
-    }
-
     const authentication = await ociAuthentication.resolve(deployData.profile);
     if (!authentication) {
         dump();

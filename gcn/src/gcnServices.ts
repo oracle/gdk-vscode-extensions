@@ -27,8 +27,7 @@ export async function build(workspaceState: vscode.Memento) {
 
     await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', false);
 
-    let dump = dumpDeployData(workspaceState);
-    let deployFailed = dump(null) !== undefined;
+    let deployFailed = dumpedFolders(workspaceState) !== undefined;
 
     folderData = [];
     await servicesView.build(folderData, -1, false, deployFailed);
@@ -64,10 +63,7 @@ export async function build(workspaceState: vscode.Memento) {
         }
     }
 
-    dump = dumpDeployData(workspaceState);
-    deployFailed = dump(null) !== undefined;
-
-    await servicesView.build(folderData, serviceFoldersCount, true, deployFailed, (folder: FolderData) => dumpDeployData(workspaceState, folder));
+    await servicesView.build(folderData, serviceFoldersCount, true, deployFailed, (folder: string) => dumpDeployData(workspaceState, folder));
 
     await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', folders && folders.length > serviceFoldersCount);
 
@@ -121,15 +117,52 @@ export function folderDataToWorkspaceFolders(folderData: FolderData | FolderData
     }
 }
 
-export function dumpDeployData(workspaceState: vscode.Memento, folders?: FolderData | FolderData[]): model.DumpDeployData {
-    const key = `deployData:${folders ? Array.isArray(folders) ? folders.map(f => f.folder.name).join(':') : folders.folder.name : ''}`;
-    return (data?: any) => {
-        const value = workspaceState.get(key);
-        if (data !== null) {
-            workspaceState.update(key, data);
+const DEPLOY_DATA_KEY = 'gcn_tooling_deployData';
+
+export function dumpDeployData(workspaceState: vscode.Memento, folders: string | string[]): model.DumpDeployData {
+    const foldersKey = Array.isArray(folders) ? folders.join(':') : folders;
+    const folderNames = Array.isArray(folders) ? folders : [ folders ];
+    return (deployData?: any) => {
+        const value: any = workspaceState.get(DEPLOY_DATA_KEY);
+        if (value) {
+            for (const k of Object.keys(value)) {
+                const arr = k.split(':');
+                for (const name of folderNames) {
+                    if (arr.includes(name)) {
+                        const obj = value[k];
+                        if (deployData !== null) {
+                            if (deployData) {
+                                value[k] = deployData;
+                            } else {
+                                delete value[k];
+                            }
+                            workspaceState.update(DEPLOY_DATA_KEY, Object.keys(value).length > 0 ? value : undefined);
+                        }
+                        return obj;
+                    }
+                }
+            }
+            if (deployData) {
+                value[foldersKey] = deployData;
+                workspaceState.update(DEPLOY_DATA_KEY, value);
+            }
+            return undefined;
+        }
+        if (deployData) {
+            workspaceState.update(DEPLOY_DATA_KEY, { [foldersKey]: deployData });
         }
         return value;
     }
+}
+
+export function dumpedFolders(workspaceState: vscode.Memento): string[] | undefined {
+    const value: any = workspaceState.get(DEPLOY_DATA_KEY);
+    if (value) {
+        for (const k of Object.keys(value)) {
+            return k.split(':');
+        }
+    }
+    return undefined;
 }
 
 // export function getCloudServices(type: string, folder: string | vscode.Uri): model.CloudServices[] | undefined {

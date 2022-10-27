@@ -57,25 +57,26 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: gc
     if (!anotherOperationInProgress()) {
         deployInProgress = true;
         await servicesView.showWelcomeView('gcn.deployInProgress');
-        const dump = gcnServices.dumpDeployData(workspaceState, folders);
         try {
-            const deployData = dump(null) || {};
-            if (deployData?.folders) {
-                folders = [];
-                for (let folder of gcnServices.getFolderData()) {
-                    if (deployData.folders.includes(folder.folder.name)) {
-                        folders.push(folder);
+            if (folders === undefined) {
+                const dumpedFolders = gcnServices.dumpedFolders(workspaceState);
+                if (dumpedFolders) {
+                    folders = [];
+                    for (let folder of gcnServices.getFolderData()) {
+                        if (dumpedFolders.includes(folder.folder.name)) {
+                            folders.push(folder);
+                        }
                     }
-                }
-            } else if (folders === undefined) {
-                const selected = await dialogs.selectFolders('Select Folders to Deploy', false);
-                if (!selected) {
-                    if (selected === null) {
-                        dialogs.showErrorMessage('No folders to deploy.');
+                } else {
+                    const selected = await dialogs.selectFolders('Select Folders to Deploy', false);
+                    if (!selected) {
+                        if (selected === null) {
+                            dialogs.showErrorMessage('No folders to deploy.');
+                        }
+                        return;
                     }
-                    return;
+                    folders = selected;
                 }
-                folders = selected;
             } else if (!Array.isArray(folders)) {
                 folders = [ folders ];
             } else if (folders.length === 0) {
@@ -87,18 +88,22 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: gc
                 return;
             }
             const workspaceFolders = gcnServices.folderDataToWorkspaceFolders(folders) as vscode.WorkspaceFolder[];
-            const deployed = await cloudSupport.deployFolders(workspaceFolders, dump);
-            if (deployed) {
-                await gcnServices.build(workspaceState);
+            const dump = gcnServices.dumpDeployData(workspaceState, workspaceFolders.map(f => f.name));
+            try {
+                const deployed = await cloudSupport.deployFolders(workspaceFolders, dump);
+                if (deployed) {
+                    await gcnServices.build(workspaceState);
+                }
+            } finally {
+                if (dump(null)) {
+                    await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', true);
+                    await gcnServices.build(workspaceState);
+                } else {
+                    await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', false);
+                }
             }
         } finally {
             await servicesView.hideWelcomeView('gcn.deployInProgress');
-            if (dump(null)) {
-                await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', true);
-                await gcnServices.build(workspaceState);
-            } else {
-                await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', false);
-            }
             deployInProgress = false;
         }
     }
@@ -108,34 +113,45 @@ export async function undeployFolders(workspaceState: vscode.Memento, folders?: 
     if (!anotherOperationInProgress()) {
         undeployInProgress = true;
         await servicesView.showWelcomeView('gcn.undeployInProgress');
-        const dump = gcnServices.dumpDeployData(workspaceState, folders);
         try {
-            const deployData = dump(null);
-            if (deployData) {
-                const folders = [];
-                for (let folder of gcnServices.getFolderData()) {
-                    if (deployData.folders.includes(folder.folder.name)) {
-                        folders.push(folder);
+            if (folders === undefined) {
+                const dumpedFolders = gcnServices.dumpedFolders(workspaceState);
+                if (dumpedFolders) {
+                    folders = [];
+                    for (let folder of gcnServices.getFolderData()) {
+                        if (dumpedFolders.includes(folder.folder.name)) {
+                            folders.push(folder);
+                        }
                     }
                 }
-                await undeployUtils.undeploy(folders, deployData, dump);
-            } else {
-                const selected = await dialogs.selectFolders('Select Folders to Undeploy', true, false);
-                if (!selected) {
-                    if (selected === null) {
-                        vscode.window.showErrorMessage('No folders to undeploy.');
+            }
+            if (folders) {
+                const dump = gcnServices.dumpDeployData(workspaceState, Array.isArray(folders) ? folders.map(f => f.folder.name) : folders.folder.name);
+                const deployData = dump(null);
+                if (deployData) {
+                    try {
+                        await undeployUtils.undeploy(Array.isArray(folders) ? folders : [ folders ], deployData, dump);
+                    } finally {
+                        if (dump(null)) {
+                            await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', true);
+                        } else {
+                            await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', false);
+                            await gcnServices.build(workspaceState);
+                        }
                     }
                     return;
                 }
-                await undeployUtils.undeployFolders(selected);
             }
+            const selected = await dialogs.selectFolders('Select Folders to Undeploy', true, false);
+            if (!selected) {
+                if (selected === null) {
+                    vscode.window.showErrorMessage('No folders to undeploy.');
+                }
+                return;
+            }
+            await undeployUtils.undeployFolders(selected);
         } finally {
             await servicesView.hideWelcomeView('gcn.undeployInProgress');
-            if (dump(null)) {
-                await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', true);
-            } else {
-                await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', false);
-            }
             undeployInProgress = false;
         }
         await gcnServices.build(workspaceState);
