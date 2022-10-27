@@ -839,7 +839,7 @@ export async function listClusters(authenticationDetailsProvider: common.ConfigF
     return result;
 }
 
-export async function createDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectName: string, compartmentID: string, notificationTopicID: string, description?: string): Promise<devops.models.Project> {
+export async function createDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectName: string, compartmentID: string, notificationTopicID: string, description?: string, tags?: { [key:string] : string }): Promise<devops.models.Project> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: devops.models.CreateProjectDetails = {
         name: projectName,
@@ -847,7 +847,8 @@ export async function createDevOpsProject(authenticationDetailsProvider: common.
         notificationConfig: {
             topicId: notificationTopicID
         },
-        compartmentId: compartmentID
+        compartmentId: compartmentID,
+        freeformTags: tags
     };
     const request: devops.requests.CreateProjectRequest = {
         createProjectDetails: requestDetails
@@ -1185,7 +1186,7 @@ export async function deleteLog(authenticationDetailsProvider: common.ConfigFile
     }
 }
 
-export async function createProjectLog(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, logGroupID: string, projectID: string, projectName: string): Promise<string | undefined> {
+export async function createProjectLog(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, logGroupID: string, projectID: string, projectName: string, tags?: { [key:string] : string }): Promise<string | undefined> {
     const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: logging.models.CreateLogDetails = {
         displayName: `${projectName}Log`,
@@ -1204,7 +1205,8 @@ export async function createProjectLog(authenticationDetailsProvider: common.Con
                 isEnabled: false
             }
         },
-        retentionDuration: 30
+        retentionDuration: 30,
+        freeformTags: tags
     };
     const request: logging.requests.CreateLogRequest = {
         logGroupId: logGroupID,
@@ -1243,14 +1245,15 @@ export async function createContainerRepository(authenticationDetailsProvider: c
     return client.createContainerRepository(request).then(response => response.containerRepository);
 }
 
-export async function createOkeDeployEnvironment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, projectName: string, clusterID: string): Promise<devops.models.DeployEnvironment> {
+export async function createOkeDeployEnvironment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, projectName: string, clusterID: string, tags?: { [key:string]: string }): Promise<devops.models.DeployEnvironment> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: devops.models.CreateOkeClusterDeployEnvironmentDetails = {
         deployEnvironmentType: devops.models.CreateOkeClusterDeployEnvironmentDetails.deployEnvironmentType,
         displayName: `${projectName}OkeDeployEnvironment`,
         description: `OKE cluster environment for devops project ${projectName}`,
         projectId: projectID,
-        clusterId: clusterID
+        clusterId: clusterID,
+        freeformTags: tags
     };
     const request: devops.requests.CreateDeployEnvironmentRequest = {
         createDeployEnvironmentDetails: requestDetails
@@ -1258,14 +1261,15 @@ export async function createOkeDeployEnvironment(authenticationDetailsProvider: 
     return client.createDeployEnvironment(request).then(response => response.deployEnvironment);
 }
 
-export async function createCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, repositoryName: string, defaultBranchName: string, description?: string): Promise<{ repository: devops.models.Repository, workRequestId: string }> {
+export async function createCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, repositoryName: string, defaultBranchName: string, description?: string, tags?: { [key:string]: string }): Promise<{ repository: devops.models.Repository, workRequestId: string }> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: devops.models.CreateRepositoryDetails = {
         name: repositoryName,
         description: description,
         projectId: projectID,
         defaultBranch: defaultBranchName,
-        repositoryType: devops.models.Repository.RepositoryType.Hosted
+        repositoryType: devops.models.Repository.RepositoryType.Hosted,
+        freeformTags: tags
     };
     const request: devops.requests.CreateRepositoryRequest = {
         createRepositoryDetails: requestDetails
@@ -1291,7 +1295,7 @@ export async function createBuildPipeline(authenticationDetailsProvider: common.
     return client.createBuildPipeline(request).then(response => response.buildPipeline);
 }
 
-export async function createBuildPipelineBuildStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, repositoryID: string, repositoryName: string, repositoryUrl: string, buildSpecFile: string): Promise<devops.models.BuildPipelineStage> {
+export async function createBuildPipelineBuildStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, repositoryID: string, repositoryName: string, repositoryUrl: string, buildSpecFile: string, tags?: { [key:string]: string }): Promise<devops.models.BuildPipelineStage> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: devops.models.CreateBuildStageDetails = {
         displayName: 'Build',
@@ -1317,7 +1321,8 @@ export async function createBuildPipelineBuildStage(authenticationDetailsProvide
                 }
             ] as devops.models.DevopsCodeRepositoryBuildSource[]
         },
-        buildPipelineStageType: devops.models.CreateBuildStageDetails.buildPipelineStageType
+        buildPipelineStageType: devops.models.CreateBuildStageDetails.buildPipelineStageType,
+        freeformTags: tags
     };
     const request: devops.requests.CreateBuildPipelineStageRequest = {
         createBuildPipelineStageDetails: requestDetails
@@ -1325,7 +1330,7 @@ export async function createBuildPipelineBuildStage(authenticationDetailsProvide
     return client.createBuildPipelineStage(request).then(response => response.buildPipelineStage);
 }
 
-export async function createBuildPipelineArtifactsStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, buildStageID: string, artifactID: string, artifactName: string): Promise<devops.models.BuildPipelineStage> {
+export async function createBuildPipelineArtifactsStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, buildStageID: string, artifactID: string, artifactName: string, tags?: { [key:string]: string }): Promise<devops.models.BuildPipelineStage> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: devops.models.CreateDeliverArtifactStageDetails = {
         displayName: 'Artifacts',
@@ -1346,7 +1351,8 @@ export async function createBuildPipelineArtifactsStage(authenticationDetailsPro
                 }
             ]
         },
-        buildPipelineStageType: devops.models.CreateDeliverArtifactStageDetails.buildPipelineStageType
+        buildPipelineStageType: devops.models.CreateDeliverArtifactStageDetails.buildPipelineStageType,
+        freeformTags: tags
     };
     const request: devops.requests.CreateBuildPipelineStageRequest = {
         createBuildPipelineStageDetails: requestDetails
@@ -1369,7 +1375,7 @@ export async function createDeployPipeline(authenticationDetailsProvider: common
     return client.createDeployPipeline(request).then(response => response.deployPipeline);
 }
 
-export async function createDeployToOkeStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, environmentID: string, deployArtifactID: string): Promise<devops.models.DeployStage> {
+export async function createDeployToOkeStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, environmentID: string, deployArtifactID: string, tags?: { [key:string]: string }): Promise<devops.models.DeployStage> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: devops.models.CreateOkeDeployStageDetails = {
         displayName: 'Deploy to OKE',
@@ -1384,7 +1390,8 @@ export async function createDeployToOkeStage(authenticationDetailsProvider: comm
             deployArtifactID
         ],
         okeClusterDeployEnvironmentId: environmentID,
-        deployStageType: devops.models.CreateOkeDeployStageDetails.deployStageType
+        deployStageType: devops.models.CreateOkeDeployStageDetails.deployStageType,
+        freeformTags: tags
     };
     const request: devops.requests.CreateDeployStageRequest = {
         createDeployStageDetails: requestDetails
@@ -1483,38 +1490,39 @@ export async function createDeployment(authenticationDetailsProvider: common.Con
     return client.createDeployment(request).then(response => response.deployment);
 }
 
-export async function createProjectDevArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string, projectID: string, artifactPath: string, artifactName: string, artifactDescription: string): Promise<devops.models.DeployArtifact> {
+export async function createProjectDevArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string, projectID: string, artifactPath: string, artifactName: string, artifactDescription: string, tags?: { [key:string]: string }): Promise<devops.models.DeployArtifact> {
     return createDeployArtifact(authenticationDetailsProvider, projectID, artifactName, artifactDescription, devops.models.DeployArtifact.DeployArtifactType.GenericFile, {
         repositoryId: repositoryID,
         deployArtifactPath: artifactPath,
         deployArtifactVersion: 'dev',
         deployArtifactSourceType: devops.models.GenericDeployArtifactSource.deployArtifactSourceType
-    });
+    }, tags);
 }
 
-export async function createProjectDockerArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, imageURI: string, artifactName: string, artifactDescription: string): Promise<devops.models.DeployArtifact> {
+export async function createProjectDockerArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, imageURI: string, artifactName: string, artifactDescription: string, tags?: { [key:string]: string }): Promise<devops.models.DeployArtifact> {
     return createDeployArtifact(authenticationDetailsProvider, projectID, artifactName, artifactDescription, devops.models.DeployArtifact.DeployArtifactType.DockerImage, {
         imageUri: imageURI,
         deployArtifactSourceType: devops.models.OcirDeployArtifactSource.deployArtifactSourceType
-    });
+    }, tags);
 }
 
-export async function createOkeDeployConfigurationArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, artifactInlineContent: string, artifactName: string, artifactDescription: string): Promise<devops.models.DeployArtifact> {
+export async function createOkeDeployConfigurationArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, artifactInlineContent: string, artifactName: string, artifactDescription: string, tags?: { [key:string]: string }): Promise<devops.models.DeployArtifact> {
     return createDeployArtifact(authenticationDetailsProvider, projectID, artifactName, artifactDescription, devops.models.DeployArtifact.DeployArtifactType.KubernetesManifest, {
         base64EncodedContent: Buffer.from(artifactInlineContent, 'binary').toString('base64'),
         deployArtifactSourceType: devops.models.InlineDeployArtifactSource.deployArtifactSourceType
-    });
+    }, tags);
 }
 
-async function createDeployArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, displayName: string, description: string, deployArtifactType: string, deployArtifactSource: devops.models.GenericDeployArtifactSource | devops.models.OcirDeployArtifactSource | devops.models.InlineDeployArtifactSource): Promise<devops.models.DeployArtifact> {
+async function createDeployArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, displayName: string, description: string, deployArtifactType: string, deployArtifactSource: devops.models.GenericDeployArtifactSource | devops.models.OcirDeployArtifactSource | devops.models.InlineDeployArtifactSource, tags?: { [key:string]: string }): Promise<devops.models.DeployArtifact> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    const createDeployArtifactDetails = {
+    const createDeployArtifactDetails: devops.models.CreateDeployArtifactDetails = {
         displayName,
         description,
         deployArtifactType,
         deployArtifactSource,
         argumentSubstitutionMode: devops.models.DeployArtifact.ArgumentSubstitutionMode.SubstitutePlaceholders,
-        projectId: projectID
+        projectId: projectID,
+        freeformTags: tags
     };
     const request: devops.requests.CreateDeployArtifactRequest = {
         createDeployArtifactDetails: createDeployArtifactDetails

@@ -87,8 +87,6 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: gc
                 return;
             }
             const workspaceFolders = gcnServices.folderDataToWorkspaceFolders(folders) as vscode.WorkspaceFolder[];
-            deployData.folders = workspaceFolders.map(folder => folder.name);
-            dump(deployData);
             const deployed = await cloudSupport.deployFolders(workspaceFolders, dump);
             if (deployed) {
                 await gcnServices.build(workspaceState);
