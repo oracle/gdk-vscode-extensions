@@ -129,7 +129,8 @@ async function selectDeployArtifacts(oci: ociContext.Context, ignore: DeployArti
     if (existingContentChoices.length > 1) {
         const multiSelectExisting = async (): Promise<DeployArtifact[] | undefined> => {
             const selection = await vscode.window.showQuickPick(existingContentChoices, {
-                placeHolder: 'Select Existing Build Artifacts to Add',
+                title: `${ociServices.ADD_ACTION_NAME}: Select Build Artifacts`,
+                placeHolder: 'Select existing build artifacts to add',
                 canPickMany: true
             });
             if (selection?.length) {
@@ -156,7 +157,8 @@ async function selectDeployArtifacts(oci: ociContext.Context, ignore: DeployArti
         vscode.window.showWarningMessage('All build artifacts already added or no build artifacts available.')
     } else {
         const selection = await vscode.window.showQuickPick(choices, {
-            placeHolder: 'Select Existing Build Artifact to Add'
+            title: `${ociServices.ADD_ACTION_NAME}: Select Build Artifact`,
+            placeHolder: 'Select existing build artifact to add'
         })
         if (selection) {
             if (typeof selection.object === 'function') {

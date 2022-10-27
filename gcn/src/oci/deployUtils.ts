@@ -23,6 +23,8 @@ import * as sshUtils from './sshUtils';
 import * as okeUtils from './okeUtils';
 
 
+const ACTION_NAME = 'Deploy To OCI';
+
 export type SaveConfig = (folder: string, config: any) => boolean;
 
 export async function deployFolders(folders: vscode.WorkspaceFolder[], resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData): Promise<boolean> {
@@ -37,7 +39,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
     const deployData: any = dump(null) || {};
 
-    const authentication = await ociAuthentication.resolve(deployData.profile);
+    const authentication = await ociAuthentication.resolve(ACTION_NAME, deployData.profile);
     if (!authentication) {
         dump();
         return false;
@@ -61,7 +63,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
         }
     }
     if (!deployData.compartment) {
-        deployData.compartment = await ociDialogs.selectCompartment(provider);
+        deployData.compartment = await ociDialogs.selectCompartment(provider, ACTION_NAME);
         if (!deployData.compartment) {
             dump();
             return false;
@@ -114,7 +116,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
     const error: string | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: 'Creating devops project',
+        title: 'Deploying to OCI',
         cancellable: false
     }, (progress, _token) => {
         return new Promise(async resolve => {
@@ -1615,7 +1617,8 @@ async function selectProjectName(suggestedName?: string): Promise<string | undef
         return undefined;
     }
     let projectName = await vscode.window.showInputBox({
-        title: 'Provide Unique DevOps Project Name',
+        title: `${ACTION_NAME}: Provide DevOps Project Name`,
+        placeHolder: 'Provide unique devops project name',
         value: suggestedName,
         validateInput: input => validateProjectName(input),
     });

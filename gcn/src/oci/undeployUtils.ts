@@ -23,7 +23,7 @@ import * as ociServices from './ociServices';
 export async function undeploy(folders: gcnServices.FolderData[], deployData: any, dump: model.DumpDeployData): Promise<void> {
     logUtils.logInfo('[undeploy] Invoked delete devops project');
 
-    const authentication = await ociAuthentication.resolve(deployData.profile);
+    const authentication = await ociAuthentication.resolve('Undeploy From OCI', deployData.profile);
     if (!authentication) {
         return;
     }
@@ -36,7 +36,7 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
 
     const error: string | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: 'Deleting devops project',
+        title: 'Undeploying from OCI',
         cancellable: false
     }, (progress, _token) => {
         return new Promise(async resolve => {

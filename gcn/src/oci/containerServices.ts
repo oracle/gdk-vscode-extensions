@@ -113,7 +113,8 @@ async function selectContainerRepositories(oci: ociContext.Context, ignore: Cont
     if (existingContentChoices.length > 1) {
         const multiSelectExisting = async (): Promise<ContainerRepository[] | undefined> => {
             const selection = await vscode.window.showQuickPick(existingContentChoices, {
-                placeHolder: 'Select Existing Container Repositories to Add',
+                title: `${ociServices.ADD_ACTION_NAME}: Select Container Repositories`,
+                placeHolder: 'Select existing container repositories to add',
                 canPickMany: true
             });
             if (selection?.length) {
@@ -141,7 +142,8 @@ async function selectContainerRepositories(oci: ociContext.Context, ignore: Cont
         vscode.window.showWarningMessage('All container repositories already added or no container repositories available.')
     } else {
         const selection = await vscode.window.showQuickPick(choices, {
-            placeHolder: 'Select Existing Container Repository to Add'
+            title: `${ociServices.ADD_ACTION_NAME}: Select Container Repository`,
+            placeHolder: 'Select existing container repository to add'
         })
         if (selection) {
             if (typeof selection.object === 'function') {

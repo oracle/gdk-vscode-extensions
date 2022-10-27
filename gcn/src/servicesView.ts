@@ -111,12 +111,12 @@ export async function hideWelcomeView(viewContext: string) {
 async function addContent(folder: gcnServices.FolderData | null | undefined, services: model.CloudServices | undefined) {
     if (!services) {
         if (!folder) {
-            folder = await dialogs.selectFolder();
+            folder = await dialogs.selectFolder('Add OCI Service');
             if (!folder) {
                 return;
             }
         }
-        services = await dialogs.selectServices(folder);
+        services = await dialogs.selectServices(folder, 'Add OCI Service');
         if (!services) {
             return;
         }

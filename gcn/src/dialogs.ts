@@ -73,7 +73,7 @@ export async function selectName(title: string, currentName: string | undefined,
     return selected;
 }
 
-export async function selectFolder(caption: string | undefined = undefined, serviceFolder: boolean | null = true): Promise<gcnServices.FolderData | null | undefined> {
+export async function selectFolder(actionName: string | undefined = undefined, hint: string | undefined = undefined, serviceFolder: boolean | null = true): Promise<gcnServices.FolderData | null | undefined> {
     const choices: QuickPickObject[] = [];
     const folderData = gcnServices.getFolderData();
     for (const folder of folderData) {
@@ -89,12 +89,13 @@ export async function selectFolder(caption: string | undefined = undefined, serv
         return choices[0].object;
     }
     const selection = await vscode.window.showQuickPick(choices, {
-        placeHolder: caption ? caption : 'Select Folder'
+		title: actionName ? `${actionName}: Select Folder` : 'Select Folder',
+        placeHolder: hint ? hint : 'Select folder'
     })
     return selection?.object;
 }
 
-export async function selectFolders(caption: string | undefined = undefined, serviceFolders: boolean = true, autoSelectSingle: boolean = true): Promise<gcnServices.FolderData[] | null | undefined> {
+export async function selectFolders(actionName: string | undefined = undefined, hint: string | undefined = undefined, serviceFolders: boolean = true, autoSelectSingle: boolean = true): Promise<gcnServices.FolderData[] | null | undefined> {
     const choices: QuickPickObject[] = [];
     const folderData = gcnServices.getFolderData();
     for (const folder of folderData) {
@@ -110,7 +111,8 @@ export async function selectFolders(caption: string | undefined = undefined, ser
         return [ choices[0].object ];
     }
     const selection = await vscode.window.showQuickPick(choices, {
-        placeHolder: caption ? caption : 'Select Folders',
+		title: actionName ? `${actionName}: Select Folders` : 'Select Folders',
+        placeHolder: hint ? hint : 'Select folders',
         canPickMany: true
     });
     if (selection && selection.length > 0) {
@@ -123,7 +125,7 @@ export async function selectFolders(caption: string | undefined = undefined, ser
     return undefined;
 }
 
-export async function selectServices(folder: gcnServices.FolderData): Promise<model.CloudServices | undefined> {
+export async function selectServices(folder: gcnServices.FolderData, actionName?: string): Promise<model.CloudServices | undefined> {
     const services = folder.services;
     if (services.length === 0) {
         return undefined;
@@ -139,12 +141,13 @@ export async function selectServices(folder: gcnServices.FolderData): Promise<mo
         choices.push(choice);
     }
     const selection = await vscode.window.showQuickPick(choices, {
-        placeHolder: 'Select Cloud Context'
+		title: actionName ? `${actionName}: Select Cloud Context` : 'Select Cloud Context',
+        placeHolder: 'Select cloud context'
     })
     return selection?.object;
 }
 
-export async function selectCloudSupport(): Promise<model.CloudSupport | undefined> {
+export async function selectCloudSupport(actionName?: string): Promise<model.CloudSupport | undefined> {
     if (CLOUD_SUPPORTS.length === 1) {
         return CLOUD_SUPPORTS[0];
     }
@@ -154,7 +157,8 @@ export async function selectCloudSupport(): Promise<model.CloudSupport | undefin
         choices.push(choice);
     }
     const selection = await vscode.window.showQuickPick(choices, {
-        placeHolder: 'Select Cloud Service'
+        title: actionName ? `${actionName}: Select Cloud Service` : 'Select Cloud Service',
+        placeHolder: 'Select cloud service'
     })
     return selection?.object;
 }

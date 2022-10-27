@@ -108,7 +108,7 @@
 			},
 			{
 				"command": "gcn.addContent",
-				"title": "Add Content...",
+				"title": "Add OCI Service...",
 				"icon": "$(add)",
 				"category": "OCI for GCN"
 			},

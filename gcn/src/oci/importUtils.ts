@@ -19,12 +19,14 @@ import * as ociDialogs from './ociDialogs';
 import * as sshUtils from './sshUtils';
 
 
+const ACTION_NAME = 'Import From OCI';
+
 // TODO: extract functions shared by deployUtils.ts
 
 export async function importFolders(): Promise<model.ImportResult | undefined> {
     logUtils.logInfo('[import] Invoked import existing devops project');
 
-    const authentication = await ociAuthentication.resolve();
+    const authentication = await ociAuthentication.resolve(ACTION_NAME);
     if (!authentication) {
         return undefined;
     }
@@ -35,24 +37,24 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
     }
     const provider = authentication.getProvider();
 
-    const compartment = await ociDialogs.selectCompartment(provider);
+    const compartment = await ociDialogs.selectCompartment(provider, ACTION_NAME);
     if (!compartment) {
         return undefined;
     }
 
-    const devopsProject = await ociDialogs.selectDevOpsProject(provider, compartment);
+    const devopsProject = await ociDialogs.selectDevOpsProject(provider, compartment, ACTION_NAME);
     if (!devopsProject) {
         return undefined;
     }
 
-    const repositories = await ociDialogs.selectCodeRepositories(provider, devopsProject);
+    const repositories = await ociDialogs.selectCodeRepositories(provider, devopsProject, ACTION_NAME);
     if (!repositories || repositories.length === 0) {
         return undefined;
     }
 
     // TODO: select https or ssh method, suggest configuring keys
 
-    const targetDirectory = await selectTargetDirectory();
+    const targetDirectory = await selectTargetDirectory(ACTION_NAME);
     if (!targetDirectory) {
         return undefined;
     }
@@ -64,7 +66,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
 
     const error: string | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: `Importing devops project ${devopsProject.name}`,
+        title: 'Importing from OCI',
         cancellable: false
     }, (progress, _token) => {
         return new Promise(async resolve => {
@@ -136,12 +138,12 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
     };
 }
 
-async function selectTargetDirectory(): Promise<vscode.Uri | undefined> {
+async function selectTargetDirectory(actionName?: string): Promise<vscode.Uri | undefined> {
     const target = await vscode.window.showOpenDialog({
         canSelectFiles: false,
         canSelectFolders: true,
         canSelectMany: false,
-        title: 'Choose Target Directory',
+        title: actionName ? `${actionName}: Choose Target Directory` : 'Choose Target Directory',
         openLabel: 'Clone Here'
     });
     return target && target.length === 1 ? target[0] : undefined;

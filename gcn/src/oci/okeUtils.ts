@@ -12,6 +12,8 @@ import * as ociUtils from './ociUtils';
 import * as ociDialogs from './ociDialogs';
 
 
+const ACTION_NAME = 'Select OKE Cluster';
+
 export async function selectOkeCluster(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, region: string, autoSelect: boolean = false, compartmentName: string | undefined = undefined, allowSkip: boolean = false): Promise<string | null | undefined> {
     const existingContentChoices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
@@ -67,7 +69,7 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
     const newContentChoice: dialogs.QuickPickObject = new dialogs.QuickPickObject(`$(add) New OKE Cluster`, undefined, 'Create new OKE cluster in this compartment', newContent);
     
     const switchCompartment = async (): Promise<string | null | undefined> => {
-        const compartment = await ociDialogs.selectCompartment(authenticationDetailsProvider, [ compartmentID ]);
+        const compartment = await ociDialogs.selectCompartment(authenticationDetailsProvider, ACTION_NAME, [ compartmentID ]);
         if (compartment) {
             return selectOkeCluster(authenticationDetailsProvider, compartment.ocid, region, false, compartment.name, false);
         }
@@ -87,8 +89,8 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
     choices.push(switchCompartmentChoice);
 
     const choice = await vscode.window.showQuickPick(choices, {
-        title: `Select OKE Cluster in ${compartmentName}`,
-        placeHolder: `Select Target OKE Cluster${existingContentChoices?.length ? '' : ' (no clusters available in this compartment)'}`
+        title: `${ACTION_NAME} in ${compartmentName}`,
+        placeHolder: `Select target OKE cluster${existingContentChoices?.length ? '' : ' (no clusters available in this compartment)'}`
     });
 
     if (choice) {

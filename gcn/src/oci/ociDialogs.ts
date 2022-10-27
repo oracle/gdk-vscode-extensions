@@ -11,7 +11,7 @@ import * as dialogs from '../dialogs';
 import * as ociUtils from './ociUtils';
 
 
-export async function selectCompartment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, ignore?: string[]): Promise<{ ocid: string, name: string } | undefined> {
+export async function selectCompartment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, actionName?: string, ignore?: string[]): Promise<{ ocid: string, name: string } | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
     // TODO: add root compartment
     const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
@@ -69,13 +69,14 @@ export async function selectCompartment(authenticationDetailsProvider: common.Co
     // }
 
     const choice = await vscode.window.showQuickPick(choices, {
-        placeHolder: 'Select Compartment'
+        title: actionName ? `${actionName}: Select Compartment` : undefined,
+        placeHolder: 'Select compartment'
     });
 
     return choice ? choice.object : undefined;
 }
 
-export async function selectDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartment: { ocid: string, name?: string }): Promise<{ ocid: string, name: string } | undefined> {
+export async function selectDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartment: { ocid: string, name?: string }, actionName?: string): Promise<{ ocid: string, name: string } | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
     const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
@@ -112,13 +113,14 @@ export async function selectDevOpsProject(authenticationDetailsProvider: common.
     }
 
     const choice = await vscode.window.showQuickPick(choices, {
-        placeHolder: 'Select DevOps Project'
+        title: actionName ? `${actionName}: Select DevOps Project` : undefined,
+        placeHolder: 'Select devops project'
     });
 
     return choice ? choice.object : undefined;
 }
 
-export async function selectCodeRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, project: { ocid: string, name?: string }): Promise<{ ocid: string, name: string, httpUrl: string | undefined, sshUrl: string | undefined }[] | undefined> {
+export async function selectCodeRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, project: { ocid: string, name?: string }, actionName?: string): Promise<{ ocid: string, name: string, httpUrl: string | undefined, sshUrl: string | undefined }[] | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
     const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
@@ -161,7 +163,8 @@ export async function selectCodeRepositories(authenticationDetailsProvider: comm
     }
 
     const choice = await vscode.window.showQuickPick(choices, {
-        placeHolder: 'Select Code Repositores',
+        title: actionName ? `${actionName}: Select Code Repositories` : undefined,
+        placeHolder: 'Select code repositories',
         canPickMany: true
     });
 

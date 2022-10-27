@@ -23,6 +23,8 @@ import * as ociAuthentication from './ociAuthentication';
 
 export const DATA_NAME = 'knowledgeBases';
 
+export const ACTION_NAME = 'Run Project Audit';
+
 const ICON = 'book';
 
 type KnowledgeBase = {
@@ -43,7 +45,7 @@ export function initialize(context: vscode.ExtensionContext) {
             logUtils.logInfo(`[audit] Invoked Audit for folder ${uri.fsPath}`);
         } else {
             logUtils.logInfo(`[audit] Invoked Audit without folder context, selecting folder`);
-            const folder = await dialogs.selectFolder('Select Folder For Which To Perform The Audit', null);
+            const folder = await dialogs.selectFolder(ACTION_NAME, 'Select folder for which to perform the audit', null);
             if (!folder) {
                 if (folder === null) {
                     logUtils.logInfo(`[audit] No folders open`);
@@ -85,7 +87,7 @@ async function executeFolderAudit(uri: vscode.Uri) {
         authentication = ociAuthentication.createCustom(undefined, profile);
     } else {
         logUtils.logInfo(`[audit] No profile selected yet`);
-        authentication = await ociAuthentication.resolve();
+        authentication = await ociAuthentication.resolve(ACTION_NAME);
         if (!authentication) {
             return undefined;
         } else if (!authentication.getConfigurationProblem()) {
@@ -106,7 +108,7 @@ async function executeFolderAudit(uri: vscode.Uri) {
         logUtils.logInfo(`[audit] Using saved knowledge base ${auditsKnowledgeBase}`);
     } else {
         logUtils.logInfo(`[audit] No knowledge base selected yet`);
-        const compartment = await ociDialogs.selectCompartment(provider);
+        const compartment = await ociDialogs.selectCompartment(provider, ACTION_NAME);
         if (!compartment) {
             return undefined;
         }
@@ -281,7 +283,8 @@ async function selectAuditKnowledgeBase(oci: ociContext.Context): Promise<string
         // TODO: provide a possibility to create a new knowledge base
         // TODO: provide a possibility to select knowledge bases from different compartments
         const selection = await vscode.window.showQuickPick(choices, {
-            placeHolder: 'Select the Existing Knowledge Base to Perform Project Audits'
+            title: `${ACTION_NAME}: Select Knowledge Base`,
+            placeHolder: 'Select existing knowledge base to perform project audits'
         })
         return selection?.object.id;
     }
@@ -348,7 +351,8 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
     if (existingContentChoices.length > 1) {
         const multiSelectExisting = async (): Promise<KnowledgeBase[] | undefined> => {
             const selection = await vscode.window.showQuickPick(existingContentChoices, {
-                placeHolder: 'Select Existing Knowledge Bases to Add',
+                title: `${ociServices.ADD_ACTION_NAME}: Select Knowledge Bases`,
+                placeHolder: 'Select existing knowledge bases to add',
                 canPickMany: true
             });
             if (selection?.length) {
@@ -376,7 +380,8 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
         vscode.window.showWarningMessage('All knowledge bases already added or no knowledge bases available.')
     } else {
         const selection = await vscode.window.showQuickPick(choices, {
-            placeHolder: 'Select Existing Knowledge Base to Add'
+            title: `${ociServices.ADD_ACTION_NAME}: Select Knowledge Base`,
+            placeHolder: 'Select existing knowledge base to add'
         })
         if (selection) {
             if (typeof selection.object === 'function') {

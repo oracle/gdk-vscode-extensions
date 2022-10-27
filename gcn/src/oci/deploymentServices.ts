@@ -207,7 +207,8 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         vscode.window.showWarningMessage('No available build pipelines to bind.')
     } else {
         buildPipeline = choices.length === 1 ? choices[0].object : (await vscode.window.showQuickPick(choices, {
-            placeHolder: 'Select Build Pipeline to Bind to'
+            title: 'New Deployment to OKE: Select Build Pipeline',
+            placeHolder: 'Select build pipeline to bind to'
         }))?.object;
     }
 
@@ -312,7 +313,8 @@ async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode
     if (existingContentChoices.length > 1) {
         const multiSelectExisting = async (): Promise<DeploymentPipeline[] | undefined> => {
             const selection = await vscode.window.showQuickPick(existingContentChoices, {
-                placeHolder: 'Select Existing Deployment Pipelines to Add',
+                title: `${ociServices.ADD_ACTION_NAME}: Select Deployment Pipelines`,
+                placeHolder: 'Select existing deployment pipelines to add',
                 canPickMany: true
             });
             if (selection?.length) {
@@ -355,7 +357,8 @@ async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode
         return undefined;
     }
     const selection = await vscode.window.showQuickPick(choices, {
-        placeHolder: 'Select Deployment Pipeline to Add'
+        title: `${ociServices.ADD_ACTION_NAME}: Select Deployment Pipeline`,
+        placeHolder: 'Select deployment pipeline to add'
     });
     if (selection) {
         if (typeof selection.object === 'function') {

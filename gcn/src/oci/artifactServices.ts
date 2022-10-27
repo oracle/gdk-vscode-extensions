@@ -115,7 +115,8 @@ async function selectArtifactRepositories(oci: ociContext.Context, ignore: Artif
     if (existingContentChoices.length > 1) {
         const multiSelectExisting = async (): Promise<ArtifactRepository[] | undefined> => {
             const selection = await vscode.window.showQuickPick(existingContentChoices, {
-                placeHolder: 'Select Existing Artifact Repositories to Add',
+                title: `${ociServices.ADD_ACTION_NAME}: Select Artifact Repositories`,
+                placeHolder: 'Select existing artifact repositories to add',
                 canPickMany: true
             });
             if (selection?.length) {
@@ -143,7 +144,8 @@ async function selectArtifactRepositories(oci: ociContext.Context, ignore: Artif
         vscode.window.showWarningMessage('All artifact repositories already added or no artifact repositories available.')
     } else {
         const selection = await vscode.window.showQuickPick(choices, {
-            placeHolder: 'Select Existing Artifact Repository to Add'
+            title: `${ociServices.ADD_ACTION_NAME}: Select Artifact Repository`,
+            placeHolder: 'Select existing artifact repository to add'
         })
         if (selection) {
             if (typeof selection.object === 'function') {

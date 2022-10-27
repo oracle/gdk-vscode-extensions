@@ -148,7 +148,8 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
     if (existingContentChoices.length > 1) {
         const multiSelectExisting = async (): Promise<BuildPipeline[] | undefined> => {
             const selection = await vscode.window.showQuickPick(existingContentChoices, {
-                placeHolder: 'Select Existing Build Pipelines to Add',
+                title: `${ociServices.ADD_ACTION_NAME}: Select Build Pipelines`,
+                placeHolder: 'Select existing build pipelines to add',
                 canPickMany: true
             });
             if (selection?.length) {
@@ -177,7 +178,8 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
         vscode.window.showWarningMessage('All build pipelines already added or no build pipelines available.')
     } else {
         const selection = await vscode.window.showQuickPick(choices, {
-            placeHolder: 'Select Existing Build Pipeline to Add'
+            title: `${ociServices.ADD_ACTION_NAME}: Select Build Pipeline`,
+            placeHolder: 'Select existing build pipeline to add'
         })
         if (selection) {
             if (typeof selection.object === 'function') {
@@ -400,7 +402,8 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         });
         if (choices.length > 0) {
             const choice = choices.length === 1 ? choices[0] : (await vscode.window.showQuickPick(choices, {
-                placeHolder: 'Select Artifact to Download'
+                title: 'Get Build Artifact: Select Artifact',
+                placeHolder: 'Select artifact to download'
             }));
             switch (choice?.type) {
                 case 'GENERIC_ARTIFACT':

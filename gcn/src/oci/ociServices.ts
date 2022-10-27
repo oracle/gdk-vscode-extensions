@@ -26,6 +26,8 @@ import * as knowledgeBaseServices from './knowledgeBaseServices';
 
 export const DATA_NAME = 'services';
 
+export const ADD_ACTION_NAME = 'Add OCI Service';
+
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openInConsole', (...params: any[]) => {
         if (params[0]?.getAddress) {
@@ -185,7 +187,8 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
             vscode.window.showWarningMessage('No content available.');
         } else {
             const selection = await vscode.window.showQuickPick(choices, {
-                placeHolder: 'Select Content to Add'
+                title: ADD_ACTION_NAME,
+                placeHolder: 'Select OCI service to add'
             })
             if (selection?.object) {
                 selection.object();
