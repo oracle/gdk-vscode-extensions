@@ -279,11 +279,6 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 dump(deployData);
             }
 
-            if (deployData) {
-                resolve('Manual break');
-                return;
-            }
-
             // --- Create build pipelines dynamic group
             progress.report({
                 increment,
