@@ -27,8 +27,11 @@ export async function build(workspaceState: vscode.Memento) {
 
     await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', false);
 
+    let dump = dumpDeployData(workspaceState);
+    let deployFailed = dump(null) !== undefined;
+
     folderData = [];
-    await servicesView.build(folderData, -1, false);
+    await servicesView.build(folderData, -1, false, deployFailed);
 
     let serviceFoldersCount = 0;
 
@@ -61,14 +64,17 @@ export async function build(workspaceState: vscode.Memento) {
         }
     }
 
-    await servicesView.build(folderData, serviceFoldersCount, true, (folder: FolderData) => dumpDeployData(workspaceState, folder));
+    dump = dumpDeployData(workspaceState);
+    deployFailed = dump(null) !== undefined;
+
+    await servicesView.build(folderData, serviceFoldersCount, true, deployFailed, (folder: FolderData) => dumpDeployData(workspaceState, folder));
 
     await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', folders && folders.length > serviceFoldersCount);
 
     await vscode.commands.executeCommand('setContext', 'gcn.serviceFoldersCount', serviceFoldersCount);
     await vscode.commands.executeCommand('setContext', 'gcn.servicesInitialized', true);
-    const dump = dumpDeployData(workspaceState);
-    await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', dump(null) !== undefined);
+    
+    await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', deployFailed);
 }
 
 function getCloudSupport(configuration: model.ServicesConfiguration): model.CloudSupport | undefined {

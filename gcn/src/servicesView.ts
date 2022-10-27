@@ -124,9 +124,9 @@ async function addContent(folder: gcnServices.FolderData | null | undefined, ser
     services.addContent();
 }
 
-export async function build(folders: gcnServices.FolderData[], deployedFoldersCount: number, servicesInitialized: boolean, dumpDeployData?: (folder: gcnServices.FolderData) => model.DumpDeployData) {
+export async function build(folders: gcnServices.FolderData[], deployedFoldersCount: number, servicesInitialized: boolean, deployFailed: boolean, dumpDeployData?: (folder: gcnServices.FolderData) => model.DumpDeployData) {
     const folderNodes: FolderNode[] = [];
-    if (servicesInitialized && folders.length > 0 && deployedFoldersCount > 0) {
+    if (servicesInitialized && !deployFailed && folders.length > 0 && deployedFoldersCount > 0) {
         const treeChanged: nodes.TreeChanged = (treeItem?: vscode.TreeItem) => {
             nodeProvider.refresh(treeItem);
         }

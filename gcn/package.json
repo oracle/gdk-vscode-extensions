@@ -235,7 +235,7 @@
 			{
 				"view": "gcn-services",
 				"contents": "Previous deployment to OCI failed. Check the failure, resolve the problem and continue with:\n[Resume Deploy To OCI](command:gcn.resumeDeployToCloud)\n[Delete Partial Deployment](command:gcn.undeployPartialFromCloud)\n\n",
-				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && gcn.deployFailed && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
+				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && gcn.deployFailed && workspaceFolderCount > 0"
 			}
 		],
 		"views": {
