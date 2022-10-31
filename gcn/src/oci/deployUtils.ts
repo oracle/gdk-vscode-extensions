@@ -192,7 +192,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     increment,
                     message: 'Creating devops project...'
                 });
-                const projectDescription = projectFolders.length === 1 ? `${projectFolders[0].projectType} project deployed from the VS Code`: 'Project deployed from the VS Code';
+                const projectDescription = projectFolders.length === 1 ? `${projectFolders[0].projectType} project deployed from the VS Code`: 'Workspace deployed from the VS Code';
                 while (deployData.project === undefined) {
                     try {
                         logUtils.logInfo(`[deploy] Creating devops project ${deployData.compartment.name}/${projectName}`);
