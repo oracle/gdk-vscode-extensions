@@ -144,7 +144,7 @@ async function selectTargetDirectory(actionName?: string): Promise<vscode.Uri | 
         canSelectFolders: true,
         canSelectMany: false,
         title: actionName ? `${actionName}: Choose Target Directory` : 'Choose Target Directory',
-        openLabel: 'Clone Here'
+        openLabel: 'Import Here'
     });
     return target && target.length === 1 ? target[0] : undefined;
 }
