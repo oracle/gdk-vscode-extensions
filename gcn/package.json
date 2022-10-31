@@ -125,6 +125,12 @@
 				"category": "OCI for GCN"
 			},
 			{
+				"command": "gcn.oci.openCodeRepositoryInConsole",
+				"title": "Open Folder Code Repository in Cloud Console",
+				"icon": "$(globe)",
+				"category": "OCI for GCN"
+			},
+			{
 				"command": "gcn.renameNode",
 				"title": "Rename",
 				"icon": "$(edit)",
@@ -325,6 +331,11 @@
 					"command": "gcn.addContent",
 					"when": "view == gcn-services && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
 					"group": "navigation@3"
+				},
+				{
+					"command": "gcn.oci.openCodeRepositoryInConsole",
+					"when": "view == gcn-services && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
+					"group": "gcn_group_oci@1"
 				}
 			],
 			"view/item/context": [
@@ -356,6 +367,11 @@
 				{
 					"command": "gcn.oci.openInConsole",
 					"when": "viewItem in gcn.oci.openInConsoleNodes",
+					"group": "a_ociContextMenu@1"
+				},
+				{
+					"command": "gcn.oci.openCodeRepositoryInConsole",
+					"when": "viewItem == gcn.folderNode",
 					"group": "a_ociContextMenu@1"
 				},
 				{

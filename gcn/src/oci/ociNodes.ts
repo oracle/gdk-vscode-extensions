@@ -29,8 +29,8 @@ export async function registerOpenInConsoleNode(context: string | string[]) {
     await vscode.commands.executeCommand('setContext', 'gcn.oci.openInConsoleNodes', OPEN_IN_CONSOLE_NODES);
 }
 
-export function openInConsole(item: CloudConsoleItem) {
-    const address = item.getAddress();
+export function openInConsole(item: CloudConsoleItem | string) {
+    const address = typeof item === 'string' ? item : item.getAddress();
     if (typeof address === 'string') {
         dialogs.openInBrowser(address);
     } else if (address instanceof Promise) {
