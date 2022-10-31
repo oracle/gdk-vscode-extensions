@@ -335,12 +335,12 @@
 				},
 				{
 					"command": "gcn.resumeDeployToCloud",
-					"when": "viewItem == gcn.oci.folderNode-failed && nbJavaLSReady",
+					"when": "viewItem == gcn.folderNode-failed && nbJavaLSReady",
 					"group": "inline@1"
 				},
 				{
 					"command": "gcn.undeployPartialFromCloud",
-					"when": "viewItem == gcn.oci.folderNode-failed && nbJavaLSReady",
+					"when": "viewItem == gcn.folderNode-failed && nbJavaLSReady",
 					"group": "inline@2"
 				},
 				{

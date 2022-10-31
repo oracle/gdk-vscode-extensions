@@ -168,9 +168,9 @@ class FolderNode extends nodes.BaseNode implements nodes.DeployNode, nodes.AddCo
 
     private static readonly DATA_NAME = 'folderNode';
     static readonly CONTEXTS = [
-        `gcn.oci.${FolderNode.DATA_NAME}`, // default
-        `gcn.oci.${FolderNode.DATA_NAME}-empty`,
-        `gcn.oci.${FolderNode.DATA_NAME}-failed`
+        `gcn.${FolderNode.DATA_NAME}`, // default
+        `gcn.${FolderNode.DATA_NAME}-empty`,
+        `gcn.${FolderNode.DATA_NAME}-failed`
     ];
 
     private folder: gcnServices.FolderData;
