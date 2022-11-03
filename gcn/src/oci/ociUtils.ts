@@ -1533,6 +1533,23 @@ export async function createCodeRepository(authenticationDetailsProvider: common
     });
 }
 
+export async function updateCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string, repositoryName?: string, defaultBranchName?: string, description?: string, tags?: { [key:string]: string }): Promise<{ repository: devops.models.Repository, workRequestId: string }> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const requestDetails: devops.models.UpdateRepositoryDetails = {
+        name: repositoryName,
+        description: description,
+        defaultBranch: defaultBranchName,
+        freeformTags: tags
+    };
+    const request: devops.requests.UpdateRepositoryRequest = {
+        repositoryId: repositoryID,
+        updateRepositoryDetails: requestDetails
+    };
+    return client.updateRepository(request).then(response => {
+        return { repository: response.repository, workRequestId: response.opcWorkRequestId };
+    });
+}
+
 export async function createBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, displayName: string, description?: string, tags?: { [key:string]: string }): Promise<devops.models.BuildPipeline> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: devops.models.CreateBuildPipelineDetails = {

@@ -510,7 +510,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     try {
                         logUtils.logInfo(`[deploy] Creating source code repository ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const repo = await ociUtils.createCodeRepository(provider, deployData.project.ocid, repositoryName, 'master', description, {
-                            'gcn_tooling_deployID': deployData.tag
+                            'gcn_tooling_deployID': deployData.tag,
+                            'gcn_tooling_deployIncomplete': 'true'
                         });
                         codeRepository = repo.repository;
                         folderData.codeRepository = codeRepository.id;
@@ -1626,6 +1627,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 // GR-41403 - save the real profile for local usage
                 data[authentication.getDataName()] = authentication.getData();
                 saveConfig(repositoryDir, data);
+
+                try {
+                    logUtils.logInfo(`[deploy] Remove incomplete tag for source code repository ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                    await ociUtils.updateCodeRepository(provider, folderData.codeRepository, undefined, undefined, undefined, {
+                        'gcn_tooling_deployID': deployData.tag
+                    });
+                } catch (err) {
+                    resolve(dialogs.getErrorMessage(`Failed to remove incomplete tag for source code repository ${repositoryName}`, err));
+                    return;
+                }
             }
 
             dump();
