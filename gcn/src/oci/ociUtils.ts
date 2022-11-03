@@ -264,6 +264,27 @@ export async function deleteDevOpsProject(authenticationDetailsProvider: common.
     }
 }
 
+export async function deleteDevOpsProjectsByDeployIDTag(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, tag: string) {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: devops.requests.ListProjectsRequest = {
+        compartmentId: compartmentID,
+        limit: 1000
+    };
+    const projects: devops.models.ProjectSummary[] = [];
+    do {
+        const response = await client.listProjects(request);
+        projects.push(...response.projectCollection.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    for (const project of projects) {
+        if (project.freeformTags && project.freeformTags['gcn_tooling_deployID'] === tag
+            && project.lifecycleState !== devops.models.Project.LifecycleState.Deleting
+            && project.lifecycleState !== devops.models.Project.LifecycleState.Deleted) {
+                await deleteDevOpsProject(authenticationDetailsProvider, project.id, true);
+        }
+    }
+}
+
 export async function listCodeRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string): Promise<devops.models.RepositorySummary[]> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: devops.requests.ListRepositoriesRequest = {
@@ -311,6 +332,26 @@ export async function deleteCodeRepository(authenticationDetailsProvider: common
     }
 }
 
+export async function deleteCodeRepositoriesByDeployIDTag(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, tag: string) {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: devops.requests.ListRepositoriesRequest = {
+        compartmentId: compartmentID,
+        limit: 1000
+    };
+    const repositories: devops.models.RepositorySummary[] = [];
+    do {
+        const response = await client.listRepositories(request);
+        repositories.push(...response.repositoryCollection.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    for (const artifact of repositories) {
+        if (artifact.freeformTags && artifact.freeformTags['gcn_tooling_deployID'] === tag
+            && artifact.lifecycleState !== devops.models.Repository.LifecycleState.Deleted) {
+                await deleteCodeRepository(authenticationDetailsProvider, artifact.id, true);
+        }
+    }
+}
+
 export async function getBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string): Promise<devops.models.BuildPipeline> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: devops.requests.GetBuildPipelineRequest = {
@@ -343,6 +384,28 @@ export async function deleteBuildPipeline(authenticationDetailsProvider: common.
     }
 }
 
+export async function deleteBuildPipelinesByDeployIDTag(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, tag: string) {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: devops.requests.ListBuildPipelinesRequest = {
+        compartmentId: compartmentID,
+        limit: 1000
+    };
+    const pipelines: devops.models.BuildPipelineSummary[] = [];
+    do {
+        const response = await client.listBuildPipelines(request);
+        pipelines.push(...response.buildPipelineCollection.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    for (const pipeline of pipelines) {
+        if (pipeline.freeformTags && pipeline.freeformTags['gcn_tooling_deployID'] === tag
+            && pipeline.lifecycleState !== devops.models.BuildPipeline.LifecycleState.Deleting
+            && pipeline.lifecycleState !== devops.models.DeployStage.LifecycleState.Deleted) {
+                await deleteBuildPipeline(authenticationDetailsProvider, pipeline.id, true);
+        }
+    }
+}
+
+
 export async function getBuildPipelineStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineStageID: string): Promise<devops.models.BuildPipelineStage> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: devops.requests.GetBuildPipelineStageRequest = {
@@ -372,6 +435,51 @@ export async function deleteBuildPipelineStage(authenticationDetailsProvider: co
     const response = client.deleteBuildPipelineStage({ buildPipelineStageId : stage });
     if (wait) {
         await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting build pipeline stage", (await response).opcWorkRequestId);
+    }
+}
+
+export async function deleteBuildPipelineStagesByDeployIDTag(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, tag: string) {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: devops.requests.ListBuildPipelineStagesRequest = {
+        compartmentId: compartmentID,
+        limit: 1000
+    };
+    let stages: devops.models.BuildPipelineStageSummary[] = [];
+    do {
+        const response = await client.listBuildPipelineStages(request);
+        stages.push(...response.buildPipelineStageCollection.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    const revDeps: Map<string, number> = new Map();
+    stages = stages.filter(s => s.freeformTags && s.freeformTags['gcn_tooling_deployID'] === tag
+        && s.lifecycleState !== devops.models.BuildPipelineStage.LifecycleState.Deleting
+        && s.lifecycleState !== devops.models.BuildPipelineStage.LifecycleState.Deleted);
+    stages.forEach(s => {
+        if (!revDeps.has(s.id)) {
+            revDeps.set(s.id, 0);
+        }
+        for (let p of s.buildPipelineStagePredecessorCollection?.items || []) {
+            if (p.id !== s.id) {
+                let n = (revDeps.get(p.id) || 0);
+                revDeps.set(p.id, n + 1);
+            }
+        }
+    });
+    const orderedStages: devops.models.BuildPipelineStageSummary[][] = [];
+    stages.forEach(s => {
+        const n = revDeps.get(s.id) || 0;
+        let l = orderedStages[n];
+        if (!l) {
+            l = orderedStages[n] = [];
+        }
+        l.push(s);
+    });
+    for (const l of orderedStages) {
+        if (l) {
+            for (const stage of l) {
+                await deleteBuildPipelineStage(authenticationDetailsProvider, stage.id, true);
+            }
+        }
     }
 }
 
@@ -441,6 +549,27 @@ export async function deleteDeployPipeline(authenticationDetailsProvider: common
     }
 }
 
+export async function deleteDeployPipelinesByDeployIDTag(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, tag: string) {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: devops.requests.ListDeployPipelinesRequest = {
+        compartmentId: compartmentID,
+        limit: 1000
+    };
+    const pipelines: devops.models.DeployPipelineSummary[] = [];
+    do {
+        const response = await client.listDeployPipelines(request);
+        pipelines.push(...response.deployPipelineCollection.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    for (const pipeline of pipelines) {
+        if (pipeline.freeformTags && pipeline.freeformTags['gcn_tooling_deployID'] === tag
+            && pipeline.lifecycleState !== devops.models.DeployPipeline.LifecycleState.Deleting
+            && pipeline.lifecycleState !== devops.models.DeployPipeline.LifecycleState.Deleted) {
+                await deleteDeployPipeline(authenticationDetailsProvider, pipeline.id, true);
+        }
+    }
+}
+
 export async function listDeployStages(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string): Promise<devops.models.DeployStageSummary[]> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: devops.requests.ListDeployStagesRequest = {
@@ -462,6 +591,27 @@ export async function deleteDeployStage(authenticationDetailsProvider: common.Co
     const response = client.deleteDeployStage({ deployStageId: stage });
     if (wait) {
         await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy stage", (await response).opcWorkRequestId);
+    }
+}
+
+export async function deleteDeployStagesByDeployIDTag(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, tag: string) {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: devops.requests.ListDeployStagesRequest = {
+        compartmentId: compartmentID,
+        limit: 1000
+    };
+    const stages: devops.models.DeployStageSummary[] = [];
+    do {
+        const response = await client.listDeployStages(request);
+        stages.push(...response.deployStageCollection.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    for (const stage of stages) {
+        if (stage.freeformTags && stage.freeformTags['gcn_tooling_deployID'] === tag
+            && stage.lifecycleState !== devops.models.DeployStage.LifecycleState.Deleting
+            && stage.lifecycleState !== devops.models.DeployStage.LifecycleState.Deleted) {
+                await deleteDeployStage(authenticationDetailsProvider, stage.id, true);
+        }
     }
 }
 
@@ -506,6 +656,27 @@ export async function deleteArtifactsRepository(authenticationDetailsProvider: c
     }
 }
 
+export async function deleteArtifactsRepositoriesByDeployIDTag(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, tag: string) {
+    const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: artifacts.requests.ListRepositoriesRequest = {
+        compartmentId: compartmentID,
+        limit: 1000
+    };
+    const repositories: artifacts.models.RepositorySummary[] = [];
+    do {
+        const response = await client.listRepositories(request);
+        repositories.push(...response.repositoryCollection.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    for (const artifact of repositories) {
+        if (artifact.freeformTags && artifact.freeformTags['gcn_tooling_deployID'] === tag
+            && artifact.lifecycleState !== artifacts.models.Repository.LifecycleState.Deleting
+            && artifact.lifecycleState !== artifacts.models.Repository.LifecycleState.Deleted) {
+                await deleteArtifactsRepository(authenticationDetailsProvider, compartmentID, artifact.id, true);
+        }
+    }
+}
+
 export async function listGenericArtifacts(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, repositoryID: string, artifactPath?: string): Promise<artifacts.models.GenericArtifactSummary[]> {
     const client = new artifacts.ArtifactsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: artifacts.requests.ListGenericArtifactsRequest = {
@@ -547,6 +718,27 @@ export async function deleteDeployArtifact(authenticationDetailsProvider: common
     const response = client.deleteDeployArtifact({ deployArtifactId : artifactId });
     if (wait) {
         await devopsWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting deploy artifact", (await response).opcWorkRequestId);
+    }
+}
+
+export async function deleteDeployArtifactsByDeployIDTag(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, tag: string) {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: devops.requests.ListDeployArtifactsRequest = {
+        compartmentId: compartmentID,
+        limit: 1000
+    };
+    const artifacts: devops.models.DeployArtifactSummary[] = [];
+    do {
+        const response = await client.listDeployArtifacts(request);
+        artifacts.push(...response.deployArtifactCollection.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    for (const artifact of artifacts) {
+        if (artifact.freeformTags && artifact.freeformTags['gcn_tooling_deployID'] === tag
+            && artifact.lifecycleState !== devops.models.DeployArtifact.LifecycleState.Deleting
+            && artifact.lifecycleState !== devops.models.DeployArtifact.LifecycleState.Deleted) {
+                await deleteDeployArtifact(authenticationDetailsProvider, artifact.id, true);
+        }
     }
 }
 
@@ -658,6 +850,27 @@ export async function deleteDeployEnvironment(authenticationDetailsProvider: com
     }
 }
 
+export async function deleteDeployEnvironmentsByDeployIDTag(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, tag: string) {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: devops.requests.ListDeployEnvironmentsRequest = {
+        compartmentId: compartmentID,
+        limit: 1000
+    };
+    const environments: devops.models.DeployEnvironmentSummary[] = [];
+    do {
+        const response = await client.listDeployEnvironments(request);
+        environments.push(...response.deployEnvironmentCollection.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    for (const environment of environments) {
+        if (environment.freeformTags && environment.freeformTags['gcn_tooling_deployID'] === tag
+            && environment.lifecycleState !== devops.models.DeployEnvironment.LifecycleState.Deleting
+            && environment.lifecycleState !== devops.models.DeployEnvironment.LifecycleState.Deleted) {
+                await deleteDeployEnvironment(authenticationDetailsProvider, environment.id, true);
+        }
+    }
+}
+
 export async function listKnowledgeBases(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<adm.models.KnowledgeBaseSummary[]> {
     const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: adm.requests.ListKnowledgeBasesRequest = {
@@ -689,6 +902,27 @@ export async function deleteKnowledgeBase(authenticationDetailsProvider: common.
         await admWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting knowledge base", (await response).opcWorkRequestId);
     }
 }    
+
+export async function deleteKnowledgeBasesByDeployIDTag(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, tag: string) {
+    const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: adm.requests.ListKnowledgeBasesRequest = {
+        compartmentId: compartmentID,
+        limit: 1000
+    };
+    const knowledgeBases: adm.models.KnowledgeBaseSummary[] = [];
+    do {
+        const response = await client.listKnowledgeBases(request);
+        knowledgeBases.push(...response.knowledgeBaseCollection.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    for (const knowledgeBase of knowledgeBases) {
+        if (knowledgeBase.freeformTags && knowledgeBase.freeformTags['gcn_tooling_deployID'] === tag
+            && knowledgeBase.lifecycleState !== adm.models.KnowledgeBase.LifecycleState.Deleting
+            && knowledgeBase.lifecycleState !== adm.models.KnowledgeBase.LifecycleState.Deleted) {
+                await deleteKnowledgeBase(authenticationDetailsProvider, knowledgeBase.id, true);
+        }
+    }
+}
 
 export async function listVulnerabilityAudits(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, knowledgeBaseID: string, limit: number | undefined = 10): Promise<adm.models.VulnerabilityAuditSummary[]> {
     const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
@@ -1183,6 +1417,26 @@ export async function deleteLog(authenticationDetailsProvider: common.ConfigFile
     });
     if (wait) {
         await loggingWaitForResourceCompletionStatus(authenticationDetailsProvider, "Deleting project log", (await response).opcWorkRequestId);
+    }
+}
+
+export async function deleteLogsByDeployIDTag(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, logGroupID: string, tag: string) {
+    const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: logging.requests.ListLogsRequest = {
+        logGroupId: logGroupID,
+        limit: 1000
+    };
+    const logs: logging.models.LogSummary[] = [];
+    do {
+        const response = await client.listLogs(request);
+        logs.push(...response.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    for (const log of logs) {
+        if (log.freeformTags && log.freeformTags['gcn_tooling_deployID'] === tag
+            && log.lifecycleState !== logging.models.LogLifecycleState.Deleting) {
+                await deleteLog(authenticationDetailsProvider, log.id, logGroupID, true);
+        }
     }
 }
 

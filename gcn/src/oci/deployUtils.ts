@@ -214,6 +214,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             projectName = newName;
                         } else {
                             resolve(dialogs.getErrorMessage('Failed to create devops project', err));
+                            deployData.project = false;
+                            dump(deployData);
                             return;
                         }
                     }
@@ -272,6 +274,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     });
                 } catch (err) {
                     resolve(dialogs.getErrorMessage('Failed to create project log', err));
+                    deployData.projectLogWorkRequest = false;
+                    dump(deployData);
                     return;
                 }
                 dump(deployData);
@@ -358,6 +362,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     })).id;
                 } catch (err) {
                     resolve(dialogs.getErrorMessage('Failed to create artifact repository', err));
+                    deployData.artifactsRepository = false;
+                    dump(deployData);
                     return;
                 }
                 dump(deployData);
@@ -395,6 +401,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         })).id;
                     } catch (err) {
                         resolve(dialogs.getErrorMessage('Failed to create OKE cluster environment', err));
+                        deployData.okeClusterEnvironment = false;
+                        dump(deployData);
                         return;
                     }
                     dump(deployData);
@@ -445,6 +453,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         }).finally(() => knowledgeCompleted = true);
                 } catch (err) {
                     resolve(dialogs.getErrorMessage('Failed to create knowledge base', err));
+                    if (!deployData.knowledgeBaseWorkRequest) {
+                        deployData.knowledgeBaseWorkRequest = false;
+                    }
+                    dump(deployData);
                     return;
                 }
                 dump(deployData);
@@ -506,6 +518,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             .then(() => codeRepositoryCompleted = true);
                     } catch (err) {
                         resolve(dialogs.getErrorMessage(`Failed to create source code repository ${repositoryName}`, err));
+                        if (!folderData.codeRepository) {
+                            folderData.codeRepository = false;
+                        }
+                        dump(deployData);
                         return;
                     }
                     dump(deployData);
@@ -579,6 +595,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             })).id;
                         } catch (err) {
                             resolve(dialogs.getErrorMessage(`Failed to create fat JAR artifact for ${repositoryName}`, err));
+                            folderData.devbuildArtifact = false;
+                            dump(deployData);
                             return;
                         }
                         dump(deployData);
@@ -617,6 +635,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             })).id;
                         } catch (err) {
                             resolve(dialogs.getErrorMessage(`Failed to create fat JAR pipeline for ${repositoryName}`, err));
+                            folderData.devbuildPipeline = false;
+                            dump(deployData);
                             return;
                         }
                         dump(deployData);
@@ -641,6 +661,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             })).id;
                         } catch (err) {
                             resolve(dialogs.getErrorMessage(`Failed to create fat JAR pipeline build stage for ${repositoryName}`, err));
+                            folderData.devbuildPipelineBuildStage = false;
+                            dump(deployData);
                             return;
                         }
                         dump(deployData);
@@ -665,6 +687,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             })).id;
                         } catch (err) {
                             resolve(dialogs.getErrorMessage(`Failed to create fat JAR pipeline artifacts stage for ${repositoryName}`, err));
+                            folderData.devbuildPipelineArtifactsStage = false;
+                            dump(deployData);
                             return;
                         }
                         dump(deployData);
@@ -732,6 +756,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             })).id;
                         } catch (err) {
                             resolve(dialogs.getErrorMessage(`Failed to create native executable artifact for ${repositoryName}`, err));
+                            folderData.nibuildArtifact = false;
+                            dump(deployData);
                             return;
                         }
                         dump(deployData);
@@ -770,6 +796,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             })).id;
                         } catch (err) {
                             resolve(dialogs.getErrorMessage(`Failed to create native executables pipeline for ${repositoryName}`, err));
+                            folderData.nibuildPipeline = false;
+                            dump(deployData);
                             return;
                         }
                         dump(deployData);
@@ -794,6 +822,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             })).id;
                         } catch (err) {
                             resolve(dialogs.getErrorMessage(`Failed to create native executables pipeline build stage for ${repositoryName}`, err));
+                            folderData.nibuildPipelineBuildStage = false;
+                            dump(deployData);
                             return;
                         }
                         dump(deployData);
@@ -818,6 +848,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             })).id;
                         } catch (err) {
                             resolve(dialogs.getErrorMessage(`Failed to create native executables pipeline artifacts stage for ${repositoryName}`, err));
+                            folderData.nibuildPipelineArtifactsStage = false;
+                            dump(deployData);
                             return;
                         }
                         dump(deployData);
@@ -881,6 +913,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     subData.containerRepository = containerRepository.id;
                                 } catch (err) {
                                     resolve(dialogs.getErrorMessage(`Failed to create container repository ${containerRepositoryName}`, err));
+                                    subData.containerRepository = false;
+                                    dump(deployData);
                                     return;
                                 }
                                 dump(deployData);
@@ -955,6 +989,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         })).id;
                                     } catch (err) {
                                         resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executable artifact for ${repositoryName}`, err));
+                                        subData.docker_nibuildArtifact = false;
+                                        dump(deployData);
                                         return;
                                     }
                                     dump(deployData);
@@ -994,6 +1030,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         })).id;
                                     } catch (err) {
                                         resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executable build pipeline for ${repositoryName}`, err));
+                                        subData.docker_nibuildPipeline = false;
+                                        dump(deployData);
                                         return;
                                     }
                                     dump(deployData);
@@ -1018,6 +1056,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         })).id;
                                     } catch (err) {
                                         resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executable pipeline build stage for ${repositoryName}`, err));
+                                        subData.docker_nibuildPipelineBuildStage = false;
+                                        dump(deployData);
                                         return;
                                     }
                                     dump(deployData);
@@ -1042,6 +1082,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         })).id;
                                     } catch (err) {
                                         resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executable pipeline artifacts stage for ${repositoryName}`, err));
+                                        subData.docker_nibuildPipelineArtifactsStage = false;
+                                        dump(deployData);
                                         return;
                                     }
                                     dump(deployData);
@@ -1097,6 +1139,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             })).id;
                                         } catch (err) {
                                             resolve(dialogs.getErrorMessage(`Failed to create OKE deployment configuration artifact for ${subName} of ${repositoryName}`, err));
+                                            subData.oke_deployConfigArtifact = false;
+                                            dump(deployData);
                                             return;
                                         }
                                         dump(deployData);
@@ -1142,6 +1186,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                                 })).id;
                                             } catch (err) {
                                                 resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
+                                                subData.oke_deployPipeline = false;
+                                                dump(deployData);
                                                 return;
                                             }
                                             dump(deployData);
@@ -1166,6 +1212,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                                 })).id;
                                             } catch (err) {
                                                 resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executables deployment to OKE stage for ${repositoryName}`, err));
+                                                subData.deployToOkeStage = false;
+                                                dump(deployData);
                                                 return;
                                             }
                                             dump(deployData);
@@ -1215,6 +1263,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             folderData.containerRepository = containerRepository.id;
                         } catch (err) {
                             resolve(dialogs.getErrorMessage(`Failed to create container repository ${containerRepositoryName}`, err));
+                            folderData.containerRepository = false;
+                            dump(deployData);
                             return;
                         }
                         dump(deployData);
@@ -1280,6 +1330,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 })).id;
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to create docker native executable artifact for ${repositoryName}`, err));
+                                folderData.docker_nibuildArtifact = false;
+                                dump(deployData);
                                 return;
                             }
                             dump(deployData);
@@ -1319,6 +1371,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 })).id;
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to create docker native executable build pipeline for ${repositoryName}`, err));
+                                folderData.docker_nibuildPipeline = false;
+                                dump(deployData);
                                 return;
                             }
                             dump(deployData);
@@ -1343,6 +1397,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 })).id;
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to create docker native executable pipeline build stage for ${repositoryName}`, err));
+                                folderData.docker_nibuildPipelineBuildStage = false;
+                                dump(deployData);
                                 return;
                             }
                             dump(deployData);
@@ -1367,6 +1423,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 })).id;
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to create docker native executable pipeline artifacts stage for ${repositoryName}`, err));
+                                folderData.docker_nibuildPipelineArtifactsStage = false;
+                                dump(deployData);
                                 return;
                             }
                             dump(deployData);
@@ -1420,6 +1478,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 })).id;
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to create OKE deployment configuration artifact for ${repositoryName}`, err));
+                                folderData.oke_deployConfigArtifact = false;
+                                dump(deployData);
                                 return;
                             }
                             dump(deployData);
@@ -1465,6 +1525,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     })).id;
                                 } catch (err) {
                                     resolve(dialogs.getErrorMessage(`Failed to create docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
+                                    folderData.oke_deployPipeline = false;
+                                    dump(deployData);
                                     return;
                                 }
                                 dump(deployData);
@@ -1489,6 +1551,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     })).id;
                                 } catch (err) {
                                     resolve(dialogs.getErrorMessage(`Failed to create docker native executables deployment to OKE stage for ${repositoryName}`, err));
+                                    folderData.deployToOkeStage = false;
+                                    dump(deployData);
                                     return;
                                 }
                                 dump(deployData);

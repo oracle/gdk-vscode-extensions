@@ -43,6 +43,7 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
             const projectName = deployData.project?.name;
             if (deployData.repositories) {
                 const repositoriesCnt = deployData.repositories.length;
+                let toCheck = false;
                 for (const repositoryName in deployData.repositories) {
                     const folderData = deployData.repositories[repositoryName];
                     if (folderData) {
@@ -61,7 +62,46 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                                         }
                                         delete subData.deployToOkeStage;
                                         dump(deployData);
+                                    } else if (subData.deployToOkeStage !== undefined) {
+                                        toCheck = true;
                                     }
+                                }
+                            }
+                        }
+                        if (folderData.deployToOkeStage) {
+                            try {
+                                progress.report({ message: `Deleting docker native executables deployment to OKE stage for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting deploy to OKE stage of deployment to OKE pipeline for docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteDeployStage(provider, folderData.deployToOkeStage, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete docker native executables deployment to OKE stage for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.deployToOkeStage;
+                            dump(deployData);
+                        } else if (folderData.deployToOkeStage !== undefined) {
+                            toCheck = true;
+                        }
+                    }
+                }
+                if (toCheck) {
+                    try {
+                        progress.report({ message: `Deleting docker native executables deployment to OKE stages...` });
+                        logUtils.logInfo(`[undeploy] Deleting deploy to OKE stages of deployment to OKE pipelines for docker native executables of ${deployData.compartment.name}/${projectName}`);
+                        await ociUtils.deleteDeployStagesByDeployIDTag(provider, deployData.compartment.ocid, deployData.tag);
+                    } catch (err) {
+                        resolve(dialogs.getErrorMessage(`Failed to delete docker native executables deployment to OKE stages`, err));
+                        return;
+                    }
+                }
+                toCheck = false;
+                for (const repositoryName in deployData.repositories) {
+                    const folderData = deployData.repositories[repositoryName];
+                    if (folderData) {
+                        if (folderData.subs) {
+                            for (const subName in folderData.subs) {
+                                const subData = folderData.subs[subName];
+                                if (subData) {
                                     if (subData.oke_deployPipeline) {
                                         try {
                                             progress.report({ message: `Deleting ${subName} docker native executables deployment to OKE pipeline for ${repositoryName}...` });
@@ -73,19 +113,46 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                                         }
                                         delete subData.oke_deployPipeline;
                                         dump(deployData);
+                                    } else if (subData.oke_deployPipeline !== undefined) {
+                                        toCheck = true;
                                     }
-                                    if (subData.oke_deployConfigArtifact) {
-                                        try {
-                                            progress.report({ message: `Deleting OKE deployment configuration artifact for ${subName} of ${repositoryName}...` });
-                                            logUtils.logInfo(`[undeploy] Deleting OKE deployment configuration artifact for ${subName} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                            await ociUtils.deleteDeployArtifact(provider, subData.oke_deployConfigArtifact, true);
-                                        } catch (err) {
-                                            resolve(dialogs.getErrorMessage(`Failed to delete OKE deployment configuration artifact for ${subName} of ${repositoryName}`, err));
-                                            return;
-                                        }
-                                        delete subData.oke_deployConfigArtifact;
-                                        dump(deployData);
-                                    }
+                                }
+                            }
+                        }
+                        if (folderData.oke_deployPipeline) {
+                            try {
+                                progress.report({ message: `Deleting docker native executables deployment to OKE pipeline for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting deployment to OKE pipeline for docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteDeployPipeline(provider, folderData.oke_deployPipeline, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.oke_deployPipeline;
+                            dump(deployData);
+                        } else if (folderData.oke_deployPipeline !== undefined) {
+                            toCheck = true;
+                        }
+                    }
+                }
+                if (toCheck) {
+                    try {
+                        progress.report({ message: `Deleting docker native executables deployment to OKE pipelines...` });
+                        logUtils.logInfo(`[undeploy] Deleting deployment to OKE pipelines for docker native executables of ${deployData.compartment.name}/${projectName}`);
+                        await ociUtils.deleteDeployPipelinesByDeployIDTag(provider, deployData.compartment.ocid, deployData.tag);
+                    } catch (err) {
+                        resolve(dialogs.getErrorMessage(`Failed to delete docker native executables deployment to OKE pipelines`, err));
+                        return;
+                    }
+                }
+                toCheck = false;
+                for (const repositoryName in deployData.repositories) {
+                    const folderData = deployData.repositories[repositoryName];
+                    if (folderData) {
+                        if (folderData.subs) {
+                            for (const subName in folderData.subs) {
+                                const subData = folderData.subs[subName];
+                                if (subData) {
                                     if (subData.docker_nibuildPipelineArtifactsStage) {
                                         try {
                                             progress.report({ message: `Deleting ${subName} docker native executable pipeline artifacts stage for ${repositoryName}...` });
@@ -97,6 +164,9 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                                         }
                                         delete subData.docker_nibuildPipelineArtifactsStage;
                                         dump(deployData);
+                                    } else if (subData.docker_nibuildPipelineArtifactsStage !== undefined) {
+                                        toCheck = true;
+                                        subData.docker_nibuildPipelineBuildStage = false;
                                     }
                                     if (subData.docker_nibuildPipelineBuildStage) {
                                         try {
@@ -109,7 +179,119 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                                         }
                                         delete subData.docker_nibuildPipelineBuildStage;
                                         dump(deployData);
+                                    } else if (subData.docker_nibuildPipelineBuildStage !== undefined) {
+                                        toCheck = true;
                                     }
+                                }
+                            }
+                        }
+                        if (folderData.docker_nibuildPipelineArtifactsStage) {
+                            try {
+                                progress.report({ message: `Deleting docker native executable pipeline artifacts stage for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting artifacts stage of build pipeline for docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteBuildPipelineStage(provider, folderData.docker_nibuildPipelineArtifactsStage, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete docker native executable pipeline artifacts stage for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.docker_nibuildPipelineArtifactsStage;
+                            dump(deployData);
+                        } else if (folderData.docker_nibuildPipelineArtifactsStage !== undefined) {
+                            toCheck = true;
+                            folderData.docker_nibuildPipelineBuildStage = false;
+                        }
+                        if (folderData.docker_nibuildPipelineBuildStage) {
+                            try {
+                                progress.report({ message: `Deleting docker native executable pipeline build stage for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting build stage of build pipeline for docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteBuildPipelineStage(provider, folderData.docker_nibuildPipelineBuildStage, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete docker native executable pipeline build stage for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.docker_nibuildPipelineBuildStage;
+                            dump(deployData);
+                        } else if (folderData.docker_nibuildPipelineBuildStage !== undefined) {
+                            toCheck = true;
+                        }
+                        if (folderData.nibuildPipelineArtifactsStage) {
+                            try {
+                                progress.report({ message: `Deleting native executables pipeline artifacts stage for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting artifacts stage of build pipeline for native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteBuildPipelineStage(provider, folderData.nibuildPipelineArtifactsStage, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete native executables pipeline artifacts stage for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.nibuildPipelineArtifactsStage;
+                            dump(deployData);
+                        } else if (folderData.nibuildPipelineArtifactsStage !== undefined) {
+                            toCheck = true;
+                            folderData.nibuildPipelineBuildStage = false;
+                        }
+                        if (folderData.nibuildPipelineBuildStage) {
+                            try {
+                                progress.report({ message: `Deleting native executables pipeline build stage for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting build stage of build pipeline for native executables o ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteBuildPipelineStage(provider, folderData.nibuildPipelineBuildStage, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete native executables pipeline build stage for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.nibuildPipelineBuildStage;
+                            dump(deployData);
+                        } else if (folderData.nibuildPipelineBuildStage !== undefined) {
+                            toCheck = true;
+                        }
+                        if (folderData.devbuildPipelineArtifactsStage) {
+                            try {
+                                progress.report({ message: `Deleting fat JAR pipeline artifacts stage for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting artifacts stage of build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteBuildPipelineStage(provider, folderData.devbuildPipelineArtifactsStage, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete fat JAR pipeline artifacts stage for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.devbuildPipelineArtifactsStage;
+                            dump(deployData);
+                        } else if (folderData.devbuildPipelineArtifactsStage !== undefined) {
+                            toCheck = true;
+                            folderData.devbuildPipelineBuildStage = false;
+                        }
+                        if (folderData.devbuildPipelineBuildStage) {
+                            try {
+                                progress.report({ message: `Deleting fat JAR pipeline build stage for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting build stage of build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteBuildPipelineStage(provider, folderData.devbuildPipelineBuildStage, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete fat JAR pipeline build stage for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.devbuildPipelineBuildStage;
+                            dump(deployData);
+                        } else if (folderData.devbuildPipelineBuildStage !== undefined) {
+                            toCheck = true;
+                        }
+                    }
+                }
+                if (toCheck) {
+                    try {
+                        progress.report({ message: `Deleting build pipeline stages...` });
+                        logUtils.logInfo(`[undeploy] Deleting build pipeline stages of ${deployData.compartment.name}/${projectName}`);
+                        await ociUtils.deleteBuildPipelineStagesByDeployIDTag(provider, deployData.compartment.ocid, deployData.tag);
+                    } catch (err) {
+                        resolve(dialogs.getErrorMessage(`Failed to delete build pipeline stages`, err));
+                        return;
+                    }
+                }
+                toCheck = false;
+                for (const repositoryName in deployData.repositories) {
+                    const folderData = deployData.repositories[repositoryName];
+                    if (folderData) {
+                        if (folderData.subs) {
+                            for (const subName in folderData.subs) {
+                                const subData = folderData.subs[subName];
+                                if (subData) {
                                     if (subData.docker_nibuildPipeline) {
                                         try {
                                             progress.report({ message: `Deleting ${subName} docker native executable build pipeline for ${repositoryName}...` });
@@ -121,6 +303,87 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                                         }
                                         delete subData.docker_nibuildPipeline;
                                         dump(deployData);
+                                    } else if (subData.docker_nibuildPipeline !== undefined) {
+                                        toCheck = true;
+                                    }
+                                }
+                            }
+                        }
+                        if (folderData.docker_nibuildPipeline) {
+                            try {
+                                progress.report({ message: `Deleting docker native executable build pipeline for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting build pipeline for docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteBuildPipeline(provider, folderData.docker_nibuildPipeline, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete docker native executable build pipeline for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.docker_nibuildPipeline;
+                            dump(deployData);
+                        } else if (folderData.docker_nibuildPipeline !== undefined) {
+                            toCheck = true;
+                        }
+                        if (folderData.nibuildPipeline) {
+                            try {
+                                progress.report({ message: `Deleting native executables pipeline for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting build pipeline for native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteBuildPipeline(provider, folderData.nibuildPipeline, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete native executables pipeline for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.nibuildPipeline;
+                            dump(deployData);
+                        } else if (folderData.nibuildPipeline !== undefined) {
+                            toCheck = true;
+                        }
+                        if (folderData.devbuildPipeline) {
+                            try {
+                                progress.report({ message: `Deleting fat JAR pipeline for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteBuildPipeline(provider, folderData.devbuildPipeline, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete fat JAR pipeline for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.devbuildPipeline;
+                            dump(deployData);
+                        } else if (folderData.devbuildPipeline !== undefined) {
+                            toCheck = true;
+                        }
+                    }
+                }
+                if (toCheck) {
+                    try {
+                        progress.report({ message: `Deleting build pipelines...` });
+                        logUtils.logInfo(`[undeploy] Deleting build pipelines of ${deployData.compartment.name}/${projectName}`);
+                        await ociUtils.deleteBuildPipelinesByDeployIDTag(provider, deployData.compartment.ocid, deployData.tag);
+                    } catch (err) {
+                        resolve(dialogs.getErrorMessage(`Failed to delete build pipelins`, err));
+                        return;
+                    }
+                }
+                toCheck = false;
+                for (const repositoryName in deployData.repositories) {
+                    const folderData = deployData.repositories[repositoryName];
+                    if (folderData) {
+                        if (folderData.subs) {
+                            for (const subName in folderData.subs) {
+                                const subData = folderData.subs[subName];
+                                if (subData) {
+                                    if (subData.oke_deployConfigArtifact) {
+                                        try {
+                                            progress.report({ message: `Deleting OKE deployment configuration artifact for ${subName} of ${repositoryName}...` });
+                                            logUtils.logInfo(`[undeploy] Deleting OKE deployment configuration artifact for ${subName} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            await ociUtils.deleteDeployArtifact(provider, subData.oke_deployConfigArtifact, true);
+                                        } catch (err) {
+                                            resolve(dialogs.getErrorMessage(`Failed to delete OKE deployment configuration artifact for ${subName} of ${repositoryName}`, err));
+                                            return;
+                                        }
+                                        delete subData.oke_deployConfigArtifact;
+                                        dump(deployData);
+                                    } else if (subData.oke_deployConfigArtifact !== undefined) {
+                                        toCheck = true;
                                     }
                                     if (subData.docker_nibuildArtifact) {
                                         try {
@@ -133,6 +396,8 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                                         }
                                         delete subData.docker_nibuildArtifact;
                                         dump(deployData);
+                                    } else if (subData.docker_nibuildArtifact !== undefined) {
+                                        toCheck = true;
                                     }
                                     if (subData.containerRepository) {
                                         const containerRepositoryName = repositoriesCnt > 1 ? `${projectName}-${repositoryName}-${subName}` : `${projectName}-${subName}`;
@@ -154,30 +419,6 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                                 }
                             }
                         }
-                        if (folderData.deployToOkeStage) {
-                            try {
-                                progress.report({ message: `Deleting docker native executables deployment to OKE stage for ${repositoryName}...` });
-                                logUtils.logInfo(`[undeploy] Deleting deploy to OKE stage of deployment to OKE pipeline for docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                await ociUtils.deleteDeployStage(provider, folderData.deployToOkeStage, true);
-                            } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to delete docker native executables deployment to OKE stage for ${repositoryName}`, err));
-                                return;
-                            }
-                            delete folderData.deployToOkeStage;
-                            dump(deployData);
-                        }
-                        if (folderData.oke_deployPipeline) {
-                            try {
-                                progress.report({ message: `Deleting docker native executables deployment to OKE pipeline for ${repositoryName}...` });
-                                logUtils.logInfo(`[undeploy] Deleting deployment to OKE pipeline for docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                await ociUtils.deleteDeployPipeline(provider, folderData.oke_deployPipeline, true);
-                            } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to delete docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
-                                return;
-                            }
-                            delete folderData.oke_deployPipeline;
-                            dump(deployData);
-                        }
                         if (folderData.oke_deployConfigArtifact) {
                             try {
                                 progress.report({ message: `Deleting OKE deployment configuration artifact for ${repositoryName}...` });
@@ -189,42 +430,8 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                             }
                             delete folderData.oke_deployConfigArtifact;
                             dump(deployData);
-                        }
-                        if (folderData.docker_nibuildPipelineArtifactsStage) {
-                            try {
-                                progress.report({ message: `Deleting docker native executable pipeline artifacts stage for ${repositoryName}...` });
-                                logUtils.logInfo(`[undeploy] Deleting artifacts stage of build pipeline for docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                await ociUtils.deleteBuildPipelineStage(provider, folderData.docker_nibuildPipelineArtifactsStage, true);
-                            } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to delete docker native executable pipeline artifacts stage for ${repositoryName}`, err));
-                                return;
-                            }
-                            delete folderData.docker_nibuildPipelineArtifactsStage;
-                            dump(deployData);
-                        }
-                        if (folderData.docker_nibuildPipelineBuildStage) {
-                            try {
-                                progress.report({ message: `Deleting docker native executable pipeline build stage for ${repositoryName}...` });
-                                logUtils.logInfo(`[undeploy] Deleting build stage of build pipeline for docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                await ociUtils.deleteBuildPipelineStage(provider, folderData.docker_nibuildPipelineBuildStage, true);
-                            } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to delete docker native executable pipeline build stage for ${repositoryName}`, err));
-                                return;
-                            }
-                            delete folderData.docker_nibuildPipelineBuildStage;
-                            dump(deployData);
-                        }
-                        if (folderData.docker_nibuildPipeline) {
-                            try {
-                                progress.report({ message: `Deleting docker native executable build pipeline for ${repositoryName}...` });
-                                logUtils.logInfo(`[undeploy] Deleting build pipeline for docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                await ociUtils.deleteBuildPipeline(provider, folderData.docker_nibuildPipeline, true);
-                            } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to delete docker native executable build pipeline for ${repositoryName}`, err));
-                                return;
-                            }
-                            delete folderData.docker_nibuildPipeline;
-                            dump(deployData);
+                        } else if (folderData.oke_deployConfigArtifact !== undefined) {
+                            toCheck = true;
                         }
                         if (folderData.docker_nibuildArtifact) {
                             try {
@@ -237,6 +444,8 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                             }
                             delete folderData.docker_nibuildArtifact;
                             dump(deployData);
+                        } else if (folderData.docker_nibuildArtifact !== undefined) {
+                            toCheck = true;
                         }
                         if (folderData.containerRepository) {
                             const containerRepositoryName = repositoriesCnt > 1 ? `${projectName}-${repositoryName}` : projectName;
@@ -251,42 +460,6 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                             delete folderData.containerRepository;
                             dump(deployData);
                         }
-                        if (folderData.nibuildPipelineArtifactsStage) {
-                            try {
-                                progress.report({ message: `Deleting native executables pipeline artifacts stage for ${repositoryName}...` });
-                                logUtils.logInfo(`[undeploy] Deleting artifacts stage of build pipeline for native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                await ociUtils.deleteBuildPipelineStage(provider, folderData.nibuildPipelineArtifactsStage, true);
-                            } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to delete native executables pipeline artifacts stage for ${repositoryName}`, err));
-                                return;
-                            }
-                            delete folderData.nibuildPipelineArtifactsStage;
-                            dump(deployData);
-                        }
-                        if (folderData.nibuildPipelineBuildStage) {
-                            try {
-                                progress.report({ message: `Deleting native executables pipeline build stage for ${repositoryName}...` });
-                                logUtils.logInfo(`[undeploy] Deleting build stage of build pipeline for native executables o ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                await ociUtils.deleteBuildPipelineStage(provider, folderData.nibuildPipelineBuildStage, true);
-                            } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to delete native executables pipeline build stage for ${repositoryName}`, err));
-                                return;
-                            }
-                            delete folderData.nibuildPipelineBuildStage;
-                            dump(deployData);
-                        }
-                        if (folderData.nibuildPipeline) {
-                            try {
-                                progress.report({ message: `Deleting native executables pipeline for ${repositoryName}...` });
-                                logUtils.logInfo(`[undeploy] Deleting build pipeline for native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                await ociUtils.deleteBuildPipeline(provider, folderData.nibuildPipeline, true);
-                            } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to delete native executables pipeline for ${repositoryName}`, err));
-                                return;
-                            }
-                            delete folderData.nibuildPipeline;
-                            dump(deployData);
-                        }
                         if (folderData.nibuildArtifact) {
                             try {
                                 progress.report({ message: `Deleting native executable artifact for ${repositoryName}...` });
@@ -298,42 +471,8 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                             }
                             delete folderData.nibuildArtifact;
                             dump(deployData);
-                        }
-                        if (folderData.devbuildPipelineArtifactsStage) {
-                            try {
-                                progress.report({ message: `Deleting fat JAR pipeline artifacts stage for ${repositoryName}...` });
-                                logUtils.logInfo(`[undeploy] Deleting artifacts stage of build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                await ociUtils.deleteBuildPipelineStage(provider, folderData.devbuildPipelineArtifactsStage, true);
-                            } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to delete fat JAR pipeline artifacts stage for ${repositoryName}`, err));
-                                return;
-                            }
-                            delete folderData.devbuildPipelineArtifactsStage;
-                            dump(deployData);
-                        }
-                        if (folderData.devbuildPipelineBuildStage) {
-                            try {
-                                progress.report({ message: `Deleting fat JAR pipeline build stage for ${repositoryName}...` });
-                                logUtils.logInfo(`[undeploy] Deleting build stage of build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                await ociUtils.deleteBuildPipelineStage(provider, folderData.devbuildPipelineBuildStage, true);
-                            } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to delete fat JAR pipeline build stage for ${repositoryName}`, err));
-                                return;
-                            }
-                            delete folderData.devbuildPipelineBuildStage;
-                            dump(deployData);
-                        }
-                        if (folderData.devbuildPipeline) {
-                            try {
-                                progress.report({ message: `Deleting fat JAR pipeline for ${repositoryName}...` });
-                                logUtils.logInfo(`[undeploy] Deleting build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                await ociUtils.deleteBuildPipeline(provider, folderData.devbuildPipeline, true);
-                            } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to delete fat JAR pipeline for ${repositoryName}`, err));
-                                return;
-                            }
-                            delete folderData.devbuildPipeline;
-                            dump(deployData);
+                        } else if (folderData.nibuildArtifact !== undefined) {
+                            toCheck = true;
                         }
                         if (folderData.devbuildArtifact) {
                             try {
@@ -346,7 +485,25 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                             }
                             delete folderData.devbuildArtifact;
                             dump(deployData);
+                        } else if (folderData.devbuildArtifact !== undefined) {
+                            toCheck = true;
                         }
+                    }
+                }
+                if (toCheck) {
+                    try {
+                        progress.report({ message: `Deleting artifacts...` });
+                        logUtils.logInfo(`[undeploy] Deleting artifacts of ${deployData.compartment.name}/${projectName}`);
+                        await ociUtils.deleteDeployArtifactsByDeployIDTag(provider, deployData.compartment.ocid, deployData.tag);
+                    } catch (err) {
+                        resolve(dialogs.getErrorMessage(`Failed to delete artifacts`, err));
+                        return;
+                    }
+                }
+                toCheck = false;
+                for (const repositoryName in deployData.repositories) {
+                    const folderData = deployData.repositories[repositoryName];
+                    if (folderData) {
                         if (folderData.codeRepository) {
                             try {
                                 progress.report({ message: `Deleting source code repository for ${repositoryName}...` });
@@ -358,6 +515,8 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                             }
                             delete folderData.codeRepository;
                             dump(deployData);
+                        } else if (folderData.codeRepository !== undefined) {
+                            toCheck = true;
                         }
                         if (Object.keys(folderData).length === 0) {
                             delete deployData.repositories[repositoryName];
@@ -379,6 +538,16 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                             logUtils.logInfo(`[undeploy] Deleting local OCI resources in ${gcnFolderPath}`);
                             fs.rmdirSync(gcnFolderPath, { recursive : true });
                         }
+                    }
+                }
+                if (toCheck) {
+                    try {
+                        progress.report({ message: `Deleting source code repositories...` });
+                        logUtils.logInfo(`[undeploy] Deleting source code repositories of ${deployData.compartment.name}/${projectName}`);
+                        await ociUtils.deleteCodeRepositoriesByDeployIDTag(provider, deployData.compartment.ocid, deployData.tag);
+                    } catch (err) {
+                        resolve(dialogs.getErrorMessage(`Failed to delete source code repositories`, err));
+                        return;
                     }
                 }
             }
@@ -408,7 +577,15 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                     delete deployData.knowledgeBaseWorkRequest;
                 }
                 dump(deployData);
-
+            } else if (deployData.knowledgeBaseWorkRequest !== undefined) {
+                try {
+                    progress.report({ message: `Deleting ADM knowledge bases for ${projectName}...` });
+                    logUtils.logInfo(`[undeploy] Deleting ADM knowledge bases for ${deployData.compartment.name}/${projectName}`);
+                    await ociUtils.deleteKnowledgeBasesByDeployIDTag(provider, deployData.compartment.ocid, deployData.tag);
+                } catch (err) {
+                    resolve(dialogs.getErrorMessage('Failed to delete knowledges bases', err));
+                    return;
+                }
             }
             if (deployData.okeClusterEnvironment) {
                 try {
@@ -421,6 +598,15 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                 }
                 delete deployData.okeClusterEnvironment;
                 dump(deployData);
+            } else if (deployData.okeClusterEnvironment !== undefined) {
+                try {
+                    progress.report({ message: `Deleting OKE cluster environments for ${projectName}...` });
+                    logUtils.logInfo(`[undeploy] Deleting OKE cluster environments for ${deployData.compartment.name}/${projectName}`);
+                    await ociUtils.deleteDeployEnvironmentsByDeployIDTag(provider, deployData.compartment.ocid, deployData.tag);
+                } catch (err) {
+                    resolve(dialogs.getErrorMessage('Failed to delete OKE cluster environments', err));
+                    return;
+                }
             }
             if (deployData.artifactsRepository) {
                 try {
@@ -433,6 +619,15 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                 }
                 delete deployData.artifactsRepository;
                 dump(deployData);
+            } else if (deployData.artifactsRepository !== undefined) {
+                try {
+                    progress.report({ message: `Deleting artifact repositories for ${projectName}...` });
+                    logUtils.logInfo(`[undeploy] Deleting artifact repositories for ${deployData.compartment.name}/${projectName}`);
+                    await ociUtils.deleteArtifactsRepositoriesByDeployIDTag(provider, deployData.compartment.ocid, deployData.tag);
+                } catch (err) {
+                    resolve(dialogs.getErrorMessage('Failed to delete artifact repositories', err));
+                    return;
+                }
             }
             if (deployData.projectLogWorkRequest) {
                 try {
@@ -449,12 +644,30 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                 delete deployData.projectLogWorkRequest;
                 delete deployData.logGroup;
                 dump(deployData);
+            } else if (deployData.projectLogWorkRequest !== undefined) {
+                try {
+                    progress.report({ message: `Deleting project logs for ${projectName}...` });
+                    logUtils.logInfo(`[undeploy] Deleting project logs for ${deployData.compartment.name}/${projectName}`);
+                    await ociUtils.deleteLogsByDeployIDTag(provider, deployData.logGroup, deployData.tag);
+                } catch (err) {
+                    resolve(dialogs.getErrorMessage('Failed to delete project logs', err));
+                    return;
+                }
             }
             if (deployData.project) {
                 try {
                     progress.report({ message: `Deleting devops project ${projectName}...` });
                     logUtils.logInfo(`[undeploy] Deleting devops project ${deployData.compartment.name}/${projectName}`);
                     await ociUtils.deleteDevOpsProject(provider, deployData.project.ocid, true);
+                } catch (err) {
+                    resolve(dialogs.getErrorMessage('Failed to delete devops project', err));
+                    return;
+                }
+            } else if (deployData.project !== undefined) {
+                try {
+                    progress.report({ message: `Deleting devops project...` });
+                    logUtils.logInfo(`[undeploy] Deleting devops project from ${deployData.compartment.name}`);
+                    await ociUtils.deleteDevOpsProjectsByDeployIDTag(provider, deployData.logGroup, deployData.tag);
                 } catch (err) {
                     resolve(dialogs.getErrorMessage('Failed to delete devops project', err));
                     return;
