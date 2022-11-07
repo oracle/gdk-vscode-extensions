@@ -56,6 +56,10 @@ export class Context implements dataSupport.DataProducer {
         return this.authentication.getProvider();
     }
 
+    getProfile(): string {
+        return this.authentication.getProfile();
+    }
+
     getCompartment(): string {
         if (!this.compartmentID) {
             throw new Error('Compartment OCID not initialized');

@@ -73,6 +73,43 @@ export async function selectName(title: string, currentName: string | undefined,
     return selected;
 }
 
+export async function selectDirectory(options?: string[], actionName?: string, title: string = 'Select Directory', openLabel: string | undefined = 'Select'): Promise<string | undefined> {
+    async function selectUsingDialog(): Promise<string | undefined> {
+		const target = await vscode.window.showOpenDialog({
+			canSelectFiles: false,
+			canSelectFolders: true,
+			canSelectMany: false,
+			title: actionName ? `${actionName}: ${title}` : title,
+			openLabel: openLabel
+		});
+		return target && target.length === 1 ? target[0].fsPath : undefined;
+	}
+	if (!options || !options.length) {
+		return selectUsingDialog();
+	}
+	const choices: QuickPickObject[] = [];
+	for (const option of options) {
+		const choice = new QuickPickObject(option, undefined, undefined, option);
+		choices.push(choice);
+	}
+	const choice = new QuickPickObject('Select Other...', undefined, undefined, selectUsingDialog);
+	choices.push(choice);
+
+	const selected = await vscode.window.showQuickPick(choices, {
+        title: actionName ? `${actionName}: ${title}` : title,
+        placeHolder: 'Select directory'
+    });
+
+    if (selected) {
+        if (typeof selected.object === 'function') {
+            return await selected.object();
+        } else {
+            return selected.object;
+        }
+    }
+    return undefined;
+}
+
 export async function selectFolder(actionName: string | undefined = undefined, hint: string | undefined = undefined, serviceFolder: boolean | null = true): Promise<gcnServices.FolderData | null | undefined> {
     const choices: QuickPickObject[] = [];
     const folderData = gcnServices.getFolderData();

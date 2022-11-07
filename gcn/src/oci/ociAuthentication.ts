@@ -7,10 +7,10 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import * as vscode from 'vscode';
 import * as common from 'oci-common';
 import * as dialogs from '../dialogs';
 import * as dataSupport from './dataSupport';
+import * as ociDialogs from './ociDialogs';
 
 
 export const DATA_NAME = 'authentication';
@@ -73,23 +73,16 @@ export async function resolve(actionName?: string, profile?: string): Promise<Au
         const profiles = listProfiles(defaultConfig);
         if (profiles.length) {
             let provider: common.ConfigFileAuthenticationDetailsProvider;
-            if (profiles.length === 1 && profiles[0] === common.ConfigFileReader.DEFAULT_PROFILE_NAME) {
+            if (!profile && profiles.length === 1 && profiles[0] === common.ConfigFileReader.DEFAULT_PROFILE_NAME) {
                 provider = createProvider(defaultConfig);
             } else if (profile && profiles.includes(profile)) {
                 provider = createProvider(defaultConfig, profile);
             } else {
-                const choices: dialogs.QuickPickObject[] = [];
-                for (const p of profiles) {
-                    choices.push(new dialogs.QuickPickObject(p, undefined, undefined));
-                }
-                const selected = await vscode.window.showQuickPick(choices, {
-                    title: actionName ? `${actionName}: Select OCI Profile` : undefined,
-                    placeHolder: 'Select OCI profile'
-                });
+                const selected = await ociDialogs.selectOciProfileFromList(profiles, false, actionName);
                 if (!selected) {
                     return undefined;
                 }
-                provider = createProvider(defaultConfig, selected.label);
+                provider = createProvider(defaultConfig, selected);
             }
             return new Authentication(provider);
         } else {

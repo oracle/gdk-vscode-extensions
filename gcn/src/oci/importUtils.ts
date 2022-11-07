@@ -12,6 +12,7 @@ import * as gitUtils from '../gitUtils';
 import * as folderStorage from '../folderStorage';
 import * as dialogs from '../dialogs';
 import * as logUtils from '../logUtils';
+import * as gcnServices from '../gcnServices';
 import * as ociServices from './ociServices';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
@@ -26,7 +27,31 @@ const ACTION_NAME = 'Import From OCI';
 export async function importFolders(): Promise<model.ImportResult | undefined> {
     logUtils.logInfo('[import] Invoked import existing devops project');
 
-    const authentication = await ociAuthentication.resolve(ACTION_NAME);
+    const openContexts: ociContext.Context[] = [];
+
+    const folderData = gcnServices.getFolderData();
+    for (const data of folderData) {
+        const services = ociServices.findByFolderData(data);
+        for (const service of services) {
+            const context = service.getContext();
+            openContexts.push(context);
+        }
+    }
+
+    let profile: string | undefined;
+    if (openContexts.length) {
+        const profiles: string[] = [];
+        for (const context of openContexts) {
+            const contextProfile = context.getProfile();
+            if (!profiles.includes(contextProfile)) {
+                profiles.push(contextProfile);
+            }
+        }
+        const selectedProfile = await ociDialogs.selectOciProfileFromList(profiles, true, ACTION_NAME);
+        profile = selectedProfile ? selectedProfile : undefined;
+    }
+
+    const authentication = await ociAuthentication.resolve(ACTION_NAME, profile);
     if (!authentication) {
         return undefined;
     }
@@ -37,29 +62,63 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
     }
     const provider = authentication.getProvider();
 
-    const compartment = await ociDialogs.selectCompartment(provider, ACTION_NAME);
-    if (!compartment) {
-        return undefined;
+    let compartment: { ocid: string, name: string } | undefined;
+    let devopsProject: { ocid: string, name: string } | undefined;
+
+    if (openContexts.length) {
+        const projects: string[] = [];
+        for (const context of openContexts) {
+            const contextProject = context.getDevOpsProject();
+            if (!projects.includes(contextProject)) {
+                projects.push(contextProject);
+            }
+        }
+        const selectedProject = await ociDialogs.selectDevOpsProjectFromList(provider, projects, true, ACTION_NAME);
+        if (!selectedProject) {
+            return undefined;
+        }
+        devopsProject = selectedProject;
+        compartment = { ocid: selectedProject.compartment, name: selectedProject.compartment };
+    } else {
+        compartment = await ociDialogs.selectCompartment(provider, ACTION_NAME);
+        if (!compartment) {
+            return undefined;
+        }
+        devopsProject = await ociDialogs.selectDevOpsProject(provider, compartment, ACTION_NAME);
+        if (!devopsProject) {
+            return undefined;
+        }
     }
 
-    const devopsProject = await ociDialogs.selectDevOpsProject(provider, compartment, ACTION_NAME);
-    if (!devopsProject) {
-        return undefined;
+    const ignoreRepositories: string[] = [];
+    if (openContexts.length) {
+        for (const context of openContexts) {
+            const contextRepository = context.getCodeRepository();
+            if (!ignoreRepositories.includes(contextRepository)) {
+                ignoreRepositories.push(contextRepository);
+            }
+        }
     }
-
-    const repositories = await ociDialogs.selectCodeRepositories(provider, devopsProject, ACTION_NAME);
+    const repositories = await ociDialogs.selectCodeRepositories(provider, devopsProject, openContexts.length === 0, ACTION_NAME, ignoreRepositories);
     if (!repositories || repositories.length === 0) {
         return undefined;
     }
 
-    // TODO: select https or ssh method, suggest configuring keys
-
-    const targetDirectory = await selectTargetDirectory(ACTION_NAME);
+    const targetDirectories: string[] = [];
+    if (openContexts.length) {
+        for (const data of folderData) {
+            const targetDirectory = path.dirname(data.folder.uri.fsPath);
+            if (!targetDirectories.includes(targetDirectory)) {
+                targetDirectories.push(targetDirectory);
+            }
+        }
+    }
+    const targetDirectory = await dialogs.selectDirectory(targetDirectories, ACTION_NAME, 'Select Target Directory', 'Import Here');
     if (!targetDirectory) {
         return undefined;
     }
 
-    logUtils.logInfo(`[import] Configured to import devops project '${devopsProject.name}' in compartment '${compartment.name}', ${repositories.length} code repository(s) will be cloned to ${targetDirectory.fsPath}`);
+    logUtils.logInfo(`[import] Configured to import devops project '${devopsProject.name}' in compartment '${compartment.name}', ${repositories.length} code repository(s) will be cloned to ${targetDirectory}`);
 
     const folders: string[] = [];
     const servicesData: any[] = [];
@@ -77,7 +136,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                 logUtils.logInfo(`[import] Cloning code repository '${repository.name}'`);
                 if (repository.sshUrl) { // TODO: https
                     await sshUtils.checkSshConfigured(provider, repository.sshUrl);
-                    const cloned = await gitUtils.cloneRepository(repository.sshUrl, targetDirectory.fsPath);
+                    const cloned = await gitUtils.cloneRepository(repository.sshUrl, targetDirectory);
                     if (!cloned) {
                         resolve(`Failed to clone repository ${repository.name}.`);
                         return;
@@ -89,7 +148,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
             }
 
             for (const repository of repositories) {
-                const folder = path.join(targetDirectory.fsPath, repository.name); // TODO: name and toplevel dir might differ!
+                const folder = path.join(targetDirectory, repository.name); // TODO: name and toplevel dir might differ!
                 folders.push(folder);
 
                 if (folderStorage.storageExists(folder)) {
@@ -112,7 +171,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                         message: `Importing services for code repository ${repository.name}...`
                     });
                     logUtils.logInfo(`[import] Importing OCI services and creating gcn.json in the locally cloned code repository '${repository.name}'`);
-                    const services = await importServices(authentication, compartment.ocid, devopsProject.ocid, repository.ocid);
+                    const services = await importServices(authentication, (compartment as { ocid: string, name: string }).ocid, (devopsProject as { ocid: string, name: string }).ocid, repository.ocid);
                     servicesData.push(services);
                 }
                 // Do not track changes to .vscode/gcn.json
@@ -136,17 +195,6 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
         folders: folders,
         servicesData: servicesData
     };
-}
-
-async function selectTargetDirectory(actionName?: string): Promise<vscode.Uri | undefined> {
-    const target = await vscode.window.showOpenDialog({
-        canSelectFiles: false,
-        canSelectFolders: true,
-        canSelectMany: false,
-        title: actionName ? `${actionName}: Choose Target Directory` : 'Choose Target Directory',
-        openLabel: 'Import Here'
-    });
-    return target && target.length === 1 ? target[0] : undefined;
 }
 
 async function importServices(authentication: ociAuthentication.Authentication, compartment: string, devopsProject: string, repository: string): Promise<any> {
