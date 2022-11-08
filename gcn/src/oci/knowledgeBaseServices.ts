@@ -44,8 +44,6 @@ export function initialize(context: vscode.ExtensionContext) {
         if (params[0]?.uri) {
             uri = vscode.Uri.parse(params[0].uri);
             logUtils.logInfo(`[audit] Invoked Audit for folder ${uri.fsPath}`);
-        } else if (vscode.window.activeTextEditor?.document?.uri) {
-            uri = vscode.window.activeTextEditor.document.uri;
         } else {
             logUtils.logInfo(`[audit] Invoked Audit without folder context, selecting folder`);
             const folder = await dialogs.selectFolder(ACTION_NAME, 'Select folder for which to perform the audit', null);
