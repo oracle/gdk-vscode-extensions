@@ -34,7 +34,9 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
         const services = ociServices.findByFolderData(data);
         for (const service of services) {
             const context = service.getContext();
-            openContexts.push(context);
+            if (!context.getConfigurationProblem()) {
+                openContexts.push(context);
+            }
         }
     }
 
