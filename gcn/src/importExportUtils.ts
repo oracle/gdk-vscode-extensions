@@ -71,7 +71,7 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: gc
                     const selected = await dialogs.selectFolders('Deploy To OCI', 'Select folders to deploy', false);
                     if (!selected) {
                         if (selected === null) {
-                            dialogs.showErrorMessage('No folders to deploy.');
+                            vscode.window.showWarningMessage('All folders already deployed or no folders to deploy.');
                         }
                         return;
                     }
