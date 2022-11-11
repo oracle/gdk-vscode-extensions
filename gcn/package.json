@@ -90,7 +90,7 @@
 			},
 			{
 				"command": "gcn.deployToCloud",
-				"title": "Deploy To OCI",
+				"title": "Deploy Folder(s) To OCI",
 				"icon": "$(cloud-upload)",
 				"category": "OCI for GCN"
 			},
@@ -102,7 +102,7 @@
 			},
 			{
 				"command": "gcn.importFromCloud",
-				"title": "Import From OCI",
+				"title": "Import Folder(s) From OCI",
 				"icon": "$(cloud-download)",
 				"category": "OCI for GCN"
 			},
