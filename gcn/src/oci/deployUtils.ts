@@ -326,14 +326,33 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
             } else {
                 try {
                     logUtils.logInfo(`[deploy] Creating project log for ${deployData.compartment.name}/${projectName}`);
-                    deployData.projectLogWorkRequest = await ociUtils.createProjectLog(provider, deployData.compartment.ocid, deployData.logGroup, projectOCID, projectName, {
+                    deployData.projectLogWorkRequest = await ociUtils.createProjectLog(provider, deployData.compartment.ocid, deployData.logGroup, projectOCID, `${projectName}Log`, {
                         'gcn_tooling_deployID': deployData.tag
                     });
                 } catch (err) {
-                    resolve(dialogs.getErrorMessage('Failed to create project log', err));
-                    deployData.projectLogWorkRequest = false;
-                    dump(deployData);
-                    return;
+                    const message: string | undefined = (err as any).message;
+                    if (!message || message.indexOf('log in the log group already uses this display name') < 0) {
+                        resolve(dialogs.getErrorMessage('Failed to create project log', err));
+                        deployData.projectLogWorkRequest = false;
+                        dump(deployData);
+                        return;
+                    }
+                    const existing = await ociUtils.listLogsByProject(provider, deployData.compartment.ocid);
+                    let cnt = 1;
+                    let logName: string;
+                    do {
+                        logName = `${projectName}Log${cnt++}`;
+                    } while (existing.find(e => logName === e.displayName));
+                    try {
+                        deployData.projectLogWorkRequest = await ociUtils.createProjectLog(provider, deployData.compartment.ocid, deployData.logGroup, projectOCID, logName, {
+                            'gcn_tooling_deployID': deployData.tag
+                        });
+                    } catch (e) {
+                        resolve(dialogs.getErrorMessage('Failed to create project log', e));
+                        deployData.projectLogWorkRequest = false;
+                        dump(deployData);
+                        return;
+                    }
                 }
                 dump(deployData);
             }

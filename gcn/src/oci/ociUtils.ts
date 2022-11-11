@@ -1375,7 +1375,7 @@ export async function getCompartmentAccessPolicy(authenticationDetailsProvider: 
     return undefined;
 }
 
-export async function listLogsByProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentId : string, projectId : string) : Promise<logging.models.LogSummary[]> {
+export async function listLogsByProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentId: string, projectId?: string) : Promise<logging.models.LogSummary[]> {
     const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const value: logging.models.LogSummary[] = [];
     const groups = await listLogGroups(authenticationDetailsProvider, compartmentId);
@@ -1385,7 +1385,7 @@ export async function listLogsByProject(authenticationDetailsProvider: common.Co
                 sourceResource : projectId
             }))?.items;
         logs.forEach(l => {
-            if (l.configuration?.source?.resource === projectId) {
+            if (!projectId || l.configuration?.source?.resource === projectId) {
                 // for some reason, the filter for "sourceResource" in listLogs does not work.
                 switch (l.lifecycleState) {
                     case logging.models.LogLifecycleState.Active:
@@ -1440,10 +1440,10 @@ export async function deleteLogsByDeployIDTag(authenticationDetailsProvider: com
     }
 }
 
-export async function createProjectLog(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, logGroupID: string, projectID: string, projectName: string, tags?: { [key:string] : string }): Promise<string | undefined> {
+export async function createProjectLog(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, logGroupID: string, projectID: string, logName: string, tags?: { [key:string] : string }): Promise<string | undefined> {
     const client = new logging.LoggingManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: logging.models.CreateLogDetails = {
-        displayName: `${projectName}Log`,
+        displayName: logName,
         logType: logging.models.CreateLogDetails.LogType.Service,
         isEnabled: true,
         configuration: {
