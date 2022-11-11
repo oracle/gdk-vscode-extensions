@@ -325,7 +325,12 @@
 				{
 					"command": "gcn.deployToCloud",
 					"when": "view == gcn-services && gcn.servicesInitialized && gcn.globalDeployAction && nbJavaLSReady && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed",
-					"group": "navigation@1"
+					"group": "gcn_group_oci2@1"
+				},
+				{
+					"command": "gcn.importFromCloud",
+					"when": "view == gcn-services && gcn.servicesInitialized && gcn.globalImportAction && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed",
+					"group": "gcn_group_oci2@2"
 				},
 				{
 					"command": "gcn.addContent",
@@ -335,7 +340,7 @@
 				{
 					"command": "gcn.oci.openCodeRepositoryInConsole",
 					"when": "view == gcn-services && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
-					"group": "gcn_group_oci@1"
+					"group": "gcn_group_oci1@1"
 				}
 			],
 			"view/item/context": [
