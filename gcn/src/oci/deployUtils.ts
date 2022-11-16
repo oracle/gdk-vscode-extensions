@@ -193,23 +193,24 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     if (deployData.okeCluster) {
                         totalSteps += 1; // deploy to OKE pipeline
                     }
-                    totalSteps += 4 * projectUtils.getCloudSpecificSubProjectNames(projectFolder).length; // Docker image, build spec, and pipeline, container repository per cloud specific subproject
+                    totalSteps += 4; // Docker jvm image, build spec, and pipeline, jvm container repository
+                    totalSteps += 4 * projectUtils.getCloudSpecificSubProjectNames(projectFolder).length; // Docker native image, build spec, and pipeline, native container repository per cloud specific subproject
                 } else if (projectFolder.projectType === 'Micronaut' || projectFolder.projectType === 'SpringBoot') {
-                    totalSteps += 12; // Jar artifact, build spec and pipeline, NI artifact, build spec and pipeline, Docker image, build spec and pipeline, OKE deploy spec and artifact, container repository
+                    totalSteps += 18; // Jar artifact, build spec and pipeline, NI artifact, build spec and pipeline, Docker native image, build spec and pipeline, Docker jvm image, build spec and pipeline, OKE deploy spec and artifact, dev OKE deploy spec and artifact, native container repository, jvm container repository
                     if (deployData.okeCluster) {
-                        totalSteps += 1; // deploy to OKE pipeline
+                        totalSteps += 2; // deploy to OKE pipeline, dev deploy to OKE pipeline
                     }
                 } else {
                     const baLocation = await projectUtils.getProjectBuildArtifactLocation(projectFolder);
                     const buildCommand = baLocation ? await projectUtils.getProjectBuildCommand(projectFolder) : undefined;
                     if (buildCommand) {
-                        totalSteps += 3; // Jar artifact, build spec and pipeline
+                        totalSteps += 7; // Jar artifact, build spec and pipeline, Docker jvm image, build spec and pipeline, jvm container repository
                         buildCommands.set(projectFolder, buildCommand);
                     }
                     const niLocation = await projectUtils.getProjectNativeExecutableArtifactLocation(projectFolder);
                     const niBuildCommand = niLocation ? await projectUtils.getProjectBuildNativeExecutableCommand(projectFolder) : undefined;
                     if (niBuildCommand) {
-                        totalSteps += 9; // NI artifact, build spec and pipeline, Docker image, build spec and pipeline, OKE deploy spec and artifact, container repository
+                        totalSteps += 9; // NI artifact, build spec and pipeline, Docker native image, build spec and pipeline, OKE deploy spec and artifact, native container repository
                         niBuildCommands.set(projectFolder, niBuildCommand);
                     }
                     if (!buildCommand && !niBuildCommand) {
@@ -1001,39 +1002,39 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
                             logUtils.logInfo(`[deploy] Setting up GCN ${subName} project resources for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
 
-                            let containerRepository;
-                            if (subData.containerRepository) {
+                            let nativeContainerRepository;
+                            if (subData.nativeContainerRepository) {
                                 progress.report({
-                                    message: `Using already created container repository for ${repositoryName}...`
+                                    message: `Using already created native container repository for ${repositoryName}...`
                                 });
                                 try {
-                                    containerRepository = await ociUtils.getContainerRepository(provider, subData.containerRepository);
-                                    if (!containerRepository) {
-                                        subData.containerRepository = undefined;
+                                    nativeContainerRepository = await ociUtils.getContainerRepository(provider, subData.containerRepository);
+                                    if (!nativeContainerRepository) {
+                                        subData.nativeContainerRepository = undefined;
                                     }
                                 } catch (err) {
-                                    subData.containerRepository = undefined;
+                                    subData.nativeContainerRepository = undefined;
                                 }
                             }
-                            if (containerRepository) {
+                            if (nativeContainerRepository) {
                                 progress.report({
                                     increment,
                                 });
-                                logUtils.logInfo(`[deploy] Using already created container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Using already created native container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             } else {
-                                // --- Create container repository
+                                // --- Create native container repository
                                 progress.report({
                                     increment,
-                                    message: `Creating container repository for ${repositoryName}...`
+                                    message: `Creating native container repository for ${repositoryName}...`
                                 });
                                 const containerRepositoryName = incrementalDeploy || folders.length > 1 ? `${projectName}-${repositoryName}-${subName}` : `${projectName}-${subName}`;
                                 try {
-                                    logUtils.logInfo(`[deploy] Creating container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                    containerRepository = await ociUtils.createContainerRepository(provider, deployData.compartment.ocid, containerRepositoryName);
-                                    subData.containerRepository = containerRepository.id;
+                                    logUtils.logInfo(`[deploy] Creating native container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    nativeContainerRepository = await ociUtils.createContainerRepository(provider, deployData.compartment.ocid, containerRepositoryName);
+                                    subData.nativeContainerRepository = nativeContainerRepository.id;
                                 } catch (err) {
-                                    resolve(dialogs.getErrorMessage(`Failed to create container repository ${containerRepositoryName}`, err));
-                                    subData.containerRepository = false;
+                                    resolve(dialogs.getErrorMessage(`Failed to create native container repository ${containerRepositoryName}`, err));
+                                    subData.nativeContainerRepository = false;
                                     dump(deployData);
                                     return;
                                 }
@@ -1046,7 +1047,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 message: `Creating ${subName} docker native executable build spec for source code repository ${repositoryName}...`
                             });
                             const docker_nibuildspec_template = 'docker_nibuild_spec.yaml';
-                            const docker_nibuildArtifactName = `${repositoryName}_dev_${subName}_docker_image`;
+                            const docker_nibuildArtifactName = `${repositoryName}_${subName}_native_docker_image`;
                             logUtils.logInfo(`[deploy] Creating ${subName} docker native executable build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             const project_native_executable_artifact_location = await projectUtils.getProjectNativeExecutableArtifactLocation(folder, subName);
                             if (!project_native_executable_artifact_location) {
@@ -1061,7 +1062,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     project_build_command: project_build_native_executable_command,
                                     project_artifact_location: project_native_executable_artifact_location,
                                     deploy_artifact_name: docker_nibuildArtifactName,
-                                    image_name: containerRepository.displayName.toLowerCase()
+                                    image_name: nativeContainerRepository.displayName.toLowerCase()
                                 }, folder, `${subName}_${docker_nibuildspec_template}`);
                                 if (!docker_nibuildTemplate) {
                                     resolve(`Failed to configure ${subName} docker native executable build spec for ${repositoryName}`);
@@ -1076,7 +1077,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     }
                                 }
 
-                                const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${namesapce}/${containerRepository.displayName}:\${DOCKER_TAG}`;
+                                const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${namesapce}/${nativeContainerRepository.displayName}:\${DOCKER_TAG}`;
                                 if (subData.docker_nibuildArtifact) {
                                     progress.report({
                                         message: `Using already created ${subName} docker native executable artifact for ${repositoryName}...`
@@ -1212,54 +1213,54 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 if (subName === 'oci') {
                                     buildPipelines.push({ 'ocid': subData.docker_nibuildPipeline, 'displayName': docker_nibuildPipelineName });
 
-                                    // --- Create OKE deployment configuration artifact
+                                    // --- Create OKE native deployment configuration spec
                                     progress.report({
                                         increment,
-                                        message: `Creating OKE deployment configuration spec for ${subName} of ${repositoryName}...`
+                                        message: `Creating OKE native deployment configuration spec for ${subName} of ${repositoryName}...`
                                     });
-                                    const oke_deploy_config_template = 'oke_deploy_config.yaml';
-                                    const oke_deployConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_config_template, {
+                                    const oke_deploy_native_config_template = 'oke_deploy_config.yaml';
+                                    const oke_deployNativeConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_native_config_template, {
                                         image_name: docker_nibuildImage,
                                         app_name: repositoryName.toLowerCase()
                                     });
-                                    if (!oke_deployConfigInlineContent) {
-                                        resolve(`Failed to create OKE deployment configuration spec for ${subName} of ${repositoryName}`);
+                                    if (!oke_deployNativeConfigInlineContent) {
+                                        resolve(`Failed to create OKE native deployment configuration spec for ${subName} of ${repositoryName}`);
                                         return;
                                     }
-                                    if (subData.oke_deployConfigArtifact) {
+                                    if (subData.oke_deployNativeConfigArtifact) {
                                         progress.report({
-                                            message: `Using already created OKE deployment configuration artifact for ${subName} of ${repositoryName}...`
+                                            message: `Using already created OKE native deployment configuration artifact for ${subName} of ${repositoryName}...`
                                         });
                                         try {
-                                            const artifact = await ociUtils.getDeployArtifact(provider, subData.oke_deployConfigArtifact);
+                                            const artifact = await ociUtils.getDeployArtifact(provider, subData.oke_deployNativeConfigArtifact);
                                             if (!artifact) {
-                                                subData.oke_deployConfigArtifact = undefined;
+                                                subData.oke_deployNativeConfigArtifact = undefined;
                                             }
                                         } catch (err) {
-                                            subData.oke_deployConfigArtifact = undefined;
+                                            subData.oke_deployNativeConfigArtifact = undefined;
                                         }
                                     }
-                                    if (subData.oke_deployConfigArtifact) {
+                                    if (subData.oke_deployNativeConfigArtifact) {
                                         progress.report({
                                             increment,
                                         });
-                                        logUtils.logInfo(`[deploy] Using already created OKE deployment configuration artifact for ${subName} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        logUtils.logInfo(`[deploy] Using already created OKE native deployment configuration artifact for ${subName} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     } else {
-                                        // --- Create OKE deployment configuration artifact
+                                        // --- Create OKE native deployment configuration artifact
                                         progress.report({
                                             increment,
-                                            message: `Creating OKE deployment configuration artifact for ${subName} of ${repositoryName}...`
+                                            message: `Creating OKE native deployment configuration artifact for ${subName} of ${repositoryName}...`
                                         });
-                                        const oke_deployConfigArtifactName = `${repositoryName}_oke_deploy_configuration`;
-                                        const oke_deployConfigArtifactDescription = `OKE deployment configuration artifact for devops project ${projectName} & repository ${repositoryName}`;
+                                        const oke_deployNativeConfigArtifactName = `${repositoryName}_oke_deploy_ni_configuration`;
+                                        const oke_deployNativeConfigArtifactDescription = `OKE native deployment configuration artifact for devops project ${projectName} & repository ${repositoryName}`;
                                         try {
-                                            logUtils.logInfo(`[deploy] Creating OKE deployment configuration artifact for ${subName} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                            subData.oke_deployConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_deployConfigInlineContent, oke_deployConfigArtifactName, oke_deployConfigArtifactDescription, {
+                                            logUtils.logInfo(`[deploy] Creating OKE native deployment configuration artifact for ${subName} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            subData.oke_deployNativeConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_deployNativeConfigInlineContent, oke_deployNativeConfigArtifactName, oke_deployNativeConfigArtifactDescription, {
                                                 'gcn_tooling_deployID': deployData.tag
                                             })).id;
                                         } catch (err) {
-                                            resolve(dialogs.getErrorMessage(`Failed to create OKE deployment configuration artifact for ${subName} of ${repositoryName}`, err));
-                                            subData.oke_deployConfigArtifact = false;
+                                            resolve(dialogs.getErrorMessage(`Failed to create OKE native deployment configuration artifact for ${subName} of ${repositoryName}`, err));
+                                            subData.oke_deployNativeConfigArtifact = false;
                                             dump(deployData);
                                             return;
                                         }
@@ -1268,35 +1269,35 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
                                     if (deployData.okeClusterEnvironment) {
 
-                                        const oke_deployPipelineName = 'Deploy OCI Docker Native Executable to OKE';
-                                        if (subData.oke_deployPipeline) {
+                                        const oke_deployNativePipelineName = 'Deploy OCI Docker Native Executable to OKE';
+                                        if (subData.oke_deployNativePipeline) {
                                             progress.report({
                                                 message: `Using already created deployment to OKE pipeline for ${subName} docker native executables of ${repositoryName}...`
                                             });
                                             try {
-                                                const pipeline = await ociUtils.getDeployPipeline(provider, subData.oke_deployPipeline);
-                                                if (oke_deployPipelineName !== pipeline.displayName) {
-                                                    subData.oke_deployPipeline = undefined;
+                                                const pipeline = await ociUtils.getDeployPipeline(provider, subData.oke_deployNativePipeline);
+                                                if (oke_deployNativePipelineName !== pipeline.displayName) {
+                                                    subData.oke_deployNativePipeline = undefined;
                                                 }
                                             } catch (err) {
-                                                subData.oke_deployPipeline = undefined;
+                                                subData.oke_deployNativePipeline = undefined;
                                             }
                                         }
-                                        if (subData.oke_deployPipeline) {
+                                        if (subData.oke_deployNativePipeline) {
                                             progress.report({
                                                 increment,
                                             });
                                             logUtils.logInfo(`[deploy] Using already created deployment to OKE pipeline for ${subName} docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         } else {
-                                            // --- Create OKE deployment pipeline
+                                            // --- Create OKE native deployment pipeline
                                             progress.report({
                                                 increment,
                                                 message: `Creating deployment to OKE pipeline for ${subName} docker native executables of ${repositoryName}...`
                                             });
-                                            const oke_deployPipelineDescription = `Deployment pipeline to deploy docker native executable for OCI & devops project ${projectName} & repository ${repositoryName} to OKE`;
+                                            const oke_deployNativePipelineDescription = `Deployment pipeline to deploy docker native executable for OCI & devops project ${projectName} & repository ${repositoryName} to OKE`;
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for ${subName} docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                                subData.oke_deployPipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, oke_deployPipelineName, oke_deployPipelineDescription, [{
+                                                subData.oke_deployNativePipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, oke_deployNativePipelineName, oke_deployNativePipelineDescription, [{
                                                     name: 'DOCKER_TAG',
                                                     defaultValue: 'latest'
                                                 }], {
@@ -1306,39 +1307,374 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                                 })).id;
                                             } catch (err) {
                                                 resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
-                                                subData.oke_deployPipeline = false;
+                                                subData.oke_deployNativePipeline = false;
                                                 dump(deployData);
                                                 return;
                                             }
                                             dump(deployData);
                                         }
-                                        if (subData.deployToOkeStage) {
+                                        if (subData.deployNativeToOkeStage) {
                                             try {
-                                                const stage = await ociUtils.getDeployStage(provider, subData.deployToOkeStage);
+                                                const stage = await ociUtils.getDeployStage(provider, subData.deployNativeToOkeStage);
                                                 if (!stage) {
-                                                    subData.deployToOkeStage = undefined;
+                                                    subData.deployNativeToOkeStage = undefined;
                                                 }
                                             } catch (err) {
-                                                subData.deployToOkeStage = undefined;
+                                                subData.deployNativeToOkeStage = undefined;
                                             }
                                         }
-                                        if (subData.deployToOkeStage) {
+                                        if (subData.deployNativeToOkeStage) {
                                             logUtils.logInfo(`[deploy] Using already created deploy to OKE stage of deployment to OKE pipeline for ${subName} docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         } else {
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${subName} docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                                subData.deployToOkeStage = (await ociUtils.createDeployToOkeStage(provider, subData.oke_deployPipeline, deployData.okeClusterEnvironment, subData.oke_deployConfigArtifact, {
+                                                subData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage(provider, subData.oke_deployNativePipeline, deployData.okeClusterEnvironment, subData.oke_deployNativeConfigArtifact, {
                                                     'gcn_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
                                                 resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executables deployment to OKE stage for ${repositoryName}`, err));
-                                                subData.deployToOkeStage = false;
+                                                subData.deployNativeToOkeStage = false;
                                                 dump(deployData);
                                                 return;
                                             }
                                             dump(deployData);
                                         }
-                                        deployPipelines.push({ 'ocid': subData.oke_deployPipeline, 'displayName': oke_deployPipelineName });
+                                        deployPipelines.push({ 'ocid': subData.oke_deployNativePipeline, 'displayName': oke_deployNativePipelineName });
+                                    }
+
+                                    let jvmContainerRepository;
+                                    if (subData.jvmContainerRepository) {
+                                        progress.report({
+                                            message: `Using already created jvm container repository for ${repositoryName}...`
+                                        });
+                                        try {
+                                            jvmContainerRepository = await ociUtils.getContainerRepository(provider, subData.containerRepository);
+                                            if (!jvmContainerRepository) {
+                                                subData.jvmContainerRepository = undefined;
+                                            }
+                                        } catch (err) {
+                                            subData.jvmContainerRepository = undefined;
+                                        }
+                                    }
+                                    if (jvmContainerRepository) {
+                                        progress.report({
+                                            increment,
+                                        });
+                                        logUtils.logInfo(`[deploy] Using already created jvm container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    } else {
+                                        // --- Create jvm container repository
+                                        progress.report({
+                                            increment,
+                                            message: `Creating jvm container repository for ${repositoryName}...`
+                                        });
+                                        const containerRepositoryName = incrementalDeploy || folders.length > 1 ? `${projectName}-${repositoryName}-${subName}-jvm` : `${projectName}-${subName}-jvm`;
+                                        try {
+                                            logUtils.logInfo(`[deploy] Creating jvm container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            jvmContainerRepository = await ociUtils.createContainerRepository(provider, deployData.compartment.ocid, containerRepositoryName);
+                                            subData.jvmContainerRepository = jvmContainerRepository.id;
+                                        } catch (err) {
+                                            resolve(dialogs.getErrorMessage(`Failed to create jvm container repository ${containerRepositoryName}`, err));
+                                            subData.jvmContainerRepository = false;
+                                            dump(deployData);
+                                            return;
+                                        }
+                                        dump(deployData);
+                                    }
+
+                                    // --- Generate docker jvm image build spec
+                                    progress.report({
+                                        increment,
+                                        message: `Creating ${subName} docker jvm image build spec for source code repository ${repositoryName}...`
+                                    });
+                                    const docker_jvmbuildspec_template = 'docker_jvmbuild_spec.yaml';
+                                    const docker_jvmbuildArtifactName = `${repositoryName}_${subName}_jvm_docker_image`;
+                                    logUtils.logInfo(`[deploy] Creating ${subName} docker jvm image build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    const project_devbuild_artifact_location = await projectUtils.getProjectBuildArtifactLocation(folder, subName);
+                                    if (!project_devbuild_artifact_location) {
+                                        dialogs.showErrorMessage(`Failed to resolve jvm image artifact for folder ${folder.uri.fsPath} & subproject ${subName}`);
+                                    }
+                                    const project_devbuild_command = await projectUtils.getProjectBuildCommand(folder, subName);
+                                    if (!project_devbuild_command) {
+                                        dialogs.showErrorMessage(`Failed to resolve jvm image build command for folder ${folder.uri.fsPath} & subproject ${subName}`);
+                                    }
+                                    if (project_devbuild_artifact_location && project_devbuild_command) {
+                                        const docker_jvmbuildTemplate = expandTemplate(resourcesPath, docker_jvmbuildspec_template, {
+                                            project_build_command: project_devbuild_command,
+                                            project_artifact_location: project_devbuild_artifact_location,
+                                            deploy_artifact_name: docker_jvmbuildArtifactName,
+                                            image_name: jvmContainerRepository.displayName.toLowerCase()
+                                        }, folder, `${subName}_${docker_jvmbuildspec_template}`);
+                                        if (!docker_jvmbuildTemplate) {
+                                            resolve(`Failed to configure ${subName} docker jvm image build spec for ${repositoryName}`);
+                                            return;
+                                        }
+                                        const docker_jvm_file = 'Dockerfile.jvm';
+                                        const docker_jvmFile = expandTemplate(resourcesPath, docker_jvm_file, {}, folder);
+                                        if (!docker_jvmFile) {
+                                            resolve(`Failed to configure docker jvm image file for ${repositoryName}`);
+                                            return;
+                                        }
+
+                                        const docker_jvmbuildImage = `${provider.getRegion().regionCode}.ocir.io/${namesapce}/${jvmContainerRepository.displayName}:\${DOCKER_TAG}`;
+                                        if (subData.docker_jvmbuildArtifact) {
+                                            progress.report({
+                                                message: `Using already created ${subName} docker jvm image artifact for ${repositoryName}...`
+                                            });
+                                            try {
+                                                const artifact = await ociUtils.getDeployArtifact(provider, subData.docker_jvmbuildArtifact);
+                                                if (!artifact) {
+                                                    subData.docker_jvmbuildArtifact = undefined;
+                                                }
+                                            } catch (err) {
+                                                subData.docker_jvmbuildArtifact = undefined;
+                                            }
+                                        }
+                                        if (subData.docker_jvmbuildArtifact) {
+                                            progress.report({
+                                                increment,
+                                            });
+                                            logUtils.logInfo(`[deploy] Using already created ${subName} docker jvm image artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        } else {
+                                            // --- Create docker jvm image artifact
+                                            progress.report({
+                                                increment,
+                                                message: `Creating ${subName} docker jvm image artifact for ${repositoryName}...`
+                                            });
+                                            const docker_jvmbuildArtifactDescription = `Docker jvm image artifact for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}`;
+                                            try {
+                                                logUtils.logInfo(`[deploy] Creating ${subName} docker jvm image artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                subData.docker_jvmbuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, projectOCID, docker_jvmbuildImage, docker_jvmbuildArtifactName, docker_jvmbuildArtifactDescription, {
+                                                    'gcn_tooling_deployID': deployData.tag
+                                                })).id;
+                                            } catch (err) {
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker jvm image artifact for ${repositoryName}`, err));
+                                                subData.docker_jvmbuildArtifact = false;
+                                                dump(deployData);
+                                                return;
+                                            }
+                                            dump(deployData);
+                                        }
+
+                                        const docker_jvmbuildPipelineName = `Build ${subName.toUpperCase()} Docker JVM Image`;
+                                        if (subData.docker_jvmbuildPipeline) {
+                                            progress.report({
+                                                message: `Using already created build pipeline for ${subName} docker jvm image of ${repositoryName}...`
+                                            });
+                                            try {
+                                                const pipeline = await ociUtils.getBuildPipeline(provider, subData.docker_jvmbuildPipeline);
+                                                if (docker_jvmbuildPipelineName !== pipeline.displayName) {
+                                                    subData.docker_jvmbuildPipeline = undefined;
+                                                }
+                                            } catch (err) {
+                                                subData.docker_jvmbuildPipeline = undefined;
+                                            }
+                                        }
+                                        if (subData.docker_jvmbuildPipeline) {
+                                            progress.report({
+                                                increment,
+                                            });
+                                            logUtils.logInfo(`[deploy] Using already created build pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        } else {
+                                            // --- Create docker jvm image pipeline
+                                            progress.report({
+                                                increment,
+                                                message: `Creating build pipeline for ${subName} docker jvm image of ${repositoryName}...`
+                                            });
+                                            const docker_jvmbuildPipelineDescription = `Build pipeline to build docker jvm image for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}`;
+                                            try {
+                                                logUtils.logInfo(`[deploy] Creating build pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                subData.docker_jvmbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, docker_jvmbuildPipelineName, docker_jvmbuildPipelineDescription, {
+                                                    'gcn_tooling_deployID': deployData.tag,
+                                                    'gcn_tooling_docker_image': subName.toLowerCase()
+                                                })).id;
+                                            } catch (err) {
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker jvm image build pipeline for ${repositoryName}`, err));
+                                                subData.docker_jvmbuildPipeline = false;
+                                                dump(deployData);
+                                                return;
+                                            }
+                                            dump(deployData);
+                                        }
+                                        if (subData.docker_jvmbuildPipelineBuildStage) {
+                                            try {
+                                                const stage = await ociUtils.getBuildPipelineStage(provider, subData.docker_jvmbuildPipelineBuildStage);
+                                                if (!stage) {
+                                                    subData.docker_jvmbuildPipelineBuildStage = undefined;
+                                                }
+                                            } catch (err) {
+                                                subData.docker_jvmbuildPipelineBuildStage = undefined;
+                                            }
+                                        }
+                                        if (subData.docker_jvmbuildPipelineBuildStage) {
+                                            logUtils.logInfo(`[deploy] Using already created build stage of build pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        } else {
+                                            try {
+                                                logUtils.logInfo(`[deploy] Creating build stage of build pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                subData.docker_jvmbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, subData.docker_jvmbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${subName}_${docker_jvmbuildspec_template}`, {
+                                                    'gcn_tooling_deployID': deployData.tag
+                                                })).id;
+                                            } catch (err) {
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker jvm image pipeline build stage for ${repositoryName}`, err));
+                                                subData.docker_jvmbuildPipelineBuildStage = false;
+                                                dump(deployData);
+                                                return;
+                                            }
+                                            dump(deployData);
+                                        }
+                                        if (subData.docker_jvmbuildPipelineArtifactsStage) {
+                                            try {
+                                                const stage = await ociUtils.getBuildPipelineStage(provider, subData.docker_jvmbuildPipelineArtifactsStage);
+                                                if (!stage) {
+                                                    subData.docker_jvmbuildPipelineArtifactsStage = undefined;
+                                                }
+                                            } catch (err) {
+                                                subData.docker_jvmbuildPipelineArtifactsStage = undefined;
+                                            }
+                                        }
+                                        if (subData.docker_jvmbuildPipelineArtifactsStage) {
+                                            logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        } else {
+                                            try {
+                                                logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                subData.docker_jvmbuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, subData.docker_jvmbuildPipeline, subData.docker_jvmbuildPipelineBuildStage, subData.docker_jvmbuildArtifact, docker_jvmbuildArtifactName, {
+                                                    'gcn_tooling_deployID': deployData.tag
+                                                })).id;
+                                            } catch (err) {
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker jvm image pipeline artifacts stage for ${repositoryName}`, err));
+                                                subData.docker_jvmbuildPipelineArtifactsStage = false;
+                                                dump(deployData);
+                                                return;
+                                            }
+                                            dump(deployData);
+                                        }
+
+                                        // --- Create OKE jvm deployment configuration spec
+                                        progress.report({
+                                            increment,
+                                            message: `Creating OKE jvm deployment configuration spec for ${subName} of ${repositoryName}...`
+                                        });
+                                        const oke_deploy_jvm_config_template = 'oke_deploy_config.yaml';
+                                        const oke_deployJvmConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_jvm_config_template, {
+                                            image_name: docker_jvmbuildImage,
+                                            app_name: repositoryName.toLowerCase()
+                                        });
+                                        if (!oke_deployJvmConfigInlineContent) {
+                                            resolve(`Failed to create OKE jvm deployment configuration spec for ${subName} of ${repositoryName}`);
+                                            return;
+                                        }
+                                        if (subData.oke_deployJvmConfigArtifact) {
+                                            progress.report({
+                                                message: `Using already created OKE jvm deployment configuration artifact for ${subName} of ${repositoryName}...`
+                                            });
+                                            try {
+                                                const artifact = await ociUtils.getDeployArtifact(provider, subData.oke_deployJvmConfigArtifact);
+                                                if (!artifact) {
+                                                    subData.oke_deployJvmConfigArtifact = undefined;
+                                                }
+                                            } catch (err) {
+                                                subData.oke_deployJvmConfigArtifact = undefined;
+                                            }
+                                        }
+                                        if (subData.oke_deployJvmConfigArtifact) {
+                                            progress.report({
+                                                increment,
+                                            });
+                                            logUtils.logInfo(`[deploy] Using already created OKE jvm deployment configuration artifact for ${subName} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        } else {
+                                            // --- Create OKE jvm deployment configuration artifact
+                                            progress.report({
+                                                increment,
+                                                message: `Creating OKE jvm deployment configuration artifact for ${subName} of ${repositoryName}...`
+                                            });
+                                            const oke_deployJvmConfigArtifactName = `${repositoryName}_oke_deploy_jvm_configuration`;
+                                            const oke_deployJvmConfigArtifactDescription = `OKE jvm deployment configuration artifact for devops project ${projectName} & repository ${repositoryName}`;
+                                            try {
+                                                logUtils.logInfo(`[deploy] Creating OKE jvm deployment configuration artifact for ${subName} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                subData.oke_deployJvmConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_deployJvmConfigInlineContent, oke_deployJvmConfigArtifactName, oke_deployJvmConfigArtifactDescription, {
+                                                    'gcn_tooling_deployID': deployData.tag
+                                                })).id;
+                                            } catch (err) {
+                                                resolve(dialogs.getErrorMessage(`Failed to create OKE jvm deployment configuration artifact for ${subName} of ${repositoryName}`, err));
+                                                subData.oke_deployJvmConfigArtifact = false;
+                                                dump(deployData);
+                                                return;
+                                            }
+                                            dump(deployData);
+                                        }
+
+                                        if (deployData.okeClusterEnvironment) {
+
+                                            const oke_deployJvmPipelineName = 'Deploy OCI Docker JVM Image to OKE';
+                                            if (subData.oke_deployJvmPipeline) {
+                                                progress.report({
+                                                    message: `Using already created deployment to OKE pipeline for ${subName} docker jvm image of ${repositoryName}...`
+                                                });
+                                                try {
+                                                    const pipeline = await ociUtils.getDeployPipeline(provider, subData.oke_deployJvmPipeline);
+                                                    if (oke_deployJvmPipelineName !== pipeline.displayName) {
+                                                        subData.oke_deployJvmPipeline = undefined;
+                                                    }
+                                                } catch (err) {
+                                                    subData.oke_deployJvmPipeline = undefined;
+                                                }
+                                            }
+                                            if (subData.oke_deployJvmPipeline) {
+                                                progress.report({
+                                                    increment,
+                                                });
+                                                logUtils.logInfo(`[deploy] Using already created deployment to OKE pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            } else {
+                                                // --- Create OKE native deployment pipeline
+                                                progress.report({
+                                                    increment,
+                                                    message: `Creating deployment to OKE pipeline for ${subName} docker jvm image of ${repositoryName}...`
+                                                });
+                                                const oke_deployJvmPipelineDescription = `Deployment pipeline to deploy docker jvm image for OCI & devops project ${projectName} & repository ${repositoryName} to OKE`;
+                                                try {
+                                                    logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                    subData.oke_deployJvmPipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, oke_deployJvmPipelineName, oke_deployJvmPipelineDescription, [{
+                                                        name: 'DOCKER_TAG',
+                                                        defaultValue: 'latest'
+                                                    }], {
+                                                        'gcn_tooling_deployID': deployData.tag,
+                                                        'gcn_tooling_buildPipelineOCID': subData.docker_jvmbuildPipeline,
+                                                        'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()
+                                                    })).id;
+                                                } catch (err) {
+                                                    resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker jvm image deployment to OKE pipeline for ${repositoryName}`, err));
+                                                    subData.oke_deployJvmPipeline = false;
+                                                    dump(deployData);
+                                                    return;
+                                                }
+                                                dump(deployData);
+                                            }
+                                            if (subData.deployJvmToOkeStage) {
+                                                try {
+                                                    const stage = await ociUtils.getDeployStage(provider, subData.deployJvmToOkeStage);
+                                                    if (!stage) {
+                                                        subData.deployJvmToOkeStage = undefined;
+                                                    }
+                                                } catch (err) {
+                                                    subData.deployJvmToOkeStage = undefined;
+                                                }
+                                            }
+                                            if (subData.deployJvmToOkeStage) {
+                                                logUtils.logInfo(`[deploy] Using already created deploy to OKE stage of deployment to OKE pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            } else {
+                                                try {
+                                                    logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                    subData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage(provider, subData.oke_deployJvmPipeline, deployData.okeClusterEnvironment, subData.oke_deployJvmConfigArtifact, {
+                                                        'gcn_tooling_deployID': deployData.tag
+                                                    })).id;
+                                                } catch (err) {
+                                                    resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker jvm image deployment to OKE stage for ${repositoryName}`, err));
+                                                    subData.deployJvmToOkeStage = false;
+                                                    dump(deployData);
+                                                    return;
+                                                }
+                                                dump(deployData);
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -1349,41 +1685,41 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     gitUtils.addGitIgnoreEntry(folder.uri.fsPath, '**/bin');
 
                 } else { // Micronaut, SpringBoot, other Java projects
-                    logUtils.logInfo(`[deploy] ${folder.projectType !== 'Unknown' ? folder.projectType : 'Recognized '}${folder.projectType} project in ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                    logUtils.logInfo(`[deploy] ${folder.projectType !== 'Unknown' ? 'Recognized ' : ''}${folder.projectType} project in ${deployData.compartment.name}/${projectName}/${repositoryName}`);
 
-                    let containerRepository;
-                    if (folderData.containerRepository) {
+                    let nativeContainerRepository;
+                    if (folderData.nativeContainerRepository) {
                         progress.report({
-                            message: `Using already created container repository for ${repositoryName}...`
+                            message: `Using already created native container repository for ${repositoryName}...`
                         });
                         try {
-                            containerRepository = await ociUtils.getContainerRepository(provider, folderData.containerRepository);
-                            if (!containerRepository) {
-                                folderData.containerRepository = undefined;
+                            nativeContainerRepository = await ociUtils.getContainerRepository(provider, folderData.nativeContainerRepository);
+                            if (!nativeContainerRepository) {
+                                folderData.nativeContainerRepository = undefined;
                             }
                         } catch (err) {
-                            folderData.containerRepository = undefined;
+                            folderData.nativeContainerRepository = undefined;
                         }
                     }
-                    if (containerRepository) {
+                    if (nativeContainerRepository) {
                         progress.report({
                             increment,
                         });
-                        logUtils.logInfo(`[deploy] Using already created container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        logUtils.logInfo(`[deploy] Using already created native container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                     } else {
-                        // --- Create container repository
+                        // --- Create native container repository
                         progress.report({
                             increment,
-                            message: `Creating container repository for ${repositoryName}...`
+                            message: `Creating native container repository for ${repositoryName}...`
                         });
                         const containerRepositoryName = incrementalDeploy || folders.length > 1 ? `${projectName}-${repositoryName}` : projectName;
                         try {
-                            logUtils.logInfo(`[deploy] Creating container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                            containerRepository = await ociUtils.createContainerRepository(provider, deployData.compartment.ocid, containerRepositoryName);
-                            folderData.containerRepository = containerRepository.id;
+                            logUtils.logInfo(`[deploy] Creating native container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            nativeContainerRepository = await ociUtils.createContainerRepository(provider, deployData.compartment.ocid, containerRepositoryName);
+                            folderData.nativeContainerRepository = nativeContainerRepository.id;
                         } catch (err) {
-                            resolve(dialogs.getErrorMessage(`Failed to create container repository ${containerRepositoryName}`, err));
-                            folderData.containerRepository = false;
+                            resolve(dialogs.getErrorMessage(`Failed to create native container repository ${containerRepositoryName}`, err));
+                            folderData.nativeContainerRepository = false;
                             dump(deployData);
                             return;
                         }
@@ -1398,13 +1734,13 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             message: `Creating docker native executable build spec for source code repository ${repositoryName}...`
                         });
                         const docker_nibuildspec_template = 'docker_nibuild_spec.yaml';
-                        const docker_nibuildArtifactName = `${repositoryName}_dev_docker_image`;
+                        const docker_nibuildArtifactName = `${repositoryName}_native_docker_image`;
                         logUtils.logInfo(`[deploy] Creating docker native executable build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const docker_nibuildTemplate = expandTemplate(resourcesPath, docker_nibuildspec_template, {
                             project_build_command: project_build_native_executable_command,
                             project_artifact_location: project_native_executable_artifact_location,
                             deploy_artifact_name: docker_nibuildArtifactName,
-                            image_name: containerRepository.displayName.toLowerCase()
+                            image_name: nativeContainerRepository.displayName.toLowerCase()
                         }, folder);
                         if (!docker_nibuildTemplate) {
                             resolve(`Failed to configure docker native executable build spec for ${repositoryName}`);
@@ -1417,7 +1753,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             return;
                         }
 
-                        const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${namesapce}/${containerRepository.displayName}:\${DOCKER_TAG}`;
+                        const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${namesapce}/${nativeContainerRepository.displayName}:\${DOCKER_TAG}`;
                         if (folderData.docker_nibuildArtifact) {
                             progress.report({
                                 message: `Using already created docker native executable artifact for ${repositoryName}...`
@@ -1551,54 +1887,54 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         }
                         buildPipelines.push({ 'ocid': folderData.docker_nibuildPipeline, 'displayName': docker_nibuildPipelineName });
 
-                        // --- Create OKE deployment configuration spec
+                        // --- Create OKE native deployment configuration spec
                         progress.report({
                             increment,
-                            message: `Creating OKE deployment configuration spec for ${repositoryName}...`
+                            message: `Creating OKE native deployment configuration spec for ${repositoryName}...`
                         });
-                        const oke_deploy_config_template = 'oke_deploy_config.yaml';
-                        const oke_deployConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_config_template, {
+                        const oke_deploy_native_config_template = 'oke_deploy_config.yaml';
+                        const oke_deployNativeConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_native_config_template, {
                             image_name: docker_nibuildImage,
                             app_name: repositoryName.toLowerCase()
                         });
-                        if (!oke_deployConfigInlineContent) {
-                            resolve(`Failed to create OKE deployment configuration spec for ${repositoryName}`);
+                        if (!oke_deployNativeConfigInlineContent) {
+                            resolve(`Failed to create OKE native deployment configuration spec for ${repositoryName}`);
                             return;
                         }
-                        if (folderData.oke_deployConfigArtifact) {
+                        if (folderData.oke_deployNativeConfigArtifact) {
                             progress.report({
-                                message: `Using already created OKE deployment configuration artifact for ${repositoryName}...`
+                                message: `Using already created OKE native deployment configuration artifact for ${repositoryName}...`
                             });
                             try {
-                                const artifact = await ociUtils.getDeployArtifact(provider, folderData.oke_deployConfigArtifact);
+                                const artifact = await ociUtils.getDeployArtifact(provider, folderData.oke_deployNativeConfigArtifact);
                                 if (!artifact) {
-                                    folderData.oke_deployConfigArtifact = undefined;
+                                    folderData.oke_deployNativeConfigArtifact = undefined;
                                 }
                             } catch (err) {
-                                folderData.oke_deployConfigArtifact = undefined;
+                                folderData.oke_deployNativeConfigArtifact = undefined;
                             }
                         }
-                        if (folderData.oke_deployConfigArtifact) {
+                        if (folderData.oke_deployNativeConfigArtifact) {
                             progress.report({
                                 increment,
                             });
-                            logUtils.logInfo(`[deploy] Using already created OKE deployment configuration artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Using already created OKE native deployment configuration artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         } else {
-                            // --- Create OKE deployment configuration artifact
+                            // --- Create OKE native deployment configuration artifact
                             progress.report({
                                 increment,
-                                message: `Creating OKE deployment configuration artifact for ${repositoryName}...`
+                                message: `Creating OKE native deployment configuration artifact for ${repositoryName}...`
                             });
-                                const oke_deployConfigArtifactName = `${repositoryName}_oke_deploy_configuration`;
-                            const oke_deployConfigArtifactDescription = `OKE deployment configuration artifact for devops project ${projectName} & repository ${repositoryName}`;
+                            const oke_deployNativeConfigArtifactName = `${repositoryName}_oke_deploy_ni_configuration`;
+                            const oke_deployNativeConfigArtifactDescription = `OKE native deployment configuration artifact for devops project ${projectName} & repository ${repositoryName}`;
                             try {
-                                logUtils.logInfo(`[deploy] Creating OKE deployment configuration artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                folderData.oke_deployConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_deployConfigInlineContent, oke_deployConfigArtifactName, oke_deployConfigArtifactDescription, {
+                                logUtils.logInfo(`[deploy] Creating OKE native deployment configuration artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.oke_deployNativeConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_deployNativeConfigInlineContent, oke_deployNativeConfigArtifactName, oke_deployNativeConfigArtifactDescription, {
                                     'gcn_tooling_deployID': deployData.tag
                                 })).id;
                             } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to create OKE deployment configuration artifact for ${repositoryName}`, err));
-                                folderData.oke_deployConfigArtifact = false;
+                                resolve(dialogs.getErrorMessage(`Failed to create OKE native deployment configuration artifact for ${repositoryName}`, err));
+                                folderData.oke_deployNativeConfigArtifact = false;
                                 dump(deployData);
                                 return;
                             }
@@ -1607,35 +1943,35 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
                         if (deployData.okeClusterEnvironment) {
 
-                            const oke_deployPipelineName = 'Deploy Docker Native Executable to OKE';
-                            if (folderData.oke_deployPipeline) {
+                            const oke_deployNativePipelineName = 'Deploy Docker Native Executable to OKE';
+                            if (folderData.oke_deployNativePipeline) {
                                 progress.report({
                                     message: `Using already created deployment to OKE pipeline for docker native executables of ${repositoryName}...`
                                 });
                                 try {
-                                    const pipeline = await ociUtils.getDeployPipeline(provider, folderData.oke_deployPipeline);
-                                    if (oke_deployPipelineName !== pipeline.displayName) {
-                                        folderData.oke_deployPipeline = undefined;
+                                    const pipeline = await ociUtils.getDeployPipeline(provider, folderData.oke_deployNativePipeline);
+                                    if (oke_deployNativePipelineName !== pipeline.displayName) {
+                                        folderData.oke_deployNativePipeline = undefined;
                                     }
                                 } catch (err) {
-                                    folderData.oke_deployPipeline = undefined;
+                                    folderData.oke_deployNativePipeline = undefined;
                                 }
                             }
-                            if (folderData.oke_deployPipeline) {
+                            if (folderData.oke_deployNativePipeline) {
                                 progress.report({
                                     increment,
                                 });
                                 logUtils.logInfo(`[deploy] Using already created deployment to OKE pipeline for docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             } else {
-                                // --- Create OKE deployment pipeline
+                                // --- Create OKE native deployment pipeline
                                 progress.report({
                                     increment,
                                     message: `Creating deployment to OKE pipeline for docker native executables of ${repositoryName}...`
                                 });
-                                const oke_deployPipelineDescription = `Deployment pipeline to deploy docker native executable for devops project ${projectName} & repository ${repositoryName} to OKE`;
+                                const oke_deployNativePipelineDescription = `Deployment pipeline to deploy docker native executable for devops project ${projectName} & repository ${repositoryName} to OKE`;
                                 try {
                                     logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                    folderData.oke_deployPipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, oke_deployPipelineName, oke_deployPipelineDescription, [{
+                                    folderData.oke_deployNativePipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, oke_deployNativePipelineName, oke_deployNativePipelineDescription, [{
                                         name: 'DOCKER_TAG',
                                         defaultValue: 'latest'
                                     }], {
@@ -1645,39 +1981,367 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     })).id;
                                 } catch (err) {
                                     resolve(dialogs.getErrorMessage(`Failed to create docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
-                                    folderData.oke_deployPipeline = false;
+                                    folderData.oke_deployNativePipeline = false;
                                     dump(deployData);
                                     return;
                                 }
                                 dump(deployData);
                             }
-                            if (folderData.deployToOkeStage) {
+                            if (folderData.deployNativeToOkeStage) {
                                 try {
-                                    const stage = await ociUtils.getDeployStage(provider, folderData.deployToOkeStage);
+                                    const stage = await ociUtils.getDeployStage(provider, folderData.deployNativeToOkeStage);
                                     if (!stage) {
-                                        folderData.deployToOkeStage = undefined;
+                                        folderData.deployNativeToOkeStage = undefined;
                                     }
                                 } catch (err) {
-                                    folderData.deployToOkeStage = undefined;
+                                    folderData.deployNativeToOkeStage = undefined;
                                 }
                             }
-                            if (folderData.deployToOkeStage) {
+                            if (folderData.deployNativeToOkeStage) {
                                 logUtils.logInfo(`[deploy] Using already created deploy to OKE stage of deployment to OKE pipeline for docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             } else {
                                 try {
                                     logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                    folderData.deployToOkeStage = (await ociUtils.createDeployToOkeStage(provider, folderData.oke_deployPipeline, deployData.okeClusterEnvironment, folderData.oke_deployConfigArtifact, {
+                                    folderData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage(provider, folderData.oke_deployNativePipeline, deployData.okeClusterEnvironment, folderData.oke_deployNativeConfigArtifact, {
                                         'gcn_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {
                                     resolve(dialogs.getErrorMessage(`Failed to create docker native executables deployment to OKE stage for ${repositoryName}`, err));
-                                    folderData.deployToOkeStage = false;
+                                    folderData.deployNativeToOkeStage = false;
                                     dump(deployData);
                                     return;
                                 }
                                 dump(deployData);
                             }
-                            deployPipelines.push({ 'ocid': folderData.oke_deployPipeline, 'displayName': oke_deployPipelineName });
+                            deployPipelines.push({ 'ocid': folderData.oke_deployNativePipeline, 'displayName': oke_deployNativePipelineName });
+                        }
+                    }
+
+                    let jvmContainerRepository;
+                    if (folderData.jvmContainerRepository) {
+                        progress.report({
+                            message: `Using already created jvm container repository for ${repositoryName}...`
+                        });
+                        try {
+                            jvmContainerRepository = await ociUtils.getContainerRepository(provider, folderData.jvmContainerRepository);
+                            if (!jvmContainerRepository) {
+                                folderData.jvmContainerRepository = undefined;
+                            }
+                        } catch (err) {
+                            folderData.jvmContainerRepository = undefined;
+                        }
+                    }
+                    if (jvmContainerRepository) {
+                        progress.report({
+                            increment,
+                        });
+                        logUtils.logInfo(`[deploy] Using already created jvm container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                    } else {
+                        // --- Create jvm container repository
+                        progress.report({
+                            increment,
+                            message: `Creating jvm container repository for ${repositoryName}...`
+                        });
+                        const containerRepositoryName = incrementalDeploy || folders.length > 1 ? `${projectName}-${repositoryName}-jvm` : `${projectName}-jvm`;
+                        try {
+                            logUtils.logInfo(`[deploy] Creating jvm container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            jvmContainerRepository = await ociUtils.createContainerRepository(provider, deployData.compartment.ocid, containerRepositoryName);
+                            folderData.jvmContainerRepository = jvmContainerRepository.id;
+                        } catch (err) {
+                            resolve(dialogs.getErrorMessage(`Failed to create jvm container repository ${containerRepositoryName}`, err));
+                            folderData.jvmContainerRepository = false;
+                            dump(deployData);
+                            return;
+                        }
+                        dump(deployData);
+                    }
+
+                    if (project_devbuild_artifact_location && project_devbuild_command) {
+
+                        // --- Generate docker jvm image build spec
+                        progress.report({
+                            increment,
+                            message: `Creating docker jvm image build build spec for source code repository ${repositoryName}...`
+                        });
+                        const docker_jvmbuildspec_template = 'docker_jvmbuild_spec.yaml';
+                        const docker_jvmbuildArtifactName = `${repositoryName}_jvm_docker_image`;
+                        logUtils.logInfo(`[deploy] Creating docker jvm image build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        const docker_jvmbuildTemplate = expandTemplate(resourcesPath, docker_jvmbuildspec_template, {
+                            project_build_command: project_devbuild_command,
+                            project_artifact_location: project_devbuild_artifact_location,
+                            deploy_artifact_name: docker_jvmbuildArtifactName,
+                            image_name: jvmContainerRepository.displayName.toLowerCase()
+                        }, folder);
+                        if (!docker_jvmbuildTemplate) {
+                            resolve(`Failed to configure docker jvm image build spec for ${repositoryName}`);
+                            return;
+                        }
+                        const docker_jvm_file = 'Dockerfile.jvm';
+                        const docker_jvmFile = expandTemplate(resourcesPath, docker_jvm_file, {}, folder);
+                        if (!docker_jvmFile) {
+                            resolve(`Failed to configure docker jvm image file for ${repositoryName}`);
+                            return;
+                        }
+
+                        const docker_jvmbuildImage = `${provider.getRegion().regionCode}.ocir.io/${namesapce}/${jvmContainerRepository.displayName}:\${DOCKER_TAG}`;
+                        if (folderData.docker_jvmbuildArtifact) {
+                            progress.report({
+                                message: `Using already created docker jvm image artifact for ${repositoryName}...`
+                            });
+                            try {
+                                const artifact = await ociUtils.getDeployArtifact(provider, folderData.docker_jvmbuildArtifact);
+                                if (!artifact) {
+                                    folderData.docker_jvmbuildArtifact = undefined;
+                                }
+                            } catch (err) {
+                                folderData.docker_jvmbuildArtifact = undefined;
+                            }
+                        }
+                        if (folderData.docker_jvmbuildArtifact) {
+                            progress.report({
+                                increment,
+                            });
+                            logUtils.logInfo(`[deploy] Using already created docker jvm image artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        } else {
+                            // --- Create docker jvm image artifact
+                            progress.report({
+                                increment,
+                                message: `Creating docker jvm image artifact for ${repositoryName}...`
+                            });
+                            const docker_jvmbuildArtifactDescription = `Docker jvm image artifact for devops project ${projectName} & repository ${repositoryName}`;
+                            try {
+                                logUtils.logInfo(`[deploy] Creating docker jvm image artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.docker_jvmbuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, projectOCID, docker_jvmbuildImage, docker_jvmbuildArtifactName, docker_jvmbuildArtifactDescription, {
+                                    'gcn_tooling_deployID': deployData.tag
+                                })).id;
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to create docker jvm image artifact for ${repositoryName}`, err));
+                                folderData.docker_jvmbuildArtifact = false;
+                                dump(deployData);
+                                return;
+                            }
+                            dump(deployData);
+                        }
+
+                        const docker_jvmbuildPipelineName = 'Build Docker JVM Image';
+                        if (folderData.docker_jvmbuildPipeline) {
+                            progress.report({
+                                message: `Using already created build pipeline for docker jvm image of ${repositoryName}...`
+                            });
+                            try {
+                                const pipeline = await ociUtils.getBuildPipeline(provider, folderData.docker_jvmbuildPipeline);
+                                if (docker_jvmbuildPipelineName !== pipeline.displayName) {
+                                    folderData.docker_jvmbuildPipeline = undefined;
+                                }
+                            } catch (err) {
+                                folderData.docker_jvmbuildPipeline = undefined;
+                            }
+                        }
+                        if (folderData.docker_jvmbuildPipeline) {
+                            progress.report({
+                                increment,
+                            });
+                            logUtils.logInfo(`[deploy] Using already created build pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        } else {
+                            // --- Create docker jvm image pipeline
+                            progress.report({
+                                increment,
+                                message: `Creating build pipeline for docker jvm image of ${repositoryName}...`
+                            });
+                            const docker_jvmbuildPipelineDescription = `Build pipeline to build docker jvm image for devops project ${projectName} & repository ${repositoryName}`;
+                            try {
+                                logUtils.logInfo(`[deploy] Creating build pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.docker_jvmbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, docker_jvmbuildPipelineName, docker_jvmbuildPipelineDescription, {
+                                    'gcn_tooling_deployID': deployData.tag,
+                                    'gcn_tooling_docker_image': 'oci'
+                                })).id;
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to create docker jvm image build pipeline for ${repositoryName}`, err));
+                                folderData.docker_jvmbuildPipeline = false;
+                                dump(deployData);
+                                return;
+                            }
+                            dump(deployData);
+                        }
+                        if (folderData.docker_jvmbuildPipelineBuildStage) {
+                            try {
+                                const stage = await ociUtils.getBuildPipelineStage(provider, folderData.docker_jvmbuildPipelineBuildStage);
+                                if (!stage) {
+                                    folderData.docker_jvmbuildPipelineBuildStage = undefined;
+                                }
+                            } catch (err) {
+                                folderData.docker_jvmbuildPipelineBuildStage = undefined;
+                            }
+                        }
+                        if (folderData.docker_jvmbuildPipelineBuildStage) {
+                            logUtils.logInfo(`[deploy] Using already created build stage of build pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        } else {
+                            try {
+                                logUtils.logInfo(`[deploy] Creating build stage of build pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.docker_jvmbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.docker_jvmbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${docker_jvmbuildspec_template}`, {
+                                    'gcn_tooling_deployID': deployData.tag
+                                })).id;
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to create docker jvm image pipeline build stage for ${repositoryName}`, err));
+                                folderData.docker_jvmbuildPipelineBuildStage = false;
+                                dump(deployData);
+                                return;
+                            }
+                            dump(deployData);
+                        }
+                        if (folderData.docker_jvmbuildPipelineArtifactsStage) {
+                            try {
+                                const stage = await ociUtils.getBuildPipelineStage(provider, folderData.docker_jvmbuildPipelineArtifactsStage);
+                                if (!stage) {
+                                    folderData.docker_jvmbuildPipelineArtifactsStage = undefined;
+                                }
+                            } catch (err) {
+                                folderData.docker_jvmbuildPipelineArtifactsStage = undefined;
+                            }
+                        }
+                        if (folderData.docker_jvmbuildPipelineArtifactsStage) {
+                            logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        } else {
+                            try {
+                                logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.docker_jvmbuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, folderData.docker_jvmbuildPipeline, folderData.docker_jvmbuildPipelineBuildStage, folderData.docker_jvmbuildArtifact, docker_jvmbuildArtifactName, {
+                                    'gcn_tooling_deployID': deployData.tag
+                                })).id;
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to create docker jvm image pipeline artifacts stage for ${repositoryName}`, err));
+                                folderData.docker_jvmbuildPipelineArtifactsStage = false;
+                                dump(deployData);
+                                return;
+                            }
+                            dump(deployData);
+                        }
+
+                        // --- Create OKE jvm deployment configuration spec
+                        progress.report({
+                            increment,
+                            message: `Creating OKE jvm deployment configuration development spec for ${repositoryName}...`
+                        });
+                        const oke_deploy_jvm_config_template = 'oke_deploy_config.yaml';
+                        const oke_deployJvmConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_jvm_config_template, {
+                            image_name: docker_jvmbuildImage,
+                            app_name: repositoryName.toLowerCase()
+                        });
+                        if (!oke_deployJvmConfigInlineContent) {
+                            resolve(`Failed to create OKE jvm deployment configuration development spec for ${repositoryName}`);
+                            return;
+                        }
+                        if (folderData.oke_deployJvmConfigArtifact) {
+                            progress.report({
+                                message: `Using already created OKE jvm deployment configuration development artifact for ${repositoryName}...`
+                            });
+                            try {
+                                const artifact = await ociUtils.getDeployArtifact(provider, folderData.oke_deployJvmConfigArtifact);
+                                if (!artifact) {
+                                    folderData.oke_deployJvmConfigArtifact = undefined;
+                                }
+                            } catch (err) {
+                                folderData.oke_deployJvmConfigArtifact = undefined;
+                            }
+                        }
+                        if (folderData.oke_deployJvmConfigArtifact) {
+                            progress.report({
+                                increment,
+                            });
+                            logUtils.logInfo(`[deploy] Using already created OKE jvm deployment configuration artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        } else {
+                            // --- Create OKE jvm deployment configuration artifact
+                            progress.report({
+                                increment,
+                                message: `Creating OKE jvm deployment configuration artifact for ${repositoryName}...`
+                            });
+                            const oke_deployJvmConfigArtifactName = `${repositoryName}_oke_deploy_jvm_configuration`;
+                            const oke_deployJvmConfigArtifactDescription = `OKE jvm deployment configuration artifact for devops project ${projectName} & repository ${repositoryName}`;
+                            try {
+                                logUtils.logInfo(`[deploy] Creating OKE jvm deployment configuration artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.oke_deployJvmConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_deployJvmConfigInlineContent, oke_deployJvmConfigArtifactName, oke_deployJvmConfigArtifactDescription, {
+                                    'gcn_tooling_deployID': deployData.tag
+                                })).id;
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to create OKE jvm deployment configuration artifact for ${repositoryName}`, err));
+                                folderData.oke_deployJvmConfigArtifact = false;
+                                dump(deployData);
+                                return;
+                            }
+                            dump(deployData);
+                        }
+
+                        if (deployData.okeClusterEnvironment) {
+
+                            const oke_deployJvmPipelineName = 'Deploy Docker JVM Image to OKE';
+                            if (folderData.oke_deployJvmPipeline) {
+                                progress.report({
+                                    message: `Using already created deployment to OKE pipeline for docker jvm image of ${repositoryName}...`
+                                });
+                                try {
+                                    const pipeline = await ociUtils.getDeployPipeline(provider, folderData.oke_deployJvmPipeline);
+                                    if (oke_deployJvmPipelineName !== pipeline.displayName) {
+                                        folderData.oke_deployJvmPipeline = undefined;
+                                    }
+                                } catch (err) {
+                                    folderData.oke_deployJvmPipeline = undefined;
+                                }
+                            }
+                            if (folderData.oke_deployJvmPipeline) {
+                                progress.report({
+                                    increment,
+                                });
+                                logUtils.logInfo(`[deploy] Using already created deployment to OKE pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            } else {
+                                // --- Create OKE jvm deployment pipeline
+                                progress.report({
+                                    increment,
+                                    message: `Creating deployment to OKE pipeline for docker jvm image of ${repositoryName}...`
+                                });
+                                const oke_deployJvmPipelineDescription = `Deployment pipeline to deploy docker jvm image for devops project ${projectName} & repository ${repositoryName} to OKE`;
+                                try {
+                                    logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    folderData.oke_deployJvmPipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, oke_deployJvmPipelineName, oke_deployJvmPipelineDescription, [{
+                                        name: 'DOCKER_TAG',
+                                        defaultValue: 'latest'
+                                    }], {
+                                        'gcn_tooling_deployID': deployData.tag,
+                                        'gcn_tooling_buildPipelineOCID': folderData.docker_jvmbuildPipeline,
+                                        'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()
+                                    })).id;
+                                } catch (err) {
+                                    resolve(dialogs.getErrorMessage(`Failed to create docker jvm image deployment to OKE pipeline for ${repositoryName}`, err));
+                                    folderData.oke_deployJvmPipeline = false;
+                                    dump(deployData);
+                                    return;
+                                }
+                                dump(deployData);
+                            }
+                            if (folderData.deployJvmToOkeStage) {
+                                try {
+                                    const stage = await ociUtils.getDeployStage(provider, folderData.deployJvmToOkeStage);
+                                    if (!stage) {
+                                        folderData.deployJvmToOkeStage = undefined;
+                                    }
+                                } catch (err) {
+                                    folderData.deployJvmToOkeStage = undefined;
+                                }
+                            }
+                            if (folderData.deployJvmToOkeStage) {
+                                logUtils.logInfo(`[deploy] Using already created deploy to OKE stage of deployment to OKE pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            } else {
+                                try {
+                                    logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    folderData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage(provider, folderData.oke_deployJvmPipeline, deployData.okeClusterEnvironment, folderData.oke_deployJvmConfigArtifact, {
+                                        'gcn_tooling_deployID': deployData.tag
+                                    })).id;
+                                } catch (err) {
+                                    resolve(dialogs.getErrorMessage(`Failed to create docker jvm image deployment to OKE stage for ${repositoryName}`, err));
+                                    folderData.deployJvmToOkeStage = false;
+                                    dump(deployData);
+                                    return;
+                                }
+                                dump(deployData);
+                            }
                         }
                     }
                 }

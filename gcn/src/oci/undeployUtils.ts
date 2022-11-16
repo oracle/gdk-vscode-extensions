@@ -51,35 +51,63 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                             for (const subName in folderData.subs) {
                                 const subData = folderData.subs[subName];
                                 if (subData) {
-                                    if (subData.deployToOkeStage) {
+                                    if (subData.deployJvmToOkeStage) {
+                                        try {
+                                            progress.report({ message: `Deleting ${subName} docker jvm image deployment to OKE stage for ${repositoryName}...` });
+                                            logUtils.logInfo(`[undeploy] Deleting deploy to OKE stage of deployment to OKE pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            await ociUtils.deleteDeployStage(provider, subData.deployJvmToOkeStage, true);
+                                        } catch (err) {
+                                            resolve(dialogs.getErrorMessage(`Failed to delete ${subName} docker jvm image deployment to OKE stage for ${repositoryName}`, err));
+                                            return;
+                                        }
+                                        delete subData.deployJvmToOkeStage;
+                                        dump(deployData);
+                                    } else if (subData.deployJvmToOkeStage !== undefined) {
+                                        toCheck = true;
+                                    }
+                                    if (subData.deployNativeToOkeStage) {
                                         try {
                                             progress.report({ message: `Deleting ${subName} docker native executables deployment to OKE stage for ${repositoryName}...` });
                                             logUtils.logInfo(`[undeploy] Deleting deploy to OKE stage of deployment to OKE pipeline for ${subName} docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                            await ociUtils.deleteDeployStage(provider, subData.deployToOkeStage, true);
+                                            await ociUtils.deleteDeployStage(provider, subData.deployNativeToOkeStage, true);
                                         } catch (err) {
                                             resolve(dialogs.getErrorMessage(`Failed to delete ${subName} docker native executables deployment to OKE stage for ${repositoryName}`, err));
                                             return;
                                         }
-                                        delete subData.deployToOkeStage;
+                                        delete subData.deployNativeToOkeStage;
                                         dump(deployData);
-                                    } else if (subData.deployToOkeStage !== undefined) {
+                                    } else if (subData.deployNativeToOkeStage !== undefined) {
                                         toCheck = true;
                                     }
                                 }
                             }
                         }
-                        if (folderData.deployToOkeStage) {
+                        if (folderData.deployJvmToOkeStage) {
+                            try {
+                                progress.report({ message: `Deleting docker jvm image deployment to OKE stage for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting deploy to OKE stage of deployment to OKE pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteDeployStage(provider, folderData.deployJvmToOkeStage, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete docker jvm image deployment to OKE stage for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.deployJvmToOkeStage;
+                            dump(deployData);
+                        } else if (folderData.deployJvmToOkeStage !== undefined) {
+                            toCheck = true;
+                        }
+                        if (folderData.deployNativeToOkeStage) {
                             try {
                                 progress.report({ message: `Deleting docker native executables deployment to OKE stage for ${repositoryName}...` });
                                 logUtils.logInfo(`[undeploy] Deleting deploy to OKE stage of deployment to OKE pipeline for docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                await ociUtils.deleteDeployStage(provider, folderData.deployToOkeStage, true);
+                                await ociUtils.deleteDeployStage(provider, folderData.deployNativeToOkeStage, true);
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to delete docker native executables deployment to OKE stage for ${repositoryName}`, err));
                                 return;
                             }
-                            delete folderData.deployToOkeStage;
+                            delete folderData.deployNativeToOkeStage;
                             dump(deployData);
-                        } else if (folderData.deployToOkeStage !== undefined) {
+                        } else if (folderData.deployNativeToOkeStage !== undefined) {
                             toCheck = true;
                         }
                     }
@@ -102,35 +130,63 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                             for (const subName in folderData.subs) {
                                 const subData = folderData.subs[subName];
                                 if (subData) {
-                                    if (subData.oke_deployPipeline) {
+                                    if (subData.oke_deployJvmPipeline) {
+                                        try {
+                                            progress.report({ message: `Deleting ${subName} docker jvm image deployment to OKE pipeline for ${repositoryName}...` });
+                                            logUtils.logInfo(`[undeploy] Deleting deployment to OKE pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            await ociUtils.deleteDeployPipeline(provider, subData.oke_deployJvmPipeline, true);
+                                        } catch (err) {
+                                            resolve(dialogs.getErrorMessage(`Failed to delete ${subName} docker jvm image deployment to OKE pipeline for ${repositoryName}`, err));
+                                            return;
+                                        }
+                                        delete subData.oke_deployJvmPipeline;
+                                        dump(deployData);
+                                    } else if (subData.oke_deployJvmPipeline !== undefined) {
+                                        toCheck = true;
+                                    }
+                                    if (subData.oke_deployNativePipeline) {
                                         try {
                                             progress.report({ message: `Deleting ${subName} docker native executables deployment to OKE pipeline for ${repositoryName}...` });
                                             logUtils.logInfo(`[undeploy] Deleting deployment to OKE pipeline for ${subName} docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                            await ociUtils.deleteDeployPipeline(provider, subData.oke_deployPipeline, true);
+                                            await ociUtils.deleteDeployPipeline(provider, subData.oke_deployNativePipeline, true);
                                         } catch (err) {
                                             resolve(dialogs.getErrorMessage(`Failed to delete ${subName} docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
                                             return;
                                         }
-                                        delete subData.oke_deployPipeline;
+                                        delete subData.oke_deployNativePipeline;
                                         dump(deployData);
-                                    } else if (subData.oke_deployPipeline !== undefined) {
+                                    } else if (subData.oke_deployNativePipeline !== undefined) {
                                         toCheck = true;
                                     }
                                 }
                             }
                         }
-                        if (folderData.oke_deployPipeline) {
+                        if (folderData.oke_deployJvmPipeline) {
+                            try {
+                                progress.report({ message: `Deleting docker jvm image deployment to OKE pipeline for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting deployment to OKE pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteDeployPipeline(provider, folderData.oke_deployJvmPipeline, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete docker jvm image deployment to OKE pipeline for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.oke_deployJvmPipeline;
+                            dump(deployData);
+                        } else if (folderData.oke_deployJvmPipeline !== undefined) {
+                            toCheck = true;
+                        }
+                        if (folderData.oke_deployNativePipeline) {
                             try {
                                 progress.report({ message: `Deleting docker native executables deployment to OKE pipeline for ${repositoryName}...` });
                                 logUtils.logInfo(`[undeploy] Deleting deployment to OKE pipeline for docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                await ociUtils.deleteDeployPipeline(provider, folderData.oke_deployPipeline, true);
+                                await ociUtils.deleteDeployPipeline(provider, folderData.oke_deployNativePipeline, true);
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to delete docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
                                 return;
                             }
-                            delete folderData.oke_deployPipeline;
+                            delete folderData.oke_deployNativePipeline;
                             dump(deployData);
-                        } else if (folderData.oke_deployPipeline !== undefined) {
+                        } else if (folderData.oke_deployNativePipeline !== undefined) {
                             toCheck = true;
                         }
                     }
@@ -153,6 +209,35 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                             for (const subName in folderData.subs) {
                                 const subData = folderData.subs[subName];
                                 if (subData) {
+                                    if (subData.docker_jvmbuildPipelineArtifactsStage) {
+                                        try {
+                                            progress.report({ message: `Deleting ${subName} docker jvm image pipeline artifacts stage for ${repositoryName}...` });
+                                            logUtils.logInfo(`[undeploy] Deleting artifacts stage of build pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            await ociUtils.deleteBuildPipelineStage(provider, subData.docker_jvmbuildPipelineArtifactsStage, true);
+                                        } catch (err) {
+                                            resolve(dialogs.getErrorMessage(`Failed to delete ${subName} docker jvm image pipeline artifacts stage for ${repositoryName}`, err));
+                                            return;
+                                        }
+                                        delete subData.docker_jvmbuildPipelineArtifactsStage;
+                                        dump(deployData);
+                                    } else if (subData.docker_jvmbuildPipelineArtifactsStage !== undefined) {
+                                        toCheck = true;
+                                        subData.docker_jvmbuildPipelineBuildStage = false;
+                                    }
+                                    if (subData.docker_jvmbuildPipelineBuildStage) {
+                                        try {
+                                            progress.report({ message: `Deleting ${subName} docker jvm image pipeline build stage for ${repositoryName}...` });
+                                            logUtils.logInfo(`[undeploy] Deleting build stage of build pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            await ociUtils.deleteBuildPipelineStage(provider, subData.docker_jvmbuildPipelineBuildStage, true);
+                                        } catch (err) {
+                                            resolve(dialogs.getErrorMessage(`Failed to delete ${subName} docker jvm image pipeline build stage for ${repositoryName}`, err));
+                                            return;
+                                        }
+                                        delete subData.docker_jvmbuildPipelineBuildStage;
+                                        dump(deployData);
+                                    } else if (subData.docker_jvmbuildPipelineBuildStage !== undefined) {
+                                        toCheck = true;
+                                    }
                                     if (subData.docker_nibuildPipelineArtifactsStage) {
                                         try {
                                             progress.report({ message: `Deleting ${subName} docker native executable pipeline artifacts stage for ${repositoryName}...` });
@@ -184,6 +269,35 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                                     }
                                 }
                             }
+                        }
+                        if (folderData.docker_jvmbuildPipelineArtifactsStage) {
+                            try {
+                                progress.report({ message: `Deleting docker jvm image pipeline artifacts stage for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting artifacts stage of build pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteBuildPipelineStage(provider, folderData.docker_jvmbuildPipelineArtifactsStage, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete docker jvm image pipeline artifacts stage for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.docker_jvmbuildPipelineArtifactsStage;
+                            dump(deployData);
+                        } else if (folderData.docker_jvmbuildPipelineArtifactsStage !== undefined) {
+                            toCheck = true;
+                            folderData.docker_jvmbuildPipelineBuildStage = false;
+                        }
+                        if (folderData.docker_jvmbuildPipelineBuildStage) {
+                            try {
+                                progress.report({ message: `Deleting docker jvm image pipeline build stage for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting build stage of build pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteBuildPipelineStage(provider, folderData.docker_jvmbuildPipelineBuildStage, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete docker jvm image fat JAR pipeline build stage for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.docker_jvmbuildPipelineBuildStage;
+                            dump(deployData);
+                        } else if (folderData.docker_jvmbuildPipelineBuildStage !== undefined) {
+                            toCheck = true;
                         }
                         if (folderData.docker_nibuildPipelineArtifactsStage) {
                             try {
@@ -292,6 +406,20 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                             for (const subName in folderData.subs) {
                                 const subData = folderData.subs[subName];
                                 if (subData) {
+                                    if (subData.docker_jvmbuildPipeline) {
+                                        try {
+                                            progress.report({ message: `Deleting ${subName} docker jvm image build pipeline for ${repositoryName}...` });
+                                            logUtils.logInfo(`[undeploy] Deleting build pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            await ociUtils.deleteBuildPipeline(provider, subData.docker_jvmbuildPipeline, true);
+                                        } catch (err) {
+                                            resolve(dialogs.getErrorMessage(`Failed to delete ${subName} docker jvm image build pipeline for ${repositoryName}`, err));
+                                            return;
+                                        }
+                                        delete subData.docker_jvmbuildPipeline;
+                                        dump(deployData);
+                                    } else if (subData.docker_jvmbuildPipeline !== undefined) {
+                                        toCheck = true;
+                                    }
                                     if (subData.docker_nibuildPipeline) {
                                         try {
                                             progress.report({ message: `Deleting ${subName} docker native executable build pipeline for ${repositoryName}...` });
@@ -308,6 +436,20 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                                     }
                                 }
                             }
+                        }
+                        if (folderData.docker_jvmbuildPipeline) {
+                            try {
+                                progress.report({ message: `Deleting docker jvm image build pipeline for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting build pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteBuildPipeline(provider, folderData.docker_jvmbuildPipeline, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete docker jvm image build pipeline for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.docker_jvmbuildPipeline;
+                            dump(deployData);
+                        } else if (folderData.docker_jvmbuildPipeline !== undefined) {
+                            toCheck = true;
                         }
                         if (folderData.docker_nibuildPipeline) {
                             try {
@@ -371,18 +513,46 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                             for (const subName in folderData.subs) {
                                 const subData = folderData.subs[subName];
                                 if (subData) {
-                                    if (subData.oke_deployConfigArtifact) {
+                                    if (subData.oke_deployJvmConfigArtifact) {
                                         try {
-                                            progress.report({ message: `Deleting OKE deployment configuration artifact for ${subName} of ${repositoryName}...` });
-                                            logUtils.logInfo(`[undeploy] Deleting OKE deployment configuration artifact for ${subName} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                            await ociUtils.deleteDeployArtifact(provider, subData.oke_deployConfigArtifact, true);
+                                            progress.report({ message: `Deleting OKE jvm deployment configuration artifact for ${subName} of ${repositoryName}...` });
+                                            logUtils.logInfo(`[undeploy] Deleting OKE jvm deployment configuration artifact for ${subName} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            await ociUtils.deleteDeployArtifact(provider, subData.oke_deployJvmConfigArtifact, true);
                                         } catch (err) {
-                                            resolve(dialogs.getErrorMessage(`Failed to delete OKE deployment configuration artifact for ${subName} of ${repositoryName}`, err));
+                                            resolve(dialogs.getErrorMessage(`Failed to delete OKE jvm deployment configuration artifact for ${subName} of ${repositoryName}`, err));
                                             return;
                                         }
-                                        delete subData.oke_deployConfigArtifact;
+                                        delete subData.oke_deployJvmConfigArtifact;
                                         dump(deployData);
-                                    } else if (subData.oke_deployConfigArtifact !== undefined) {
+                                    } else if (subData.oke_deployJvmConfigArtifact !== undefined) {
+                                        toCheck = true;
+                                    }
+                                    if (subData.oke_deployNativeConfigArtifact) {
+                                        try {
+                                            progress.report({ message: `Deleting OKE native deployment configuration artifact for ${subName} of ${repositoryName}...` });
+                                            logUtils.logInfo(`[undeploy] Deleting OKE native deployment configuration artifact for ${subName} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            await ociUtils.deleteDeployArtifact(provider, subData.oke_deployNativeConfigArtifact, true);
+                                        } catch (err) {
+                                            resolve(dialogs.getErrorMessage(`Failed to delete OKE native deployment configuration artifact for ${subName} of ${repositoryName}`, err));
+                                            return;
+                                        }
+                                        delete subData.oke_deployNativeConfigArtifact;
+                                        dump(deployData);
+                                    } else if (subData.oke_deployNativeConfigArtifact !== undefined) {
+                                        toCheck = true;
+                                    }
+                                    if (subData.docker_jvmbuildArtifact) {
+                                        try {
+                                            progress.report({ message: `Deleting ${subName} docker jvm image artifact for ${repositoryName}...` });
+                                            logUtils.logInfo(`[undeploy] Deleting ${subName} docker jvm image artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            await ociUtils.deleteDeployArtifact(provider, subData.docker_jvmbuildArtifact, true);
+                                        } catch (err) {
+                                            resolve(dialogs.getErrorMessage(`Failed to delete ${subName} docker jvm image artifact for ${repositoryName}`, err));
+                                            return;
+                                        }
+                                        delete subData.docker_jvmbuildArtifact;
+                                        dump(deployData);
+                                    } else if (subData.docker_jvmbuildArtifact !== undefined) {
                                         toCheck = true;
                                     }
                                     if (subData.docker_nibuildArtifact) {
@@ -399,17 +569,30 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                                     } else if (subData.docker_nibuildArtifact !== undefined) {
                                         toCheck = true;
                                     }
-                                    if (subData.containerRepository) {
-                                        const containerRepositoryName = repositoriesCnt > 1 ? `${projectName}-${repositoryName}-${subName}` : `${projectName}-${subName}`;
+                                    if (subData.jvmContainerRepository) {
+                                        const containerRepositoryName = repositoriesCnt > 1 ? `${projectName}-${repositoryName}-${subName}-jvm` : `${projectName}-${subName}-jvm`;
                                         try {
-                                            progress.report({ message: `Deleting container repository ${containerRepositoryName}...` });
-                                            logUtils.logInfo(`[undeploy] Deleting container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                            await ociUtils.deleteContainerRepository(provider, subData.containerRepository, true);
+                                            progress.report({ message: `Deleting jvm container repository ${containerRepositoryName}...` });
+                                            logUtils.logInfo(`[undeploy] Deleting jvm container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            await ociUtils.deleteContainerRepository(provider, subData.jvmContainerRepository, true);
                                         } catch (err) {
-                                            resolve(dialogs.getErrorMessage(`Failed to delete container repository ${containerRepositoryName}`, err));
+                                            resolve(dialogs.getErrorMessage(`Failed to delete jvm container repository ${containerRepositoryName}`, err));
                                             return;
                                         }
-                                        delete subData.containerRepository;
+                                        delete subData.jvmContainerRepository;
+                                        dump(deployData);
+                                    }
+                                    if (subData.nativeContainerRepository) {
+                                        const containerRepositoryName = repositoriesCnt > 1 ? `${projectName}-${repositoryName}-${subName}` : `${projectName}-${subName}`;
+                                        try {
+                                            progress.report({ message: `Deleting native container repository ${containerRepositoryName}...` });
+                                            logUtils.logInfo(`[undeploy] Deleting native container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            await ociUtils.deleteContainerRepository(provider, subData.nativeContainerRepository, true);
+                                        } catch (err) {
+                                            resolve(dialogs.getErrorMessage(`Failed to delete native container repository ${containerRepositoryName}`, err));
+                                            return;
+                                        }
+                                        delete subData.nativeContainerRepository;
                                         dump(deployData);
                                     }
                                     if (Object.keys(subData).length === 0) {
@@ -419,18 +602,46 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                                 }
                             }
                         }
-                        if (folderData.oke_deployConfigArtifact) {
+                        if (folderData.oke_deployJvmConfigArtifact) {
                             try {
-                                progress.report({ message: `Deleting OKE deployment configuration artifact for ${repositoryName}...` });
-                                logUtils.logInfo(`[undeploy] Deleting OKE deployment configuration artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                await ociUtils.deleteDeployArtifact(provider, folderData.oke_deployConfigArtifact, true);
+                                progress.report({ message: `Deleting OKE jvm deployment configuration artifact for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting OKE jvm deployment configuration artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteDeployArtifact(provider, folderData.oke_deployJvmConfigArtifact, true);
                             } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to delete OKE deployment configuration artifact for ${repositoryName}`, err));
+                                resolve(dialogs.getErrorMessage(`Failed to delete OKE jvm deployment configuration artifact for ${repositoryName}`, err));
                                 return;
                             }
-                            delete folderData.oke_deployConfigArtifact;
+                            delete folderData.oke_deployJvmConfigArtifact;
                             dump(deployData);
-                        } else if (folderData.oke_deployConfigArtifact !== undefined) {
+                        } else if (folderData.oke_deployJvmConfigArtifact !== undefined) {
+                            toCheck = true;
+                        }
+                        if (folderData.oke_deployNativeConfigArtifact) {
+                            try {
+                                progress.report({ message: `Deleting OKE native deployment configuration artifact for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting OKE native deployment configuration artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteDeployArtifact(provider, folderData.oke_deployNativeConfigArtifact, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete OKE native deployment configuration artifact for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.oke_deployNativeConfigArtifact;
+                            dump(deployData);
+                        } else if (folderData.oke_deployNativeConfigArtifact !== undefined) {
+                            toCheck = true;
+                        }
+                        if (folderData.docker_jvmbuildArtifact) {
+                            try {
+                                progress.report({ message: `Deleting docker jvm image artifact for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting docker jvm image artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteDeployArtifact(provider, folderData.docker_jvmbuildArtifact, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete docker jvm image artifact for ${repositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.docker_jvmbuildArtifact;
+                            dump(deployData);
+                        } else if (folderData.docker_jvmbuildArtifact !== undefined) {
                             toCheck = true;
                         }
                         if (folderData.docker_nibuildArtifact) {
@@ -447,17 +658,30 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                         } else if (folderData.docker_nibuildArtifact !== undefined) {
                             toCheck = true;
                         }
-                        if (folderData.containerRepository) {
-                            const containerRepositoryName = repositoriesCnt > 1 ? `${projectName}-${repositoryName}` : projectName;
+                        if (folderData.jvmContainerRepository) {
+                            const containerRepositoryName = repositoriesCnt > 1 ? `${projectName}-${repositoryName}-jvm` : `${projectName}-jvm`;
                             try {
-                                progress.report({ message: `Deleting container repository ${containerRepositoryName}...` });
-                                logUtils.logInfo(`[undeploy] Deleting container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                await ociUtils.deleteContainerRepository(provider, folderData.containerRepository, true);
+                                progress.report({ message: `Deleting jvm container repository ${containerRepositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting jvm container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteContainerRepository(provider, folderData.jvmContainerRepository, true);
                             } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to delete container repository ${containerRepositoryName}`, err));
+                                resolve(dialogs.getErrorMessage(`Failed to delete jvm container repository ${containerRepositoryName}`, err));
                                 return;
                             }
-                            delete folderData.containerRepository;
+                            delete folderData.jvmContainerRepository;
+                            dump(deployData);
+                        }
+                        if (folderData.nativeContainerRepository) {
+                            const containerRepositoryName = repositoriesCnt > 1 ? `${projectName}-${repositoryName}` : projectName;
+                            try {
+                                progress.report({ message: `Deleting native container repository ${containerRepositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting native container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteContainerRepository(provider, folderData.nativeContainerRepository, true);
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to delete native container repository ${containerRepositoryName}`, err));
+                                return;
+                            }
+                            delete folderData.nativeContainerRepository;
                             dump(deployData);
                         }
                         if (folderData.nibuildArtifact) {
@@ -965,18 +1189,22 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
                     if (cloudSubNames.length) {
                         for (const subName of cloudSubNames) {
                             containerRepositoryNames.push(`${data[0].name}-${name}-${subName}`.toLowerCase());
+                            containerRepositoryNames.push(`${data[0].name}-${name}-${subName}-jvm`.toLowerCase());
                         }
                     } else {
                         containerRepositoryNames.push(`${data[0].name}-${name}`.toLowerCase());
+                        containerRepositoryNames.push(`${data[0].name}-${name}-jvm`.toLowerCase());
                     }
                 }
             } else {
                 if (cloudSubNames.length) {
                     for (const subName of cloudSubNames) {
                         containerRepositoryNames.push(`${data[0].name}-${subName}`.toLowerCase());
+                        containerRepositoryNames.push(`${data[0].name}-${subName}-jvm`.toLowerCase());
                     }
                 } else {
                     containerRepositoryNames.push(data[0].name.toLowerCase());
+                    containerRepositoryNames.push(`${data[0].name}-jvm`.toLowerCase());
                 }
             }
             for (const repo of containerRepositories) {
