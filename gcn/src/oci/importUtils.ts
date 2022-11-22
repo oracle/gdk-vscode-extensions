@@ -167,6 +167,9 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                     }
                     folderStorage.store(folder, configuration, true);
                     servicesData.push(undefined);
+                    // Do not track local changes to .vscode/gcn.json
+                    const gcnConfig = folderStorage.getDefaultLocation();
+                    gitUtils.skipWorkTree(folder, gcnConfig); // [GCN-1141] Only works if file present in the remote repo
                 } else {
                     // GCN configuration does not exist in the cloud repository
                     progress.report({
@@ -175,10 +178,8 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                     logUtils.logInfo(`[import] Importing OCI services and creating gcn.json in the locally cloned code repository '${repository.name}'`);
                     const services = await importServices(authentication, (compartment as { ocid: string, name: string }).ocid, (devopsProject as { ocid: string, name: string }).ocid, repository.ocid);
                     servicesData.push(services);
+                    // TODO: .vscode/gcn.json will be marked as locally new (not in the remote repo)
                 }
-                // Do not track changes to .vscode/gcn.json
-                const gcnConfig = folderStorage.getDefaultLocation();
-                gitUtils.skipWorkTree(folder, gcnConfig);
             }
 
             logUtils.logInfo('[import] Existing devops project successfully imported');

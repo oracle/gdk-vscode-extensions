@@ -198,7 +198,9 @@ export async function skipWorkTree(folder: string, entry: string): Promise<void>
         const command = `${gitPath} update-index --skip-worktree ${entry}`;
         await execute(command, folder);
     } catch (err) {
-        dialogs.showErrorMessage(`Failed to skip work tree of  ${entry}`, err);
+        const msg = dialogs.getErrorMessage(`Failed to skip work tree of  ${entry}`, err);
+        logUtils.logWarning(`[git] ${msg}`);
+        vscode.window.showWarningMessage(msg);
     }
 }
 
