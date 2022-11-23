@@ -143,14 +143,14 @@ export async function createProject(context: vscode.ExtensionContext): Promise<v
 
     const uri = vscode.Uri.file(targetLocation);
     if (vscode.workspace.workspaceFolders) {
-        const value = await vscode.window.showInformationMessage('New Micronaut project created', OPEN_IN_NEW_WINDOW, ADD_TO_CURRENT_WORKSPACE);
+        const value = await vscode.window.showInformationMessage('New GCN project created', OPEN_IN_NEW_WINDOW, ADD_TO_CURRENT_WORKSPACE);
         if (value === OPEN_IN_NEW_WINDOW) {
             await vscode.commands.executeCommand('vscode.openFolder', uri, true);
         } else if (value === ADD_TO_CURRENT_WORKSPACE) {
             vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, undefined, { uri });
         }
-    } else if (vscode.window.visibleTextEditors.length > 0) {
-        const value = await vscode.window.showInformationMessage('New Micronaut project created', OPEN_IN_NEW_WINDOW, OPEN_IN_CURRENT_WINDOW);
+    } else if (vscode.window.activeTextEditor) {
+        const value = await vscode.window.showInformationMessage('New GCN project created', OPEN_IN_NEW_WINDOW, OPEN_IN_CURRENT_WINDOW);
         if (value) {
             await vscode.commands.executeCommand('vscode.openFolder', uri, OPEN_IN_NEW_WINDOW === value);
         }
