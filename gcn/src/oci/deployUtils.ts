@@ -2473,7 +2473,9 @@ async function selectProjectName(suggestedName?: string): Promise<string | undef
         if (!isNaN(name.charAt(0) as any)) {
             return 'DevOps project name cannot start with a number'
         }
-        // TODO: check that the name is "ASCII letter, digit, '_' (underscore) or '-' (hyphen) characters"
+        if (!/.*(?:^[a-zA-Z_](-?[a-zA-Z_0-9])*$).*/g.test(name)) {
+            return 'DevOps project name must match ".*(?:^[a-zA-Z_](-?[a-zA-Z_0-9])*$).*"'
+        }
         return undefined;
     }
     let projectName = await vscode.window.showInputBox({
