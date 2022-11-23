@@ -891,7 +891,7 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                 try {
                     progress.report({ message: `Deleting devops project...` });
                     logUtils.logInfo(`[undeploy] Deleting devops project from ${deployData.compartment.name}`);
-                    await ociUtils.deleteDevOpsProjectsByDeployIDTag(provider, deployData.logGroup, deployData.tag);
+                    await ociUtils.deleteDevOpsProjectsByDeployIDTag(provider, deployData.compartment.ocid, deployData.tag);
                 } catch (err) {
                     resolve(dialogs.getErrorMessage('Failed to delete devops project', err));
                     return;
