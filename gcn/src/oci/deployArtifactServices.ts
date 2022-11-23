@@ -364,7 +364,7 @@ class GenericDeployArtifactNode extends DeployArtifactNode {
             if (result instanceof Error) {
                 dialogs.showError(result);
             } else if (result) {
-                artifactServices.downloadGenericArtifactContent(this.oci, result.id, this.object.displayName, result.artifactPath);
+                artifactServices.downloadGenericArtifactContent(this.oci, result.id, this.object.displayName, result.artifactPath, result.sizeInBytes);
             }
         });
     }

@@ -6,7 +6,6 @@
  */
 
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 import * as devops from 'oci-devops';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
@@ -21,6 +20,7 @@ import * as ociService from './ociService';
 import * as ociServices  from './ociServices';
 import * as dataSupport from './dataSupport';
 import * as ociNodes from './ociNodes';
+import * as artifactServices from './artifactServices';
 
 
 export const DATA_NAME = 'buildPipelines';
@@ -371,13 +371,13 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
     }
 
     async downloadArtifact() {
-        const choices: { label: string, type: string, id: string, path?: string }[] = await vscode.window.withProgress({
+        const choices: { label: string, type: string, id: string, path?: string, size?: number  }[] = await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: 'Reading available artifacts...',
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async resolve => {
-                const choices: { label: string, type: string, id: string, path?: string }[] = [];
+                const choices: { label: string, type: string, id: string, path?: string, size?: number }[] = [];
                 if (this.lastRun?.deliveredArtifacts) {
                     for (const artifact of this.lastRun.deliveredArtifacts) {
                         switch (artifact.type) {
@@ -385,10 +385,10 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                                 try {
                                     const genericArtifact = await ociUtils.getGenericArtifact(this.oci.getProvider(), artifact.id);
                                     if (genericArtifact.displayName && genericArtifact.artifactPath) {
-                                        choices.push({ label: genericArtifact.displayName, type: artifact.type, id: genericArtifact.id, path: genericArtifact.artifactPath });
+                                        choices.push({ label: genericArtifact.displayName, type: artifact.type, id: genericArtifact.id, path: genericArtifact.artifactPath /* TODO: may contain slashes! */, size: genericArtifact.sizeInBytes });
                                     }
                                 } catch (err) {
-                                    // TODO: handle
+                                    logUtils.logError(`[build] ${dialogs.getErrorMessage('Failed to resolve generic artifact', err)}`);
                                 }
                                 break;
                             case 'OCIR':
@@ -407,43 +407,8 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
             }));
             switch (choice?.type) {
                 case 'GENERIC_ARTIFACT':
-                    try {
-                        ociUtils.getGenericArtifactContent(this.oci.getProvider(), choice.id).then(content => {
-                            vscode.window.showSaveDialog({
-                                defaultUri: vscode.Uri.file(choice.path || ''),
-                                title: 'Save Artifact As'
-                            }).then(fileUri => {
-                                if (fileUri) {
-                                    vscode.window.withProgress({
-                                        location: vscode.ProgressLocation.Notification,
-                                        title: `Downloading artifact ${choice.path}...`,
-                                        cancellable: false
-                                    }, (_progress, _token) => {
-                                        return new Promise(async (resolve) => {
-                                            const data = content;
-                                            const file = fs.createWriteStream(fileUri.fsPath);
-                                            data.pipe(file);
-                                            data.on('error', (err: Error) => {
-                                                dialogs.showErrorMessage('Failed to download artifact', err);
-                                                file.destroy();
-                                                resolve(false);
-                                            });
-                                            data.on('end', () => {
-                                                const open = 'Open File Location';
-                                                vscode.window.showInformationMessage(`Artifact ${choice.path} downloaded.`, open).then(choice => {
-                                                    if (choice === open) {
-                                                        vscode.commands.executeCommand('revealFileInOS', fileUri);
-                                                    }
-                                                });
-                                                resolve(true);
-                                            });
-                                        });
-                                    })
-                                }
-                            });
-                        });
-                    } catch (err) {
-                        dialogs.showErrorMessage('Failed to download artifact', err);
+                    if (choice.path) { // should always be true for generic artifact
+                        artifactServices.downloadGenericArtifactContent(this.oci, choice.id, choice.label, choice.path, choice.size);
                     }
                     break;
                 case 'OCIR':

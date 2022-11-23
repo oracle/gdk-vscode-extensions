@@ -12,11 +12,14 @@ import * as servicesView from './servicesView';
 import * as welcome from './welcome';
 import * as gcnProjectCreate from './gcnProjectCreate';
 import * as logUtils from './logUtils';
+import * as dialogs from './dialogs';
 
 export const CLOUD_SUPPORTS: model.CloudSupport[] = [];
 
 export function activate(context: vscode.ExtensionContext) {
 	logUtils.logInfo('[extension] Activating extension');
+
+	dialogs.initialize(context);
 
 	CLOUD_SUPPORTS.push(
 		require('./oci/ociSupport').create(context)

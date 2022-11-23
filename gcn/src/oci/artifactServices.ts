@@ -22,6 +22,8 @@ export const DATA_NAME = 'artifactRepositories';
 
 export const ICON = 'file-binary';
 
+const PERSISTENT_TARGET_KEY = 'saveArtifactTargetDir';
+
 type ArtifactRepository = {
     ocid: string,
     displayName: string
@@ -284,14 +286,17 @@ class GenericArtifactNode extends nodes.BaseNode implements ociNodes.OciResource
 
     static readonly CONTEXT = 'gcn.oci.genericArtifactNode';
 
-    private object: ArtifactRepository;
+    private object: GenericArtifact;
     private oci: ociContext.Context;
+
+    private objectSize: number | undefined;
 
     constructor(object: GenericArtifact, oci: ociContext.Context, artifact?: artifacts.models.GenericArtifactSummary) {
         super(object.displayName, undefined, GenericArtifactNode.CONTEXT, undefined, undefined);
         this.object = object;
         this.oci = oci;
         this.iconPath = new vscode.ThemeIcon(ICON);
+        this.objectSize = artifact?.sizeInBytes;
         this.updateAppearance(artifact);
     }
 
@@ -319,44 +324,63 @@ class GenericArtifactNode extends nodes.BaseNode implements ociNodes.OciResource
         if (versionSeparatorIdx > 0) {
             filename = filename.substring(0, versionSeparatorIdx);
         }
-        downloadGenericArtifactContent(this.oci, this.object.ocid, this.object.displayName, filename);
+        downloadGenericArtifactContent(this.oci, this.object.ocid, this.object.displayName, filename, this.objectSize);
     }
 }
 
-export function downloadGenericArtifactContent(oci: ociContext.Context, artifactID: string, displayName: string, filename: string) {
+export function downloadGenericArtifactContent(oci: ociContext.Context, artifactID: string, displayName: string, fileName: string, size?: number) {
     vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: 'Reading build artifact content...',
+        title: 'Reading artifact content...',
         cancellable: false
     }, async (_progress, _token) => {
         try {
+            if (size === undefined) {
+                size = (await ociUtils.getGenericArtifact(oci.getProvider(), artifactID)).sizeInBytes;
+            }
             return await ociUtils.getGenericArtifactContent(oci.getProvider(), artifactID);
         } catch (err) {
-            return new Error(dialogs.getErrorMessage('Error while resolving generic artifact', err));
+            return new Error(dialogs.getErrorMessage('Failed to read artifact', err));
         }
     }).then(result => {
         if (result instanceof Error) {
             dialogs.showError(result);
         } else {
-            vscode.window.showSaveDialog({
-                defaultUri: vscode.Uri.file(filename),
-                title: 'Save Artifact As'
-            }).then(fileUri => {
+            dialogs.showSaveFileDialog('Save Artifact As', fileName, PERSISTENT_TARGET_KEY).then(fileUri => {
                 if (fileUri) {
                     vscode.window.withProgress({
                         location: vscode.ProgressLocation.Notification,
                         title: `Downloading artifact ${displayName}...`,
-                        cancellable: false
-                    }, (_progress, _token) => {
+                        cancellable: true
+                    }, (progress, token) => {
                         return new Promise(async (resolve) => {
                             const data = result;
                             const file = fs.createWriteStream(fileUri.fsPath);
+                            token.onCancellationRequested(() => {
+                                resolve(false);
+                                data.destroy();
+                                file.end();
+                                fs.unlinkSync(fileUri.fsPath);
+                            });
                             data.pipe(file);
                             data.on('error', (err: Error) => {
                                 dialogs.showErrorMessage('Failed to download artifact', err);
                                 file.destroy();
                                 resolve(false);
                             });
+                            if (size) {
+                                const percent = size / 100;
+                                let counter = 0;
+                                let progressCounter = 0;
+                                data.on('data', (chunk: string | any[]) => {
+                                    counter += chunk.length;
+                                    let f = Math.floor(counter / percent);
+                                    if (f > progressCounter) {
+                                        progress.report({ increment: f - progressCounter });
+                                        progressCounter = f;
+                                    }
+                                });
+                            }
                             data.on('end', () => {
                                 const open = 'Open File Location';
                                 vscode.window.showInformationMessage(`Artifact ${displayName} downloaded.`, open).then(choice => {
