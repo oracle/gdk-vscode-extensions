@@ -447,6 +447,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         resolve(`Failed to resolve artifact repository for devops project ${projectName}`);
                         return;
                     }
+                } else {
+                    artifactRepositoryOCID = deployData.artifactsRepository;
                 }
             } else {
                 // --- Create artifact repository
