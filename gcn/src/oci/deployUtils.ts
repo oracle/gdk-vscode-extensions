@@ -1223,7 +1223,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     const oke_deploy_native_config_template = 'oke_deploy_config.yaml';
                                     const oke_deployNativeConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_native_config_template, {
                                         image_name: docker_nibuildImage,
-                                        app_name: repositoryName.toLowerCase()
+                                        app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                                     });
                                     if (!oke_deployNativeConfigInlineContent) {
                                         resolve(`Failed to create OKE native deployment configuration spec for ${subName} of ${repositoryName}`);
@@ -1305,7 +1305,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                                 }], {
                                                     'gcn_tooling_deployID': deployData.tag,
                                                     'gcn_tooling_buildPipelineOCID': subData.docker_nibuildPipeline,
-                                                    'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()
+                                                    'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                                                 })).id;
                                             } catch (err) {
                                                 resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
@@ -1558,7 +1558,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         const oke_deploy_jvm_config_template = 'oke_deploy_config.yaml';
                                         const oke_deployJvmConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_jvm_config_template, {
                                             image_name: docker_jvmbuildImage,
-                                            app_name: repositoryName.toLowerCase()
+                                            app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                                         });
                                         if (!oke_deployJvmConfigInlineContent) {
                                             resolve(`Failed to create OKE jvm deployment configuration spec for ${subName} of ${repositoryName}`);
@@ -1640,7 +1640,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                                     }], {
                                                         'gcn_tooling_deployID': deployData.tag,
                                                         'gcn_tooling_buildPipelineOCID': subData.docker_jvmbuildPipeline,
-                                                        'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()
+                                                        'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                                                     })).id;
                                                 } catch (err) {
                                                     resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker jvm image deployment to OKE pipeline for ${repositoryName}`, err));
@@ -1897,7 +1897,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         const oke_deploy_native_config_template = 'oke_deploy_config.yaml';
                         const oke_deployNativeConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_native_config_template, {
                             image_name: docker_nibuildImage,
-                            app_name: repositoryName.toLowerCase()
+                            app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                         });
                         if (!oke_deployNativeConfigInlineContent) {
                             resolve(`Failed to create OKE native deployment configuration spec for ${repositoryName}`);
@@ -1979,7 +1979,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     }], {
                                         'gcn_tooling_deployID': deployData.tag,
                                         'gcn_tooling_buildPipelineOCID': folderData.docker_nibuildPipeline,
-                                        'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()
+                                        'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                                     })).id;
                                 } catch (err) {
                                     resolve(dialogs.getErrorMessage(`Failed to create docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
@@ -2226,7 +2226,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         const oke_deploy_jvm_config_template = 'oke_deploy_config.yaml';
                         const oke_deployJvmConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_jvm_config_template, {
                             image_name: docker_jvmbuildImage,
-                            app_name: repositoryName.toLowerCase()
+                            app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                         });
                         if (!oke_deployJvmConfigInlineContent) {
                             resolve(`Failed to create OKE jvm deployment configuration development spec for ${repositoryName}`);
@@ -2308,7 +2308,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     }], {
                                         'gcn_tooling_deployID': deployData.tag,
                                         'gcn_tooling_buildPipelineOCID': folderData.docker_jvmbuildPipeline,
-                                        'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()
+                                        'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                                     })).id;
                                 } catch (err) {
                                     resolve(dialogs.getErrorMessage(`Failed to create docker jvm image deployment to OKE pipeline for ${repositoryName}`, err));

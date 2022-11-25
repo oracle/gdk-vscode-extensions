@@ -224,7 +224,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     const oke_deployPipelineName = `Deploy ${projectType === 'GCN' ? 'OCI ' : ''}Docker Native Executable to OKE`;
                     const oke_deployPipelineDescription = `Deployment pipeline to deploy docker native executable for ${projectType === 'GCN' ? 'OCI & ' : ''}devops project ${projectName} & repository ${repositoryName} to OKE`;
                     const tags: { [key:string]: string } = {
-                        'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase()
+                        'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                     };
                     if (buildPipeline) {
                         tags.gcn_tooling_buildPipelineOCID = buildPipeline;
