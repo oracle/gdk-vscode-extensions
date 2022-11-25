@@ -30,7 +30,7 @@ export async function checkNBLS(): Promise<string | undefined> {
         }
         await delay(1000);
     }
-    return 'Project support nat available. Check whether the Language Server for Java by Apache NetBeans extension is active and initialized.'
+    return 'Project support not available. Check whether the Language Server for Java by Apache NetBeans extension is active and initialized.'
 }
 
 export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<ProjectFolder> {
