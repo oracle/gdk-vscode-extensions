@@ -952,13 +952,16 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
     const devopsId = oci.getDevOpsProject();
     const compartmentId = oci.getCompartment();
 
-    const data : [devops.models.Project, identity.models.Compartment | undefined] = await vscode.window.withProgress({
+    const repositoryName = folder.folder.name.replace(/\s+/g, '_');
+
+    const data : [devops.models.Project, identity.models.Compartment | undefined, devops.models.RepositorySummary | undefined] = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: `Validating OCI data for folder ${folder.folder.name}`
     }, async (_progress, _token) => {
         const p = await ociUtils.getDevopsProject(authProvider, devopsId);
         const c = await ociUtils.getCompartment(authProvider, compartmentId);
-        return [p, c];
+        const r = (await ociUtils.listCodeRepositories(authProvider, devopsId)).find(repo => repositoryName === repo.name && repo.freeformTags?.gcn_tooling_deployID);
+        return [p, c, r];
     });
     if (!data[0]) {
         dialogs.showErrorMessage(`Cannot undeploy folder ${folder.folder.name}: Failed to resolve DevOps Project ${devopsId}`);
@@ -966,6 +969,10 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
     }
     if (!data[1]) {
         dialogs.showErrorMessage(`Cannot undeploy folder ${folder.folder.name}: Failed to resolve Compartment ${compartmentId}`);
+        return;
+    }
+    if (!data[2]) {
+        dialogs.showErrorMessage(`Cannot undeploy folder ${folder.folder.name}: Either failed to resolve Code Repository ${repositoryName} inside DevOps Project ${data[0].name} or the Code Repository resolved was not deployed via VSCode`);
         return;
     }
 
