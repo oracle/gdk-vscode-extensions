@@ -39,34 +39,39 @@ type VulnerabilityAudit = {
 }
 
 export function initialize(context: vscode.ExtensionContext) {
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.projectAudit.execute', async (...params: any[]) => {
-        let uri: vscode.Uri;
-        if (params[0]?.uri) {
-            uri = vscode.Uri.parse(params[0].uri);
-            logUtils.logInfo(`[audit] Invoked Audit for folder ${uri.fsPath}`);
-        } else {
-            logUtils.logInfo(`[audit] Invoked Audit without folder context, selecting folder`);
-            const folder = await dialogs.selectFolder(ACTION_NAME, 'Select folder for which to perform the audit', null);
-            if (!folder) {
-                if (folder === null) {
-                    logUtils.logInfo(`[audit] No folders open`);
-                    vscode.window.showWarningMessage('No folders open');
-                }
-                return;
-            }
-            uri = folder.folder.uri;
-        }
+    function auditFolder(uri: vscode.Uri) {
         logUtils.logInfo(`[audit] Resolving OCI service for audit of folder ${uri.fsPath}`);
-        const service = await getFolderAuditsService(uri);
-        if (service) {
-            // Executing for a deployed folder
-            logUtils.logInfo(`[audit] Executing audit of deployed folder ${uri.fsPath}`);
-            service.executeProjectAudit(uri);
-        } else if (service === null) {
-            // Executing for a not deployed folder
-            logUtils.logInfo(`[audit] Executing audit of not deployed folder ${uri.fsPath}`);
-            executeFolderAudit(uri);
+        getFolderAuditsService(uri).then(service => {
+            if (service) {
+                // Executing for a deployed folder
+                logUtils.logInfo(`[audit] Executing audit of deployed folder ${uri.fsPath}`);
+                service.executeProjectAudit(uri);
+            } else if (service === null) {
+                // Executing for a not deployed folder
+                logUtils.logInfo(`[audit] Executing audit of not deployed folder ${uri.fsPath}`);
+                executeFolderAudit(uri);
+            }
+        });
+    }
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.projectAudit.execute', (...params: any[]) => {
+        if (params[0]?.uri) {
+            const uri = vscode.Uri.parse(params[0].uri);
+            logUtils.logInfo(`[audit] Invoked Audit for folder ${uri.fsPath}`);
+            auditFolder(uri);
         }
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.projectAudit.execute_Global', () => {
+        logUtils.logInfo(`[audit] Invoked Audit without folder context, selecting folder`);
+        dialogs.selectFolder(ACTION_NAME, 'Select folder for which to perform the audit', null).then(folder => {
+            if (folder) {
+                const uri = folder.folder.uri;
+                logUtils.logInfo(`[audit] Selected folder ${uri.fsPath}`);
+                auditFolder(uri);
+            } else if (folder === null) {
+                logUtils.logInfo(`[audit] No folders open`);
+                vscode.window.showWarningMessage('No folders open');
+            }
+        });
     }));
 
     nodes.registerRenameableNode(KnowledgeBaseNode.CONTEXT);

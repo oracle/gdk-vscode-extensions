@@ -34,27 +34,30 @@ export function initialize(context: vscode.ExtensionContext) {
             ociNodes.openInConsole(params[0] as ociNodes.CloudConsoleItem);
         }
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openCodeRepositoryInConsole', async (...params: any[]) => {
-        let folder: gcnServices.FolderData | null | undefined;
+
+    function openCodeRepoInConsole(folder: gcnServices.FolderData) {
+        const ociServices = findByFolderData(folder);
+        if (ociServices?.length) {
+            const ociService = ociServices[0];
+            const context = ociService.getContext();
+            const codeRepository = context.getCodeRepository();
+            const address = `https://cloud.oracle.com/devops-coderepository/repositories/${codeRepository}`;
+            ociNodes.openInConsole(address);
+        }
+    }
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openCodeRepositoryInConsole', (...params: any[]) => {
         if (params[0]?.folder) {
-            folder = params[0]?.folder;
-        } else {
-            folder = await dialogs.selectFolder('Open Folder Code Repository', 'Select deployed folder', true);
+            openCodeRepoInConsole(params[0].folder);
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openCodeRepositoryInConsole_Global', () => {
+        dialogs.selectFolder('Open Folder Code Repository', 'Select deployed folder', true).then(folder => {
             if (folder === null) {
                 vscode.window.showErrorMessage('No deployed folder available.');
-                return;
+            } else if (folder) {
+                openCodeRepoInConsole(folder);
             }
-        }
-        if (folder) {
-            const ociServices = findByFolderData(folder);
-            if (ociServices?.length) {
-                const ociService = ociServices[0];
-                const context = ociService.getContext();
-                const codeRepository = context.getCodeRepository();
-                const address = `https://cloud.oracle.com/devops-coderepository/repositories/${codeRepository}`;
-                ociNodes.openInConsole(address);
-            }
-        }
+        });
 	}));
 
     buildServices.initialize(context);

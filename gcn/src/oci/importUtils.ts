@@ -77,6 +77,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
         }
         const selectedProject = await ociDialogs.selectDevOpsProjectFromList(provider, projects, true, ACTION_NAME);
         if (!selectedProject) {
+            // TODO: if (selectedProject === null) display error/warning
             return undefined;
         }
         devopsProject = selectedProject;

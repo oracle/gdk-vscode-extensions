@@ -34,10 +34,13 @@
 	"activationEvents": [
 		"onCommand:gcn.showWelcomePage",
 		"onCommand:gcn.oci.projectAudit.execute",
+		"onCommand:gcn.oci.projectAudit.execute_Global",
 		"onCommand:gcn.createGcnProject",
 		"onCommand:gcn.importFromCloud",
-		"onCommand:gcn.deployToCloud",
+		"onCommand:gcn.deployToCloud_Global",
 		"onCommand:gcn.undeployFromCloud",
+		"onCommand:gcn.addContent_Global",
+		"onCommand:gcn.oci.openCodeRepositoryInConsole_Global",
 		"onView:gcn-services"
 	],
 	"main": "./dist/extension",
@@ -84,18 +87,36 @@
 				"category": "GCN"
 			},
 			{
+				"command": "gcn.undeployPartialFromCloud_Global",
+				"title": "Revert Partial Deploy To OCI",
+				"icon": "$(trash)",
+				"category": "GCN"
+			},
+			{
 				"command": "gcn.showWelcomePage",
 				"title": "Show OCI Services for GCN Page",
 				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.deployToCloud",
+				"title": "Deploy Folder To OCI",
+				"icon": "$(cloud-upload)",
+				"category": "OCI for GCN"
+			},
+			{
+				"command": "gcn.deployToCloud_Global",
 				"title": "Deploy Folder(s) To OCI",
 				"icon": "$(cloud-upload)",
 				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.resumeDeployToCloud",
+				"title": "Resume Deploy To OCI",
+				"icon": "$(cloud-upload)",
+				"category": "GCN"
+			},
+			{
+				"command": "gcn.resumeDeployToCloud_Global",
 				"title": "Resume Deploy To OCI",
 				"icon": "$(cloud-upload)",
 				"category": "GCN"
@@ -108,6 +129,12 @@
 			},
 			{
 				"command": "gcn.addContent",
+				"title": "Add OCI Service...",
+				"icon": "$(add)",
+				"category": "OCI for GCN"
+			},
+			{
+				"command": "gcn.addContent_Global",
 				"title": "Add OCI Service...",
 				"icon": "$(add)",
 				"category": "OCI for GCN"
@@ -126,6 +153,12 @@
 			},
 			{
 				"command": "gcn.oci.openCodeRepositoryInConsole",
+				"title": "Open Folder Code Repository in Cloud Console",
+				"icon": "$(globe)",
+				"category": "OCI for GCN"
+			},
+			{
+				"command": "gcn.oci.openCodeRepositoryInConsole_Global",
 				"title": "Open Folder Code Repository in Cloud Console",
 				"icon": "$(globe)",
 				"category": "OCI for GCN"
@@ -202,6 +235,11 @@
 				"category": "OCI for GCN"
 			},
 			{
+				"command": "gcn.oci.projectAudit.execute_Global",
+				"title": "Run Project Audit",
+				"category": "OCI for GCN"
+			},
+			{
 				"command": "gcn.createGcnProject",
 				"title": "Create GCN Project",
 				"category": "OCI for GCN"
@@ -235,12 +273,12 @@
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Deploy the folder(s) to OCI to enable remote build & deploy image functionality.\n[Deploy To OCI](command:gcn.deployToCloud)\n\nLearn more about [Oracle Cloud Infrastructure](https://www.oracle.com/cloud) and [Graal Cloud Native](https://developer.oracle.com/languages/graalvm/graal-cloud-native.html).",
+				"contents": "Deploy the folder(s) to OCI to enable remote build & deploy image functionality.\n[Deploy To OCI](command:gcn.deployToCloud_Global)\n\nLearn more about [Oracle Cloud Infrastructure](https://www.oracle.com/cloud) and [Graal Cloud Native](https://developer.oracle.com/languages/graalvm/graal-cloud-native.html).",
 				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Previous deployment to OCI failed. Check the failure, resolve the problem and continue with:\n[Resume Deploy To OCI](command:gcn.resumeDeployToCloud)\n[Delete Partial Deployment](command:gcn.undeployPartialFromCloud)\n\n",
+				"contents": "Previous deployment to OCI failed. Check the failure, resolve the problem and continue with:\n[Resume Deploy To OCI](command:gcn.resumeDeployToCloud_Global)\n[Delete Partial Deployment](command:gcn.undeployPartialFromCloud_Global)\n\n",
 				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && gcn.deployFailed && workspaceFolderCount > 0"
 			}
 		],
@@ -260,7 +298,15 @@
 					"when": "false"
 				},
 				{
+					"command": "gcn.resumeDeployToCloud_Global",
+					"when": "false"
+				},
+				{
 					"command": "gcn.undeployPartialFromCloud",
+					"when": "false"
+				},
+				{
+					"command": "gcn.undeployPartialFromCloud_Global",
 					"when": "false"
 				},
 				{
@@ -273,6 +319,14 @@
 				},
 				{
 					"command": "gcn.oci.openInConsole",
+					"when": "false"
+				},
+				{
+					"command": "gcn.deployToCloud",
+					"when": "false"
+				},
+				{
+					"command": "gcn.oci.openCodeRepositoryInConsole",
 					"when": "false"
 				},
 				{
@@ -318,12 +372,16 @@
 				{
 					"command": "gcn.oci.downloadLatestGenericArtifact",
 					"when": "false"
+				},
+				{
+					"command": "gcn.oci.projectAudit.execute",
+					"when": "false"
 				}
 			],
 			"editor/context": [],
 			"view/title": [
 				{
-					"command": "gcn.deployToCloud",
+					"command": "gcn.deployToCloud_Global",
 					"when": "view == gcn-services && gcn.servicesInitialized && gcn.globalDeployAction && nbJavaLSReady && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed",
 					"group": "gcn_group_oci2@1"
 				},
@@ -333,12 +391,12 @@
 					"group": "gcn_group_oci2@2"
 				},
 				{
-					"command": "gcn.addContent",
+					"command": "gcn.addContent_Global",
 					"when": "view == gcn-services && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
 					"group": "navigation@3"
 				},
 				{
-					"command": "gcn.oci.openCodeRepositoryInConsole",
+					"command": "gcn.oci.openCodeRepositoryInConsole_Global",
 					"when": "view == gcn-services && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
 					"group": "gcn_group_oci1@1"
 				}
