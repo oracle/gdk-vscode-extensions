@@ -58,7 +58,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
     }
 
     const incrementalDeploy = openContexts?.length;
-
+    let auth: ociAuthentication.Authentication | undefined;
     if (incrementalDeploy) {
         const profiles: string[] = [];
         for (const context of openContexts) {
@@ -68,12 +68,17 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
             }
         }
         const selectedProfile = await ociDialogs.selectOciProfileFromList(profiles, true, ACTION_NAME);
-        if (selectedProfile) {
-            deployData.profile = selectedProfile;
+        if (!selectedProfile) {
+            dump();
+            return false;
         }
+        auth = ociAuthentication.createCustom(undefined, selectedProfile);
+        deployData.profile = selectedProfile;
+    } else {
+        auth = await ociAuthentication.resolve(ACTION_NAME, deployData.profile);
     }
 
-    const authentication = await ociAuthentication.resolve(ACTION_NAME, deployData.profile);
+    const authentication = auth;
     if (!authentication) {
         dump();
         return false;

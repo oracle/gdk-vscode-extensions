@@ -40,7 +40,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
         }
     }
 
-    let profile: string | undefined;
+    let auth: ociAuthentication.Authentication | undefined;
     if (openContexts.length) {
         const profiles: string[] = [];
         for (const context of openContexts) {
@@ -50,10 +50,14 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
             }
         }
         const selectedProfile = await ociDialogs.selectOciProfileFromList(profiles, true, ACTION_NAME);
-        profile = selectedProfile ? selectedProfile : undefined;
+        if (!selectedProfile) {
+            return undefined;
+        }
+        auth = ociAuthentication.createCustom(undefined, selectedProfile);
+    } else {
+        auth = await ociAuthentication.resolve(ACTION_NAME);
     }
-
-    const authentication = await ociAuthentication.resolve(ACTION_NAME, profile);
+    const authentication = auth;
     if (!authentication) {
         return undefined;
     }
