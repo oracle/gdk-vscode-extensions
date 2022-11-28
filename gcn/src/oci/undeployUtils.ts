@@ -18,6 +18,7 @@ import * as logUtils from '../logUtils';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociUtils from './ociUtils';
 import * as ociServices from './ociServices';
+import { pipeline } from 'stream';
 
 
 export async function undeploy(folders: gcnServices.FolderData[], deployData: any, dump: model.DumpDeployData): Promise<void> {
@@ -954,14 +955,14 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
 
     const repositoryName = folder.folder.name.replace(/\s+/g, '_');
 
-    const data : [devops.models.Project, identity.models.Compartment | undefined, devops.models.RepositorySummary | undefined] = await vscode.window.withProgress({
+    const data : [devops.models.Project, identity.models.Compartment | undefined, devops.models.RepositorySummary | undefined, boolean] = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: `Validating OCI data for folder ${folder.folder.name}`
     }, async (_progress, _token) => {
         const p = await ociUtils.getDevopsProject(authProvider, devopsId);
         const c = await ociUtils.getCompartment(authProvider, compartmentId);
-        const r = (await ociUtils.listCodeRepositories(authProvider, devopsId)).find(repo => repositoryName === repo.name && repo.freeformTags?.gcn_tooling_deployID);
-        return [p, c, r];
+        const reps = await ociUtils.listCodeRepositories(authProvider, devopsId);
+        return [p, c, reps.find(repo => repositoryName === repo.name && repo.freeformTags?.gcn_tooling_deployID), reps.length === 1];
     });
     if (!data[0]) {
         dialogs.showErrorMessage(`Cannot undeploy folder ${folder.folder.name}: Failed to resolve DevOps Project ${devopsId}`);
@@ -976,6 +977,8 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         return;
     }
 
+    const repositoryId = data[2].id;
+    const isLast = data[3];
     const folderPath = folder.folder.uri.fsPath;
 
     const compartmentLogname = data[1].name;
@@ -984,25 +987,12 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
 
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: `Undeploying ${data[0].name} from OCI `,
+        title: `Undeploying ${folder.folder.name} from OCI `,
         cancellable: false
     }, async (_progress, _token) => {
-        _progress.report({message : "Listing project repositories"});
-        const repoNames: string[] = [];
-        logUtils.logInfo(`[undeploy] Listing all source code repositories in ${projectLogname}`);
-        const repoPromises : Promise<any>[] | undefined = (await ociUtils.listCodeRepositories(authProvider, devopsId)).map(repo => {
-            if (repo.name) {
-                repoNames.push(repo.name);
-            }
-            _progress.report({ message: `Deleting code repository: ${repo.name}`})
-            logUtils.logInfo(`[undeploy] Deleting code repository ${repo.name} in ${projectLogname}`);
-            return ociUtils.deleteCodeRepository(authProvider, repo.id);
-        });
-        if (repoPromises) {
-            logUtils.logInfo(`[undeploy] Wating to complete deletion of all code repositories in ${projectLogname}`);
-            await Promise.all(repoPromises);
-            logUtils.logInfo(`[undeploy] All code repositories in ${projectLogname} deleted`);
-        }
+        _progress.report({ message: `Deleting code repository: ${repositoryName}`})
+        logUtils.logInfo(`[undeploy] Deleting code repository ${repositoryName} in ${projectLogname}`);
+        await ociUtils.deleteCodeRepository(authProvider, repositoryId);
         
         const gitPath = path.join(folderPath, '.git');
         if (fs.existsSync(gitPath)) {
@@ -1014,7 +1004,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         _progress.report({message : "Listing Build Pipelines"});
         logUtils.logInfo(`[undeploy] Listing all build pipelines in ${projectLogname}`);
 
-        const buildPipelines: devops.models.BuildPipelineSummary[] = await ociUtils.listBuildPipelines(authProvider, devopsId);
+        const buildPipelines: devops.models.BuildPipelineSummary[] = await ociUtils.listBuildPipelinesByCodeRepository(authProvider, devopsId, repositoryId);
         for (let pipe of buildPipelines) {
             _progress.report({message : `Processing pipeline ${pipe.displayName}`});
             logUtils.logInfo(`[undeploy] Processing build pipeline ${pipe.displayName} in ${projectLogname}`);
@@ -1084,132 +1074,121 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         _progress.report({message : "Listing Deploy Pipelines"});
         logUtils.logInfo(`[undeploy] Listing all deployment pipelines in ${projectLogname}`);
 
+        const buildPipelineIds = buildPipelines.map(pipe => pipe.id);
         const deployPipelines: devops.models.DeployPipelineSummary[] = await ociUtils.listDeployPipelines(authProvider, devopsId);
         for (let pipe of deployPipelines) {
-            _progress.report({message : `Processing pipeline ${pipe.displayName}`});
+            if (pipe.freeformTags?.gcn_tooling_buildPipelineOCID && buildPipelineIds.includes(pipe.freeformTags?.gcn_tooling_buildPipelineOCID)) {
+                _progress.report({message : `Processing pipeline ${pipe.displayName}`});
+                logUtils.logInfo(`[undeploy] Listing stages of deployment pipeline ${pipe.displayName} in ${projectLogname}`);
+                const stages: devops.models.DeployStageSummary[] = await ociUtils.listDeployStages(authProvider, pipe.id);
+                const orderedStages: devops.models.DeployStageSummary[] = [];
+                const id2Stage: Map<string, devops.models.DeployStageSummary> = new Map();
 
-            logUtils.logInfo(`[undeploy] Listing stages of deployment pipeline ${pipe.displayName} in ${projectLogname}`);
-            const stages: devops.models.DeployStageSummary[] = await ociUtils.listDeployStages(authProvider, pipe.id);
-            const orderedStages: devops.models.DeployStageSummary[] = [];
-            const id2Stage: Map<string, devops.models.DeployStageSummary> = new Map();
-
-            // push leaf stages first.
-            const revDeps: Map<string, number> = new Map();
-            stages.forEach(s => {
-                id2Stage.set(s.id, s);
-                if (!revDeps.has(s.id)) {
-                    revDeps.set(s.id, 0);
-                }
-                // console.log(`Stage ${s.displayName} has predecessors: ${s.deployStagePredecessorCollection?.items.map(pred => pred.id).join(', ')}`)
-                for (let p of s.deployStagePredecessorCollection?.items || []) {
-                    if (p.id === s.id || p.id === pipe.id) {
-                        // ??? Who invented reference-to-owner in predecessors ??
-                        continue;
+                // push leaf stages first.
+                const revDeps: Map<string, number> = new Map();
+                stages.forEach(s => {
+                    id2Stage.set(s.id, s);
+                    if (!revDeps.has(s.id)) {
+                        revDeps.set(s.id, 0);
                     }
-                    let n = (revDeps.get(p.id) || 0);
-                    revDeps.set(p.id, n + 1);
-                }
-            });
+                    // console.log(`Stage ${s.displayName} has predecessors: ${s.deployStagePredecessorCollection?.items.map(pred => pred.id).join(', ')}`)
+                    for (let p of s.deployStagePredecessorCollection?.items || []) {
+                        if (p.id === s.id || p.id === pipe.id) {
+                            // ??? Who invented reference-to-owner in predecessors ??
+                            continue;
+                        }
+                        let n = (revDeps.get(p.id) || 0);
+                        revDeps.set(p.id, n + 1);
+                    }
+                });
 
-            while (revDeps.size > 0) {
-                let found : boolean = false;
-                for (let k of revDeps.keys()) {
-                    if (revDeps.get(k) == 0) {
-                        found = true;
-                        const s = id2Stage.get(k);
-                        revDeps.delete(k);
-                        if (!s) continue;
+                while (revDeps.size > 0) {
+                    let found : boolean = false;
+                    for (let k of revDeps.keys()) {
+                        if (revDeps.get(k) == 0) {
+                            found = true;
+                            const s = id2Stage.get(k);
+                            revDeps.delete(k);
+                            if (!s) continue;
 
-                        orderedStages.push(s);
-                        //console.log(`Add stage ${s.displayName} = ${s.id}`)
-                        for (let p of s.deployStagePredecessorCollection?.items || []) {
-                            if (p.id === s.id || p.id === pipe.id) {
-                                continue;
+                            orderedStages.push(s);
+                            //console.log(`Add stage ${s.displayName} = ${s.id}`)
+                            for (let p of s.deployStagePredecessorCollection?.items || []) {
+                                if (p.id === s.id || p.id === pipe.id) {
+                                    continue;
+                                }
+                                let n = (revDeps.get(p.id) || 1);
+                                revDeps.set(p.id, n - 1);
                             }
-                            let n = (revDeps.get(p.id) || 1);
-                            revDeps.set(p.id, n - 1);
                         }
                     }
+                    if (!found) {
+                        throw "Inconsistent pipeline structure!";
+                    }
                 }
-                if (!found) {
-                    throw "Inconsistent pipeline structure!";
+
+                // console.log(`Deleting ${orderedStages.length} stages before deleting ${pipe.displayName}`);
+                for (let stage of orderedStages) {
+                    _progress.report({message : `Deleting stage ${stage.displayName}`});
+                    logUtils.logInfo(`[undeploy] Deleting stage ${stage.displayName} of deployment pipeline ${pipe.displayName} in ${projectLogname}`);
+                    await ociUtils.deleteDeployStage(authProvider, stage.id, true);
                 }
-            }
+                _progress.report({message : `Deleting pipeline ${pipe.displayName}`});
 
-            // console.log(`Deleting ${orderedStages.length} stages before deleting ${pipe.displayName}`);
-            for (let stage of orderedStages) {
-                _progress.report({message : `Deleting stage ${stage.displayName}`});
-                logUtils.logInfo(`[undeploy] Deleting stage ${stage.displayName} of deployment pipeline ${pipe.displayName} in ${projectLogname}`);
-                await ociUtils.deleteDeployStage(authProvider, stage.id, true);
+                // in theory, pipelines are independent, but it seems the delete operation overlaps on the project OCID, so they must be deleted
+                // sequentially.
+                logUtils.logInfo(`[undeploy] Deleting deployment pipeline ${pipe.displayName} in ${projectLogname}`);
+                await ociUtils.deleteDeployPipeline(authProvider, pipe.id, true)
             }
-            _progress.report({message : `Deleting pipeline ${pipe.displayName}`});
-
-            // in theory, pipelines are independent, but it seems the delete operation overlaps on the project OCID, so they must be deleted
-            // sequentially.
-            logUtils.logInfo(`[undeploy] Deleting deployment pipeline ${pipe.displayName} in ${projectLogname}`);
-            await ociUtils.deleteDeployPipeline(authProvider, pipe.id, true)
         };
 
-        _progress.report({message : "Listing project logs"});
-        logUtils.logInfo(`[undeploy] Listing all logs in ${projectLogname}`);
-        const logPromises : Promise<any>[] | undefined = (await ociUtils.listLogsByProject(authProvider, compartmentId, devopsId))?.map(l => {
-            _progress.report({message : `Deleting log ${l.displayName}`});
-            logUtils.logInfo(`[undeploy] Deleting log ${l.displayName} in ${projectLogname}`);
-            return ociUtils.deleteLog(authProvider, l.id, l.logGroupId, true);
-        });
-        if (logPromises) {
-            logUtils.logInfo(`[undeploy] Wating to complete deletion of all logs in ${projectLogname}`);
-            await Promise.all(logPromises);
-            logUtils.logInfo(`[undeploy] All logs in ${projectLogname} deleted`);
+        const projectFolder = await projectUtils.getProjectFolder(folder.folder);
+        const cloudSubNames = projectUtils.getCloudSpecificSubProjectNames(projectFolder);
+        const deployArtifactNames = [
+            `${repositoryName}_dev_fatjar`,
+            `${repositoryName}_dev_executable`,
+            `${repositoryName}_oke_deploy_ni_configuration`,
+            `${repositoryName}_oke_deploy_jvm_configuration`
+        ];
+        if (cloudSubNames.length) {
+            for (const subName of cloudSubNames) {
+                deployArtifactNames.push(`${repositoryName}_${subName}_native_docker_image`);
+                deployArtifactNames.push(`${repositoryName}_${subName}_jvm_docker_image`);
+            }
+        } else {
+            deployArtifactNames.push(`${repositoryName}_native_docker_image`);
+            deployArtifactNames.push(`${repositoryName}_jvm_docker_image`);
         }
-        
         _progress.report({message : "Listing deploy artifacts"});
         logUtils.logInfo(`[undeploy] Listing all deploy artifacts in ${projectLogname}`);
         let artifacts = await ociUtils.listDeployArtifacts(authProvider, devopsId);
         for (let a of artifacts) {
-            _progress.report({ message: `Deleting artifact ${a.displayName}`});
-            logUtils.logInfo(`[undeploy] Deleting artifact ${a.displayName} in ${projectLogname}`);
-            // seems that deleteArtifact also transaction-conflicts on the project.
-            await ociUtils.deleteDeployArtifact(authProvider, a.id, true);
-        };
-        _progress.report({ message: 'Searching artifact repositories'});
-        logUtils.logInfo(`[undeploy] Listing all artifact repositories in ${compartmentLogname}`);
-        const artifactsRepositories = await ociUtils.listArtifactRepositories(authProvider, compartmentId);
-        if (artifactsRepositories) {
-            for (const repo of artifactsRepositories) {
-                if ((repo.freeformTags?.['gcn_tooling_projectOCID'] == devopsId)) {
-                    _progress.report({message : `Deleting artifact repository ${repo.displayName}`});
-                    logUtils.logInfo(`[undeploy] Deleting artifact repository ${repo.displayName} in ${compartmentLogname}`);
-                    await ociUtils.deleteArtifactsRepository(authProvider, compartmentId, repo.id, true);
-                }
+            if (a.displayName && deployArtifactNames.includes(a.displayName)) {
+                _progress.report({ message: `Deleting artifact ${a.displayName}`});
+                logUtils.logInfo(`[undeploy] Deleting artifact ${a.displayName} in ${projectLogname}`);
+                // seems that deleteArtifact also transaction-conflicts on the project.
+                await ociUtils.deleteDeployArtifact(authProvider, a.id, true);
             }
-        }
+        };
+
         _progress.report({ message: 'Searching container repositories'});
         logUtils.logInfo(`[undeploy] Listing all container repositories in ${compartmentLogname}`);
         const containerRepositories = await ociUtils.listContainerRepositories(authProvider, compartmentId);
         if (containerRepositories) {
             const containerRepositoryNames: string[] = [];
-            const projectFolder = await projectUtils.getProjectFolder(folder.folder);
-            const cloudSubNames = projectUtils.getCloudSpecificSubProjectNames(projectFolder);
-            if (repoNames.length > 1) {
-                for (const name of repoNames) {
-                    if (cloudSubNames.length) {
-                        for (const subName of cloudSubNames) {
-                            containerRepositoryNames.push(`${data[0].name}-${name}-${subName}`.toLowerCase());
-                            containerRepositoryNames.push(`${data[0].name}-${name}-${subName}-jvm`.toLowerCase());
-                        }
-                    } else {
-                        containerRepositoryNames.push(`${data[0].name}-${name}`.toLowerCase());
-                        containerRepositoryNames.push(`${data[0].name}-${name}-jvm`.toLowerCase());
-                    }
-                }
-            } else {
-                if (cloudSubNames.length) {
-                    for (const subName of cloudSubNames) {
+            if (cloudSubNames.length) {
+                for (const subName of cloudSubNames) {
+                    containerRepositoryNames.push(`${data[0].name}-${repositoryName}-${subName}`.toLowerCase());
+                    containerRepositoryNames.push(`${data[0].name}-${repositoryName}-${subName}-jvm`.toLowerCase());
+                    if (isLast) {
                         containerRepositoryNames.push(`${data[0].name}-${subName}`.toLowerCase());
                         containerRepositoryNames.push(`${data[0].name}-${subName}-jvm`.toLowerCase());
                     }
-                } else {
+                }
+            } else {
+                containerRepositoryNames.push(`${data[0].name}-${repositoryName}`.toLowerCase());
+                containerRepositoryNames.push(`${data[0].name}-${repositoryName}-jvm`.toLowerCase());
+                if (isLast) {
                     containerRepositoryNames.push(data[0].name.toLowerCase());
                     containerRepositoryNames.push(`${data[0].name}-jvm`.toLowerCase());
                 }
@@ -1222,30 +1201,59 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
                 }
             }
         }
-        _progress.report({ message: 'Searching OKE cluster environments'});
-        logUtils.logInfo(`[undeploy] Listing all OKE cluster environments in ${projectLogname}`);
-        const okeClusterEnvironments = await ociUtils.listDeployEnvironments(authProvider, devopsId);
-        for (const env of okeClusterEnvironments) {
-            _progress.report({message : `Deleting OKE cluster environment ${env.displayName}`});
-            logUtils.logInfo(`[undeploy] Deleting OKE cluster environment ${env.displayName} in ${projectLogname}`);
-            await ociUtils.deleteDeployEnvironment(authProvider, env.id, true);
-        }
-        // PENDING: knowledgebase search + deletion should be done by the Services Plugin; need API to invoke it on the OCI configuration.
-        _progress.report({ message: 'Searching knowledge bases'});
-        logUtils.logInfo(`[undeploy] Listing all knowledge bases in ${compartmentLogname}`);
-        let knowledgeBases = await ociUtils.listKnowledgeBases(authProvider, compartmentId);
-        for (let kb of knowledgeBases) {
-            if ((kb.freeformTags?.['gcn_tooling_usage'] === "gcn-adm-audit") &&
-                (kb.freeformTags?.['gcn_tooling_projectOCID'] == devopsId)) {
-                    _progress.report({message : `Deleting knowledge base ${kb.displayName}`});
-                    logUtils.logInfo(`[undeploy] Deleting knowledge base ${kb.displayName} in ${compartmentLogname}`);
-                    await ociUtils.deleteKnowledgeBase(authProvider, kb.id, true);
+
+        if (isLast) {
+            _progress.report({message : "Listing project logs"});
+            logUtils.logInfo(`[undeploy] Listing all logs in ${projectLogname}`);
+            const logPromises : Promise<any>[] | undefined = (await ociUtils.listLogsByProject(authProvider, compartmentId, devopsId))?.map(l => {
+                _progress.report({message : `Deleting log ${l.displayName}`});
+                logUtils.logInfo(`[undeploy] Deleting log ${l.displayName} in ${projectLogname}`);
+                return ociUtils.deleteLog(authProvider, l.id, l.logGroupId, true);
+            });
+            if (logPromises) {
+                logUtils.logInfo(`[undeploy] Wating to complete deletion of all logs in ${projectLogname}`);
+                await Promise.all(logPromises);
+                logUtils.logInfo(`[undeploy] All logs in ${projectLogname} deleted`);
             }
+
+            _progress.report({ message: 'Searching artifact repositories'});
+            logUtils.logInfo(`[undeploy] Listing all artifact repositories in ${compartmentLogname}`);
+            const artifactsRepositories = await ociUtils.listArtifactRepositories(authProvider, compartmentId);
+            if (artifactsRepositories) {
+                for (const repo of artifactsRepositories) {
+                    if ((repo.freeformTags?.['gcn_tooling_projectOCID'] == devopsId)) {
+                        _progress.report({message : `Deleting artifact repository ${repo.displayName}`});
+                        logUtils.logInfo(`[undeploy] Deleting artifact repository ${repo.displayName} in ${compartmentLogname}`);
+                        await ociUtils.deleteArtifactsRepository(authProvider, compartmentId, repo.id, true);
+                    }
+                }
+            }
+            _progress.report({ message: 'Searching OKE cluster environments'});
+            logUtils.logInfo(`[undeploy] Listing all OKE cluster environments in ${projectLogname}`);
+            const okeClusterEnvironments = await ociUtils.listDeployEnvironments(authProvider, devopsId);
+            for (const env of okeClusterEnvironments) {
+                _progress.report({message : `Deleting OKE cluster environment ${env.displayName}`});
+                logUtils.logInfo(`[undeploy] Deleting OKE cluster environment ${env.displayName} in ${projectLogname}`);
+                await ociUtils.deleteDeployEnvironment(authProvider, env.id, true);
+            }
+            // PENDING: knowledgebase search + deletion should be done by the Services Plugin; need API to invoke it on the OCI configuration.
+            _progress.report({ message: 'Searching knowledge bases'});
+            logUtils.logInfo(`[undeploy] Listing all knowledge bases in ${compartmentLogname}`);
+            let knowledgeBases = await ociUtils.listKnowledgeBases(authProvider, compartmentId);
+            for (let kb of knowledgeBases) {
+                if ((kb.freeformTags?.['gcn_tooling_usage'] === "gcn-adm-audit") &&
+                    (kb.freeformTags?.['gcn_tooling_projectOCID'] == devopsId)) {
+                        _progress.report({message : `Deleting knowledge base ${kb.displayName}`});
+                        logUtils.logInfo(`[undeploy] Deleting knowledge base ${kb.displayName} in ${compartmentLogname}`);
+                        await ociUtils.deleteKnowledgeBase(authProvider, kb.id, true);
+                }
+            }
+            _progress.report({message : `Deleting project ${data[0].name}`});
+            logUtils.logInfo(`[undeploy] Deleting devops project ${projectLogname}`);
+            let p = ociUtils.deleteDevOpsProject(authProvider, devopsId, true);
+            logUtils.logInfo(`[undeploy] Devops project ${projectLogname} deleted`);
         }
-        _progress.report({message : `Deleting project ${data[0].name}`});
-        logUtils.logInfo(`[undeploy] Deleting devops project ${projectLogname}`);
-        let p = ociUtils.deleteDevOpsProject(authProvider, devopsId, true);
-        logUtils.logInfo(`[undeploy] Devops project ${projectLogname} deleted`);
+
         const gcnPath = path.join(folderPath, '.vscode', 'gcn.json');
         _progress.report({message : `Deleting GCN registration ${gcnPath}`});
         logUtils.logInfo(`[undeploy] Deleting GCN registration ${gcnPath}`);
@@ -1256,8 +1264,6 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             logUtils.logInfo(`[undeploy] Deleting local OCI resources in ${gcnFolderPath}`);
             fs.rmdirSync(gcnFolderPath, { recursive : true});
         }
-
-        return p;
     });
 }
 
