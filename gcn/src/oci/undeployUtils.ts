@@ -18,7 +18,6 @@ import * as logUtils from '../logUtils';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociUtils from './ociUtils';
 import * as ociServices from './ociServices';
-import { pipeline } from 'stream';
 
 
 export async function undeploy(folders: gcnServices.FolderData[], deployData: any, dump: model.DumpDeployData): Promise<void> {
@@ -1250,7 +1249,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             }
             _progress.report({message : `Deleting project ${data[0].name}`});
             logUtils.logInfo(`[undeploy] Deleting devops project ${projectLogname}`);
-            let p = ociUtils.deleteDevOpsProject(authProvider, devopsId, true);
+            ociUtils.deleteDevOpsProject(authProvider, devopsId, true);
             logUtils.logInfo(`[undeploy] Devops project ${projectLogname} deleted`);
         }
 
