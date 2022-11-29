@@ -173,7 +173,7 @@ function tryReadGradleVersion(folder : string, version: string = '0.1') : string
 }
 
 export async function getProjectBuildArtifactLocation(folder: ProjectFolder, subfolder: string = 'oci'): Promise<string | undefined> {
-    const projectUri: string = folder.uri.toString();
+    const projectPath: string = folder.uri.path;
     let artifacts: any[] | undefined = undefined;
     if (folder.projectType === 'GCN') {
         const uri = folder.subprojects.find(sub => sub.name === subfolder)?.uri;
@@ -184,13 +184,11 @@ export async function getProjectBuildArtifactLocation(folder: ProjectFolder, sub
             return undefined;
         }
     } else {
-        artifacts = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, projectUri);
+        artifacts = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, folder.uri.toString());
     }
     if (artifacts && artifacts.length === 1) {
-        const loc: string = artifacts[0].location;
-        if (loc.startsWith(projectUri + '/')) {
-            return loc.slice(projectUri.length + 1);
-        }
+        const loc: vscode.Uri = vscode.Uri.parse(artifacts[0].location);
+        return path.relative(projectPath, loc.path).replace(path.sep, '/');
     }
     if (isMaven(folder)) {
         if (folder.projectType === 'Micronaut') {
@@ -220,7 +218,7 @@ export async function getProjectBuildArtifactLocation(folder: ProjectFolder, sub
 }
 
 export async function getProjectNativeExecutableArtifactLocation(folder: ProjectFolder, subfolder: string = 'oci'): Promise<string | undefined> {
-    const projectUri: string = folder.uri.toString();
+    const projectPath: string = folder.uri.path;
     let artifacts: any[] | undefined = undefined;
     if (folder.projectType === 'GCN') {
         const uri = folder.subprojects.find(sub => sub.name === subfolder)?.uri;
@@ -228,13 +226,11 @@ export async function getProjectNativeExecutableArtifactLocation(folder: Project
             artifacts = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, uri, NATIVE_BUILD);
         }
     } else {
-        artifacts = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, projectUri, NATIVE_BUILD);
+        artifacts = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, folder.uri.toString(), NATIVE_BUILD);
     }
     if (artifacts && artifacts.length === 1) {
-        const loc: string = artifacts[0].location;
-        if (loc.startsWith(projectUri + '/')) {
-            return loc.slice(projectUri.length + 1);
-        }
+        const loc: vscode.Uri = vscode.Uri.parse(artifacts[0].location);
+        return path.relative(projectPath, loc.path).replace(path.sep, '/');
     }
     if (isMaven(folder)) {
         if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {
