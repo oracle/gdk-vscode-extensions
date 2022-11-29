@@ -35,6 +35,7 @@ type DeploymentPipeline = {
 export function initialize(context: vscode.ExtensionContext) {
     nodes.registerRenameableNode(DeploymentPipelineNode.CONTEXTS);
     nodes.registerRemovableNode(DeploymentPipelineNode.CONTEXTS);
+    nodes.registerViewLogNode([DeploymentPipelineNode.CONTEXTS[1], DeploymentPipelineNode.CONTEXTS[2], DeploymentPipelineNode.CONTEXTS[3]]);
     ociNodes.registerOpenInConsoleNode(DeploymentPipelineNode.CONTEXTS);
 
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runDeployPipeline', (node: DeploymentPipelineNode) => {
@@ -43,8 +44,8 @@ export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openInBrowser', (node: DeploymentPipelineNode) => {
 		node.openDeploymentInBrowser();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.showDeployOutput', (node: DeploymentPipelineNode) => {
-		node.showDeploymentOutput();
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.viewLog', (node: DeploymentPipelineNode) => {
+		node.viewLog();
 	}));
 }
 
@@ -416,11 +417,12 @@ class Service extends ociService.Service {
 
 }
 
-class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
+class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ViewLogNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'deploymentPipelineNode';
     static readonly CONTEXTS = [
         `gcn.oci.${DeploymentPipelineNode.DATA_NAME}`, // default
+        `gcn.oci.${DeploymentPipelineNode.DATA_NAME}-has-lastdeployment`, // handle to the previous deployment available
         `gcn.oci.${DeploymentPipelineNode.DATA_NAME}-in-progress`, // in progress
         `gcn.oci.${DeploymentPipelineNode.DATA_NAME}-deployments-available` // artifacts available
     ];
@@ -435,7 +437,6 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
         this.object = object;
         this.oci = oci;
         this.iconPath = new vscode.ThemeIcon(ICON);
-        this.command = { command: 'gcn.oci.showDeployOutput', title: 'Show Deployment Output', arguments: [this] };
         this.updateAppearance();
         if (this.object.lastDeployment) {
             try {
@@ -524,7 +525,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                             service?.serviceNodesChanged(this);
                             this.showSucceededFlag = true;
                             this.updateLastDeployment(deployment.id, deployment.lifecycleState, deployment.displayName ? vscode.window.createOutputChannel(deployment.displayName) : undefined);
-                            this.showDeploymentOutput();
+                            this.viewLog();
                             this.updateWhenCompleted(deployment.id, deployment.compartmentId, deploymentName);
                         }
                     } catch (err) {
@@ -597,7 +598,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
         });
     }
 
-    showDeploymentOutput() {
+    viewLog() {
         this.lastDeployment?.output?.show();
     }
 
@@ -613,19 +614,19 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
             case 'CANCELING':
                 // this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.yellow'));
                 this.iconPath = new vscode.ThemeIcon(ICON_IN_PROGRESS, new vscode.ThemeColor('charts.yellow'));
-                this.contextValue = DeploymentPipelineNode.CONTEXTS[1];
+                this.contextValue = DeploymentPipelineNode.CONTEXTS[2];
                 break;
             case 'SUCCEEDED':
                 this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.green'));
-                this.contextValue = deploymentName ? DeploymentPipelineNode.CONTEXTS[2] : DeploymentPipelineNode.CONTEXTS[0];
+                this.contextValue = deploymentName ? DeploymentPipelineNode.CONTEXTS[3] : DeploymentPipelineNode.CONTEXTS[1];
                 break;
             case 'FAILED':
                 this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.red'));
-                this.contextValue = DeploymentPipelineNode.CONTEXTS[0];
+                this.contextValue = DeploymentPipelineNode.CONTEXTS[1];
                 break;
             default:
                 this.iconPath = new vscode.ThemeIcon(ICON);
-                this.contextValue = DeploymentPipelineNode.CONTEXTS[0];
+                this.contextValue = DeploymentPipelineNode.CONTEXTS[1];
         }
         this.updateStateLabel(state);
         this.treeChanged(this);

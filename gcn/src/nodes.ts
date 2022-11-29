@@ -106,6 +106,21 @@ export async function registerShowReportNode(context: string | string[]) {
     await vscode.commands.executeCommand('setContext', 'gcn.showReportNodes', SHOW_REPORT_NODES);
 }
 
+export interface ViewLogNode {
+    viewLog(): void;
+}
+
+const VIEW_LOG_NODES: string[] = [];
+
+export async function registerViewLogNode(context: string | string[]) {
+    if (typeof context === 'string' || context instanceof String) {
+        VIEW_LOG_NODES.push(context as string);
+    } else {
+        VIEW_LOG_NODES.push(...context);
+    }
+    await vscode.commands.executeCommand('setContext', 'gcn.viewLogNodes', VIEW_LOG_NODES);
+}
+
 export function getLabel(node: BaseNode): string | undefined {
     return typeof node.label === 'string' ? node.label as string : (node.label as vscode.TreeItemLabel).label;
 }

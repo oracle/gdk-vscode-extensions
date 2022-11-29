@@ -37,6 +37,7 @@ type BuildPipeline = {
 export function initialize(context: vscode.ExtensionContext) {
     nodes.registerRenameableNode(BuildPipelineNode.CONTEXTS);
     nodes.registerRemovableNode(BuildPipelineNode.CONTEXTS);
+    nodes.registerViewLogNode([BuildPipelineNode.CONTEXTS[1], BuildPipelineNode.CONTEXTS[2], BuildPipelineNode.CONTEXTS[3]]);
     ociNodes.registerOpenInConsoleNode(BuildPipelineNode.CONTEXTS);
 
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runBuildPipeline', (node: BuildPipelineNode) => {
@@ -45,8 +46,8 @@ export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.getBuildArtifact', (node: BuildPipelineNode) => {
 		node.downloadArtifact();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.showBuildOutput', (node: BuildPipelineNode) => {
-		node.showBuildOutput();
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.viewLog', (node: BuildPipelineNode) => {
+		node.viewLog();
 	}));
 }
 
@@ -238,11 +239,12 @@ class Service extends ociService.Service {
 
 }
 
-class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
+class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ViewLogNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'buildPipelineNode';
     static readonly CONTEXTS = [
         `gcn.oci.${BuildPipelineNode.DATA_NAME}`, // default
+        `gcn.oci.${BuildPipelineNode.DATA_NAME}-has-lastrun`, // handle to the previous run available
         `gcn.oci.${BuildPipelineNode.DATA_NAME}-in-progress`, // in progress
         `gcn.oci.${BuildPipelineNode.DATA_NAME}-artifacts-available` // artifacts available
     ];
@@ -257,7 +259,6 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         this.object = object;
         this.oci = oci;
         this.iconPath = new vscode.ThemeIcon(ICON);
-        this.command = { command: 'gcn.oci.showBuildOutput', title: 'Show Build Output', arguments: [this] };
         this.updateAppearance();
         if (this.object.lastBuildRun) {
             try {
@@ -357,7 +358,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                                         service?.serviceNodesChanged(this);
                                         this.showSucceededFlag = true;
                                         this.updateLastRun(buildRun.id, buildRun.lifecycleState, buildRun.displayName ? vscode.window.createOutputChannel(buildRun.displayName) : undefined);
-                                        this.showBuildOutput();
+                                        this.viewLog();
                                         this.updateWhenCompleted(buildRun.id, buildRun.compartmentId, buildName);
                                     }
                                 } catch (err) {
@@ -424,7 +425,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         }
     }
 
-    showBuildOutput() {
+    viewLog() {
         this.lastRun?.output?.show();
     }
 
@@ -440,19 +441,19 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
             case 'CANCELING':
                 // this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.yellow'));
                 this.iconPath = new vscode.ThemeIcon(ICON_IN_PROGRESS, new vscode.ThemeColor('charts.yellow'));
-                this.contextValue = BuildPipelineNode.CONTEXTS[1];
+                this.contextValue = BuildPipelineNode.CONTEXTS[2];
                 break;
             case 'SUCCEEDED':
                 this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.green'));
-                this.contextValue = deliveredArtifacts?.length ? BuildPipelineNode.CONTEXTS[2] : BuildPipelineNode.CONTEXTS[0];
+                this.contextValue = deliveredArtifacts?.length ? BuildPipelineNode.CONTEXTS[3] : BuildPipelineNode.CONTEXTS[1];
                 break;
             case 'FAILED':
                 this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.red'));
-                this.contextValue = BuildPipelineNode.CONTEXTS[0];
+                this.contextValue = BuildPipelineNode.CONTEXTS[1];
                 break;
             default:
                 this.iconPath = new vscode.ThemeIcon(ICON);
-                this.contextValue = BuildPipelineNode.CONTEXTS[0];
+                this.contextValue = BuildPipelineNode.CONTEXTS[1];
         }
         this.updateStateLabel(state);
         this.treeChanged(this);
