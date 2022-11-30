@@ -20,10 +20,12 @@ import * as ociUtils from './ociUtils';
 import * as ociServices from './ociServices';
 
 
-export async function undeploy(folders: gcnServices.FolderData[], deployData: any, dump: model.DumpDeployData): Promise<void> {
-    logUtils.logInfo('[undeploy] Invoked delete devops project');
+const ACTION_NAME = 'Undeploy from OCI';
 
-    const authentication = await ociAuthentication.resolve('Undeploy from OCI', deployData.profile);
+export async function undeploy(folders: gcnServices.FolderData[], deployData: any, dump: model.DumpDeployData): Promise<void> {
+    logUtils.logInfo('[undeploy] Invoked undeploy folders from OCI');
+
+    const authentication = await ociAuthentication.resolve(ACTION_NAME, deployData.profile);
     if (!authentication) {
         return;
     }

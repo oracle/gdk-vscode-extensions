@@ -30,7 +30,7 @@ const ACTION_NAME = 'Deploy to OCI';
 export type SaveConfig = (folder: string, config: any) => boolean;
 
 export async function deployFolders(folders: vscode.WorkspaceFolder[], resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData): Promise<boolean> {
-    logUtils.logInfo('[deploy] Invoked create new devops project');
+    logUtils.logInfo('[deploy] Invoked deploy folders to OCI');
     
     const nblsErr = await projectUtils.checkNBLS();
     if (nblsErr) {

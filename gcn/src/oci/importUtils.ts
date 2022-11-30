@@ -25,7 +25,7 @@ const ACTION_NAME = 'Import from OCI';
 // TODO: extract functions shared by deployUtils.ts
 
 export async function importFolders(): Promise<model.ImportResult | undefined> {
-    logUtils.logInfo('[import] Invoked import existing devops project');
+    logUtils.logInfo('[import] Invoked import folders from OCI');
 
     const openContexts: ociContext.Context[] = [];
 
