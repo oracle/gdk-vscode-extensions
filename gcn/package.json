@@ -200,9 +200,21 @@
 				"category": "OCI for GCN"
 			},
 			{
+				"command": "gcn.oci.stopBuildPipeline",
+				"title": "Stop Current Build",
+				"icon": "$(error)",
+				"category": "OCI for GCN"
+			},
+			{
 				"command": "gcn.oci.runDeployPipeline",
 				"title": "Run Deployment Pipeline",
 				"icon": "$(run)",
+				"category": "OCI for GCN"
+			},
+			{
+				"command": "gcn.oci.stopDeployPipeline",
+				"title": "Stop Current Deployment",
+				"icon": "$(error)",
 				"category": "OCI for GCN"
 			},
 			{
@@ -364,7 +376,15 @@
 					"when": "false"
 				},
 				{
+					"command": "gcn.oci.stopBuildPipeline",
+					"when": "false"
+				},
+				{
 					"command": "gcn.oci.runDeployPipeline",
+					"when": "false"
+				},
+				{
+					"command": "gcn.oci.stopDeployPipeline",
 					"when": "false"
 				},
 				{
@@ -473,8 +493,18 @@
 					"group": "inline@1"
 				},
 				{
+					"command": "gcn.oci.stopBuildPipeline",
+					"when": "viewItem == gcn.oci.buildPipelineNode-in-progress",
+					"group": "inline@1"
+				},
+				{
 					"command": "gcn.oci.runDeployPipeline",
 					"when": "viewItem == gcn.oci.deploymentPipelineNode || viewItem == gcn.oci.deploymentPipelineNode-has-lastdeployment || viewItem == gcn.oci.deploymentPipelineNode-deployments-available",
+					"group": "inline@1"
+				},
+				{
+					"command": "gcn.oci.stopDeployPipeline",
+					"when": "viewItem == gcn.oci.deploymentPipelineNode-in-progress",
 					"group": "inline@1"
 				},
 				{

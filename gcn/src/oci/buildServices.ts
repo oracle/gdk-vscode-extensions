@@ -43,6 +43,9 @@ export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runBuildPipeline', (node: BuildPipelineNode) => {
 		node.runPipeline();
 	}));
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.stopBuildPipeline', (node: BuildPipelineNode) => {
+		node.cancelPipeline();
+	}));
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.getBuildArtifact', (node: BuildPipelineNode) => {
 		node.downloadArtifact();
 	}));
@@ -306,7 +309,8 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
     }
 
     runPipeline() {
-        if (!ociUtils.isRunning(this.lastRun?.state)) {
+        const currentState = this.lastRun?.state;
+        if (currentState === devops.models.BuildRun.LifecycleState.Canceling || !ociUtils.isRunning(currentState)) {
             const folder = servicesView.findWorkspaceFolderByNode(this)?.uri;
             if (folder) {
                 graalvmUtils.getActiveGVMVersion().then(async version => {
@@ -375,6 +379,28 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         }
     }
 
+    cancelPipeline() {
+        const lastRun = this.lastRun;
+        if (lastRun && lastRun.state !== devops.models.BuildRun.LifecycleState.Canceling) {
+            if (lastRun.state === devops.models.BuildRun.LifecycleState.Accepted) {
+                vscode.window.showWarningMessage('Pipeline cannot be stopped while starting, try again later.');
+            } else {
+                const stopOption = 'Stop Current Build';
+                const continueOption = 'Continue Build';
+                vscode.window.showWarningMessage(`Stop build pipeline '${this.object.displayName}'?`, stopOption, continueOption).then(sel => {
+                    if (sel === stopOption) {
+                        try {
+                            ociUtils.cancelBuildRun(this.oci.getProvider(), lastRun.ocid);
+                            this.updateLastRun(lastRun.ocid, devops.models.BuildRun.LifecycleState.Canceling, lastRun.output, undefined);
+                        } catch (err) {
+                            dialogs.showErrorMessage(`Failed to stop build pipeline '${this.object.displayName}'`, err);
+                        }
+                    }
+                });
+            }
+        }
+    }
+
     async downloadArtifact() {
         const choices: { label: string, type: string, id: string, path?: string, size?: number  }[] = await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
@@ -436,19 +462,22 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         }
         this.lastRun = { ocid, state, output, deliveredArtifacts };
         switch (state) {
-            case 'ACCEPTED':
-            case 'IN_PROGRESS':
-            case 'CANCELING':
-                // this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.yellow'));
+            case devops.models.BuildRun.LifecycleState.Accepted:
+            case devops.models.BuildRun.LifecycleState.InProgress:
                 this.iconPath = new vscode.ThemeIcon(ICON_IN_PROGRESS, new vscode.ThemeColor('charts.yellow'));
                 this.contextValue = BuildPipelineNode.CONTEXTS[2];
                 break;
-            case 'SUCCEEDED':
+            case devops.models.BuildRun.LifecycleState.Succeeded:
                 this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.green'));
                 this.contextValue = deliveredArtifacts?.length ? BuildPipelineNode.CONTEXTS[3] : BuildPipelineNode.CONTEXTS[1];
                 break;
-            case 'FAILED':
+            case devops.models.BuildRun.LifecycleState.Failed:
                 this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.red'));
+                this.contextValue = BuildPipelineNode.CONTEXTS[1];
+                break;
+            case devops.models.BuildRun.LifecycleState.Canceling:
+            case devops.models.BuildRun.LifecycleState.Canceled:
+                this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.yellow'));
                 this.contextValue = BuildPipelineNode.CONTEXTS[1];
                 break;
             default:
@@ -461,19 +490,22 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
 
     private updateStateLabel(state?: string) {
         switch (state) {
-            case 'ACCEPTED':
+            case devops.models.BuildRun.LifecycleState.Accepted:
                 this.description = 'starting...';
                 break;
-            case 'IN_PROGRESS':
+            case devops.models.BuildRun.LifecycleState.InProgress:
                 this.description = 'in progress...';
                 break;
-            case 'CANCELING':
+            case devops.models.BuildRun.LifecycleState.Canceling:
                 this.description = 'canceling...';
                 break;
-            case 'SUCCEEDED':
+            case devops.models.BuildRun.LifecycleState.Canceled:
+                this.description = 'canceled';
+                break;
+            case devops.models.BuildRun.LifecycleState.Succeeded:
                 this.description = this.showSucceededFlag ? 'completed' : undefined; // do not display 'completed' for runs completed in previous VS Code session
                 break;
-            case 'FAILED':
+            case devops.models.BuildRun.LifecycleState.Failed:
                 this.description = 'failed';
                 break;
             default:
@@ -514,12 +546,10 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                                 return { id: undefined, type: undefined};
                         }
                     }).filter(value => value.type);
-                    this.updateLastRun(buildRunId, state, this.lastRun?.output, deliveredArtifacts);
                 } else {
                     this.showSucceededFlag = true;
-                    this.updateStateLabel(state);
-                    this.treeChanged(this);
                 }
+                this.updateLastRun(buildRunId, state, this.lastRun?.output, deliveredArtifacts);
                 if (this.lastRun?.output && compartmentId && groupId && logId) {
                     const timeStart = buildRun.buildRunProgress?.timeStarted;
                     const timeEnd = ociUtils.isRunning(buildRun.lifecycleState) ? new Date() : buildRun.buildRunProgress?.timeFinished;

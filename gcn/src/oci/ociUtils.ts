@@ -1720,6 +1720,18 @@ export async function createBuildRun(authenticationDetailsProvider: common.Confi
     return client.createBuildRun(request).then(response => response.buildRun);
 }
 
+export async function cancelBuildRun(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, buildRunId: string): Promise<devops.models.BuildRun> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const requestDetails: devops.models.CancelBuildRunDetails = {
+        reason: 'Canceled from VS Code by the user'
+    };
+    const request: devops.requests.CancelBuildRunRequest = {
+        cancelBuildRunDetails: requestDetails,
+        buildRunId: buildRunId
+    };
+    return client.cancelBuildRun(request).then(response => response.buildRun);
+}
+
 export async function listDeployments(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, limit: number | undefined = 10): Promise<devops.models.DeploymentSummary[]> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: devops.requests.ListDeploymentsRequest = {
@@ -1759,6 +1771,18 @@ export async function createDeployment(authenticationDetailsProvider: common.Con
         createDeploymentDetails: requestDetails
     };
     return client.createDeployment(request).then(response => response.deployment);
+}
+
+export async function cancelDeployment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, deploymentId: string): Promise<devops.models.Deployment> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const requestDetails: devops.models.CancelDeploymentDetails = {
+        reason: 'Canceled from VS Code by the user'
+    };
+    const request: devops.requests.CancelDeploymentRequest = {
+        cancelDeploymentDetails: requestDetails,
+        deploymentId: deploymentId
+    };
+    return client.cancelDeployment(request).then(response => response.deployment);
 }
 
 export async function createProjectDevArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string, projectID: string, artifactPath: string, artifactName: string, artifactDescription: string, tags?: { [key:string]: string }): Promise<devops.models.DeployArtifact> {

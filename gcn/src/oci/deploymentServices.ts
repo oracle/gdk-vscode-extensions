@@ -41,6 +41,9 @@ export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runDeployPipeline', (node: DeploymentPipelineNode) => {
 		node.runPipeline();
 	}));
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.stopDeployPipeline', (node: DeploymentPipelineNode) => {
+		node.cancelPipeline();
+	}));
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openInBrowser', (node: DeploymentPipelineNode) => {
 		node.openDeploymentInBrowser();
 	}));
@@ -484,7 +487,8 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
     }
 
     runPipeline() {
-        if (!ociUtils.isRunning(this.lastDeployment?.state)) {
+        const currentState = this.lastDeployment?.state;
+        if (currentState === devops.models.Deployment.LifecycleState.Canceling || !ociUtils.isRunning(currentState)) {
             const deploymentName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
             logUtils.logInfo(`[deploy] Starting deployment '${deploymentName}'`);
             vscode.window.withProgress({
@@ -534,6 +538,28 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                     }
                 });
             });
+        }
+    }
+
+    cancelPipeline() {
+        const lastDeployment = this.lastDeployment;
+        if (lastDeployment && lastDeployment.state !== devops.models.Deployment.LifecycleState.Canceling) {
+            if (lastDeployment.state === devops.models.Deployment.LifecycleState.Accepted) {
+                vscode.window.showWarningMessage('Pipeline cannot be stopped while starting, try again later.');
+            } else {
+                const stopOption = 'Stop Current Deployment';
+                const continueOption = 'Continue Deployment';
+                vscode.window.showWarningMessage(`Stop deployment pipeline '${this.object.displayName}'?`, stopOption, continueOption).then(sel => {
+                    if (sel === stopOption) {
+                        try {
+                            ociUtils.cancelDeployment(this.oci.getProvider(), lastDeployment.ocid);
+                            this.updateLastDeployment(lastDeployment.ocid, devops.models.Deployment.LifecycleState.Canceling, lastDeployment.output);
+                        } catch (err) {
+                            dialogs.showErrorMessage(`Failed to stop deployment pipeline '${this.object.displayName}'`, err);
+                        }
+                    }
+                });
+            }
         }
     }
 
@@ -609,19 +635,22 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
         }
         this.lastDeployment = { ocid, state, output, deploymentName };
         switch (state) {
-            case 'ACCEPTED':
-            case 'IN_PROGRESS':
-            case 'CANCELING':
-                // this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.yellow'));
+            case devops.models.Deployment.LifecycleState.Accepted:
+            case devops.models.Deployment.LifecycleState.InProgress:
                 this.iconPath = new vscode.ThemeIcon(ICON_IN_PROGRESS, new vscode.ThemeColor('charts.yellow'));
                 this.contextValue = DeploymentPipelineNode.CONTEXTS[2];
                 break;
-            case 'SUCCEEDED':
+            case devops.models.Deployment.LifecycleState.Succeeded:
                 this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.green'));
                 this.contextValue = deploymentName ? DeploymentPipelineNode.CONTEXTS[3] : DeploymentPipelineNode.CONTEXTS[1];
                 break;
-            case 'FAILED':
+            case devops.models.Deployment.LifecycleState.Failed:
                 this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.red'));
+                this.contextValue = DeploymentPipelineNode.CONTEXTS[1];
+                break;
+            case devops.models.Deployment.LifecycleState.Canceling:
+            case devops.models.Deployment.LifecycleState.Canceled:
+                this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.yellow'));
                 this.contextValue = DeploymentPipelineNode.CONTEXTS[1];
                 break;
             default:
@@ -634,19 +663,22 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
 
     private updateStateLabel(state?: string) {
         switch (state) {
-            case 'ACCEPTED':
+            case devops.models.Deployment.LifecycleState.Accepted:
                 this.description = 'starting...';
                 break;
-            case 'IN_PROGRESS':
+            case devops.models.Deployment.LifecycleState.InProgress:
                 this.description = 'in progress...';
                 break;
-            case 'CANCELING':
+            case devops.models.Deployment.LifecycleState.Canceling:
                 this.description = 'canceling...';
                 break;
-            case 'SUCCEEDED':
+            case devops.models.Deployment.LifecycleState.Canceled:
+                this.description = 'canceled';
+                break;
+            case devops.models.Deployment.LifecycleState.Succeeded:
                 this.description = this.showSucceededFlag ? 'completed' : undefined; // do not display 'completed' for runs completed in previous VS Code session
                 break;
-            case 'FAILED':
+            case devops.models.Deployment.LifecycleState.Failed:
                 this.description = 'failed';
                 break;
             default:
@@ -679,8 +711,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                     this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output, (await this.getResource()).freeformTags?.gcn_tooling_okeDeploymentName);
                 } else {
                     this.showSucceededFlag = true;
-                    this.updateStateLabel(state);
-                    this.treeChanged(this);
+                    this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output);
                 }
                 if (this.lastDeployment?.output && compartmentId && groupId && logId) {
                     const timeStart = deployment.deploymentExecutionProgress?.timeStarted;
