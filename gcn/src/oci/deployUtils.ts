@@ -25,7 +25,7 @@ import * as sshUtils from './sshUtils';
 import * as okeUtils from './okeUtils';
 
 
-const ACTION_NAME = 'Deploy To OCI';
+const ACTION_NAME = 'Deploy to OCI';
 
 export type SaveConfig = (folder: string, config: any) => boolean;
 

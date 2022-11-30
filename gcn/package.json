@@ -77,18 +77,18 @@
 		"commands": [
 			{
 				"command": "gcn.undeployFromCloud",
-				"title": "Undeploy From OCI",
+				"title": "Undeploy from OCI",
 				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.undeployPartialFromCloud",
-				"title": "Revert Partial Deploy To OCI",
+				"title": "Revert Partial Deploy to OCI",
 				"icon": "$(trash)",
 				"category": "GCN"
 			},
 			{
 				"command": "gcn.undeployPartialFromCloud_Global",
-				"title": "Revert Partial Deploy To OCI",
+				"title": "Revert Partial Deploy to OCI",
 				"icon": "$(trash)",
 				"category": "GCN"
 			},
@@ -99,31 +99,31 @@
 			},
 			{
 				"command": "gcn.deployToCloud",
-				"title": "Deploy Folder To OCI",
+				"title": "Deploy Folder to OCI",
 				"icon": "$(cloud-upload)",
 				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.deployToCloud_Global",
-				"title": "Deploy Folder(s) To OCI",
+				"title": "Deploy Folder(s) to OCI",
 				"icon": "$(cloud-upload)",
 				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.resumeDeployToCloud",
-				"title": "Resume Deploy To OCI",
+				"title": "Resume Deploy to OCI",
 				"icon": "$(cloud-upload)",
 				"category": "GCN"
 			},
 			{
 				"command": "gcn.resumeDeployToCloud_Global",
-				"title": "Resume Deploy To OCI",
+				"title": "Resume Deploy to OCI",
 				"icon": "$(cloud-upload)",
 				"category": "GCN"
 			},
 			{
 				"command": "gcn.importFromCloud",
-				"title": "Import Folder(s) From OCI",
+				"title": "Import Folder(s) from OCI",
 				"icon": "$(cloud-download)",
 				"category": "OCI for GCN"
 			},
@@ -286,17 +286,17 @@
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Import existing folder(s) from OCI, including remote build & deploy image functionality.\n[Import From OCI](command:gcn.importFromCloud)\n\nLearn more about [Oracle Cloud Infrastructure](https://www.oracle.com/cloud) and [Graal Cloud Native](https://developer.oracle.com/languages/graalvm/graal-cloud-native.html).",
+				"contents": "Import existing folder(s) from OCI, including remote build & deploy image functionality.\n[Import from OCI](command:gcn.importFromCloud)\n\nLearn more about [Oracle Cloud Infrastructure](https://www.oracle.com/cloud) and [Graal Cloud Native](https://developer.oracle.com/languages/graalvm/graal-cloud-native.html).",
 				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed && workspaceFolderCount == 0"
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Deploy the folder(s) to OCI to enable remote build & deploy image functionality.\n[Deploy To OCI](command:gcn.deployToCloud_Global)\n\nLearn more about [Oracle Cloud Infrastructure](https://www.oracle.com/cloud) and [Graal Cloud Native](https://developer.oracle.com/languages/graalvm/graal-cloud-native.html).",
+				"contents": "Deploy the folder(s) to OCI to enable remote build & deploy image functionality.\n[Deploy to OCI](command:gcn.deployToCloud_Global)\n\nLearn more about [Oracle Cloud Infrastructure](https://www.oracle.com/cloud) and [Graal Cloud Native](https://developer.oracle.com/languages/graalvm/graal-cloud-native.html).",
 				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
 			},
 			{
 				"view": "gcn-services",
-				"contents": "Previous deployment to OCI failed. Check the failure, resolve the problem and continue with:\n[Resume Deploy To OCI](command:gcn.resumeDeployToCloud_Global)\n[Delete Partial Deployment](command:gcn.undeployPartialFromCloud_Global)\n\n",
+				"contents": "Previous deployment to OCI failed. Check the failure, resolve the problem and continue with:\n[Resume Deploy to OCI](command:gcn.resumeDeployToCloud_Global)\n[Delete Partial Deployment](command:gcn.undeployPartialFromCloud_Global)\n\n",
 				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && gcn.deployFailed && workspaceFolderCount > 0"
 			}
 		],

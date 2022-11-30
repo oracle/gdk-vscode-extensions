@@ -20,7 +20,7 @@ import * as ociDialogs from './ociDialogs';
 import * as sshUtils from './sshUtils';
 
 
-const ACTION_NAME = 'Import From OCI';
+const ACTION_NAME = 'Import from OCI';
 
 // TODO: extract functions shared by deployUtils.ts
 

@@ -23,7 +23,7 @@ export async function importDevopsProject() {
         await servicesView.showWelcomeView('gcn.importInProgress');
         let folders;
         try {
-            const cloudSupport = await dialogs.selectCloudSupport('Import From OCI');
+            const cloudSupport = await dialogs.selectCloudSupport('Import from OCI');
             if (!cloudSupport) {
                 return;
             }
@@ -68,7 +68,7 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: gc
                         }
                     }
                 } else {
-                    const selected = await dialogs.selectFolders('Deploy To OCI', 'Select folders to deploy', false);
+                    const selected = await dialogs.selectFolders('Deploy to OCI', 'Select folders to deploy', false);
                     if (!selected) {
                         if (selected === null) {
                             vscode.window.showWarningMessage('All folders already deployed or no folders to deploy.');
@@ -83,7 +83,7 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: gc
                 dialogs.showErrorMessage('No folders to deploy.');
                 return;
             }
-            const cloudSupport = await dialogs.selectCloudSupport('Deploy To OCI');
+            const cloudSupport = await dialogs.selectCloudSupport('Deploy to OCI');
             if (!cloudSupport) {
                 return;
             }
@@ -142,7 +142,7 @@ export async function undeployFolders(workspaceState: vscode.Memento, folders?: 
                     return;
                 }
             }
-            const selected = await dialogs.selectFolders('Undeploy From OCI', 'Select folders to undeploy', true, false);
+            const selected = await dialogs.selectFolders('Undeploy from OCI', 'Select folders to undeploy', true, false);
             if (!selected) {
                 if (selected === null) {
                     vscode.window.showErrorMessage('No folders to undeploy.');
