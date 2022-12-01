@@ -760,9 +760,15 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                         }
                         const gcnFolderPath = path.join(folderPath, '.gcn');
                         if (fs.existsSync(gcnFolderPath)) {
-                            progress.report({ message : 'Deleting local OCI resources' });
-                            logUtils.logInfo(`[undeploy] Deleting local OCI resources in ${gcnFolderPath}`);
+                            progress.report({ message : `Deleting local OCI resources at ${gcnFolderPath}` });
+                            logUtils.logInfo(`[undeploy] Deleting local OCI resources at ${gcnFolderPath}`);
                             fs.rmdirSync(gcnFolderPath, { recursive : true });
+                        }
+                        const gitFolderPath = path.join(folderPath, '.git');
+                        if (fs.existsSync(gitFolderPath)) {
+                            progress.report({ message: `Deleting local GIT repository at ${gitFolderPath}`})
+                            logUtils.logInfo(`[undeploy] Deleting local GIT repository at ${gitFolderPath}`);
+                            fs.rmdirSync(gitFolderPath, { recursive : true});
                         }
                     }
                 }

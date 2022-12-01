@@ -42,6 +42,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
     const dumpData: any = dump(null);
     const deployData: any = dumpData || {};
 
+    if (!deployData.git) {
+        for (const folder of folders) {
+            if (gitUtils.getHEAD(folder.uri, true)) {
+                dialogs.showErrorMessage(`Folder ${folder.name} being deployed is already versioned and cannot be deployed to OCI.`);
+                logUtils.logInfo(`[deploy] Folder ${folder.name} being deployed is already versioned and cannot be deployed to OCI.`);
+                return false;
+            }
+        }
+    }
+
     const openContexts: ociContext.Context[] | undefined = dumpData ? undefined : [];
 
     const folderData = openContexts ? gcnServices.getFolderData() : undefined;
@@ -2418,11 +2428,14 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     }
                 }
                 logUtils.logInfo(`[deploy] Populating source code repository ${deployData.compartment.name}/${projectName}/${repositoryName} from ${repositoryDir}`);
-                const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir, storage);
+                const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir, folderData, storage);
                 if (pushErr) {
                     resolve(`Failed to push source code repository ${repositoryName}: ${pushErr}`);
+                    dump(deployData);
                     return;
                 }
+                dump(deployData);
+
                 // GR-41403 - save the real profile for local usage
                 data[authentication.getDataName()] = authentication.getData();
                 saveConfig(repositoryDir, data);
