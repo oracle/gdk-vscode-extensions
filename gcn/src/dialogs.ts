@@ -355,7 +355,13 @@ export class MultiStepInput {
 						}
 					}),
 					input.onDidAccept(() => {
-						resolve(canSelectMany ? input.selectedItems : input.selectedItems[0]);
+						if (canSelectMany) {
+							resolve(input.selectedItems);
+						 } else {
+							if (input?.selectedItems[0]) {
+								resolve(input.selectedItems[0]);
+							}
+						 }
 					}),
 					input.onDidHide(() => {
 						(async () => {
