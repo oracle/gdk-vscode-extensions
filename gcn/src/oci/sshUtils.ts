@@ -74,13 +74,21 @@ async function initializeSshKeys(provider: common.ConfigFileAuthenticationDetail
     if (parsed.modified) {
         let ack = await vscode.window.showInformationMessage(`The keys for OCI are missing in SSH configuration. Do you allow to add them to SSH config file ?
                 Various repository operations may fail if the SSH keys are not configured.`, "Yes", "No");
-        if (ack !== "Yes") {
+        if (ack !== "Yes" || !parsed.lines) {
             return false;
         }
-        const newContents = parsed.lines?.join(os.EOL);
-        fs.writeFileSync(defaultConfigLocation, newContents);
+        writeSshConfigContents(parsed.lines.join(os.EOL));
     }
     return true;
+}
+
+function writeSshConfigContents(newContents : string) {
+    fs.mkdirSync(path.dirname(defaultConfigLocation), {
+        recursive: true,
+        // owner: read-write-execute, group+others: 0
+        mode: 0o700
+    });
+    fs.writeFileSync(defaultConfigLocation, newContents);
 }
 
 async function sshUtilitiesPresent() : Promise<boolean> {
@@ -294,16 +302,16 @@ function isAutoAcceptHostFingerprint() : boolean {
 function addAutoAcceptHostFingerprintForCloud() : boolean {
     const parsed = new ParsedKnownHosts();
     if (parsed.foundIndex < 0) {
-        return false;
+        parsed.addHostSection();
     }
+    
     if (parsed.isDisabled()) {
         return true;
     }
     
     parsed.addStrictAndCheckDirectives();
-    if (parsed.modified) {
-        const newContents = parsed.lines?.join(os.EOL);
-        fs.writeFileSync(defaultConfigLocation, newContents);
+    if (parsed.modified && parsed.lines) {
+        writeSshConfigContents(parsed.lines.join(os.EOL));
     }
 
     return true;

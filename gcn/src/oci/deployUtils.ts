@@ -677,7 +677,12 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 }
 
                 if (codeRepository.sshUrl) {
-                    await sshUtils.checkSshConfigured(provider, codeRepository.sshUrl);
+                    try {
+                        await sshUtils.checkSshConfigured(provider, codeRepository.sshUrl);
+                    } catch (err) {
+                        resolve(`Failed to configure SSH for repository ${repositoryName} URL ${codeRepository.sshUrl}.`);
+                        return;
+                    }
                 }
 
                 const project_devbuild_artifact_location = await projectUtils.getProjectBuildArtifactLocation(folder);

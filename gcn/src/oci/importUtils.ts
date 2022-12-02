@@ -142,8 +142,13 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                 });
                 logUtils.logInfo(`[import] Cloning code repository '${repository.name}'`);
                 if (repository.sshUrl) { // TODO: https
-                    await sshUtils.checkSshConfigured(provider, repository.sshUrl);
-                    const cloned = await gitUtils.cloneRepository(repository.sshUrl, targetDirectory);
+                    try {
+                        await sshUtils.checkSshConfigured(provider, repository.sshUrl);
+                    } catch (err) {
+                        resolve(`Failed to configure SSH for repository ${repository.name} URL ${repository.sshUrl}.`);
+                        return;
+                    }
+                        const cloned = await gitUtils.cloneRepository(repository.sshUrl, targetDirectory);
                     if (!cloned) {
                         resolve(`Failed to clone repository ${repository.name}.`);
                         return;
