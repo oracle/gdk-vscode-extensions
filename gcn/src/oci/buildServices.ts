@@ -346,14 +346,15 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                         }, (_progress, _token) => {
                             return new Promise(async resolve => {
                                 try {
+                                    const repository = await ociUtils.getCodeRepository(this.oci.getProvider(), this.oci.getCodeRepository());
                                     let commitInfo;
                                     if (head?.name && head.commit) {
-                                        const repository = await ociUtils.getCodeRepository(this.oci.getProvider(), this.oci.getCodeRepository());
                                         if (repository && repository.httpUrl && `refs/heads/${head.name}` !== repository.defaultBranch) {
                                             commitInfo = { repositoryUrl: repository.httpUrl, repositoryBranch: head.name, commitHash: head.commit };
                                         }
                                     }
-                                    const buildRun = await ociUtils.createBuildRun(this.oci.getProvider(), this.object.ocid, buildName, params, commitInfo);
+                                    const buildRunName = repository.name ? `${repository.name}: ${buildName}` : buildName;
+                                    const buildRun = await ociUtils.createBuildRun(this.oci.getProvider(), this.object.ocid, buildRunName, params, commitInfo);
                                     logUtils.logInfo(`[build] Build '${buildName}' started`);
                                     resolve(true);
                                     if (buildRun) {

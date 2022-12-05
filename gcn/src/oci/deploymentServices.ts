@@ -520,7 +520,9 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                             resolve(false);
                             return;
                         }
-                        const deployment = await ociUtils.createDeployment(this.oci.getProvider(), this.object.ocid, deploymentName, dockerTag ? [{ name: dockerTagVarName, value: dockerTag }] : undefined);
+                        const repository = await ociUtils.getCodeRepository(this.oci.getProvider(), this.oci.getCodeRepository());
+                        const deploymentRunName = repository.name ? `${repository.name}: ${deploymentName}` : deploymentName;
+                        const deployment = await ociUtils.createDeployment(this.oci.getProvider(), this.object.ocid, deploymentRunName, dockerTag ? [{ name: dockerTagVarName, value: dockerTag }] : undefined);
                         logUtils.logInfo(`[deploy] Deployment '${deploymentName}' started`);
                         resolve(true);
                         if (deployment) {
