@@ -75,13 +75,20 @@ async function selectArtifactRepositories(oci: ociContext.Context, ignore: Artif
         // TODO: display the progress in QuickPick
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: 'Reading compartment artifact repositories...',
+            title: 'Reading artifact repositories...',
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
                 try {
                     const items = await ociUtils.listArtifactRepositories(oci.getProvider(), oci.getCompartment());
-                    resolve(items);
+                    const projectID = oci.getDevOpsProject();
+                    const projectItems: artifacts.models.RepositorySummary[] = [];
+                    for (const item of items) {
+                        if (item.freeformTags?.gcn_tooling_projectOCID === projectID) {
+                            projectItems.push(item);
+                        }
+                    }
+                    resolve(projectItems.length ? projectItems : items);
                     return;
                 } catch (err) {
                     resolve(undefined);

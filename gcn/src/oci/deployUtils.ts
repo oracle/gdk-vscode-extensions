@@ -502,7 +502,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     logUtils.logInfo(`[deploy] Creating artifact repository for ${deployData.compartment.name}/${projectName}`);
                     deployData.artifactsRepository = (await ociUtils.createArtifactsRepository(provider, deployData.compartment.ocid, projectName, {
                         'gcn_tooling_deployID': deployData.tag,
-                        "gcn_tooling_projectOCID" : projectOCID
+                        'gcn_tooling_projectOCID': projectOCID
                     })).id;
                     artifactRepositoryOCID = deployData.artifactsRepository;
                 } catch (err) {
@@ -761,7 +761,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         try {
                             logUtils.logInfo(`[deploy] Creating fat JAR artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             folderData.devbuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactRepository, projectOCID, devbuildArtifactPath, devbuildArtifactName, devbuildArtifactDescription, {
-                                'gcn_tooling_deployID': deployData.tag
+                                'gcn_tooling_deployID': deployData.tag,
+                                'gcn_tooling_codeRepoID': codeRepository.id
                             })).id;
                         } catch (err) {
                             resolve(dialogs.getErrorMessage(`Failed to create fat JAR artifact for ${repositoryName}`, err));
@@ -923,7 +924,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         try {
                             logUtils.logInfo(`[deploy] Creating native executable artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             folderData.nibuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactRepository, projectOCID, nibuildArtifactPath, nibuildArtifactName, nibuildArtifactDescription, {
-                                'gcn_tooling_deployID': deployData.tag
+                                'gcn_tooling_deployID': deployData.tag,
+                                'gcn_tooling_codeRepoID': codeRepository.id
                             })).id;
                         } catch (err) {
                             resolve(dialogs.getErrorMessage(`Failed to create native executable artifact for ${repositoryName}`, err));
@@ -1157,7 +1159,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     try {
                                         logUtils.logInfo(`[deploy] Creating ${subName} docker native executable artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         subData.docker_nibuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, projectOCID, docker_nibuildImage, docker_nibuildArtifactName, docker_nibuildArtifactDescription, {
-                                            'gcn_tooling_deployID': deployData.tag
+                                            'gcn_tooling_deployID': deployData.tag,
+                                            'gcn_tooling_codeRepoID': codeRepository.id
                                         })).id;
                                     } catch (err) {
                                         resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executable artifact for ${repositoryName}`, err));
@@ -1308,7 +1311,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         try {
                                             logUtils.logInfo(`[deploy] Creating OKE native deployment configuration artifact for ${subName} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                             subData.oke_deployNativeConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_deployNativeConfigInlineContent, oke_deployNativeConfigArtifactName, oke_deployNativeConfigArtifactDescription, {
-                                                'gcn_tooling_deployID': deployData.tag
+                                                'gcn_tooling_deployID': deployData.tag,
+                                                'gcn_tooling_codeRepoID': codeRepository.id
                                             })).id;
                                         } catch (err) {
                                             resolve(dialogs.getErrorMessage(`Failed to create OKE native deployment configuration artifact for ${subName} of ${repositoryName}`, err));
@@ -1354,6 +1358,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                                     defaultValue: 'latest'
                                                 }], {
                                                     'gcn_tooling_deployID': deployData.tag,
+                                                    'gcn_tooling_codeRepoID': codeRepository.id,
                                                     'gcn_tooling_buildPipelineOCID': subData.docker_nibuildPipeline,
                                                     'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                                                 })).id;
@@ -1499,7 +1504,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         try {
                                             logUtils.logInfo(`[deploy] Creating ${subName} docker jvm image artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                             subData.docker_jvmbuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, projectOCID, docker_jvmbuildImage, docker_jvmbuildArtifactName, docker_jvmbuildArtifactDescription, {
-                                                'gcn_tooling_deployID': deployData.tag
+                                                'gcn_tooling_deployID': deployData.tag,
+                                                'gcn_tooling_codeRepoID': codeRepository.id
                                             })).id;
                                         } catch (err) {
                                             resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker jvm image artifact for ${repositoryName}`, err));
@@ -1647,7 +1653,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         try {
                                             logUtils.logInfo(`[deploy] Creating OKE jvm deployment configuration artifact for ${subName} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                             subData.oke_deployJvmConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_deployJvmConfigInlineContent, oke_deployJvmConfigArtifactName, oke_deployJvmConfigArtifactDescription, {
-                                                'gcn_tooling_deployID': deployData.tag
+                                                'gcn_tooling_deployID': deployData.tag,
+                                                'gcn_tooling_codeRepoID': codeRepository.id
                                             })).id;
                                         } catch (err) {
                                             resolve(dialogs.getErrorMessage(`Failed to create OKE jvm deployment configuration artifact for ${subName} of ${repositoryName}`, err));
@@ -1693,6 +1700,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                                     defaultValue: 'latest'
                                                 }], {
                                                     'gcn_tooling_deployID': deployData.tag,
+                                                    'gcn_tooling_codeRepoID': codeRepository.id,
                                                     'gcn_tooling_buildPipelineOCID': subData.docker_jvmbuildPipeline,
                                                     'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                                                 })).id;
@@ -1836,7 +1844,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             try {
                                 logUtils.logInfo(`[deploy] Creating docker native executable artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.docker_nibuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, projectOCID, docker_nibuildImage, docker_nibuildArtifactName, docker_nibuildArtifactDescription, {
-                                    'gcn_tooling_deployID': deployData.tag
+                                    'gcn_tooling_deployID': deployData.tag,
+                                    'gcn_tooling_codeRepoID': codeRepository.id
                                 })).id;
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to create docker native executable artifact for ${repositoryName}`, err));
@@ -1985,7 +1994,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             try {
                                 logUtils.logInfo(`[deploy] Creating OKE native deployment configuration artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.oke_deployNativeConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_deployNativeConfigInlineContent, oke_deployNativeConfigArtifactName, oke_deployNativeConfigArtifactDescription, {
-                                    'gcn_tooling_deployID': deployData.tag
+                                    'gcn_tooling_deployID': deployData.tag,
+                                    'gcn_tooling_codeRepoID': codeRepository.id
                                 })).id;
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to create OKE native deployment configuration artifact for ${repositoryName}`, err));
@@ -2031,6 +2041,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         defaultValue: 'latest'
                                     }], {
                                         'gcn_tooling_deployID': deployData.tag,
+                                        'gcn_tooling_codeRepoID': codeRepository.id,
                                         'gcn_tooling_buildPipelineOCID': folderData.docker_nibuildPipeline,
                                         'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                                     })).id;
@@ -2166,7 +2177,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             try {
                                 logUtils.logInfo(`[deploy] Creating docker jvm image artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.docker_jvmbuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, projectOCID, docker_jvmbuildImage, docker_jvmbuildArtifactName, docker_jvmbuildArtifactDescription, {
-                                    'gcn_tooling_deployID': deployData.tag
+                                    'gcn_tooling_deployID': deployData.tag,
+                                    'gcn_tooling_codeRepoID': codeRepository.id
                                 })).id;
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to create docker jvm image artifact for ${repositoryName}`, err));
@@ -2314,7 +2326,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             try {
                                 logUtils.logInfo(`[deploy] Creating OKE jvm deployment configuration artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.oke_deployJvmConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_deployJvmConfigInlineContent, oke_deployJvmConfigArtifactName, oke_deployJvmConfigArtifactDescription, {
-                                    'gcn_tooling_deployID': deployData.tag
+                                    'gcn_tooling_deployID': deployData.tag,
+                                    'gcn_tooling_codeRepoID': codeRepository.id
                                 })).id;
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to create OKE jvm deployment configuration artifact for ${repositoryName}`, err));
@@ -2360,6 +2373,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         defaultValue: 'latest'
                                     }], {
                                         'gcn_tooling_deployID': deployData.tag,
+                                        'gcn_tooling_codeRepoID': codeRepository.id,
                                         'gcn_tooling_buildPipelineOCID': folderData.docker_jvmbuildPipeline,
                                         'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                                     })).id;

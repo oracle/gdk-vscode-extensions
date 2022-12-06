@@ -87,7 +87,14 @@ async function selectDeployArtifacts(oci: ociContext.Context, ignore: DeployArti
             return new Promise(async(resolve) => {
                 try {
                     const items = await ociUtils.listDeployArtifacts(oci.getProvider(), oci.getDevOpsProject());
-                    resolve(items);
+                    const codeRepoID = oci.getCodeRepository();
+                    const projectItems: devops.models.DeployArtifactSummary[] = [];
+                    for (const item of items) {
+                        if (item.freeformTags?.gcn_tooling_codeRepoID === codeRepoID) {
+                            projectItems.push(item);
+                        }
+                    }
+                    resolve(projectItems.length ? projectItems : items);
                     return;
                 } catch (err) {
                     resolve(undefined);

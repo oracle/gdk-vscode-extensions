@@ -273,13 +273,20 @@ async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode
         // TODO: display the progress in QuickPick
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: 'Reading project deployment pipelines...',
+            title: 'Reading deployment pipelines...',
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
                 try {
                     const items = await ociUtils.listDeployPipelines(oci.getProvider(), oci.getDevOpsProject());
-                    resolve(items);
+                    const codeRepoID = oci.getCodeRepository();
+                    const projectItems: devops.models.DeployPipelineSummary[] = [];
+                    for (const item of items) {
+                        if (item.freeformTags?.gcn_tooling_codeRepoID === codeRepoID) {
+                            projectItems.push(item);
+                        }
+                    }
+                    resolve(projectItems.length ? projectItems : items);
                     return;
                 } catch (err) {
                     resolve(undefined);

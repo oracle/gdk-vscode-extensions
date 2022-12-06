@@ -74,7 +74,7 @@ async function selectContainerRepositories(oci: ociContext.Context, ignore: Cont
         // TODO: display the progress in QuickPick
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: 'Reading compartment container repositories...',
+            title: 'Reading container repositories...',
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {

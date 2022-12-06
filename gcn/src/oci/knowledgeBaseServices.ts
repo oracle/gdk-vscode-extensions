@@ -345,7 +345,7 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
                             projectItems.push(item);
                         }
                     }
-                    resolve(projectItems.length? projectItems : items);
+                    resolve(projectItems.length ? projectItems : items);
                     return;
                 } catch (err) {
                     resolve(undefined);
