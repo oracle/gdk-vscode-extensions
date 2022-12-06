@@ -199,6 +199,14 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
             const niBuildCommands = new Map();
             for (const folder of folders) {
                 logUtils.logInfo(`[deploy] Getting project information for folder ${folder.uri.fsPath}`);
+                const repositoryName = removeSpaces(folder.name); // TODO: repositoryName should be unique within the devops project
+                if (!deployData.repositories) {
+                    deployData.repositories = {};
+                }
+                let folderData = deployData.repositories[repositoryName];
+                if (!folderData) {
+                    folderData = deployData.repositories[repositoryName] = {};
+                }
                 const projectFolder = await projectUtils.getProjectFolder(folder);
                 logUtils.logInfo(`[deploy] Folder ${folder.uri.fsPath} identified as project of type ${projectFolder.projectType} with build system ${projectFolder.buildSystem}`);
                 projectFolders.push(projectFolder);
@@ -217,7 +225,13 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     }
                 } else {
                     const baLocation = await projectUtils.getProjectBuildArtifactLocation(projectFolder);
-                    const buildCommand = baLocation ? await projectUtils.getProjectBuildCommand(projectFolder) : undefined;
+                    let buildCommand;
+                    if (folderData.projectBuildCommand) {
+                        buildCommand = folderData.projectBuildCommand;
+                    } else {
+                        buildCommand = baLocation ? await projectUtils.getProjectBuildCommand(projectFolder) : undefined;
+                        folderData.projectBuildCommand = buildCommand;
+                    }
                     if (buildCommand) {
                         totalSteps += 9; // Jar artifact, build spec and pipeline, Docker jvm image, build spec and pipeline, dev OKE deploy spec and artifact, jvm container repository
                         if (deployData.okeCluster) {
@@ -226,7 +240,13 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         buildCommands.set(projectFolder, buildCommand);
                     }
                     const niLocation = await projectUtils.getProjectNativeExecutableArtifactLocation(projectFolder);
-                    const niBuildCommand = niLocation ? await projectUtils.getProjectBuildNativeExecutableCommand(projectFolder) : undefined;
+                    let niBuildCommand;
+                    if (folderData.projectBuildNativeExecutableCommand) {
+                        niBuildCommand = folderData.projectBuildNativeExecutableCommand;
+                    } else {
+                        niBuildCommand = niLocation ? await projectUtils.getProjectBuildNativeExecutableCommand(projectFolder) : undefined;
+                        folderData.projectBuildNativeExecutableCommand = niBuildCommand;
+                    }
                     if (niBuildCommand) {
                         totalSteps += 9; // NI artifact, build spec and pipeline, Docker native image, build spec and pipeline, OKE deploy spec and artifact, native container repository
                         if (deployData.okeCluster) {
