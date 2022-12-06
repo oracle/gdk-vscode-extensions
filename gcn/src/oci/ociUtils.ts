@@ -488,28 +488,35 @@ export async function listBuildPipelinesByCodeRepository(authenticationDetailsPr
     const buildPipelineSummaries: devops.models.BuildPipelineSummary[] = [];
     if (buildPipelines) {
         for (const buildPipeline of buildPipelines) {
-            const stages = await listBuildPipelineStages(authenticationDetailsProvider, buildPipeline.id);
-            if (stages) {
-                let buildPipelineSummary: devops.models.BuildPipelineSummary | undefined = undefined;
-                for (const stage of stages) {
-                    if (stage.buildPipelineStageType === devops.models.BuildStage.buildPipelineStageType) {
-                        const buildStage = stage as devops.models.BuildStage;
-                        for (const buildSource of buildStage.buildSourceCollection.items) {
-                            if (buildSource.connectionType === devops.models.DevopsCodeRepositoryBuildSource.connectionType) {
-                                const devopsBuildSource = buildSource as devops.models.DevopsCodeRepositoryBuildSource;
-                                if (devopsBuildSource.repositoryId === repositoryID) {
-                                    buildPipelineSummary = buildPipeline;
-                                    break;
+            const codeRepoID = buildPipeline.freeformTags?.gcn_tooling_codeRepoID;
+            if (codeRepoID) {
+                if (codeRepoID === repositoryID) {
+                    buildPipelineSummaries.push(buildPipeline);
+                }
+            } else {
+                const stages = await listBuildPipelineStages(authenticationDetailsProvider, buildPipeline.id);
+                if (stages) {
+                    let buildPipelineSummary: devops.models.BuildPipelineSummary | undefined = undefined;
+                    for (const stage of stages) {
+                        if (stage.buildPipelineStageType === devops.models.BuildStage.buildPipelineStageType) {
+                            const buildStage = stage as devops.models.BuildStage;
+                            for (const buildSource of buildStage.buildSourceCollection.items) {
+                                if (buildSource.connectionType === devops.models.DevopsCodeRepositoryBuildSource.connectionType) {
+                                    const devopsBuildSource = buildSource as devops.models.DevopsCodeRepositoryBuildSource;
+                                    if (devopsBuildSource.repositoryId === repositoryID) {
+                                        buildPipelineSummary = buildPipeline;
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                        if (buildPipelineSummary) {
-                            break;
+                            if (buildPipelineSummary) {
+                                break;
+                            }
                         }
                     }
-                }
-                if (buildPipelineSummary) {
-                    buildPipelineSummaries.push(buildPipelineSummary);
+                    if (buildPipelineSummary) {
+                        buildPipelineSummaries.push(buildPipelineSummary);
+                    }
                 }
             }
         }

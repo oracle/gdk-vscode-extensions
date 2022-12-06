@@ -184,12 +184,12 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
     async function listBuildPipelines(oci: ociContext.Context): Promise<devops.models.DeployPipelineSummary[] | undefined> {
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: 'Reading project build pipelines...',
+            title: 'Reading build pipelines...',
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
                 try {
-                    const items = await ociUtils.listBuildPipelines(oci.getProvider(), oci.getDevOpsProject());
+                    const items = await ociUtils.listBuildPipelinesByCodeRepository(oci.getProvider(), oci.getDevOpsProject(), oci.getCodeRepository());
                     resolve(items);
                     return;
                 } catch (err) {

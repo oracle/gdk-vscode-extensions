@@ -801,7 +801,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         try {
                             logUtils.logInfo(`[deploy] Creating build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             folderData.devbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, `${repositoryName}: ${devbuildPipelineName}`, devbuildPipelineDescription, {
-                                'gcn_tooling_deployID': deployData.tag
+                                'gcn_tooling_deployID': deployData.tag,
+                                'gcn_tooling_codeRepoID': codeRepository.id
                             })).id;
                         } catch (err) {
                             resolve(dialogs.getErrorMessage(`Failed to create fat JAR pipeline for ${repositoryName}`, err));
@@ -962,7 +963,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         try {
                             logUtils.logInfo(`[deploy] Creating build pipeline for native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             folderData.nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, `${repositoryName}: ${nibuildPipelineName}`, nibuildPipelineDescription, {
-                                'gcn_tooling_deployID': deployData.tag
+                                'gcn_tooling_deployID': deployData.tag,
+                                'gcn_tooling_codeRepoID': codeRepository.id
                             })).id;
                         } catch (err) {
                             resolve(dialogs.getErrorMessage(`Failed to create native executables pipeline for ${repositoryName}`, err));
@@ -1196,6 +1198,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         logUtils.logInfo(`[deploy] Creating build pipeline for ${subName} docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         subData.docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, `${repositoryName}: ${docker_nibuildPipelineName}`, docker_nibuildPipelineDescription, {
                                             'gcn_tooling_deployID': deployData.tag,
+                                            'gcn_tooling_codeRepoID': codeRepository.id,
                                             'gcn_tooling_docker_image': subName.toLowerCase()
                                         })).id;
                                     } catch (err) {
@@ -1537,6 +1540,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             logUtils.logInfo(`[deploy] Creating build pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                             subData.docker_jvmbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, `${repositoryName}: ${docker_jvmbuildPipelineName}`, docker_jvmbuildPipelineDescription, {
                                                 'gcn_tooling_deployID': deployData.tag,
+                                                'gcn_tooling_codeRepoID': codeRepository.id,
                                                 'gcn_tooling_docker_image': subName.toLowerCase()
                                             })).id;
                                         } catch (err) {
@@ -1873,6 +1877,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 logUtils.logInfo(`[deploy] Creating build pipeline for docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, `${repositoryName}: ${docker_nibuildPipelineName}`, docker_nibuildPipelineDescription, {
                                     'gcn_tooling_deployID': deployData.tag,
+                                    'gcn_tooling_codeRepoID': codeRepository.id,
                                     'gcn_tooling_docker_image': 'oci'
                                 })).id;
                             } catch (err) {
@@ -2202,6 +2207,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 logUtils.logInfo(`[deploy] Creating build pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.docker_jvmbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, `${repositoryName}: ${docker_jvmbuildPipelineName}`, docker_jvmbuildPipelineDescription, {
                                     'gcn_tooling_deployID': deployData.tag,
+                                    'gcn_tooling_codeRepoID': codeRepository.id,
                                     'gcn_tooling_docker_image': 'oci'
                                 })).id;
                             } catch (err) {
