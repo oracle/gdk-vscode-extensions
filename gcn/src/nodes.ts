@@ -210,9 +210,8 @@ export class AsyncNode extends ChangeableNode {
     }
 
     public getChildren(): BaseNode[] | undefined {
-        if (this.children !== null) {
-            return this.children;
-        } else {
+        if (this.children === null) {
+            this.children = [ new LoadingNode() ];
             this.computeChildren().then(children => {
                 this.setChildren(children);
                 this.treeChanged(this);
@@ -222,8 +221,8 @@ export class AsyncNode extends ChangeableNode {
                 this.setChildren([ new NoItemsNode() ]);
                 this.treeChanged(this);
             });
-            return [ new LoadingNode() ];
         }
+        return this.children;
     }
 
     async computeChildren(): Promise<BaseNode[] | undefined> {
