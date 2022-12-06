@@ -43,9 +43,9 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
     }, (progress, _token) => {
         return new Promise(async resolve => {
             const projectName = deployData.project?.name;
+            let toCheck = false;
             if (deployData.repositories) {
                 const repositoriesCnt = deployData.repositories.length;
-                let toCheck = false;
                 for (const repositoryName in deployData.repositories) {
                     const folderData = deployData.repositories[repositoryName];
                     if (folderData) {
@@ -754,6 +754,7 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                     }
                 }
             }
+            toCheck = false;
             let knowledgeBase;
             if (deployData.knowledgeBaseOCID) {
                 knowledgeBase = deployData.knowledgeBaseOCID;
@@ -770,8 +771,7 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                     logUtils.logInfo(`[undeploy] Deleting ADM knowledge base for ${deployData.compartment.name}/${projectName}`);
                     await ociUtils.deleteKnowledgeBase(provider, knowledgeBase, true);
                 } catch (err) {
-                    resolve(dialogs.getErrorMessage('Failed to delete knowledge base', err));
-                    return;
+                    toCheck = true;
                 }
                 if (deployData.knowledgeBaseOCID) {
                     delete deployData.knowledgeBaseOCID;
@@ -781,57 +781,67 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                 }
                 dump(deployData);
             } else if (deployData.knowledgeBaseWorkRequest !== undefined) {
+                toCheck = true;
+            }
+            if (toCheck) {
                 try {
-                    progress.report({ message: `Deleting ADM knowledge bases for ${projectName}...` });
-                    logUtils.logInfo(`[undeploy] Deleting ADM knowledge bases for ${deployData.compartment.name}/${projectName}`);
+                    progress.report({ message: `Deleting ADM knowledge bases by deploy tag for ${projectName}...` });
+                    logUtils.logInfo(`[undeploy] Deleting ADM knowledge bases by deploy tag for ${deployData.compartment.name}/${projectName}`);
                     await ociUtils.deleteKnowledgeBasesByDeployIDTag(provider, deployData.compartment.ocid, deployData.tag);
                 } catch (err) {
                     resolve(dialogs.getErrorMessage('Failed to delete knowledges bases', err));
                     return;
                 }
             }
+            toCheck = false;
             if (deployData.okeClusterEnvironment) {
                 try {
                     progress.report({ message: `Deleting OKE cluster environment for ${projectName}...` });
                     logUtils.logInfo(`[undeploy] Deleting OKE cluster environment for ${deployData.compartment.name}/${projectName}`);
                     await ociUtils.deleteDeployEnvironment(provider, deployData.okeClusterEnvironment, true);
                 } catch (err) {
-                    resolve(dialogs.getErrorMessage('Failed to delete OKE cluster environment', err));
-                    return;
+                    toCheck = true;
                 }
                 delete deployData.okeClusterEnvironment;
                 dump(deployData);
             } else if (deployData.okeClusterEnvironment !== undefined) {
+                toCheck = true;
+            }
+            if (toCheck) {
                 try {
-                    progress.report({ message: `Deleting OKE cluster environments for ${projectName}...` });
-                    logUtils.logInfo(`[undeploy] Deleting OKE cluster environments for ${deployData.compartment.name}/${projectName}`);
+                    progress.report({ message: `Deleting OKE cluster environments by deploy tag for ${projectName}...` });
+                    logUtils.logInfo(`[undeploy] Deleting OKE cluster environments by deploy tag for ${deployData.compartment.name}/${projectName}`);
                     await ociUtils.deleteDeployEnvironmentsByDeployIDTag(provider, deployData.compartment.ocid, deployData.tag);
                 } catch (err) {
                     resolve(dialogs.getErrorMessage('Failed to delete OKE cluster environments', err));
                     return;
                 }
             }
+            toCheck = false;
             if (deployData.artifactsRepository) {
                 try {
                     progress.report({ message: `Deleting artifact repository for ${projectName}...` });
                     logUtils.logInfo(`[undeploy] Deleting artifact repository for ${deployData.compartment.name}/${projectName}`);
                     await ociUtils.deleteArtifactsRepository(provider, deployData.compartment.ocid, deployData.artifactsRepository, true);
                 } catch (err) {
-                    resolve(dialogs.getErrorMessage('Failed to delete artifact repository', err));
-                    return;
+                    toCheck = true;
                 }
                 delete deployData.artifactsRepository;
                 dump(deployData);
             } else if (deployData.artifactsRepository !== undefined) {
+                toCheck = true;
+            }
+            if (toCheck) {
                 try {
-                    progress.report({ message: `Deleting artifact repositories for ${projectName}...` });
-                    logUtils.logInfo(`[undeploy] Deleting artifact repositories for ${deployData.compartment.name}/${projectName}`);
+                    progress.report({ message: `Deleting artifact repositories by deploy tag for ${projectName}...` });
+                    logUtils.logInfo(`[undeploy] Deleting artifact repositories by deploy tag for ${deployData.compartment.name}/${projectName}`);
                     await ociUtils.deleteArtifactsRepositoriesByDeployIDTag(provider, deployData.compartment.ocid, deployData.tag);
                 } catch (err) {
                     resolve(dialogs.getErrorMessage('Failed to delete artifact repositories', err));
                     return;
                 }
             }
+            toCheck = false;
             if (deployData.projectLogWorkRequest) {
                 try {
                     progress.report({ message: `Deleting project log for ${projectName}...` });
@@ -841,35 +851,39 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                         await ociUtils.deleteLog(provider, log, deployData.logGroup, true);
                     }
                 } catch (err) {
-                    resolve(dialogs.getErrorMessage('Failed to delete project log', err));
-                    return;
+                    toCheck = true;
                 }
                 delete deployData.projectLogWorkRequest;
-                delete deployData.logGroup;
                 dump(deployData);
             } else if (deployData.projectLogWorkRequest !== undefined) {
+                toCheck = true;
+            }
+            if (toCheck) {
                 try {
-                    progress.report({ message: `Deleting project logs for ${projectName}...` });
-                    logUtils.logInfo(`[undeploy] Deleting project logs for ${deployData.compartment.name}/${projectName}`);
+                    progress.report({ message: `Deleting project logs by deploy tag for ${projectName}...` });
+                    logUtils.logInfo(`[undeploy] Deleting project logs by deploy tag for ${deployData.compartment.name}/${projectName}`);
                     await ociUtils.deleteLogsByDeployIDTag(provider, deployData.logGroup, deployData.tag);
                 } catch (err) {
                     resolve(dialogs.getErrorMessage('Failed to delete project logs', err));
                     return;
                 }
             }
+            toCheck = false;
             if (deployData.project) {
                 try {
                     progress.report({ message: `Deleting devops project ${projectName}...` });
                     logUtils.logInfo(`[undeploy] Deleting devops project ${deployData.compartment.name}/${projectName}`);
                     await ociUtils.deleteDevOpsProject(provider, deployData.project.ocid, true);
                 } catch (err) {
-                    resolve(dialogs.getErrorMessage('Failed to delete devops project', err));
-                    return;
+                    toCheck = true;
                 }
             } else if (deployData.project !== undefined) {
+                toCheck = true;
+            }
+            if (toCheck) {
                 try {
-                    progress.report({ message: `Deleting devops project...` });
-                    logUtils.logInfo(`[undeploy] Deleting devops project from ${deployData.compartment.name}`);
+                    progress.report({ message: `Deleting devops project by deploy tag...` });
+                    logUtils.logInfo(`[undeploy] Deleting devops project by deploy tag from ${deployData.compartment.name}`);
                     await ociUtils.deleteDevOpsProjectsByDeployIDTag(provider, deployData.compartment.ocid, deployData.tag);
                 } catch (err) {
                     resolve(dialogs.getErrorMessage('Failed to delete devops project', err));
