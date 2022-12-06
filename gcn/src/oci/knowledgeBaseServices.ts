@@ -332,13 +332,20 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
         // TODO: display the progress in QuickPick
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: 'Reading compartment knowledge bases...',
+            title: 'Reading knowledge bases...',
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
                 try {
                     const items = await ociUtils.listKnowledgeBases(oci.getProvider(), oci.getCompartment());
-                    resolve(items);
+                    const projectID = oci.getDevOpsProject();
+                    const projectItems: adm.models.KnowledgeBaseSummary[] = [];
+                    for (const item of items) {
+                        if (item.freeformTags?.gcn_tooling_projectOCID === projectID) {
+                            projectItems.push(item);
+                        }
+                    }
+                    resolve(projectItems.length? projectItems : items);
                     return;
                 } catch (err) {
                     resolve(undefined);
