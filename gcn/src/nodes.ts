@@ -203,6 +203,13 @@ export class ChangeableNode extends BaseNode {
 
 export class AsyncNode extends ChangeableNode {
 
+    private static LOADING_ICON = new vscode.ThemeIcon('loading~spin');
+
+    private backupIconPath: string | vscode.Uri | {
+        light: string | vscode.Uri;
+        dark: string | vscode.Uri;
+    } | vscode.ThemeIcon | undefined | null = null;
+
     constructor(label: string, description: string | undefined, contextValue: string | undefined, treeChanged: TreeChanged) {
         super(label, description, contextValue, null, false, treeChanged);
         this.description = description;
@@ -212,10 +219,23 @@ export class AsyncNode extends ChangeableNode {
     public getChildren(): BaseNode[] | undefined {
         if (this.children === null) {
             this.children = [ new LoadingNode() ];
+            if (this.backupIconPath === null) {
+                this.backupIconPath = this.iconPath;
+                this.iconPath = AsyncNode.LOADING_ICON;
+                this.treeChanged(this);
+            }
             this.computeChildren().then(children => {
+                if (this.backupIconPath !== null) {
+                    this.iconPath = this.backupIconPath;
+                    this.backupIconPath = null;
+                }
                 this.setChildren(children);
                 this.treeChanged(this);
             }).catch(err => {
+                if (this.backupIconPath !== null) {
+                    this.iconPath = this.backupIconPath;
+                    this.backupIconPath = null;
+                }
                 const nodeText = this.label ? this.label : this.description;
                 dialogs.showErrorMessage(`Failed to expand node ${nodeText}`, err);
                 this.setChildren([ new NoItemsNode() ]);
