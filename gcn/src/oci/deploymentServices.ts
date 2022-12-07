@@ -303,7 +303,14 @@ async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode
         let idx = 1;
         for (const item of existing) {
             if (!shouldIgnore(item.id)) {
-                const displayName = item.displayName ? item.displayName : `Deployment Pipeline ${idx++}`;
+                let itemDisplayName = item.displayName;
+                if (itemDisplayName) {
+                    const codeRepoPrefix = item.freeformTags?.gcn_tooling_codeRepoPrefix;
+                    if (codeRepoPrefix && itemDisplayName.startsWith(codeRepoPrefix)) {
+                        itemDisplayName = itemDisplayName.substring(codeRepoPrefix.length);
+                    }
+                }
+                const displayName = itemDisplayName ? itemDisplayName : `Deployment Pipeline ${idx++}`;
                 const description = item.description ? item.description : 'Deployment pipeline';
                 pipelines.push({
                     ocid: item.id,

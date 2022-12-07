@@ -133,7 +133,14 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
         let idx = 1;
         for (const item of existing) {
             if (!shouldIgnore(item.id)) {
-                const displayName = item.displayName ? item.displayName : `Build Pipeline ${idx++}`;
+                let itemDisplayName = item.displayName;
+                if (itemDisplayName) {
+                    const codeRepoPrefix = item.freeformTags?.gcn_tooling_codeRepoPrefix;
+                    if (codeRepoPrefix && itemDisplayName.startsWith(codeRepoPrefix)) {
+                        itemDisplayName = itemDisplayName.substring(codeRepoPrefix.length);
+                    }
+                }
+                const displayName = itemDisplayName ? itemDisplayName : `Build Pipeline ${idx++}`;
                 const description = item.description ? item.description : 'Build pipeline';
                 pipelines.push({
                     ocid: item.id,
