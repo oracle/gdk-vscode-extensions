@@ -330,6 +330,7 @@ function getServices(): ValueAndLabel[] {
         ret.push({
             label: item.getLabel().$as('string'),
             value: item.getValueName().$as('string'),
+            detail: item.getDescription().$as('string'),
         })
     }
     return ret;
@@ -591,7 +592,9 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			shouldResume: () => Promise.resolve(false)
         });
         state.clouds = selected;
-        return (input: dialogs.MultiStepInput) => pickFeatureCategories(input, state);
+        // return (input: dialogs.MultiStepInput) => pickFeatureCategories(input, state);
+        // disable feature selection.
+        return undefined;
     }
 
     async function pickFeatureCategories(input: dialogs.MultiStepInput, state: Partial<State>) {
