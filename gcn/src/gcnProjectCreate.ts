@@ -91,7 +91,7 @@ async function initialize(): Promise<any> {
         await graalVMExt.activate();
     }
     return gcnApi ? Promise.resolve(gcnApi) : AotjsVM.run([]).then((vm: any) => {
-        return gcnApi = vm.exports.gcn.ui.API;
+        return gcnApi = vm.exports.cloud.graal.gcn.ui.API;
     });
 }
 
