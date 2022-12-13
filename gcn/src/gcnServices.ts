@@ -35,6 +35,10 @@ export async function build(workspaceState: vscode.Memento) {
 
     let serviceFoldersCount = 0;
 
+    for (const cloudSupport of CLOUD_SUPPORTS) {
+        cloudSupport.buildingServices();
+    }
+
     const folders = vscode.workspace.workspaceFolders;
     if (folders) {
         for (const folder of folders) {
@@ -64,7 +68,15 @@ export async function build(workspaceState: vscode.Memento) {
         }
     }
 
+    for (const cloudSupport of CLOUD_SUPPORTS) {
+        cloudSupport.populatingView();
+    }
+
     await servicesView.build(folderData, serviceFoldersCount, true, deployFailed, (folder: string) => dumpDeployData(workspaceState, folder));
+
+    for (const cloudSupport of CLOUD_SUPPORTS) {
+        cloudSupport.servicesReady();
+    }
 
     await vscode.commands.executeCommand('setContext', 'gcn.globalImportAction', serviceFoldersCount);
     await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', serviceFoldersCount && folders && folders.length > serviceFoldersCount);

@@ -51,11 +51,19 @@ export interface CloudSupport {
 
     deployFolders(folders: vscode.WorkspaceFolder[], dump: DumpDeployData): Promise<boolean>
 
-    getServices(folder : vscode.WorkspaceFolder, configuration: ServicesConfiguration): CloudServices | undefined;
+    getServices(folder: vscode.WorkspaceFolder, configuration: ServicesConfiguration): CloudServices | undefined;
+
+    buildingServices(): void;
+
+    populatingView(): void;
+
+    servicesReady(): void;
 
 }
 
 export interface CloudServices {
+
+    setDecorableContainer(container: nodes.DecorableNode): void;
 
     addContent(): void;
 

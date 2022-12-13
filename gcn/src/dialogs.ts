@@ -10,16 +10,11 @@ import * as path from 'path';
 import * as gcnServices from './gcnServices';
 import * as model from './model';
 import * as logUtils from './logUtils';
+import * as persistenceUtils from './persistenceUtils';
 import { CLOUD_SUPPORTS } from './extension';
 
 
 const GCN_TERMINAL = 'Graal Cloud Native';
-
-let workspaceState: vscode.Memento | undefined;
-
-export function initialize(context: vscode.ExtensionContext) {
-    workspaceState = context.workspaceState;
-}
 
 export function getGCNTerminal(): vscode.Terminal {
     let terminal = vscode.window.terminals.find(t => t.name === GCN_TERMINAL);
@@ -82,8 +77,8 @@ export async function selectName(title: string, currentName: string | undefined,
 
 export async function showSaveFileDialog(title: string, filename?: string, lastdirKey?: string): Promise<vscode.Uri | undefined> {
 	let defaultPath: string | undefined;
-	if (workspaceState && lastdirKey) {
-		const lastdir: string | undefined = workspaceState.get(lastdirKey);
+	if (lastdirKey) {
+		const lastdir: string | undefined = persistenceUtils.getWorkspaceObject(lastdirKey);
 		if (lastdir) {
 			defaultPath = lastdir;
 		}
@@ -98,9 +93,9 @@ export async function showSaveFileDialog(title: string, filename?: string, lastd
 		defaultUri: defaultPath ? vscode.Uri.file(defaultPath) : undefined,
 		title: title
 	});
-	if (selected && workspaceState && lastdirKey) {
+	if (selected && lastdirKey) {
 		const selectedPath = selected.fsPath;
-		await workspaceState.update(lastdirKey, path.dirname((selectedPath)));
+		await persistenceUtils.setWorkspaceObject(lastdirKey, path.dirname((selectedPath)));
 	}
 	return selected;
 }

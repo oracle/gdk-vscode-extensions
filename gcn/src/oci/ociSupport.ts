@@ -9,6 +9,8 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as model from '../model';
 import * as folderStorage from '../folderStorage';
+import * as persistenceUtils from '../persistenceUtils';
+import * as servicesView from '../servicesView';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
 import * as dataSupport from './dataSupport';
@@ -21,10 +23,41 @@ const TYPE = 'oci';
 
 let RESOURCES_FOLDER: string;
 
+const DEVOPS_DECORATIONS_KEY = 'gcn.oci.devOpsDecorations';
+let CURRENT_SERVICES: ociServices.OciServices[] = [];
+let CURRENT_DEVOPS_PROJECTS: string[] = [];
+let devopsDecorations: boolean = false;
+
 export function create(context: vscode.ExtensionContext): model.CloudSupport {
-    RESOURCES_FOLDER = path.join(context.extensionPath, 'resources', 'oci');
+    initialize(context);
     ociServices.initialize(context);
     return new OciSupport();
+}
+
+function initialize(context: vscode.ExtensionContext) {
+    RESOURCES_FOLDER = path.join(context.extensionPath, 'resources', 'oci');
+
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.enableDevOpsDecorations', () => {
+        updateDevOpsDecorations(true);
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.disableDevOpsDecorations', () => {
+        updateDevOpsDecorations(false);
+	}));
+}
+
+function updateDevOpsDecorations(enabled?: boolean) {
+    if (enabled !== undefined) {
+        devopsDecorations = enabled;
+        persistenceUtils.setWorkspaceObject(DEVOPS_DECORATIONS_KEY, enabled);
+    } else {
+        const workspaceSetting: boolean | undefined = persistenceUtils.getWorkspaceObject(DEVOPS_DECORATIONS_KEY);
+        devopsDecorations = workspaceSetting === undefined ? CURRENT_DEVOPS_PROJECTS.length > 1 : workspaceSetting;
+    }
+    vscode.commands.executeCommand('setContext', 'gcn.oci.devOpsDecorations', devopsDecorations);
+    for (const services of CURRENT_SERVICES) {
+        services.decorateContainer(devopsDecorations);
+    }
+    servicesView.refresh();
 }
 
 class OciSupport implements model.CloudSupport {
@@ -53,6 +86,24 @@ class OciSupport implements model.CloudSupport {
         return deployUtils.deployFolders(folders, RESOURCES_FOLDER, saveConfig, dump);
     }
 
+    buildingServices() {
+        CURRENT_SERVICES = [];
+        CURRENT_DEVOPS_PROJECTS = [];
+    }
+
+    populatingView() {
+        for (const services of CURRENT_SERVICES) {
+            const devopsProject = services.getContext().getDevOpsProject();
+            if (!CURRENT_DEVOPS_PROJECTS.includes(devopsProject)) {
+                CURRENT_DEVOPS_PROJECTS.push(devopsProject);
+            }
+        }
+    }
+
+    servicesReady() {
+        updateDevOpsDecorations();
+    }
+
     getServices(folder: vscode.WorkspaceFolder, configuration: model.ServicesConfiguration): model.CloudServices | undefined {
         const data = configuration.data;
         const dataChanged: dataSupport.DataChanged = (dataProducer?: dataSupport.DataProducer) => {
@@ -68,6 +119,7 @@ class OciSupport implements model.CloudSupport {
         const oci = ociContext.create(authentication, contextData, dataChanged);
         const servicesData = data[ociServices.DATA_NAME];
         const services = new ociServices.OciServices(folder, oci, servicesData, dataChanged);
+        CURRENT_SERVICES.push(services);
         return services;
     }
 

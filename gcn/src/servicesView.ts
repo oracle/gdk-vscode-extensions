@@ -76,6 +76,8 @@ export function initialize(context: vscode.ExtensionContext) {
             (params[0] as nodes.ShowReportNode).showReport();
         }
 	}));
+
+    context.subscriptions.push(vscode.window.registerTreeDataProvider('gcn-services', nodeProvider));
 }
 
 export function findCloudServicesByNode(node: nodes.BaseNode | undefined): model.CloudServices | undefined {
@@ -126,6 +128,10 @@ async function addContent(folder: gcnServices.FolderData | null | undefined, ser
         }
     }
     services.addContent();
+}
+
+export function refresh() {
+    nodeProvider.refresh();
 }
 
 export async function build(folders: gcnServices.FolderData[], deployedFoldersCount: number, servicesInitialized: boolean, deployFailed: boolean, dumpDeployData?: (folder: string) => model.DumpDeployData) {
@@ -182,8 +188,15 @@ class FolderNode extends nodes.BaseNode implements nodes.DeployNode, nodes.AddCo
     constructor(folder: gcnServices.FolderData, children: FolderServicesNode[]) {
         super(folder.folder.name, undefined, folder.services.length > 0 ? FolderNode.CONTEXTS[0] : FolderNode.CONTEXTS[1], children, true);
         this.folder = folder;
-        this.collapseOneChildNode();
-        this.updateAppearance();
+        if (!this.children || this.children.length === 0) {
+            this.tooltip = 'Local folder not deployed to OCI';
+        } else {
+            this.collapseOneChildNode();
+            this.updateAppearance();
+            for (const servicesNode of children) {
+                servicesNode.getServices().setDecorableContainer(servicesNode);
+            }
+        }
     }
 
     collapseOneChildNode() {
@@ -212,17 +225,20 @@ class FolderNode extends nodes.BaseNode implements nodes.DeployNode, nodes.AddCo
 
 }
 
-class FolderServicesNode extends nodes.BaseNode implements nodes.AddContentNode {
+class FolderServicesNode extends nodes.BaseNode implements nodes.DecorableNode, nodes.AddContentNode {
 
     static readonly CONTEXT = 'gcn.folderServicesNode';
 
     private services: model.CloudServices;
     parentWhenCollapsed: FolderNode | undefined;
 
+    private treeChanged: nodes.TreeChanged;
+
     constructor(name: string, services: model.CloudServices, treeChanged: nodes.TreeChanged) {
         super(name, undefined, FolderServicesNode.CONTEXT, null, true);
         this.services = services;
         this.updateAppearance();
+        this.treeChanged = treeChanged;
         const subtreeChanged: nodes.TreeChanged = (treeItem?: vscode.TreeItem) => {
             if (treeItem) {
                 treeChanged(treeItem);
@@ -244,6 +260,15 @@ class FolderServicesNode extends nodes.BaseNode implements nodes.AddContentNode 
 
     getServices(): model.CloudServices {
         return this.services;
+    }
+
+    decorate(decoration: nodes.NodeDecoration, refreshNode?: boolean) {
+        const servicesRoot = this.parentWhenCollapsed ? this.parentWhenCollapsed : this;
+        servicesRoot.description = decoration.description;
+        servicesRoot.tooltip = decoration.tooltip;
+        if (refreshNode) {
+            this.treeChanged(servicesRoot);
+        }
     }
 
     addContent() {
@@ -322,4 +347,4 @@ class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
         }
 	}
 }
-export const nodeProvider = new NodeProvider();
+const nodeProvider = new NodeProvider();

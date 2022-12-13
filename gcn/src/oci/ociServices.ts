@@ -6,14 +6,17 @@
  */
 
 import * as vscode from 'vscode';
+import * as common from 'oci-common';
 import * as gcnServices from '../gcnServices';
 import * as model from '../model';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
 import * as servicesView from '../servicesView';
+import * as logUtils from '../logUtils'
 import * as ociContext from './ociContext';
 import * as dataSupport from './dataSupport';
 import * as ociNodes from './ociNodes';
+import * as ociUtils from './ociUtils';
 
 import * as buildServices from './buildServices';
 import * as ociService from './ociService';
@@ -58,6 +61,47 @@ export function initialize(context: vscode.ExtensionContext) {
                 openCodeRepoInConsole(folder);
             }
         });
+	}));
+    function openDevOpsProjectInConsole(folder: gcnServices.FolderData) {
+        const ociServices = findByFolderData(folder);
+        if (ociServices?.length) {
+            const ociService = ociServices[0];
+            const context = ociService.getContext();
+            const devopsProject = context.getDevOpsProject();
+            const address = `https://cloud.oracle.com/devops-project/projects/${devopsProject}`;
+            ociNodes.openInConsole(address);
+        }
+    }
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openDevOpsProjectInConsole', (...params: any[]) => {
+        if (params[0]?.folder) {
+            openDevOpsProjectInConsole(params[0].folder);
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openDevOpsProjectInConsole_Global', () => {
+        const projects: string[] = [];
+        const folderData = gcnServices.getFolderData();
+        for (const folder of folderData || []) {
+            const ociServices = findByFolderData(folder)
+            for (const ociService of ociServices) {
+                const project = ociService.getContext().getDevOpsProject();
+                if (!projects.includes(project)) {
+                    projects.push(project);
+                }
+            }
+        }
+        if (projects.length === 1) {
+            const address = `https://cloud.oracle.com/devops-project/projects/${projects[0]}`;
+            ociNodes.openInConsole(address);
+        } else {
+            dialogs.selectFolder('Open DevOps Project', 'Select deployed folder', true).then(folder => {
+                console.log(folder)
+                if (folder === null) {
+                    vscode.window.showErrorMessage('No deployed folder available.');
+                } else if (folder) {
+                    openDevOpsProjectInConsole(folder);
+                }
+            });
+        }
 	}));
 
     buildServices.initialize(context);
@@ -152,14 +196,14 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
 
 export class OciServices implements model.CloudServices, dataSupport.DataProducer {
 
-    // private readonly folder: vscode.WorkspaceFolder;
     private readonly oci: ociContext.Context;
     private servicesData: any;
     private readonly services: ociService.Service[];
     private treeChanged: nodes.TreeChanged | undefined;
 
+    private decorableContainer: nodes.DecorableNode | undefined;
+
     constructor(folder: vscode.WorkspaceFolder, oci: ociContext.Context, servicesData: any, dataChanged: dataSupport.DataChanged) {
-        // this.folder = folder;
         this.oci = oci;
         this.servicesData = servicesData ? servicesData : {};
         const serviceDataChanged: dataSupport.DataChanged = (dataProducer?: dataSupport.DataProducer) => {
@@ -198,6 +242,43 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
             }
         }
         return undefined;
+    }
+
+    public setDecorableContainer(container: nodes.DecorableNode) {
+        this.decorableContainer = container;
+    }
+
+    public decorateContainer(devopsDecorations: boolean) {
+        if (this.decorableContainer) {
+            if (!devopsDecorations) {
+                this.decorableContainer.decorate({
+                    description: undefined,
+                    tooltip: 'Local folder deployed to OCI'
+                });
+            } else {
+                this.decorableContainer.decorate({
+                    description: '[resolving OCI target...]',
+                    tooltip: 'Local folder deployed to OCI'
+                });
+                async function lazilyDecorateContainer(provider: common.ConfigFileAuthenticationDetailsProvider, project: string, repository: string, container: nodes.DecorableNode) {
+                    try {
+                        const devopsProject = await ociUtils.getDevopsProject(provider, project);
+                        const codeRepository = await ociUtils.getCodeRepository(provider, repository);
+                        container.decorate({
+                            description: `[${devopsProject.name}/${codeRepository.name}]`,
+                            tooltip: `Local folder deployed to OCI as code repository ${codeRepository.name} in devops project ${devopsProject.name}`
+                        }, true);
+                    } catch (err) {
+                        container.decorate({
+                            description: '[unknown OCI target]',
+                            tooltip: 'Local folder deployed to OCI'
+                        }, true);
+                        logUtils.logError(`[folder oci services] ${dialogs.getErrorMessage('Failed to resolve container decoration', err)}`);
+                    }
+                }
+                lazilyDecorateContainer(this.oci.getProvider(), this.oci.getDevOpsProject(), this.oci.getCodeRepository(), this.decorableContainer);
+            }
+        }
     }
 
     async addContent() {

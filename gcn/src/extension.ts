@@ -12,14 +12,14 @@ import * as servicesView from './servicesView';
 import * as welcome from './welcome';
 import * as gcnProjectCreate from './gcnProjectCreate';
 import * as logUtils from './logUtils';
-import * as dialogs from './dialogs';
+import * as persistenceUtils from './persistenceUtils';
 
 export const CLOUD_SUPPORTS: model.CloudSupport[] = [];
 
 export function activate(context: vscode.ExtensionContext) {
 	logUtils.logInfo('[extension] Activating extension');
 
-	dialogs.initialize(context);
+	persistenceUtils.initialize(context);
 
 	CLOUD_SUPPORTS.push(
 		require('./oci/ociSupport').create(context)
@@ -34,7 +34,6 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	servicesView.initialize(context);
-	context.subscriptions.push(vscode.window.registerTreeDataProvider('gcn-services', servicesView.nodeProvider));
 
 	context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(async () => {
 		await gcnServices.build(context.workspaceState);
