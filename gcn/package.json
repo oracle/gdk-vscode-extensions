@@ -472,12 +472,12 @@
 				},
 				{
 					"command": "gcn.oci.enableDevOpsDecorations",
-					"when": "view == gcn-services && gcn.servicesInitialized && gcn.serviceFoldersCount > 0 && !gcn.oci.devOpsDecorations && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
+					"when": "view == gcn-services && gcn.servicesInitialized && workspaceFolderCount > 1 && gcn.serviceFoldersCount > 0 && !gcn.oci.devOpsDecorations && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
 					"group": "gcn_group_oci3@1"
 				},
 				{
 					"command": "gcn.oci.disableDevOpsDecorations",
-					"when": "view == gcn-services && gcn.servicesInitialized && gcn.serviceFoldersCount > 0 && gcn.oci.devOpsDecorations && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
+					"when": "view == gcn-services && gcn.servicesInitialized && workspaceFolderCount > 1 && gcn.serviceFoldersCount > 0 && gcn.oci.devOpsDecorations && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
 					"group": "gcn_group_oci3@1"
 				}
 			],
