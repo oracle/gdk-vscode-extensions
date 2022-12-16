@@ -188,7 +188,7 @@ export async function getProjectBuildArtifactLocation(folder: ProjectFolder, sub
     }
     if (artifacts && artifacts.length === 1) {
         const loc: vscode.Uri = vscode.Uri.parse(artifacts[0].location);
-        return path.relative(projectPath, loc.path).replace(path.sep, '/');
+        return path.relative(projectPath, loc.path);
     }
     if (isMaven(folder)) {
         if (folder.projectType === 'Micronaut') {
@@ -230,7 +230,7 @@ export async function getProjectNativeExecutableArtifactLocation(folder: Project
     }
     if (artifacts && artifacts.length === 1) {
         const loc: vscode.Uri = vscode.Uri.parse(artifacts[0].location);
-        return path.relative(projectPath, loc.path).replace(path.sep, '/');
+        return path.relative(projectPath, loc.path);
     }
     if (isMaven(folder)) {
         if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {

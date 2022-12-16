@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as mustache from 'mustache';
 import * as gitUtils from '../gitUtils'
 import * as model from '../model';
@@ -776,7 +777,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     }
                 }
 
-                const project_devbuild_artifact_location = await projectUtils.getProjectBuildArtifactLocation(folder);
+                const project_devbuild_artifact_location = pathForTargetPlatform(await projectUtils.getProjectBuildArtifactLocation(folder));
                 if (!project_devbuild_artifact_location && folder.projectType !== 'Unknown') {
                     dialogs.showErrorMessage(`Failed to resolve fat JAR artifact for folder ${folder.uri.fsPath}`);
                 }
@@ -956,7 +957,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     buildPipelines.push({ 'ocid': folderData.devbuildPipeline, 'displayName': devbuildPipelineName });
                 }
 
-                const project_native_executable_artifact_location = await projectUtils.getProjectNativeExecutableArtifactLocation(folder);
+                const project_native_executable_artifact_location = pathForTargetPlatform(await projectUtils.getProjectNativeExecutableArtifactLocation(folder));
                 if (!project_native_executable_artifact_location && folder.projectType !== 'Unknown') {
                     dialogs.showErrorMessage(`Failed to resolve native executable artifact for folder ${folder.uri.fsPath}`);
                 }
@@ -1160,7 +1161,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
                             logUtils.logInfo(`[deploy] Setting up GCN ${subName} project resources for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
 
-                            const project_native_executable_artifact_location = await projectUtils.getProjectNativeExecutableArtifactLocation(folder, subName);
+                            const project_native_executable_artifact_location = pathForTargetPlatform(await projectUtils.getProjectNativeExecutableArtifactLocation(folder, subName));
                             if (!project_native_executable_artifact_location) {
                                 dialogs.showErrorMessage(`Failed to resolve native executable artifact for folder ${folder.uri.fsPath} & subproject ${subName}`);
                             }
@@ -1548,7 +1549,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             }
 
                             if (subName === 'oci') {
-                                const project_devbuild_artifact_location = await projectUtils.getProjectBuildArtifactLocation(folder, subName);
+                                const project_devbuild_artifact_location = pathForTargetPlatform(await projectUtils.getProjectBuildArtifactLocation(folder, subName));
                                 if (!project_devbuild_artifact_location) {
                                     dialogs.showErrorMessage(`Failed to resolve jvm image artifact for folder ${folder.uri.fsPath} & subproject ${subName}`);
                                 }
@@ -2874,6 +2875,14 @@ async function selectProjectName(suggestedName?: string): Promise<string | undef
 
 function removeSpaces(name: string): string {
     return name.replace(/\s+/g, '_');
+}
+
+function pathForTargetPlatform(path: string | undefined): string | undefined {
+    if (path && os.platform() === 'win32') {
+        path = path.replace(/\\/g, '/');
+        path = path.replace(/.exe/g, '');
+    }
+    return path;
 }
 
 function expandTemplate(templatesStorage: string, template: string, args: { [key:string] : string }, folder?: vscode.WorkspaceFolder, name?: string): string | undefined {
