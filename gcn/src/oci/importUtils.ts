@@ -7,6 +7,7 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as devops from 'oci-devops';
 import * as model from '../model';
 import * as gitUtils from '../gitUtils';
 import * as folderStorage from '../folderStorage';
@@ -18,6 +19,7 @@ import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
 import * as ociDialogs from './ociDialogs';
 import * as sshUtils from './sshUtils';
+import * as ociUtils from './ociUtils';
 
 
 const ACTION_NAME = 'Import from OCI';
@@ -159,6 +161,8 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                 }
             }
 
+            let projectResources: any | undefined;
+
             for (const repository of repositories) {
                 const folder = path.join(targetDirectory, repository.name); // TODO: name and toplevel dir might differ!
                 folders.push(folder);
@@ -166,7 +170,6 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                 if (folderStorage.storageExists(folder)) {
                     // GCN configuration already exists in the cloud repository
                     // NOTE: overwriting the OCI authentication for the local profile
-                    // TODO: needs a better approach!
                     logUtils.logInfo(`[import] Updating OCI profile in gcn.json in the locally cloned code repository '${repository.name}'`);
                     const configuration = folderStorage.read(folder);
                     const cloudServices: any[] = configuration.cloudServices;
@@ -182,13 +185,48 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                     gitUtils.skipWorkTree(folder, gcnConfig); // [GCN-1141] Only works if file present in the remote repo
                 } else {
                     // GCN configuration does not exist in the cloud repository
+                    // Using GeneratedResources* artifacts if available
+                    progress.report({
+                        message: `Resolving services for code repository ${repository.name}...`
+                    });
+                    const oci = new ociContext.Context(authentication, (compartment as { ocid: string, name: string }).ocid, (devopsProject as { ocid: string, name: string }).ocid, repository.ocid);
+                    let codeRepositoryResources: any | undefined;
+                    try {
+                        let artifacts = await ociUtils.listDeployArtifacts(oci.getProvider(), oci.getDevOpsProject());
+                        for (const artifact of artifacts) {
+                            if (artifact.freeformTags?.gcn_tooling_codeRepoResourcesList && artifact.freeformTags?.gcn_tooling_codeRepoID === repository.ocid) {
+                                const content = (artifact.deployArtifactSource as devops.models.InlineDeployArtifactSource).base64EncodedContent;
+                                const stringContent = Buffer.from(content, 'base64').toString('binary');
+                                codeRepositoryResources = JSON.parse(stringContent);
+                                if (projectResources) {
+                                    break;
+                                }
+                            } else if (!projectResources && artifact.freeformTags?.gcn_tooling_projectResourcesList) {
+                                const content = (artifact.deployArtifactSource as devops.models.InlineDeployArtifactSource).base64EncodedContent;
+                                const stringContent = Buffer.from(content, 'base64').toString('binary');
+                                projectResources = JSON.parse(stringContent);
+                                if (codeRepositoryResources) {
+                                    break;
+                                }
+                            }
+                        }
+                        if (!projectResources) {
+                            logUtils.logWarning(`[import] No list of generated devops project resources for '${devopsProject?.name}'`);
+                        }
+                        if (!codeRepositoryResources) {
+                            logUtils.logWarning(`[import] No list of generated code repository resources for '${repository.name}'`);
+                        }
+                    } catch (err) {
+                        logUtils.logError(dialogs.getErrorMessage(`[import] Failed to read list of generated resources for code repository '${repository.name}'`));
+                    }
                     progress.report({
                         message: `Importing services for code repository ${repository.name}...`
                     });
                     logUtils.logInfo(`[import] Importing OCI services and creating gcn.json in the locally cloned code repository '${repository.name}'`);
-                    const services = await importServices(authentication, (compartment as { ocid: string, name: string }).ocid, (devopsProject as { ocid: string, name: string }).ocid, repository.ocid);
+                    const services = await importServices(authentication, oci, projectResources, codeRepositoryResources);
                     servicesData.push(services);
-                    // TODO: .vscode/gcn.json will be marked as locally new (not in the remote repo)
+                    // Do not track local changes to .vscode/gcn.json
+                    gitUtils.addGitIgnoreEntry(folder, '.vscode/gcn.json');
                 }
             }
 
@@ -210,14 +248,13 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
     };
 }
 
-async function importServices(authentication: ociAuthentication.Authentication, compartment: string, devopsProject: string, repository: string): Promise<any> {
+async function importServices(authentication: ociAuthentication.Authentication, oci: ociContext.Context, projectResources: any | undefined, codeRepositoryResources: any | undefined): Promise<any> {
     const data: any = {
         version: '1.0'
     };
     data[authentication.getDataName()] = authentication.getData();
-    const oci = new ociContext.Context(authentication, compartment, devopsProject, repository);
     data[oci.getDataName()] = oci.getData();
-    const services = await ociServices.importServices(oci);
+    const services = await ociServices.importServices(oci, projectResources, codeRepositoryResources);
     data[services.getDataName()] = services.getData();
     return data;
 }

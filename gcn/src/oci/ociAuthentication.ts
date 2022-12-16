@@ -159,12 +159,12 @@ export class Authentication implements dataSupport.DataProducer {
         return currentProfile ? currentProfile : common.ConfigFileReader.DEFAULT_PROFILE_NAME;
     }
 
-    getData(forceDefaults: boolean = false): any {
+    getData(): any {
         if (!this.provider) {
             throw new Error('Authentication provider not initialized');
         }
         const currentProfile = this.provider.getProfileCredentials()?.currentProfile;
-        const profile = forceDefaults || currentProfile === common.ConfigFileReader.DEFAULT_PROFILE_NAME ? undefined : currentProfile;
+        const profile = currentProfile === common.ConfigFileReader.DEFAULT_PROFILE_NAME ? undefined : currentProfile;
         const data = {
             type: AUTH_TYPE_CONFIG_FILE,
             path: CONFIG_FILE_PATH_DEFAULT,

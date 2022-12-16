@@ -94,7 +94,6 @@ export function initialize(context: vscode.ExtensionContext) {
             ociNodes.openInConsole(address);
         } else {
             dialogs.selectFolder('Open DevOps Project', 'Select deployed folder', true).then(folder => {
-                console.log(folder)
                 if (folder === null) {
                     vscode.window.showErrorMessage('No deployed folder available.');
                 } else if (folder) {
@@ -136,11 +135,11 @@ export function findByFolderData(folder: gcnServices.FolderData): OciServices[] 
     return ociServices;
 }
 
-export async function importServices(oci: ociContext.Context): Promise<dataSupport.DataProducer> {
+export async function importServices(oci: ociContext.Context, projectResources: any | undefined, codeRepositoryResources: any | undefined): Promise<dataSupport.DataProducer> {
     // TODO: Might return populated instance of OciServices which internally called importServices() on every Service
     const data: any = {};
     try {
-        const buildServicesData = await buildServices.importServices(oci);
+        const buildServicesData = await buildServices.importServices(oci, projectResources, codeRepositoryResources);
         if (buildServicesData) {
             data[buildServicesData.getDataName()] = buildServicesData.getData();
         }
@@ -148,7 +147,7 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
         dialogs.showErrorMessage('Failed to import build pipelines', err);
     }
     try {
-        const deploymentServicesData = await deploymentServices.importServices(oci);
+        const deploymentServicesData = await deploymentServices.importServices(oci, projectResources, codeRepositoryResources);
         if (deploymentServicesData) {
             data[deploymentServicesData.getDataName()] = deploymentServicesData.getData();
         }
@@ -156,7 +155,7 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
         dialogs.showErrorMessage('Failed to import deployment pipelines', err);
     }
     try {
-        const deployArtifactServicesData = await deployArtifactServices.importServices(oci);
+        const deployArtifactServicesData = await deployArtifactServices.importServices(oci, projectResources, codeRepositoryResources);
         if (deployArtifactServicesData) {
             data[deployArtifactServicesData.getDataName()] = deployArtifactServicesData.getData();
         }
@@ -164,7 +163,7 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
         dialogs.showErrorMessage('Failed to import build artifacts', err);
     }
     try {
-        const artifactServicesData = await artifactServices.importServices(oci);
+        const artifactServicesData = await artifactServices.importServices(oci, projectResources, codeRepositoryResources);
         if (artifactServicesData) {
             data[artifactServicesData.getDataName()] = artifactServicesData.getData();
         }
@@ -172,7 +171,7 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
         dialogs.showErrorMessage('Failed to import artifact repositories', err);
     }
     try {
-        const containerServicesData = await containerServices.importServices(oci);
+        const containerServicesData = await containerServices.importServices(oci, projectResources, codeRepositoryResources);
         if (containerServicesData) {
             data[containerServicesData.getDataName()] = containerServicesData.getData();
         }
@@ -180,7 +179,7 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
         dialogs.showErrorMessage('Failed to import container repositories', err);
     }
     try {
-        const knowledgeBaseServicesData = await knowledgeBaseServices.importServices(oci);
+        const knowledgeBaseServicesData = await knowledgeBaseServices.importServices(oci, projectResources, codeRepositoryResources);
         if (knowledgeBaseServicesData) {
             data[knowledgeBaseServicesData.getDataName()] = knowledgeBaseServicesData.getData();
         }

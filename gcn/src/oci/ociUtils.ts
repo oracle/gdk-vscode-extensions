@@ -1044,12 +1044,12 @@ export async function createCompartmentNotificationTopic(authenticationDetailsPr
     return client.createTopic(request).then(response => response.notificationTopic);
 }
 
-export async function getOrCreateNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<string> {
+export async function getOrCreateNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<{ notificationTopic: ons.models.NotificationTopic, created: boolean }> {
     const notificationTopics = await listNotificationTopics(authenticationDetailsProvider, compartmentID);
     if (notificationTopics.length > 0) {
-        return notificationTopics[0].topicId;
+        return { notificationTopic: notificationTopics[0], created: false };
     }
-    return createCompartmentNotificationTopic(authenticationDetailsProvider, compartmentID, description).then(response => response.topicId);
+    return createCompartmentNotificationTopic(authenticationDetailsProvider, compartmentID, description).then(response => { return { notificationTopic: response, created: true }});
 }
 
 export async function getCluster(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, clusterID: string): Promise<containerengine.models.Cluster> {
@@ -1179,16 +1179,16 @@ export async function createDefaultLogGroup(authenticationDetailsProvider: commo
     }
 }
 
-export async function getDefaultLogGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean, description?: string): Promise<string | undefined> {
+export async function getDefaultLogGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean, description?: string): Promise<{ logGroup: logging.models.LogGroupSummary, created: boolean } | undefined> {
     const logGroup = await listLogGroups(authenticationDetailsProvider, compartmentID, DEFAULT_LOG_GROUP);
     if (logGroup.length > 0) {
-        return logGroup[0].id;
+        return { logGroup: logGroup[0], created: false };
     }
     if (create) {
         await createDefaultLogGroup(authenticationDetailsProvider, compartmentID, description);
         const logGroup = await listLogGroups(authenticationDetailsProvider, compartmentID, DEFAULT_LOG_GROUP);
         if (logGroup.length > 0) {
-            return logGroup[0].id;
+            return { logGroup: logGroup[0], created: true };
         }
     }
     return undefined;
@@ -1823,6 +1823,27 @@ async function createDeployArtifact(authenticationDetailsProvider: common.Config
         deployArtifactType,
         deployArtifactSource,
         argumentSubstitutionMode: devops.models.DeployArtifact.ArgumentSubstitutionMode.SubstitutePlaceholders,
+        projectId: projectID,
+        freeformTags: tags
+    };
+    const request: devops.requests.CreateDeployArtifactRequest = {
+        createDeployArtifactDetails: createDeployArtifactDetails
+    };
+    return client.createDeployArtifact(request).then(response => response.deployArtifact);
+}
+
+export async function creatGenericInlineArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, artifactName: string, artifactDescription: string, artifactInlineContent: string, tags?: { [key:string]: string }): Promise<devops.models.DeployArtifact> {
+    const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const deployArtifactSource: devops.models.InlineDeployArtifactSource = {
+        base64EncodedContent: Buffer.from(artifactInlineContent, 'binary').toString('base64'),
+        deployArtifactSourceType: devops.models.InlineDeployArtifactSource.deployArtifactSourceType
+    };
+    const createDeployArtifactDetails: devops.models.CreateDeployArtifactDetails = {
+        displayName: artifactName,
+        description: artifactDescription,
+        deployArtifactType: devops.models.DeployArtifact.DeployArtifactType.GenericFile,
+        deployArtifactSource: deployArtifactSource,
+        argumentSubstitutionMode: devops.models.DeployArtifact.ArgumentSubstitutionMode.None,
         projectId: projectID,
         freeformTags: tags
     };

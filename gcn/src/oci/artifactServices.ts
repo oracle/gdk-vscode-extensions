@@ -47,7 +47,7 @@ export function initialize(context: vscode.ExtensionContext): void {
     ociNodes.registerOpenInConsoleNode(ArtifactRepositoryNode.CONTEXT);
 }
 
-export async function importServices(_oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
+export async function importServices(_oci: ociContext.Context, _projectResources: any | undefined, _codeRepositoryResources: any | undefined): Promise<dataSupport.DataProducer | undefined> {
     // TODO: Might return populated instance of Service which internally called importServices()
     return undefined;
 }

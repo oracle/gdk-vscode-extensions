@@ -236,7 +236,7 @@ async function execute(command: string, cwd: string): Promise<string> {
 
 export function addGitIgnoreEntry(folder: string, entry: string) {
     const gitIgnore = path.join(folder, '.gitignore');    
-    logUtils.logInfo(`[git] Add ${entry} to ${gitIgnore}`);
+    logUtils.logInfo(`[git] Add '${entry}' to ${gitIgnore}`);
     entry = entry.replace(/\\/g, '/');
     if (fs.existsSync(gitIgnore)) {
         const content = fs.readFileSync(gitIgnore).toString();
@@ -246,6 +246,7 @@ export function addGitIgnoreEntry(folder: string, entry: string) {
         const lines = content.length === 0 ? [] : content.split(lineEnd);
         for (const line of lines) {
             if (line.trim() === entry) {
+                logUtils.logInfo(`[git] '${entry}' already present in ${gitIgnore}`);
                 return;
             }
         }

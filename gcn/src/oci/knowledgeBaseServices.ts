@@ -200,30 +200,51 @@ async function createSharedKnowledgeBase(authenticationDetailsProvider: common.C
     return ociUtils.admWaitForResourceCompletionStatus(authenticationDetailsProvider, `Shared audits knowledge base for compartment ${compartmentName}`, workRequestId);
 }
 
-export async function importServices(oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
+export async function importServices(oci: ociContext.Context, projectResources: any | undefined, _codeRepositoryResources: any | undefined): Promise<dataSupport.DataProducer | undefined> {
     // TODO: Might return populated instance of Service which internally called importServices()
-    logUtils.logInfo('[import] Importing knowledge bases');
-    const provider = oci.getProvider();
-    const compartment = oci.getCompartment();
-    const knowledgeBases = await ociUtils.listKnowledgeBases(provider, compartment);
-    if (knowledgeBases && knowledgeBases.length > 0) {
-        const knowledgeBase = knowledgeBases[0].id;
-        logUtils.logInfo(`[import] Importing knowledge base ${knowledgeBase}`);
-        const result: dataSupport.DataProducer = {
-            getDataName: () => DATA_NAME,
-            getData: () => {
-                return {
-                    settings: {
-                        folderAuditsKnowledgeBase: knowledgeBase
+    if (projectResources?.knowledgeBases) {
+        logUtils.logInfo('[import] Importing knowledge bases from list of generated resources');
+        if (projectResources.knowledgeBases[0]) {
+            const knowledgeBase = projectResources.knowledgeBases[0].ocid;
+            logUtils.logInfo(`[import] Importing knowledge base ${knowledgeBase}`);
+            const result: dataSupport.DataProducer = {
+                getDataName: () => DATA_NAME,
+                getData: () => {
+                    return {
+                        settings: {
+                            folderAuditsKnowledgeBase: knowledgeBase
+                        }
                     }
                 }
-            }
-        };
-        return result;
+            };
+            return result;
+        } else {
+            logUtils.logInfo('[import] No knowledge bases found');
+        }
     } else {
-        logUtils.logInfo('[import] No knowledge base found in project compartment');
-        return undefined;
+        logUtils.logInfo('[import] Importing knowledge bases - no list of generated resources');
+        const provider = oci.getProvider();
+        const compartment = oci.getCompartment();
+        const knowledgeBases = await ociUtils.listKnowledgeBases(provider, compartment);
+        if (knowledgeBases && knowledgeBases.length > 0) {
+            const knowledgeBase = knowledgeBases[0].id;
+            logUtils.logInfo(`[import] Importing knowledge base ${knowledgeBase}`);
+            const result: dataSupport.DataProducer = {
+                getDataName: () => DATA_NAME,
+                getData: () => {
+                    return {
+                        settings: {
+                            folderAuditsKnowledgeBase: knowledgeBase
+                        }
+                    }
+                }
+            };
+            return result;
+        } else {
+            logUtils.logInfo('[import] No knowledge base found in project compartment');
+        }
     }
+    return undefined;
 }
 
 export function create(folder: vscode.WorkspaceFolder, oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged): ociService.Service {

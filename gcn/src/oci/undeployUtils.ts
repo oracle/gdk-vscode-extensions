@@ -1151,13 +1151,23 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             deployArtifactNames.push(`${repositoryName}_native_docker_image`);
             deployArtifactNames.push(`${repositoryName}_jvm_docker_image`);
         }
-        _progress.report({message : "Listing deploy artifacts"});
+        _progress.report({message: 'Listing deploy artifacts'});
         logUtils.logInfo(`[undeploy] Listing all deploy artifacts in ${projectLogname}`);
         let artifacts = await ociUtils.listDeployArtifacts(authProvider, devopsId);
         for (let a of artifacts) {
             if (a.displayName && deployArtifactNames.includes(a.displayName)) {
                 _progress.report({ message: `Deleting artifact ${a.displayName}`});
                 logUtils.logInfo(`[undeploy] Deleting artifact ${a.displayName} in ${projectLogname}`);
+                // seems that deleteArtifact also transaction-conflicts on the project.
+                await ociUtils.deleteDeployArtifact(authProvider, a.id, true);
+            } else if (a.freeformTags?.gcn_tooling_codeRepoResourcesList && a.freeformTags?.gcn_tooling_codeRepoID === repositoryId) {
+                _progress.report({ message: `Deleting list of automatically generated code repository resources ${a.displayName}`});
+                logUtils.logInfo(`[undeploy] Deleting list of automatically generated code repository resources ${a.displayName} in ${repositoryName}`);
+                // seems that deleteArtifact also transaction-conflicts on the project.
+                await ociUtils.deleteDeployArtifact(authProvider, a.id, true);
+            } else if (isLast && a.freeformTags?.gcn_tooling_projectResourcesList) {
+                _progress.report({ message: `Deleting list of automatically generated project resources ${a.displayName}`});
+                logUtils.logInfo(`[undeploy] Deleting list of automatically generated project resources ${a.displayName} in ${projectLogname}`);
                 // seems that deleteArtifact also transaction-conflicts on the project.
                 await ociUtils.deleteDeployArtifact(authProvider, a.id, true);
             }

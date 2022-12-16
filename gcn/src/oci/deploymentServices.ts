@@ -52,10 +52,49 @@ export function initialize(context: vscode.ExtensionContext) {
 	}));
 }
 
-export async function importServices(_oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
+export async function importServices(oci: ociContext.Context, _projectResources: any | undefined, codeRepositoryResources: any | undefined): Promise<dataSupport.DataProducer | undefined> {
     // TODO: Might return populated instance of Service which internally called importServices()
-    // TODO: Implement import deployment pipelines
-    // logUtils.logInfo('Importing deployment pipelines');
+    if (codeRepositoryResources?.deploymentPipelines) {
+        logUtils.logInfo('[import] Importing deployment pipelines from list of generated resources');
+        const items: DeploymentPipeline[] = [];
+        let idx = 0;
+        for (const deploymentPipeline of codeRepositoryResources.deploymentPipelines) {
+            if (deploymentPipeline.autoImport) {
+                try {
+                    const pipeline = await ociUtils.getDeployPipeline(oci.getProvider(), deploymentPipeline.ocid);
+                    let pipelineDisplayName = pipeline.displayName;
+                    if (pipelineDisplayName) {
+                        const codeRepoPrefix = pipeline.freeformTags?.gcn_tooling_codeRepoPrefix;
+                        if (codeRepoPrefix && pipelineDisplayName.startsWith(codeRepoPrefix)) {
+                            pipelineDisplayName = pipelineDisplayName.substring(codeRepoPrefix.length);
+                        }
+                    }
+                    const displayName = pipelineDisplayName ? pipelineDisplayName : `Deployment Pipeline ${idx++}`;
+                    logUtils.logInfo(`[import] Importing deployment pipeline '${displayName}': ${pipeline.id}`);
+                    items.push({
+                        'ocid': pipeline.id,
+                        'displayName': displayName
+                    });
+                } catch (err) {
+                    logUtils.logError(dialogs.getErrorMessage(`[import] Failed to import deployment pipeline ${deploymentPipeline.ocid}`));
+                }
+            }
+        }
+        const result: dataSupport.DataProducer = {
+            getDataName: () => DATA_NAME,
+            getData: () => {
+                return {
+                    items: items
+                }
+            }
+        };
+        if (!items.length) {
+            logUtils.logInfo('[import] No deployment pipelines found');
+        }
+        return result;
+    } else {
+        logUtils.logInfo('[import] Not importing deployment pipelines - no list of generated resources');
+    }
     return undefined;
 }
 
@@ -704,7 +743,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
     }
 
     private async updateWhenCompleted(deploymentId: string, compartmentId?: string, deploymentName?: string) {
-        const groupId = compartmentId ? await ociUtils.getDefaultLogGroup(this.oci.getProvider(), compartmentId) : undefined;
+        const groupId = compartmentId ? (await ociUtils.getDefaultLogGroup(this.oci.getProvider(), compartmentId))?.logGroup.id : undefined;
         const logId = groupId ? (await ociUtils.listLogs(this.oci.getProvider(), groupId)).find(item => item.configuration?.source.resource === this.oci.getDevOpsProject())?.id : undefined;
         let lastResults: any[] = [];
         const update = async () => {

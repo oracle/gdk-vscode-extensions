@@ -54,23 +54,33 @@ export function initialize(context: vscode.ExtensionContext) {
 	}));
 }
 
-export async function importServices(oci: ociContext.Context): Promise<dataSupport.DataProducer | undefined> {
+export async function importServices(oci: ociContext.Context, _projectResources: any | undefined, codeRepositoryResources: any | undefined): Promise<dataSupport.DataProducer | undefined> {
     // TODO: Might return populated instance of Service which internally called importServices()
-    logUtils.logInfo('[import] Importing build pipelines');
-    const provider = oci.getProvider();
-    const project = oci.getDevOpsProject();
-    const repository = oci.getCodeRepository();
-    const pipelines = await ociUtils.listBuildPipelinesByCodeRepository(provider, project, repository);
-    if (pipelines.length > 0) {
+    if (codeRepositoryResources?.buildPipelines) {
+        logUtils.logInfo('[import] Importing build pipelines from list of generated resources');
         const items: BuildPipeline[] = [];
         let idx = 0;
-        for (const pipeline of pipelines) {
-            const displayName = pipeline.displayName ? pipeline.displayName : `Build Pipeline ${idx++}`;
-            logUtils.logInfo(`[import] Importing build pipeline '${displayName}': ${pipeline.id}`);
-            items.push({
-                'ocid': pipeline.id,
-                'displayName': displayName
-            });
+        for (const buildPipeline of codeRepositoryResources.buildPipelines) {
+            if (buildPipeline.autoImport) {
+                try {
+                    const pipeline = await ociUtils.getBuildPipeline(oci.getProvider(), buildPipeline.ocid);
+                    let pipelineDisplayName = pipeline.displayName;
+                    if (pipelineDisplayName) {
+                        const codeRepoPrefix = pipeline.freeformTags?.gcn_tooling_codeRepoPrefix;
+                        if (codeRepoPrefix && pipelineDisplayName.startsWith(codeRepoPrefix)) {
+                            pipelineDisplayName = pipelineDisplayName.substring(codeRepoPrefix.length);
+                        }
+                    }
+                    const displayName = pipelineDisplayName ? pipelineDisplayName : `Build Pipeline ${idx++}`;
+                    logUtils.logInfo(`[import] Importing build pipeline '${displayName}': ${pipeline.id}`);
+                    items.push({
+                        'ocid': pipeline.id,
+                        'displayName': displayName
+                    });
+                } catch (err) {
+                    logUtils.logError(dialogs.getErrorMessage(`[import] Failed to import build pipeline ${buildPipeline.ocid}`));
+                }
+            }
         }
         const result: dataSupport.DataProducer = {
             getDataName: () => DATA_NAME,
@@ -80,11 +90,48 @@ export async function importServices(oci: ociContext.Context): Promise<dataSuppo
                 }
             }
         };
+        if (!items.length) {
+            logUtils.logInfo('[import] No build pipelines found');
+        }
         return result;
     } else {
-        logUtils.logInfo('[import] No build pipeline found in project compartment');
-        return undefined;
+        logUtils.logInfo('[import] Importing build pipelines - no list of generated resources');
+        const provider = oci.getProvider();
+        const project = oci.getDevOpsProject();
+        const repository = oci.getCodeRepository();
+        const pipelines = await ociUtils.listBuildPipelinesByCodeRepository(provider, project, repository);
+        if (pipelines.length > 0) {
+            const items: BuildPipeline[] = [];
+            let idx = 0;
+            for (const pipeline of pipelines) {
+                let pipelineDisplayName = pipeline.displayName;
+                if (pipelineDisplayName) {
+                    const codeRepoPrefix = pipeline.freeformTags?.gcn_tooling_codeRepoPrefix;
+                    if (codeRepoPrefix && pipelineDisplayName.startsWith(codeRepoPrefix)) {
+                        pipelineDisplayName = pipelineDisplayName.substring(codeRepoPrefix.length);
+                    }
+                }
+                const displayName = pipelineDisplayName ? pipelineDisplayName : `Build Pipeline ${idx++}`;
+                logUtils.logInfo(`[import] Importing build pipeline '${displayName}': ${pipeline.id}`);
+                items.push({
+                    'ocid': pipeline.id,
+                    'displayName': displayName
+                });
+            }
+            const result: dataSupport.DataProducer = {
+                getDataName: () => DATA_NAME,
+                getData: () => {
+                    return {
+                        items: items
+                    }
+                }
+            };
+            return result;
+        } else {
+            logUtils.logInfo('[import] No build pipelines found');
+        }
     }
+    return undefined;
 }
 
 export function create(folder: vscode.WorkspaceFolder, oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged): ociService.Service {
@@ -523,7 +570,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
     }
 
     private async updateWhenCompleted(buildRunId: string, compartmentId?: string, buildName?: string) {
-        const groupId = compartmentId ? await ociUtils.getDefaultLogGroup(this.oci.getProvider(), compartmentId) : undefined;
+        const groupId = compartmentId ? (await ociUtils.getDefaultLogGroup(this.oci.getProvider(), compartmentId))?.logGroup.id : undefined;
         const logId = groupId ? (await ociUtils.listLogs(this.oci.getProvider(), groupId)).find(item => item.configuration?.source.resource === this.oci.getDevOpsProject())?.id : undefined;
         let deliveredArtifacts: { id: string, type: string }[] | undefined;
         let lastResults: any[] = [];
