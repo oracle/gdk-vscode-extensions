@@ -119,6 +119,9 @@ async function addContent(folder: gcnServices.FolderData | null | undefined, ser
         if (!folder) {
             folder = await dialogs.selectFolder('Add OCI Service');
             if (!folder) {
+                if (folder === null) {
+                    vscode.window.showWarningMessage('No deployed folder available.');
+                }
                 return;
             }
         }

@@ -62,7 +62,8 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: gc
                 const dumpedFolders = gcnServices.dumpedFolders(workspaceState);
                 if (dumpedFolders) {
                     folders = [];
-                    for (let folder of gcnServices.getFolderData()) {
+                    const folderData = await gcnServices.getFolderData();
+                    for (let folder of folderData) {
                         if (dumpedFolders.includes(folder.folder.name)) {
                             folders.push(folder);
                         }
@@ -118,7 +119,8 @@ export async function undeployFolders(workspaceState: vscode.Memento, folders?: 
                 const dumpedFolders = gcnServices.dumpedFolders(workspaceState);
                 if (dumpedFolders) {
                     folders = [];
-                    for (let folder of gcnServices.getFolderData()) {
+                    const folderData = await gcnServices.getFolderData();
+                    for (let folder of folderData) {
                         if (dumpedFolders.includes(folder.folder.name)) {
                             folders.push(folder);
                         }
@@ -145,7 +147,7 @@ export async function undeployFolders(workspaceState: vscode.Memento, folders?: 
             const selected = await dialogs.selectFolders('Undeploy from OCI', 'Select folders to undeploy', true, false);
             if (!selected) {
                 if (selected === null) {
-                    vscode.window.showErrorMessage('No folders to undeploy.');
+                    vscode.window.showWarningMessage('No folders to undeploy.');
                 }
                 return;
             }

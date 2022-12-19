@@ -31,7 +31,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
 
     const openContexts: ociContext.Context[] = [];
 
-    const folderData = gcnServices.getFolderData();
+    const folderData = await gcnServices.getFolderData();
     for (const data of folderData) {
         const services = ociServices.findByFolderData(data);
         for (const service of services) {

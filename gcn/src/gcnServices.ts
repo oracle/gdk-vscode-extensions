@@ -19,72 +19,87 @@ export type FolderData = {
     services: model.CloudServices[];
 }
 
-let folderData: FolderData[];
+let firstFolderDataPromise: boolean = true;
+let folderDataPromiseResolve: (value: FolderData[] | PromiseLike<FolderData[]>) => void;
+let folderDataPromise: Promise<FolderData[]> = new Promise(resolve => {
+    folderDataPromiseResolve = resolve;
+});
 
 export async function build(workspaceState: vscode.Memento) {
-    await vscode.commands.executeCommand('setContext', 'gcn.servicesInitialized', false);
-    await vscode.commands.executeCommand('setContext', 'gcn.serviceFoldersCount', -1);
-
-    await vscode.commands.executeCommand('setContext', 'gcn.globalImportAction', false);
-    await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', false);
-
-    let deployFailed = dumpedFolders(workspaceState) !== undefined;
-
-    folderData = [];
-    await servicesView.build(folderData, -1, false, deployFailed);
-
-    let serviceFoldersCount = 0;
-
-    for (const cloudSupport of CLOUD_SUPPORTS) {
-        cloudSupport.buildingServices();
+    if (firstFolderDataPromise) {
+        firstFolderDataPromise = false;
+    } else {
+        folderDataPromise = new Promise(resolve => {
+            folderDataPromiseResolve = resolve;
+        });
     }
+    const folderData: FolderData[] = [];
+    try {
+        await vscode.commands.executeCommand('setContext', 'gcn.servicesInitialized', false);
+        await vscode.commands.executeCommand('setContext', 'gcn.serviceFoldersCount', -1);
 
-    const folders = vscode.workspace.workspaceFolders;
-    if (folders) {
-        for (const folder of folders) {
-            const data: FolderData = {
-                folder: folder,
-                configurations: [],
-                services: []
-            };
-            const services = folderStorage.readStorage(folder);
-            const configurations = services?.getConfigurations();
-            if (configurations) {
-                for (const configuration of configurations) {
-                    const cloudSupport = getCloudSupport(configuration);
-                    if (cloudSupport) {
-                        const supportServices = cloudSupport.getServices(folder, configuration);
-                        if (supportServices) {
-                            if (data.configurations.length === 0) {
-                                serviceFoldersCount++;
+        await vscode.commands.executeCommand('setContext', 'gcn.globalImportAction', false);
+        await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', false);
+
+        let deployFailed = dumpedFolders(workspaceState) !== undefined;
+
+        await servicesView.build(folderData, -1, false, deployFailed);
+
+        let serviceFoldersCount = 0;
+
+        for (const cloudSupport of CLOUD_SUPPORTS) {
+            cloudSupport.buildingServices();
+        }
+
+        const folders = vscode.workspace.workspaceFolders;
+        if (folders) {
+            for (const folder of folders) {
+                const data: FolderData = {
+                    folder: folder,
+                    configurations: [],
+                    services: []
+                };
+                const services = folderStorage.readStorage(folder);
+                const configurations = services?.getConfigurations();
+                if (configurations) {
+                    for (const configuration of configurations) {
+                        const cloudSupport = getCloudSupport(configuration);
+                        if (cloudSupport) {
+                            const supportServices = cloudSupport.getServices(folder, configuration);
+                            if (supportServices) {
+                                if (data.configurations.length === 0) {
+                                    serviceFoldersCount++;
+                                }
+                                data.configurations.push(configuration);
+                                data.services.push(supportServices);
                             }
-                            data.configurations.push(configuration);
-                            data.services.push(supportServices);
                         }
                     }
                 }
+                folderData.push(data);
             }
-            folderData.push(data);
         }
+
+        for (const cloudSupport of CLOUD_SUPPORTS) {
+            cloudSupport.populatingView();
+        }
+
+        await servicesView.build(folderData, serviceFoldersCount, true, deployFailed, (folder: string) => dumpDeployData(workspaceState, folder));
+
+        for (const cloudSupport of CLOUD_SUPPORTS) {
+            cloudSupport.servicesReady();
+        }
+
+        await vscode.commands.executeCommand('setContext', 'gcn.globalImportAction', serviceFoldersCount);
+        await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', serviceFoldersCount && folders && folders.length > serviceFoldersCount);
+
+        await vscode.commands.executeCommand('setContext', 'gcn.serviceFoldersCount', serviceFoldersCount);
+        await vscode.commands.executeCommand('setContext', 'gcn.servicesInitialized', true);
+        
+        await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', deployFailed);
+    } finally {
+        folderDataPromiseResolve(folderData);
     }
-
-    for (const cloudSupport of CLOUD_SUPPORTS) {
-        cloudSupport.populatingView();
-    }
-
-    await servicesView.build(folderData, serviceFoldersCount, true, deployFailed, (folder: string) => dumpDeployData(workspaceState, folder));
-
-    for (const cloudSupport of CLOUD_SUPPORTS) {
-        cloudSupport.servicesReady();
-    }
-
-    await vscode.commands.executeCommand('setContext', 'gcn.globalImportAction', serviceFoldersCount);
-    await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', serviceFoldersCount && folders && folders.length > serviceFoldersCount);
-
-    await vscode.commands.executeCommand('setContext', 'gcn.serviceFoldersCount', serviceFoldersCount);
-    await vscode.commands.executeCommand('setContext', 'gcn.servicesInitialized', true);
-    
-    await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', deployFailed);
 }
 
 function getCloudSupport(configuration: model.ServicesConfiguration): model.CloudSupport | undefined {
@@ -96,11 +111,12 @@ function getCloudSupport(configuration: model.ServicesConfiguration): model.Clou
     return undefined;
 }
 
-export function getFolderData(): FolderData[] {
-    return folderData;
+export async function getFolderData(): Promise<FolderData[]> {
+    return folderDataPromise;
 }
 
-export function findFolderData(folder: vscode.Uri): FolderData | undefined {
+export async function findFolderData(folder: vscode.Uri): Promise<FolderData | undefined> {
+    const folderData: FolderData[] = await getFolderData();
     for (const data of folderData) {
         // TODO: is there a more robust normalization in VS Code / Node.js?
         const f1 = normalize(folder.fsPath);

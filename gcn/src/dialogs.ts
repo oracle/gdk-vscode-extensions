@@ -139,8 +139,8 @@ export async function selectDirectory(options?: string[], actionName?: string, t
 
 export async function selectFolder(actionName: string | undefined = undefined, hint: string | undefined = undefined, serviceFolder: boolean | null = true): Promise<gcnServices.FolderData | null | undefined> {
     const choices: QuickPickObject[] = [];
-    const folderData = gcnServices.getFolderData();
-    for (const folder of folderData || []) {
+    const folderData = await gcnServices.getFolderData();
+    for (const folder of folderData) {
         if (serviceFolder === null || serviceFolder && folder.services.length > 0 || !serviceFolder && folder.services.length === 0) {
             const choice = new QuickPickObject(folder.folder.name, undefined, undefined, folder);
             choices.push(choice);
@@ -161,7 +161,7 @@ export async function selectFolder(actionName: string | undefined = undefined, h
 
 export async function selectFolders(actionName: string | undefined = undefined, hint: string | undefined = undefined, serviceFolders: boolean = true, autoSelectSingle: boolean = true): Promise<gcnServices.FolderData[] | null | undefined> {
     const choices: QuickPickObject[] = [];
-    const folderData = gcnServices.getFolderData();
+    const folderData = await gcnServices.getFolderData();
     for (const folder of folderData) {
         if (serviceFolders && folder.services.length > 0 || !serviceFolders && folder.services.length === 0) {
             const choice = new QuickPickObject(folder.folder.name, undefined, undefined, folder);

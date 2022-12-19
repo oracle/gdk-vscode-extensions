@@ -54,7 +54,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
     const openContexts: ociContext.Context[] | undefined = dumpData ? undefined : [];
 
-    const folderData = openContexts ? gcnServices.getFolderData() : undefined;
+    const folderData = openContexts ? await gcnServices.getFolderData() : undefined;
     if (openContexts && folderData) {
         for (const data of folderData) {
             const services = ociServices.findByFolderData(data);

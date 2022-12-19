@@ -69,7 +69,7 @@ export function initialize(context: vscode.ExtensionContext) {
                 auditFolder(uri);
             } else if (folder === null) {
                 logUtils.logInfo(`[audit] No folders open`);
-                vscode.window.showWarningMessage('No folders open');
+                vscode.window.showWarningMessage('No folders to audit.');
             }
         });
     }));
@@ -257,8 +257,8 @@ export function findByNode(node: nodes.BaseNode): Service | undefined {
     return service instanceof Service ? service as Service : undefined;
 }
 
-export function findByFolder(folder: vscode.Uri): Service[] | undefined {
-    const services = ociServices.findByFolder(folder);
+export async function findByFolder(folder: vscode.Uri): Promise<Service[] | undefined> {
+    const services = await ociServices.findByFolder(folder);
     if (!services) {
         return undefined;
     }
@@ -277,7 +277,7 @@ async function getFolderAuditsService(folder: vscode.Uri): Promise<Service | nul
     if (!wsf) {
         return null;
     }
-    const services = findByFolder(wsf.uri);
+    const services = await findByFolder(wsf.uri);
     if (!services || services.length === 0) {
         return null;
     }

@@ -56,7 +56,7 @@ export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openCodeRepositoryInConsole_Global', () => {
         dialogs.selectFolder('Open Folder Code Repository', 'Select deployed folder', true).then(folder => {
             if (folder === null) {
-                vscode.window.showErrorMessage('No deployed folder available.');
+                vscode.window.showWarningMessage('No deployed folder available.');
             } else if (folder) {
                 openCodeRepoInConsole(folder);
             }
@@ -77,10 +77,10 @@ export function initialize(context: vscode.ExtensionContext) {
             openDevOpsProjectInConsole(params[0].folder);
         }
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openDevOpsProjectInConsole_Global', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openDevOpsProjectInConsole_Global', async () => {
         const projects: string[] = [];
-        const folderData = gcnServices.getFolderData();
-        for (const folder of folderData || []) {
+        const folderData = await gcnServices.getFolderData();
+        for (const folder of folderData) {
             const ociServices = findByFolderData(folder)
             for (const ociService of ociServices) {
                 const project = ociService.getContext().getDevOpsProject();
@@ -95,7 +95,7 @@ export function initialize(context: vscode.ExtensionContext) {
         } else {
             dialogs.selectFolder('Open DevOps Project', 'Select deployed folder', true).then(folder => {
                 if (folder === null) {
-                    vscode.window.showErrorMessage('No deployed folder available.');
+                    vscode.window.showWarningMessage('No deployed folder available.');
                 } else if (folder) {
                     openDevOpsProjectInConsole(folder);
                 }
@@ -116,8 +116,8 @@ export function findByNode(node: nodes.BaseNode): OciServices | undefined {
     return cloudServices instanceof OciServices ? cloudServices as OciServices : undefined;
 }
 
-export function findByFolder(folder: vscode.Uri): OciServices[] | undefined {
-    const folderData = gcnServices.findFolderData(folder);
+export async function findByFolder(folder: vscode.Uri): Promise<OciServices[] | undefined> {
+    const folderData = await gcnServices.findFolderData(folder);
     if (!folderData) {
         return undefined;
     }
