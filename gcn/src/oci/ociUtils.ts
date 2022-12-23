@@ -6,6 +6,7 @@
  */
 
 import * as common from 'oci-common';
+import * as core from "oci-core";
 import * as identity from 'oci-identity';
 import * as devops from 'oci-devops';
 import * as artifacts from 'oci-artifacts';
@@ -14,6 +15,7 @@ import * as ons from 'oci-ons';
 import * as logging from 'oci-logging';
 import * as loggingsearch from 'oci-loggingsearch';
 import * as genericartifactscontent from 'oci-genericartifactscontent';
+import * as containerinstances from 'oci-containerinstances'
 import { containerengine, objectstorage } from 'oci-sdk';
 
 
@@ -1851,6 +1853,275 @@ export async function creatGenericInlineArtifact(authenticationDetailsProvider: 
         createDeployArtifactDetails: createDeployArtifactDetails
     };
     return client.createDeployArtifact(request).then(response => response.deployArtifact);
+}
+
+export async function listVCNs(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name?: string): Promise<core.models.Vcn[]> {
+    const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: core.requests.ListVcnsRequest = {
+        compartmentId: compartmentID,
+        lifecycleState: core.models.Vcn.LifecycleState.Available,
+        displayName: name,
+        limit: 1000
+    };
+    const result: core.models.Vcn[] = [];
+    do {
+        const response = await client.listVcns(request);
+        result.push(...response.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    return result;
+}
+
+export async function createVCN(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name?: string, tags?: { [key:string] : string }): Promise<core.models.Vcn> {
+    const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const requestDetails: core.models.CreateVcnDetails = {
+        displayName: name,
+        compartmentId: compartmentID,
+        cidrBlocks: ['10.0.0.0/24'],
+        freeformTags: tags
+    }
+    const request: core.requests.CreateVcnRequest = {
+        createVcnDetails: requestDetails
+    }
+    return client.createVcn(request).then(result => result.vcn);
+}
+
+export async function createInternetGateway(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, vcnID: string, name?: string, tags?: { [key:string] : string }): Promise<core.models.InternetGateway> {
+    const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const requestDetails: core.models.CreateInternetGatewayDetails = {
+        displayName: name,
+        compartmentId: compartmentID,
+        vcnId: vcnID,
+        isEnabled: true,
+        freeformTags: tags
+    }
+    const request: core.requests.CreateInternetGatewayRequest = {
+        createInternetGatewayDetails: requestDetails
+    }
+    return client.createInternetGateway(request).then(result => result.internetGateway);
+}
+
+export async function listSubnets(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name?: string): Promise<core.models.Subnet[]> {
+    const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: core.requests.ListSubnetsRequest = {
+        compartmentId: compartmentID,
+        lifecycleState: core.models.Subnet.LifecycleState.Available,
+        displayName: name,
+        limit: 1000
+    };
+    const result: core.models.Subnet[] = [];
+    do {
+        const response = await client.listSubnets(request);
+        result.push(...response.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    return result;
+}
+
+export async function createSubnet(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, vcnID: string, name?: string, tags?: { [key:string] : string }): Promise<core.models.Subnet> {
+    const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const requestDetails: core.models.CreateSubnetDetails = {
+        displayName: name,
+        cidrBlock: '10.0.0.0/24',
+        compartmentId: compartmentID,
+        vcnId: vcnID,
+        freeformTags: tags
+    }
+    const request: core.requests.CreateSubnetRequest = {
+        createSubnetDetails: requestDetails
+    }
+    return client.createSubnet(request).then(result => result.subnet);
+}
+
+export async function getSecurityList(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, securityListID: string): Promise<core.models.SecurityList> {
+    const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    
+    const request: core.requests.GetSecurityListRequest = {
+        securityListId: securityListID
+    };
+    
+    return client.getSecurityList(request).then(response => response.securityList);
+}
+
+export async function updateSecurityList(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, securityListID: string, ingressSecurityRules?: Array<core.models.IngressSecurityRule>, egressSecurityRules?: Array<core.models.EgressSecurityRule>): Promise<core.models.SecurityList> {
+    const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    
+    const requestDetails: core.models.UpdateSecurityListDetails = {
+        ingressSecurityRules: ingressSecurityRules,
+        egressSecurityRules: egressSecurityRules
+    }
+    
+    const request: core.requests.UpdateSecurityListRequest = {
+        securityListId: securityListID,
+        updateSecurityListDetails: requestDetails
+    };
+    
+    return client.updateSecurityList(request).then(response => response.securityList);
+}
+
+export async function getRouteTable(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, routeTableID: string): Promise<core.models.RouteTable> {
+    const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    
+    const request: core.requests.GetRouteTableRequest = {
+        rtId: routeTableID
+    };
+    
+    return client.getRouteTable(request).then(response => response.routeTable);
+}
+
+export async function updateRouteTable(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, routeTableID: string, routeRules?: Array<core.models.RouteRule>): Promise<core.models.RouteTable> {
+    const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    
+    const requestDetails: core.models.UpdateRouteTableDetails = {
+        routeRules: routeRules
+    }
+    
+    const request: core.requests.UpdateRouteTableRequest = {
+        rtId: routeTableID,
+        updateRouteTableDetails: requestDetails
+    };
+    
+    return client.updateRouteTable(request).then(response => response.routeTable);
+}
+
+export async function getVNIC(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, vnicID: string): Promise<core.models.Vnic> {
+    const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    
+    const request: core.requests.GetVnicRequest = {
+        vnicId: vnicID
+    };
+    
+    return client.getVnic(request).then(response => response.vnic);
+}
+
+export async function listContainerInstances(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name?: string): Promise<containerinstances.models.ContainerInstanceSummary[]> {
+    const client = new containerinstances.ContainerInstanceClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: containerinstances.requests.ListContainerInstancesRequest = {
+        compartmentId: compartmentID,
+        lifecycleState: containerinstances.models.ContainerInstance.LifecycleState.Active,
+        displayName: name,
+        limit: 1000
+    };
+    const result: containerinstances.models.ContainerInstanceSummary[] = [];
+    do {
+        const response = await client.listContainerInstances(request);
+        result.push(...response.containerInstanceCollection.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    return result;
+}
+
+export async function getContainerInstance(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, containerInstanceID: string): Promise<containerinstances.models.ContainerInstance> {
+    const client = new containerinstances.ContainerInstanceClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    
+    const request: containerinstances.requests.GetContainerInstanceRequest = {
+        containerInstanceId: containerInstanceID
+    };
+    
+    return client.getContainerInstance(request).then(response => response.containerInstance);
+}
+
+export async function createContainerInstance(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, imageURL: string, subnetID: string, name: string): Promise<{ containerInstance: containerinstances.models.ContainerInstance, workRequestId: string }> {
+    const client = new containerinstances.ContainerInstanceClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    
+    const shapeConfig: containerinstances.models.CreateContainerInstanceShapeConfigDetails = {
+        ocpus: 1
+        // memoryInGBs: 1
+    }
+
+    const containerDetails: containerinstances.models.CreateContainerDetails = {
+        imageUrl: imageURL
+    }
+
+    const vnicDetails: containerinstances.models.CreateContainerVnicDetails = {
+        subnetId: subnetID
+    }
+    
+    const requestDetails: containerinstances.models.CreateContainerInstanceDetails = {
+        displayName: name,
+        compartmentId: compartmentID,
+        availabilityDomain: 'hkYI:PHX-AD-1',
+        shape: 'CI.Standard.E4.Flex',
+        shapeConfig: shapeConfig,
+        containers: [ containerDetails ],
+        vnics: [ vnicDetails ]
+    }
+
+    const request: containerinstances.requests.CreateContainerInstanceRequest = {
+        createContainerInstanceDetails: requestDetails
+    };
+    
+    return client.createContainerInstance(request).then(response => { return { containerInstance: response.containerInstance, workRequestId: response.opcWorkRequestId } });
+}
+
+export async function restartContainerInstance(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, containerInstanceID: string): Promise<string> {
+    const client = new containerinstances.ContainerInstanceClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    
+    const request: containerinstances.requests.RestartContainerInstanceRequest = {
+        containerInstanceId: containerInstanceID
+    };
+    
+    return client.restartContainerInstance(request).then(response => response.opcWorkRequestId);
+}
+
+export async function deleteContainerInstance(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, containerInstanceID: string): Promise<string> {
+    const client = new containerinstances.ContainerInstanceClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    
+    const request: containerinstances.requests.DeleteContainerInstanceRequest = {
+        containerInstanceId: containerInstanceID
+    };
+    
+    return client.deleteContainerInstance(request).then(response => response.opcWorkRequestId);
+}
+
+export async function getContainer(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, containerID: string): Promise<containerinstances.models.Container> {
+    const client = new containerinstances.ContainerInstanceClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    
+    const request: containerinstances.requests.GetContainerRequest = {
+        containerId: containerID
+    };
+    
+    return client.getContainer(request).then(response => response.container);
+}
+
+export async function containerInstancesWaitForResourceCompletionStatus(
+    authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider,
+    resourceDescription: string, requestId: string): Promise<string> {
+    
+    // TODO: handle timeout, use increasing polling time.
+    const client = new containerinstances.ContainerInstanceClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: containerinstances.requests.GetWorkRequestRequest = {
+        workRequestId: requestId,
+    };
+
+    let requestState: containerinstances.models.WorkRequest | undefined;
+
+    // TODO: make this configurable, in vscode/workspace options
+    const maxWaitingTimeMillis = 60 * 1000; 
+    const initialPollTime = 2000;
+    W: for (let waitCount = (maxWaitingTimeMillis / initialPollTime); waitCount > 0; waitCount--) {
+        // console.log(`>>> getRequest ${req.workRequestId}`);
+        const response = await client.getWorkRequest(request);
+        // console.log(`>>> getRequest ${req.workRequestId} = ${response.workRequest.status}`);
+        switch (response.workRequest.status) {
+            case containerinstances.models.OperationStatus.Succeeded:
+            case containerinstances.models.OperationStatus.Failed:
+            case containerinstances.models.OperationStatus.Canceled:
+                requestState = response.workRequest;
+                break W;
+        }
+        await delay(2000);
+    }
+    if (!requestState) {
+        throw `Timeout while creating ${resourceDescription}`;
+    }
+    if (requestState.status !== containerinstances.models.OperationStatus.Succeeded) {
+        // PENDING: make some abortion exception that can carry WorkRequest errors, should be caught top-level & reported to the user instead of plain message.
+        let msg : string = `Creation of ${resourceDescription} failed`;
+        throw msg;
+    }
+    // PENDING: what exactly do the 'affected resources' mean ???
+    return requestState.resources[0].identifier;
 }
 
 export async function completion(initialPollTime: number, getState: () => Promise<string | undefined>, checkFirst?: boolean): Promise<string | undefined> {

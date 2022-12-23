@@ -387,6 +387,18 @@ class OcirDeployArtifactNode extends DeployArtifactNode {
         super(object, oci, OcirDeployArtifactNode.CONTEXT, containerServices.ITEM_ICON, treeChanged);
     }
 
+    async getImageUrl(): Promise<string> {
+        return new Promise<string>(async (resolve, reject) => {
+            try {
+                const deployArtifact = await this.getResource();
+                const deployArtifactSource = deployArtifact.deployArtifactSource as devops.models.OcirDeployArtifactSource;
+                resolve(deployArtifactSource.imageUri);
+            } catch (err) {
+                reject(dialogs.getErrorMessage('Failed to resolve build artifact', err));
+            }
+        });
+    }
+
     pull() {
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,

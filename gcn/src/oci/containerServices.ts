@@ -278,7 +278,7 @@ class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.Removable
 
 }
 
-class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource {
+export class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource {
 
     static readonly CONTEXT = 'gcn.oci.containerImageNode';
 
@@ -313,6 +313,30 @@ class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource 
     //     const image = await this.getResource();
     //     return `https://cloud.oracle.com/registry/containers/repos/${image.repositoryId}/images/${this.object.ocid}`;
     // }
+
+    async getImageUrl(): Promise<string> {
+        return new Promise<string>(async (resolve, reject) => {
+            try {
+                const regionKey = this.oci.getProvider().getRegion().regionCode;
+                const namespace = await ociUtils.getObjectStorageNamespace(this.oci.getProvider());
+                if (namespace) {
+                    const resource = await this.getResource();
+                    const repositoryName = resource.repositoryName;
+                    const version = resource.version;
+                    if (version) {
+                        const target = `${regionKey}.ocir.io/${namespace}/${repositoryName}:${version}`; // https://docs.oracle.com/en-us/iaas/Content/Registry/Tasks/registrypullingimagesusingthedockercli.htm
+                        resolve(target);
+                    } else {
+                        reject('Failed to resolve docker pull command - unknown image version.');
+                    }
+                } else {
+                    reject('Failed to resolve docker pull command - unknown tenancy name.');
+                }
+            } catch (err) {
+                reject(dialogs.getErrorMessage('Failed to resolve docker pull command', err));
+            }
+        });
+    }
 
     pull() {
         vscode.window.withProgress({

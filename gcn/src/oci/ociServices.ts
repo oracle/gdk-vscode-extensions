@@ -25,6 +25,7 @@ import * as deployArtifactServices from './deployArtifactServices';
 import * as artifactServices from './artifactServices';
 import * as containerServices from './containerServices';
 import * as knowledgeBaseServices from './knowledgeBaseServices';
+import * as containerInstanceServices from './containerInstanceServices';
 
 
 export const DATA_NAME = 'services';
@@ -109,6 +110,7 @@ export function initialize(context: vscode.ExtensionContext) {
     artifactServices.initialize(context);
     containerServices.initialize(context);
     knowledgeBaseServices.initialize(context);
+    containerInstanceServices.initialize(context);
 }
 
 export function findByNode(node: nodes.BaseNode): OciServices | undefined {
@@ -186,6 +188,14 @@ export async function importServices(oci: ociContext.Context, projectResources: 
     } catch (err) {
         dialogs.showErrorMessage('Failed to import knowledge bases', err);
     }
+    try {
+        const containerInstanceServicesData = await containerInstanceServices.importServices(oci, projectResources, codeRepositoryResources);
+        if (containerInstanceServicesData) {
+            data[containerInstanceServicesData.getDataName()] = containerInstanceServicesData.getData();
+        }
+    } catch (err) {
+        dialogs.showErrorMessage('Failed to import knowledge bases', err);
+    }
     const result: dataSupport.DataProducer = {
         getDataName: () => DATA_NAME,
         getData: () => data
@@ -226,7 +236,8 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
             deployArtifactServices.create(folder, oci, this.servicesData[deployArtifactServices.DATA_NAME], serviceDataChanged),
             artifactServices.create(folder, oci, this.servicesData[artifactServices.DATA_NAME], serviceDataChanged),
             containerServices.create(folder, oci, this.servicesData[containerServices.DATA_NAME], serviceDataChanged),
-            knowledgeBaseServices.create(folder, oci, this.servicesData[knowledgeBaseServices.DATA_NAME], serviceDataChanged)
+            knowledgeBaseServices.create(folder, oci, this.servicesData[knowledgeBaseServices.DATA_NAME], serviceDataChanged),
+            containerInstanceServices.create(folder, oci, this.servicesData[containerInstanceServices.DATA_NAME], serviceDataChanged)
         ];
     }
 
