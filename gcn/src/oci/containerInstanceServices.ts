@@ -17,7 +17,6 @@ import * as ociContext from './ociContext';
 import * as ociService from './ociService';
 import * as ociServices from './ociServices';
 import * as dataSupport from './dataSupport';
-import * as containerServices from './containerServices';
 
 
 export const DATA_NAME = 'containerInstances';
@@ -25,10 +24,10 @@ export const DATA_NAME = 'containerInstances';
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runDockerImage', (...params: any[]) => {
         if (params[0]?.getImageUrl) {
-            const node: containerServices.ContainerImageNode = params[0] as containerServices.ContainerImageNode;
+            const node: nodes.BaseNode = params[0] as nodes.BaseNode;
             const service = findByNode(node);
             if (service) {
-                const imageUrl = node.getImageUrl();
+                const imageUrl = params[0].getImageUrl();
                 service.runAndOpenContainerInstance(imageUrl);
             }
         }

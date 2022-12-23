@@ -278,7 +278,7 @@ class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.Removable
 
 }
 
-export class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource {
+class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource {
 
     static readonly CONTEXT = 'gcn.oci.containerImageNode';
 
