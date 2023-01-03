@@ -16,7 +16,7 @@ require('../lib/gcn.ui.api');
  /**
   * Number of fixed steps. Update whenever steps in selectCreateOptions change
   */
- const fixedSteps = 11;
+ const fixedSteps = 9;
 
  /**
   * Global option
@@ -203,7 +203,7 @@ async function writeProjectContents(options: CreateOptions, location: string) {
         j(options.clouds),
         options.buildTool,
         options.testFramework,
-        options.language,
+        'JAVA', // options.language,
         options.javaVersion,
         'gcn-vscode-extension',
         true,
@@ -297,10 +297,6 @@ function getDefaultJavaVersion(): string {
 
 }
 
-function getLanguages(): ValueAndLabel[] {
-    return convertLabelledValues(gcnApi.languages().getOptions().toArray());
-}
-
 function getBuildTools() {
     return convertLabelledValues(gcnApi.buildTools().getOptions().toArray());
 }
@@ -330,66 +326,8 @@ function getServices(): ValueAndLabel[] {
         ret.push({
             label: item.getLabel().$as('string'),
             value: item.getValueName().$as('string'),
+            detail: item.getDescription().$as('string'),
         })
-    }
-    return ret;
-}
-
-function getFeatureCategories(): string[] {
-    const ret: string[] = [];
-    let cats = gcnApi.features().keySet().toArray();
-    for (let i = 0; i < cats.length; i++) {
-        ret.push(cats[i].$as('string') as string);
-    }
-    return ret;
-}
-
-interface ValuePickItem extends vscode.QuickPickItem { 
-    value : string 
-};
-
-function findCategoryObject(cat: string) {
-    let cats = gcnApi.features().keySet().toArray();
-    for (let i = 0; i < cats.length; i++) {
-        if (cats[i].$as('string') == cat) {
-            return cats[i];
-        }
-    }
-    return undefined;
-}
-
-function getFeaturesFromCategory(category: string): ValuePickItem[] {
-    const ret: ValuePickItem [] = [];
-    const key = findCategoryObject(category);
-    if (!key) {
-        return ret;
-    }
-    let features = gcnApi.features();
-    let arr = features.get(key)?.toArray();
-    if (!arr || arr.length == 0) {
-        return [];
-    }
-    for (let i = 0; i < arr.length; i++) {
-        let f = arr[i];
-        let label: string = f.getTitle().$as('string');
-        const val: string = f.getName().$as('string');
-        const desc: string = f.getDescription().$as('string');
-        const preview: boolean = f.isPreview().$as('boolean');
-        const community: boolean = f.isCommunity().$as('boolean');
-
-        if (preview) {
-            label = '$(eye) ' + label;
-        }
-        if (community) {
-            label = '$(github) ' + label;
-        }
-
-        ret.push({
-            value: val,
-            label: label,
-            detail: desc
-
-        });
     }
     return ret;
 }
@@ -514,21 +452,6 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			validate: (value: string) => Promise.resolve((/^[a-z_][a-z0-9_]*(\.[a-z0-9_]+)*$/.test(value)) ? undefined : 'Invalid base package'),
 			shouldResume: () => Promise.resolve(false)
 		});
-		return (input: dialogs.MultiStepInput) => pickLanguage(input, state);
-	}
-
-	async function pickLanguage(input: dialogs.MultiStepInput, state: Partial<State>) {
-        const choices = getLanguages();
-		const selected: any = await input.showQuickPick({
-			title,
-			step: 6,
-			totalSteps: totalSteps(state),
-            placeholder: 'Pick project language',
-            items: choices,
-            activeItems: findSelection(choices, state.language),
-			shouldResume: () => Promise.resolve(false)
-        });
-        state.language = selected;
 		return (input: dialogs.MultiStepInput) => pickServices(input, state);
 	}
 
@@ -536,7 +459,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
         const choices = state.micronautVersion && state.applicationType && state.javaVersion ? getServices() : [];
 		const selected: any = await input.showQuickPick({
 			title,
-			step: 7,
+			step: 6,
 			totalSteps: totalSteps(state),
             placeholder: 'Pick project services',
             items: choices,
@@ -552,7 +475,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
         const choices = getBuildTools();
 		const selected: any = await input.showQuickPick({
 			title,
-			step: 8,
+			step: 7,
 			totalSteps: totalSteps(state),
             placeholder: 'Pick build tool',
             items: choices,
@@ -567,7 +490,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
         const choices = getTestFrameworks();
 		const selected: any = await input.showQuickPick({
 			title,
-			step: 9,
+			step: 8,
 			totalSteps: totalSteps(state),
             placeholder: 'Pick test framework',
             items: choices,
@@ -582,7 +505,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
         const choices = getClouds() || [];
 		const selected: any = await input.showQuickPick({
 			title,
-			step: 10,
+			step: 9,
 			totalSteps: totalSteps(state),
             placeholder: 'Pick cloud environment',
             items: choices,
@@ -591,54 +514,9 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			shouldResume: () => Promise.resolve(false)
         });
         state.clouds = selected;
-        return (input: dialogs.MultiStepInput) => pickFeatureCategories(input, state);
+        return undefined;
     }
 
-    async function pickFeatureCategories(input: dialogs.MultiStepInput, state: Partial<State>) {
-        const cats : string[] = getFeatureCategories();
-        const choices = cats.map((v: string) => ({ label: v, value: v }));
-		const selected: any = await input.showQuickPick({
-			title,
-			step: 11,
-			totalSteps: totalSteps(state),
-            placeholder: 'Choose categories to include features from',
-            items: choices,
-            activeItems: findSelectedItems(choices, state.featureCategories || []),
-            canSelectMany: true,
-			shouldResume: () => Promise.resolve(false)
-        });
-        state.featureCategories = selected;
-        if (selected.length > 0) {
-            const chooseFrom = selected.map((c : ValueAndLabel) => c.value);
-            return (input: dialogs.MultiStepInput) => pickFeaturesFromCategory(input, state, chooseFrom, selected[0].value);
-        } else {
-            return undefined;
-        }
-    }
-
-    async function pickFeaturesFromCategory(input: dialogs.MultiStepInput, state: Partial<State>, cats: string[], category: string) {
-        const choices = getFeaturesFromCategory(category);
-        const idx = cats.indexOf(category);
-		const selected: any = await input.showQuickPick({
-			title,
-			step: fixedSteps + idx + 1,
-			totalSteps: totalSteps(state),
-            placeholder: `Pick feature(s) for ${category} category`,
-            items: choices,
-            activeItems: findSelectedItems(choices, state.features?.get(category) || []),
-            canSelectMany: true,
-			shouldResume: () => Promise.resolve(false)
-        });
-        if (!state.features) {
-            state.features = new Map();
-        }
-        state.features?.set(category, selected as ValueAndLabel[]);
-        if (idx >= 0 && idx < cats.length - 1) {
-            return (input: dialogs.MultiStepInput) => pickFeaturesFromCategory(input, state, cats, cats[idx + 1]);
-        } else {
-            return undefined;
-        }
-    }
     const s: State | undefined = await collectInputs();
     if (!s) {
         return undefined;
@@ -666,7 +544,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
         },
         applicationType: s.applicationType.value,
         buildTool: s.buildTool.value,
-        language: s.language.value,
+        language: 'JAVA',
         testFramework: s.testFramework.value,
 
         basePackage: s.basePackage,
