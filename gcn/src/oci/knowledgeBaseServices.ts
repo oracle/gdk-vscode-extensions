@@ -136,7 +136,12 @@ async function executeFolderAudit(uri: vscode.Uri) {
     }
 
     logUtils.logInfo(`[audit] Executing generic audit of folder ${uri.fsPath}`);
-    return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri.toString(), auditsKnowledgeBase, { auditName: folderName2AuditName(uri)});
+    return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri.toString(), auditsKnowledgeBase, 
+        { 
+            profile: profile,
+            auditName: folderName2AuditName(uri)
+        }
+    );
 }
 
 function folderName2AuditName(uri : vscode.Uri) : string {
@@ -486,9 +491,12 @@ class Service extends ociService.Service {
             dialogs.showErrorMessage('Required Language Server is not ready.');
             return;
         }
-
+        
         return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri.toString(), 
-            auditsKnowledgeBase, {} // TODO: cleanup this, bad argument check in NBLS.
+            auditsKnowledgeBase, 
+            {
+                profile: this.oci.getProfile()
+            }
         )
     }
 
@@ -498,7 +506,10 @@ class Service extends ociService.Service {
             return;
         }
         vscode.commands.executeCommand('nbls.gcn.projectAudit.display', this.folder.uri.toString(), auditsKnowledgeBase, 
-                                        { force : true }
+            { 
+                force : true,
+                profile: this.oci.getProfile()
+            }
         );
         const prjs: any[] = await vscode.commands.executeCommand('nbls.project.info', this.folder.uri.toString(), { recursive : true, projectStructure : true });
 
@@ -506,8 +517,12 @@ class Service extends ociService.Service {
             return;
         }
         for (let i of prjs.slice(1)) {
-            vscode.commands.executeCommand('nbls.gcn.projectAudit.display', i.projectDirectory, auditsKnowledgeBase, 
-             { force : true });
+            vscode.commands.executeCommand('nbls.gcn.projectAudit.display', i.projectDirectory, auditsKnowledgeBase,  
+                { 
+                    force : true,
+                    profile: this.oci.getProfile()
+                }
+            );
         }
     }
 
