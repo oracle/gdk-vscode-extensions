@@ -35,7 +35,7 @@ type DeploymentPipeline = {
 export function initialize(context: vscode.ExtensionContext) {
     nodes.registerRenameableNode(DeploymentPipelineNode.CONTEXTS);
     nodes.registerRemovableNode(DeploymentPipelineNode.CONTEXTS);
-    nodes.registerViewLogNode([DeploymentPipelineNode.CONTEXTS[1], DeploymentPipelineNode.CONTEXTS[2], DeploymentPipelineNode.CONTEXTS[3]]);
+    nodes.registerViewDeploymentLogNode([DeploymentPipelineNode.CONTEXTS[1], DeploymentPipelineNode.CONTEXTS[2]]);
     ociNodes.registerOpenInConsoleNode(DeploymentPipelineNode.CONTEXTS);
 
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runDeployPipeline', (node: DeploymentPipelineNode) => {
@@ -47,7 +47,7 @@ export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openInBrowser', (node: DeploymentPipelineNode) => {
 		node.openDeploymentInBrowser();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.viewLog', (node: DeploymentPipelineNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.viewDeploymentLog', (node: DeploymentPipelineNode) => {
 		node.viewLog();
 	}));
 }
@@ -473,7 +473,7 @@ class Service extends ociService.Service {
 
 }
 
-class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ViewLogNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
+class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ViewDeploymentLogNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'deploymentPipelineNode';
     static readonly CONTEXTS = [

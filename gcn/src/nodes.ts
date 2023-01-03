@@ -112,19 +112,34 @@ export async function registerShowReportNode(context: string | string[]) {
     await vscode.commands.executeCommand('setContext', 'gcn.showReportNodes', SHOW_REPORT_NODES);
 }
 
-export interface ViewLogNode {
+export interface ViewBuildLogNode {
     viewLog(): void;
 }
 
-const VIEW_LOG_NODES: string[] = [];
+const VIEW_BUILD_LOG_NODES: string[] = [];
 
-export async function registerViewLogNode(context: string | string[]) {
+export async function registerViewBuildLogNode(context: string | string[]) {
     if (typeof context === 'string' || context instanceof String) {
-        VIEW_LOG_NODES.push(context as string);
+        VIEW_BUILD_LOG_NODES.push(context as string);
     } else {
-        VIEW_LOG_NODES.push(...context);
+        VIEW_BUILD_LOG_NODES.push(...context);
     }
-    await vscode.commands.executeCommand('setContext', 'gcn.viewLogNodes', VIEW_LOG_NODES);
+    await vscode.commands.executeCommand('setContext', 'gcn.viewBuildLogNodes', VIEW_BUILD_LOG_NODES);
+}
+
+export interface ViewDeploymentLogNode {
+    viewLog(): void;
+}
+
+const VIEW_DEPLOYMENT_LOG_NODES: string[] = [];
+
+export async function registerViewDeploymentLogNode(context: string | string[]) {
+    if (typeof context === 'string' || context instanceof String) {
+        VIEW_DEPLOYMENT_LOG_NODES.push(context as string);
+    } else {
+        VIEW_DEPLOYMENT_LOG_NODES.push(...context);
+    }
+    await vscode.commands.executeCommand('setContext', 'gcn.viewDeploymentLogNodes', VIEW_DEPLOYMENT_LOG_NODES);
 }
 
 export function getLabel(node: BaseNode): string | undefined {

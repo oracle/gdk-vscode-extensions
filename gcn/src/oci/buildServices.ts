@@ -21,6 +21,7 @@ import * as ociServices  from './ociServices';
 import * as dataSupport from './dataSupport';
 import * as ociNodes from './ociNodes';
 import * as artifactServices from './artifactServices';
+import * as containerInstanceServices from './containerInstanceServices';
 
 
 export const DATA_NAME = 'buildPipelines';
@@ -37,7 +38,7 @@ type BuildPipeline = {
 export function initialize(context: vscode.ExtensionContext) {
     nodes.registerRenameableNode(BuildPipelineNode.CONTEXTS);
     nodes.registerRemovableNode(BuildPipelineNode.CONTEXTS);
-    nodes.registerViewLogNode([BuildPipelineNode.CONTEXTS[1], BuildPipelineNode.CONTEXTS[2], BuildPipelineNode.CONTEXTS[3]]);
+    nodes.registerViewBuildLogNode([BuildPipelineNode.CONTEXTS[1], BuildPipelineNode.CONTEXTS[2]]);
     ociNodes.registerOpenInConsoleNode(BuildPipelineNode.CONTEXTS);
 
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runBuildPipeline', (node: BuildPipelineNode) => {
@@ -47,9 +48,18 @@ export function initialize(context: vscode.ExtensionContext) {
 		node.cancelPipeline();
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.getBuildArtifact', (node: BuildPipelineNode) => {
-		node.downloadArtifact();
+		node.getArtifacts();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.viewLog', (node: BuildPipelineNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.downloadSingleBuildArtifact', (node: BuildPipelineNode) => {
+		node.downloadSingleArtifact();
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.pullSingleBuildArtifact', (node: BuildPipelineNode) => {
+		node.pullSingleArtifact();
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runSingleBuildArtifact', (node: BuildPipelineNode) => {
+		node.runSingleArtifact();
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.viewBuildLog', (node: BuildPipelineNode) => {
 		node.viewLog();
 	}));
 }
@@ -296,14 +306,16 @@ class Service extends ociService.Service {
 
 }
 
-class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ViewLogNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
+class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ViewBuildLogNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'buildPipelineNode';
     static readonly CONTEXTS = [
         `gcn.oci.${BuildPipelineNode.DATA_NAME}`, // default
         `gcn.oci.${BuildPipelineNode.DATA_NAME}-has-lastrun`, // handle to the previous run available
         `gcn.oci.${BuildPipelineNode.DATA_NAME}-in-progress`, // in progress
-        `gcn.oci.${BuildPipelineNode.DATA_NAME}-artifacts-available` // artifacts available
+        `gcn.oci.${BuildPipelineNode.DATA_NAME}-artifacts-available`, // artifacts available
+        `gcn.oci.${BuildPipelineNode.DATA_NAME}-single-download-available`, // single generic artifact available
+        `gcn.oci.${BuildPipelineNode.DATA_NAME}-single-image-available` // single docker image available
     ];
 
     private object: BuildPipeline;
@@ -456,7 +468,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         }
     }
 
-    async downloadArtifact() {
+    async getArtifacts() {
         const choices: { label: string, type: string, id: string, path?: string, size?: number  }[] = await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: 'Reading available artifacts...',
@@ -506,6 +518,62 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         }
     }
 
+    async downloadSingleArtifact() {
+        const artifact: { label: string, type: string, id: string, path?: string, size?: number } | undefined = await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Reading artifact...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async resolve => {
+                let artifact: { label: string, type: string, id: string, path?: string, size?: number } | undefined;
+                if (this.lastRun?.deliveredArtifacts?.length === 1) {
+                    const deliveredArtifact = this.lastRun.deliveredArtifacts[0];
+                    if (deliveredArtifact.type === 'GENERIC_ARTIFACT') {
+                        try {
+                            const genericArtifact = await ociUtils.getGenericArtifact(this.oci.getProvider(), deliveredArtifact.id);
+                            if (genericArtifact.displayName && genericArtifact.artifactPath) {
+                                artifact = { label: genericArtifact.displayName, type: deliveredArtifact.type, id: genericArtifact.id, path: genericArtifact.artifactPath /* TODO: may contain slashes! */, size: genericArtifact.sizeInBytes };
+                            }
+                        } catch (err) {
+                            logUtils.logError(`[build] ${dialogs.getErrorMessage('Failed to resolve generic artifact', err)}`);
+                        }
+                    }
+                }
+                resolve(artifact);
+            });
+        });
+        if (artifact?.path) {
+            artifactServices.downloadGenericArtifactContent(this.oci, artifact.id, artifact.label, artifact.path, artifact.size);
+        } else {
+            vscode.window.showErrorMessage('No artifact to download.');
+        }
+    }
+
+    async pullSingleArtifact() {
+        if (this.lastRun?.deliveredArtifacts?.length === 1) {
+            const deliveredArtifact = this.lastRun.deliveredArtifacts[0];
+            if (deliveredArtifact.type === 'OCIR' && deliveredArtifact.id) {
+                dockerUtils.pullImage(deliveredArtifact.id);
+                return;
+            }
+        }
+        vscode.window.showErrorMessage('No image to pull.');
+    }
+
+    async runSingleArtifact() {
+        if (this.lastRun?.deliveredArtifacts?.length === 1) {
+            const deliveredArtifact = this.lastRun.deliveredArtifacts[0];
+            if (deliveredArtifact.type === 'OCIR' && deliveredArtifact.id) {
+                const cis = containerInstanceServices.findByNode(this);
+                if (cis) {
+                    cis.runAndOpenContainerInstance(deliveredArtifact.id);
+                    return;
+                }
+            }
+        }
+        vscode.window.showErrorMessage('No image to run.');
+    }
+
     viewLog() {
         this.lastRun?.output?.show();
     }
@@ -524,7 +592,24 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                 break;
             case devops.models.BuildRun.LifecycleState.Succeeded:
                 this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.green'));
-                this.contextValue = deliveredArtifacts?.length ? BuildPipelineNode.CONTEXTS[3] : BuildPipelineNode.CONTEXTS[1];
+                if (deliveredArtifacts?.length) {
+                    if (deliveredArtifacts.length === 1) {
+                        switch (deliveredArtifacts[0].type) {
+                            case 'GENERIC_ARTIFACT':
+                                this.contextValue = BuildPipelineNode.CONTEXTS[4];
+                                break;
+                            case 'OCIR':
+                                this.contextValue = BuildPipelineNode.CONTEXTS[5];
+                                break;
+                            default:
+                                this.contextValue = BuildPipelineNode.CONTEXTS[3];
+                        }
+                    } else {
+                        this.contextValue = BuildPipelineNode.CONTEXTS[3];
+                    }
+                } else {
+                    this.contextValue = BuildPipelineNode.CONTEXTS[1];
+                }
                 break;
             case devops.models.BuildRun.LifecycleState.Failed:
                 this.iconPath = new vscode.ThemeIcon(ICON, new vscode.ThemeColor('charts.red'));

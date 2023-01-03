@@ -90,7 +90,7 @@ class Service extends ociService.Service {
                     });
                     logUtils.logInfo('[containerinstance] Resolving existing Container Instance for image URL ' + dockerImageUrl);
                     currentContainerInstance = await ociUtils.getContainerInstance(authenticationDetailsProvider, lastContainerInstanceID);
-                    if (dockerImageUrl.endsWith(':latest')) {
+                    if (dockerImageUrl.endsWith(':latest') || !dockerImageUrl.includes(':')) {
                         logUtils.logInfo('[containerinstance] Restarting existing Container Instance for image URL ' + dockerImageUrl);
                         progress.report({
                             message: 'Restarting existing Container Instance'
