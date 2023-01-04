@@ -11,12 +11,37 @@ import * as cp from 'child_process';
 import * as vscode from 'vscode';
 
 
+// NOTE: should be updated whenever the defaults change
+// TODO: could this be automated somehow based on the GitHub/GDS catalogs?
+const DEFAULT_JAVA_VERSION = '17';
+const DEFAULT_GRAALVM_VERSION = '22';
+
 export async function getActiveGVMVersion(): Promise<string[] | undefined> {
     const gvm = getActiveGVM();
     if (!gvm) {
         return undefined;
     }
     return getGraalVMVersions(gvm);
+}
+
+export function getBuildRunGVMVersion(activeGVMVersions?: string[]): string[] {
+    const activeJavaVersion = activeGVMVersions?.[0];
+    const javaVersion = activeJavaVersion ? activeJavaVersion : DEFAULT_JAVA_VERSION;
+    
+    const activeGraalVMVersion = activeGVMVersions?.[1];
+    let graalVMVersion;
+    if (activeGraalVMVersion) {
+        if (activeGraalVMVersion.endsWith('.0.0-dev')) { // stable version not available yet for the remote yum
+            graalVMVersion = DEFAULT_GRAALVM_VERSION; // TODO: should use previous stable GraalVM version (major--)?
+        } else {
+            const i = activeGraalVMVersion.indexOf('.');
+            graalVMVersion = i === -1 ? activeGraalVMVersion : activeGraalVMVersion.slice(0, i);
+        }
+    } else {
+        graalVMVersion = DEFAULT_GRAALVM_VERSION;
+    }
+    
+    return [javaVersion, graalVMVersion];
 }
 
 export function getGVMBuildRunParameters(versions: string[]): { name: string, value: string }[] | undefined {
@@ -100,10 +125,6 @@ async function getGraalVMVersions(homeFolder: string): Promise<string[] | undefi
                                 resolve(undefined);
                             }
                             graalVMVersion = versionStrings[2];
-                            i = graalVMVersion.indexOf('.');
-                            if (i > -1) {
-                                graalVMVersion = graalVMVersion.slice(0, i);
-                            }
                             resolve([ javaVersion, graalVMVersion ]);
                         } else {
                             resolve(undefined);
