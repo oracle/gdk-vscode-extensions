@@ -28,12 +28,6 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "gcn-database-drivers.helloWorld",
-        "title": "Hello World"
-      }
-    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
