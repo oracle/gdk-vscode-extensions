@@ -48,6 +48,9 @@ suite = {
     "graalvm" : {
       "class": "VSCodeExtensionProject",
     },
+    "gcn-database-drivers" : {
+      "class": "VSCodeExtensionProject",
+    },
     "micronaut" : {
       "class": "VSCodeExtensionProject",
     },
