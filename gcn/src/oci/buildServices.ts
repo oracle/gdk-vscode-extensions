@@ -374,77 +374,84 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         return `https://cloud.oracle.com/devops-build/projects/${pipeline.projectId}/build-pipelines/${pipeline.id}`;
     }
 
-    runPipeline() {
+    async runPipeline() {
         const currentState = this.lastRun?.state;
         if (currentState === devops.models.BuildRun.LifecycleState.Canceling || !ociUtils.isRunning(currentState)) {
             const folder = servicesView.findWorkspaceFolderByNode(this)?.uri;
             if (folder) {
-                // TODO: might reflect Java version from a non-GraalVM Java installation
-                graalvmUtils.getActiveGVMVersion().then(async version => {
-                    if (gitUtils.locallyModified(folder)) {
-                        const cancelOption = 'Cancel Build And Show Source Control View';
-                        const runBuildOption = 'Build Anyway';
-                        const selOption = await vscode.window.showWarningMessage('Local souces differ from the repository content in cloud.', cancelOption, runBuildOption);
-                        if (runBuildOption !== selOption) {
-                            if (cancelOption === selOption) {
-                                vscode.commands.executeCommand('workbench.view.scm');
-                            }
-                            return;
+                if (gitUtils.locallyModified(folder)) {
+                    const cancelOption = 'Cancel Build And Show Source Control View';
+                    const runBuildOption = 'Build Anyway';
+                    const selOption = await vscode.window.showWarningMessage('Local souces differ from the repository content in cloud.', cancelOption, runBuildOption);
+                    if (runBuildOption !== selOption) {
+                        if (cancelOption === selOption) {
+                            vscode.commands.executeCommand('workbench.view.scm');
                         }
+                        return;
                     }
-                    const head = gitUtils.getHEAD(folder);
-                    if (head?.name && !head.upstream) {
-                        const cancelOption = 'Cancel Build';
-                        const pushOption = 'Publish Branch And Continue';
-                        if (pushOption !== await vscode.window.showWarningMessage(`Local branch "${head.name}" has not been published yet.`, cancelOption, pushOption)) {
-                            return;
-                        } else {
-                            await gitUtils.pushLocalBranch(folder);
-                        }
+                }
+                const head = gitUtils.getHEAD(folder);
+                if (head?.name && !head.upstream) {
+                    const cancelOption = 'Cancel Build';
+                    const pushOption = 'Publish Branch And Continue';
+                    if (pushOption !== await vscode.window.showWarningMessage(`Local branch "${head.name}" has not been published yet.`, cancelOption, pushOption)) {
+                        return;
+                    } else {
+                        await gitUtils.pushLocalBranch(folder);
                     }
+                }
+                const gcnConfiguration = vscode.workspace.getConfiguration('gcn');
+                const useLocalGvmVersion: boolean = gcnConfiguration.get('useLocalGraalvmVersion', false);
+                const version = useLocalGvmVersion ? await graalvmUtils.getActiveGVMVersion() : undefined;
+                if (useLocalGvmVersion) {
+                     // TODO: might reflect Java version from a non-GraalVM Java installation
                     if (!version) {
                         logUtils.logInfo('[build] No local active GraalVM detected, using defaults for the build');
                     } else if (version[1].endsWith('-dev')) {
                         logUtils.logInfo(`[build] Devbuild local active GraalVM detected: ${version[1]}, using stable release for the build`);
+                    } else {
+                        logUtils.logInfo('[build] Using local active GraalVM version for the build');
                     }
-                    const targetVersion = graalvmUtils.getBuildRunGVMVersion(version);
-                    const params = graalvmUtils.getGVMBuildRunParameters(targetVersion);
-                    const buildName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
-                    logUtils.logInfo(`[build] Starting build '${buildName}' using GraalVM ${targetVersion[1]}, Java ${targetVersion[0]}`);
-                    vscode.window.withProgress({
-                        location: vscode.ProgressLocation.Notification,
-                        title: `Starting build "${buildName}" using GraalVM ${targetVersion[1]}, Java ${targetVersion[0]}...`,
-                        cancellable: false
-                    }, (_progress, _token) => {
-                        return new Promise(async resolve => {
-                            try {
-                                const repository = await ociUtils.getCodeRepository(this.oci.getProvider(), this.oci.getCodeRepository());
-                                let commitInfo;
-                                if (head?.name && head.commit) {
-                                    if (repository && repository.httpUrl && `refs/heads/${head.name}` !== repository.defaultBranch) {
-                                        commitInfo = { repositoryUrl: repository.httpUrl, repositoryBranch: head.name, commitHash: head.commit };
-                                    }
+                } else {
+                    logUtils.logInfo('[build] Using default GraalVM for the build');
+                }
+                const targetVersion = graalvmUtils.getBuildRunGVMVersion(version);
+                const params = graalvmUtils.getGVMBuildRunParameters(targetVersion);
+                const buildName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
+                logUtils.logInfo(`[build] Starting build '${buildName}' using GraalVM ${targetVersion[1]}, Java ${targetVersion[0]}`);
+                vscode.window.withProgress({
+                    location: vscode.ProgressLocation.Notification,
+                    title: `Starting build "${buildName}" using GraalVM ${targetVersion[1]}, Java ${targetVersion[0]}...`,
+                    cancellable: false
+                }, (_progress, _token) => {
+                    return new Promise(async resolve => {
+                        try {
+                            const repository = await ociUtils.getCodeRepository(this.oci.getProvider(), this.oci.getCodeRepository());
+                            let commitInfo;
+                            if (head?.name && head.commit) {
+                                if (repository && repository.httpUrl && `refs/heads/${head.name}` !== repository.defaultBranch) {
+                                    commitInfo = { repositoryUrl: repository.httpUrl, repositoryBranch: head.name, commitHash: head.commit };
                                 }
-                                const buildRunName = repository.name ? `${repository.name}: ${buildName}` : buildName;
-                                const buildRun = await ociUtils.createBuildRun(this.oci.getProvider(), this.object.ocid, buildRunName, params, commitInfo);
-                                logUtils.logInfo(`[build] Build '${buildName}' started`);
-                                resolve(true);
-                                if (buildRun) {
-                                    this.object.lastBuildRun = buildRun.id;
-                                    const service = findByNode(this);
-                                    service?.serviceNodesChanged(this);
-                                    this.showSucceededFlag = true;
-                                    this.updateLastRun(buildRun.id, buildRun.lifecycleState, buildRun.displayName ? vscode.window.createOutputChannel(buildRun.displayName) : undefined);
-                                    this.viewLog();
-                                    this.updateWhenCompleted(buildRun.id, buildRun.compartmentId, buildName);
-                                }
-                            } catch (err) {
-                                dialogs.showErrorMessage(`Failed to start build pipeline '${this.object.displayName}'`, err);
-                                resolve(false);
                             }
-                        });
-                    })
-                });
+                            const buildRunName = repository.name ? `${repository.name}: ${buildName}` : buildName;
+                            const buildRun = await ociUtils.createBuildRun(this.oci.getProvider(), this.object.ocid, buildRunName, params, commitInfo);
+                            logUtils.logInfo(`[build] Build '${buildName}' started`);
+                            resolve(true);
+                            if (buildRun) {
+                                this.object.lastBuildRun = buildRun.id;
+                                const service = findByNode(this);
+                                service?.serviceNodesChanged(this);
+                                this.showSucceededFlag = true;
+                                this.updateLastRun(buildRun.id, buildRun.lifecycleState, buildRun.displayName ? vscode.window.createOutputChannel(buildRun.displayName) : undefined);
+                                this.viewLog();
+                                this.updateWhenCompleted(buildRun.id, buildRun.compartmentId, buildName);
+                            }
+                        } catch (err) {
+                            dialogs.showErrorMessage(`Failed to start build pipeline '${this.object.displayName}'`, err);
+                            resolve(false);
+                        }
+                    });
+                })
             }
         }
     }

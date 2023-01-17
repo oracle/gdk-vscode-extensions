@@ -67,6 +67,12 @@
 					"description": "Profile to access the shared knowledge base for audits",
 					"scope": "machine"
 				},
+				"gcn.useLocalGraalvmVersion": {
+					"type": "boolean",
+					"default": false,
+					"description": "Use local active GraalVM (major) version for the remote build",
+					"scope": "machine"
+				},
 				"gcn.home": {
 					"type": "string",
 					"default": "",
