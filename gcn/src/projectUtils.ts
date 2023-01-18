@@ -113,7 +113,7 @@ export async function getProjectBuildNativeExecutableCommand(folder: ProjectFold
             return 'chmod 777 ./mvnw && ./mvnw install --no-transfer-progress -Dpackaging=native-image -DskipTests';
         }
         if (folder.projectType === 'SpringBoot') {
-            return 'chmod 777 ./mvnw && ./mvnw package --no-transfer-progress -Pnative -DskipTests';
+            return 'chmod 777 ./mvnw && ./mvnw --no-transfer-progress native:compile -Pnative -DskipTests';
         }
         if (folder.projectType === 'GCN') {
             let appName = undefined;
