@@ -23,6 +23,7 @@ import * as ociContext from './ociContext';
 import * as ociDialogs from './ociDialogs';
 import * as sshUtils from './sshUtils';
 import * as okeUtils from './okeUtils';
+import * as kubernetesUtils from '../kubernetesUtils';
 
 
 const ACTION_NAME = 'Deploy to OCI';
@@ -135,6 +136,36 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
         if (!deployData.compartment) {
             dump();
             return false;
+        }
+    }
+
+    if (!deployData.namespace) {
+        try {
+            deployData.namespace = await ociUtils.getObjectStorageNamespace(provider);
+        } catch (err) {}
+        if (!deployData.namespace) {
+            dialogs.showErrorMessage('Cannot resolve object storage namespace.');
+            dump();
+            return false;
+        }
+    }
+
+    if (!deployData.secretName) {
+        deployData.secretName = 'vscode-generated-ocirsecret';
+        const secret = await kubernetesUtils.getSecret(deployData.secretName);
+        if (!secret) {
+            const user = await ociUtils.getUser(provider, provider.getUser());
+            const password = await ociDialogs.inputPassword(user.name, ACTION_NAME);
+            if (password === undefined) {
+                dump();
+                return false;
+            }
+            const success = await kubernetesUtils.createSecret(deployData.secretName, `${provider.getRegion().regionCode}.ocir.io`, `${deployData.namespace}/${user.name}`, password);
+            if (!success) {
+                dialogs.showErrorMessage('Cannot create Docker registry secret.');
+                dump();
+                return false;
+            }
         }
     }
 
@@ -1137,16 +1168,6 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     buildPipelines.push({ 'ocid': folderData.nibuildPipeline, 'displayName': nibuildPipelineName });
                 }
 
-                let namesapce: string | undefined;
-                try {
-                    logUtils.logInfo(`[deploy] Resolving object storage namespace`);
-                    namesapce = await ociUtils.getObjectStorageNamespace(provider);
-                } catch (err) {}
-                if (!namesapce) {
-                    resolve(`Failed to create docker native executables pipeline for ${repositoryName} - cannot resolve object storage namespace.`);
-                    return;
-                }
-
                 if (folder.projectType === 'GCN') {
                     logUtils.logInfo(`[deploy] Recognized GCN project in ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                     for (const subName of projectUtils.getCloudSpecificSubProjectNames(folder)) {
@@ -1243,7 +1264,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     }
                                 }
 
-                                const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${namesapce}/${nativeContainerRepository.displayName}:\${DOCKER_TAG}`;
+                                const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${deployData.namespace}/${nativeContainerRepository.displayName}:\${DOCKER_TAG}`;
                                 if (subData.docker_nibuildArtifact) {
                                     progress.report({
                                         message: `Using already created ${subName} docker native executable artifact for ${repositoryName}...`
@@ -1406,7 +1427,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     const oke_deploy_native_config_template = 'oke_deploy_config.yaml';
                                     const oke_deployNativeConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_native_config_template, {
                                         image_name: docker_nibuildImage,
-                                        app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
+                                        app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
+                                        secret_name: deployData.secretName
                                     });
                                     if (!oke_deployNativeConfigInlineContent) {
                                         resolve(`Failed to create OKE native deployment configuration spec for ${subName} of ${repositoryName}`);
@@ -1629,7 +1651,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         return;
                                     }
 
-                                    const docker_jvmbuildImage = `${provider.getRegion().regionCode}.ocir.io/${namesapce}/${jvmContainerRepository.displayName}:\${DOCKER_TAG}`;
+                                    const docker_jvmbuildImage = `${provider.getRegion().regionCode}.ocir.io/${deployData.namespace}/${jvmContainerRepository.displayName}:\${DOCKER_TAG}`;
                                     if (subData.docker_jvmbuildArtifact) {
                                         progress.report({
                                             message: `Using already created ${subName} docker jvm image artifact for ${repositoryName}...`
@@ -1788,7 +1810,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     const oke_deploy_jvm_config_template = 'oke_deploy_config.yaml';
                                     const oke_deployJvmConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_jvm_config_template, {
                                         image_name: docker_jvmbuildImage,
-                                        app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
+                                        app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
+                                        secret_name: deployData.secretName
                                     });
                                     if (!oke_deployJvmConfigInlineContent) {
                                         resolve(`Failed to create OKE jvm deployment configuration spec for ${subName} of ${repositoryName}`);
@@ -2008,7 +2031,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             return;
                         }
 
-                        const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${namesapce}/${nativeContainerRepository.displayName}:\${DOCKER_TAG}`;
+                        const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${deployData.namespace}/${nativeContainerRepository.displayName}:\${DOCKER_TAG}`;
                         if (folderData.docker_nibuildArtifact) {
                             progress.report({
                                 message: `Using already created docker native executable artifact for ${repositoryName}...`
@@ -2169,7 +2192,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         const oke_deploy_native_config_template = 'oke_deploy_config.yaml';
                         const oke_deployNativeConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_native_config_template, {
                             image_name: docker_nibuildImage,
-                            app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
+                            app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
+                            secret_name: deployData.secretName
                         });
                         if (!oke_deployNativeConfigInlineContent) {
                             resolve(`Failed to create OKE native deployment configuration spec for ${repositoryName}`);
@@ -2382,7 +2406,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             return;
                         }
 
-                        const docker_jvmbuildImage = `${provider.getRegion().regionCode}.ocir.io/${namesapce}/${jvmContainerRepository.displayName}:\${DOCKER_TAG}`;
+                        const docker_jvmbuildImage = `${provider.getRegion().regionCode}.ocir.io/${deployData.namespace}/${jvmContainerRepository.displayName}:\${DOCKER_TAG}`;
                         if (folderData.docker_jvmbuildArtifact) {
                             progress.report({
                                 message: `Using already created docker jvm image artifact for ${repositoryName}...`
@@ -2541,7 +2565,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         const oke_deploy_jvm_config_template = 'oke_deploy_config.yaml';
                         const oke_deployJvmConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_jvm_config_template, {
                             image_name: docker_jvmbuildImage,
-                            app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
+                            app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
+                            secret_name: deployData.secretName
                         });
                         if (!oke_deployJvmConfigInlineContent) {
                             resolve(`Failed to create OKE jvm deployment configuration development spec for ${repositoryName}`);

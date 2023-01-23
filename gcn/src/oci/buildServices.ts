@@ -16,6 +16,7 @@ import * as servicesView from '../servicesView';
 import * as logUtils from '../logUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
+import * as ociDialogs from './ociDialogs';
 import * as ociService from './ociService';
 import * as ociServices  from './ociServices';
 import * as dataSupport from './dataSupport';
@@ -529,7 +530,9 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                     }
                     break;
                 case 'OCIR':
-                    dockerUtils.pullImage(choice.id);
+                    if (await ociDialogs.dockerAuthenticate(this.oci.getProvider(), choice.id, 'Get Build Artifact')) {
+                        dockerUtils.pullImage(choice.id);
+                    }
                     break;
             }
         } else {
@@ -572,7 +575,9 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         if (this.lastRun?.deliveredArtifacts?.length === 1) {
             const deliveredArtifact = this.lastRun.deliveredArtifacts[0];
             if (deliveredArtifact.type === 'OCIR' && deliveredArtifact.id) {
-                dockerUtils.pullImage(deliveredArtifact.id);
+                if (await ociDialogs.dockerAuthenticate(this.oci.getProvider(), deliveredArtifact.id, 'Pull Docker Image')) {
+                    dockerUtils.pullImage(deliveredArtifact.id);
+                }
                 return;
             }
         }

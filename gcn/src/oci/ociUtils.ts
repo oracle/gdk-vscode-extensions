@@ -1500,7 +1500,7 @@ export async function createContainerRepository(authenticationDetailsProvider: c
         compartmentId: compartmentID,
         displayName: repositoryName.toLowerCase(),
         isImmutable: false,
-        isPublic: true
+        isPublic: false
     };
     const request: artifacts.requests.CreateContainerRepositoryRequest = {
         createContainerRepositoryDetails: requestDetails
@@ -2021,7 +2021,7 @@ export async function getContainerInstance(authenticationDetailsProvider: common
     return client.getContainerInstance(request).then(response => response.containerInstance);
 }
 
-export async function createContainerInstance(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, imageURL: string, subnetID: string, name: string): Promise<{ containerInstance: containerinstances.models.ContainerInstance, workRequestId: string }> {
+export async function createContainerInstance(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, imageURL: string, subnetID: string, name: string, username: string, password: string): Promise<{ containerInstance: containerinstances.models.ContainerInstance, workRequestId: string }> {
     const client = new containerinstances.ContainerInstanceClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     
     const shapeConfig: containerinstances.models.CreateContainerInstanceShapeConfigDetails = {
@@ -2036,7 +2036,19 @@ export async function createContainerInstance(authenticationDetailsProvider: com
     const vnicDetails: containerinstances.models.CreateContainerVnicDetails = {
         subnetId: subnetID
     }
+
+    const endpointIdx = imageURL.indexOf('/');
+    const registryEndpoint = endpointIdx < 0 ? `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io` : imageURL.slice(0, endpointIdx);
+    const namespaceIdx = imageURL.indexOf('/', endpointIdx + 1);
+    const namespace = namespaceIdx < 0 ? await getObjectStorageNamespace(authenticationDetailsProvider) : imageURL.slice(endpointIdx + 1, namespaceIdx);
     
+    const imagePullSecretDetails: containerinstances.models.CreateBasicImagePullSecretDetails = {
+        secretType: 'BASIC',
+        registryEndpoint,
+        username: Buffer.from(`${namespace}/${username}`).toString('base64'),
+        password: Buffer.from(password).toString('base64')
+    }
+
     const requestDetails: containerinstances.models.CreateContainerInstanceDetails = {
         displayName: name,
         compartmentId: compartmentID,
@@ -2044,7 +2056,8 @@ export async function createContainerInstance(authenticationDetailsProvider: com
         shape: 'CI.Standard.E4.Flex',
         shapeConfig: shapeConfig,
         containers: [ containerDetails ],
-        vnics: [ vnicDetails ]
+        vnics: [ vnicDetails ],
+        imagePullSecrets: [ imagePullSecretDetails ]
     }
 
     const request: containerinstances.requests.CreateContainerInstanceRequest = {

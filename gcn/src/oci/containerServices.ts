@@ -12,6 +12,7 @@ import * as dialogs from '../dialogs';
 import * as dockerUtils from '../dockerUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
+import * as ociDialogs from './ociDialogs';
 import * as ociService from './ociService';
 import * as ociServices  from './ociServices';
 import * as dataSupport from './dataSupport';
@@ -353,7 +354,7 @@ class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource 
                     const version = resource.version;
                     if (version) {
                         const target = `${regionKey}.ocir.io/${namespace}/${repositoryName}:${version}`; // https://docs.oracle.com/en-us/iaas/Content/Registry/Tasks/registrypullingimagesusingthedockercli.htm
-                        return target;
+                        return (await ociDialogs.dockerAuthenticate(this.oci.getProvider(), target, 'Pull Docker Image')) ? target : undefined;
                     } else {
                         return new Error('Failed to resolve docker pull command - unknown image version.');
                     }

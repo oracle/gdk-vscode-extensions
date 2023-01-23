@@ -14,6 +14,7 @@ import * as dialogs from '../dialogs';
 import * as logUtils from '../logUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
+import * as ociDialogs from './ociDialogs';
 import * as ociService from './ociService';
 import * as ociServices from './ociServices';
 import * as dataSupport from './dataSupport';
@@ -100,6 +101,11 @@ class Service extends ociService.Service {
                         await ociUtils.containerInstancesWaitForResourceCompletionStatus(authenticationDetailsProvider, 'Container Instance', workRequestID);
                     }
                 } else {
+                    const user = await ociUtils.getUser(authenticationDetailsProvider, authenticationDetailsProvider.getUser());
+                    const password = await ociDialogs.inputPassword(user.name, 'Run and Open in Browser');
+                    if (password === undefined) {
+                        return;
+                    }
                     logUtils.logInfo('[containerinstance] No existing Container Instance found for image URL ' + dockerImageUrl);
                     if (lastContainerInstanceID) {
                         logUtils.logInfo('[containerinstance] Deleting previous Container Instance ' + lastContainerInstanceID);
@@ -112,7 +118,7 @@ class Service extends ociService.Service {
                     const subnet = await getOrCreateCISubnet(authenticationDetailsProvider, compartment);
                     const ciName = `CI-VSCode-${Date.now()}`;
                     logUtils.logInfo('[containerinstance] Creating new Container Instance for image URL ' + dockerImageUrl);
-                    const containerInstanceHandle = await ociUtils.createContainerInstance(authenticationDetailsProvider, compartment, dockerImageUrl, subnet.id, ciName);
+                    const containerInstanceHandle = await ociUtils.createContainerInstance(authenticationDetailsProvider, compartment, dockerImageUrl, subnet.id, ciName, user.name, password);
                     const containerInstanceID = containerInstanceHandle.containerInstance.id;
                     this.settingsData = {
                         containerInstance: containerInstanceID,
