@@ -303,7 +303,7 @@
 			{
 				"command": "gcn.createGcnProject",
 				"title": "Create GCN Project",
-				"category": "OCI for GCN"
+				"category": "GCN"
 			},
 			{
 				"command": "gcn.oci.enableDevOpsDecorations",
