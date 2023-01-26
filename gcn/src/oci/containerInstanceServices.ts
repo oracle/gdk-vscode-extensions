@@ -91,7 +91,8 @@ class Service extends ociService.Service {
                     });
                     logUtils.logInfo('[containerinstance] Resolving existing Container Instance for image URL ' + dockerImageUrl);
                     currentContainerInstance = await ociUtils.getContainerInstance(authenticationDetailsProvider, lastContainerInstanceID);
-                    if (dockerImageUrl.endsWith(':latest') || !dockerImageUrl.includes(':')) {
+                    const currentState = currentContainerInstance.lifecycleState;
+                    if (currentState === containerinstances.models.ContainerInstance.LifecycleState.Active && (dockerImageUrl.endsWith(':latest') || !dockerImageUrl.includes(':'))) {
                         logUtils.logInfo('[containerinstance] Restarting existing Container Instance for image URL ' + dockerImageUrl);
                         progress.report({
                             message: 'Restarting existing Container Instance'
@@ -99,6 +100,21 @@ class Service extends ociService.Service {
                         const workRequestID = await ociUtils.restartContainerInstance(authenticationDetailsProvider, lastContainerInstanceID);
                         logUtils.logInfo('[containerinstance] Waiting for restarted Container Instance for image URL ' + dockerImageUrl);
                         await ociUtils.containerInstancesWaitForResourceCompletionStatus(authenticationDetailsProvider, 'Container Instance', workRequestID);
+                    } else if (currentState === containerinstances.models.ContainerInstance.LifecycleState.Inactive) {
+                        logUtils.logInfo('[containerinstance] Starting existing Container Instance for image URL ' + dockerImageUrl);
+                        progress.report({
+                            message: 'Starting existing Container Instance'
+                        });
+                        const workRequestID = await ociUtils.startContainerInstance(authenticationDetailsProvider, currentContainerInstance.id);
+                        logUtils.logInfo('[containerinstance] Waiting for Container Instance for image URL ' + dockerImageUrl);
+                        await ociUtils.containerInstancesWaitForResourceCompletionStatus(authenticationDetailsProvider, 'Container Instance', workRequestID);
+                    } else if (currentState !== containerinstances.models.ContainerInstance.LifecycleState.Active) {
+                        dialogs.showErrorMessage(`Unsupported state of Container Instance for image ${dockerImageUrl}: ${currentState}. Please invoke the action again.`);
+                        this.settingsData = undefined;
+                        if (this.dataChanged) {
+                            this.dataChanged(this);
+                        }
+                        return;
                     }
                 } else {
                     const user = await ociUtils.getUser(authenticationDetailsProvider, authenticationDetailsProvider.getUser());

@@ -2011,6 +2011,22 @@ export async function listContainerInstances(authenticationDetailsProvider: comm
     return result;
 }
 
+export async function listContainerInstanceContainers(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, containerInstanceID: string): Promise<containerinstances.models.ContainerSummary[]> {
+    const client = new containerinstances.ContainerInstanceClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: containerinstances.requests.ListContainersRequest = {
+        compartmentId: compartmentID,
+        containerInstanceId: containerInstanceID,
+        limit: 1000
+    };
+    const result: containerinstances.models.ContainerSummary[] = [];
+    do {
+        const response = await client.listContainers(request);
+        result.push(...response.containerCollection.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    return result;
+}
+
 export async function getContainerInstance(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, containerInstanceID: string): Promise<containerinstances.models.ContainerInstance> {
     const client = new containerinstances.ContainerInstanceClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     
@@ -2065,6 +2081,16 @@ export async function createContainerInstance(authenticationDetailsProvider: com
     };
     
     return client.createContainerInstance(request).then(response => { return { containerInstance: response.containerInstance, workRequestId: response.opcWorkRequestId } });
+}
+
+export async function startContainerInstance(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, containerInstanceID: string): Promise<string> {
+    const client = new containerinstances.ContainerInstanceClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    
+    const request: containerinstances.requests.StartContainerInstanceRequest = {
+        containerInstanceId: containerInstanceID
+    };
+    
+    return client.startContainerInstance(request).then(response => response.opcWorkRequestId);
 }
 
 export async function restartContainerInstance(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, containerInstanceID: string): Promise<string> {
