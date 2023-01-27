@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import * as common from 'oci-common';
 import * as dialogs from '../dialogs';
 import * as dockerUtils from '../dockerUtils';
+import * as kubernetesUtils from '../kubernetesUtils';
 import * as logUtils from '../logUtils';
 import * as ociUtils from './ociUtils';
 
@@ -247,6 +248,33 @@ export async function selectCodeRepositories(authenticationDetailsProvider: comm
     return undefined;
 }
 
+export async function getKubeSecret(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, secretName: string, namespace: string, actionName?: string): Promise<string | null | undefined> {
+    return vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: 'Creating Kubernetes Secret...',
+        cancellable: false
+    }, (_progress, _token) => {
+        return new Promise(async resolve => {
+            const secret = await kubernetesUtils.getSecret(secretName);
+            if (!secret) {
+                const user = await ociUtils.getUser(authenticationDetailsProvider, authenticationDetailsProvider.getUser());
+                const password = await inputPassword(user.name, actionName);
+                if (password === undefined) {
+                    resolve(undefined);
+                    return;
+                }
+                const success = await kubernetesUtils.createSecret(secretName, `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io`, `${namespace}/${user.name}`, password);
+                if (!success) {
+                    dialogs.showErrorMessage('Cannot create Kubernetes Secret to access OCI container registries.');
+                    resolve(null);
+                    return;
+                }
+            }
+            resolve(secretName);
+        });
+    });
+}
+
 export async function dockerAuthenticate(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, imageURL: string, actionName?: string): Promise<boolean> {
     const endpointIdx = imageURL.indexOf('/');
     const registryEndpoint = endpointIdx < 0 ? `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io` : imageURL.slice(0, endpointIdx);
@@ -265,8 +293,8 @@ export async function dockerAuthenticate(authenticationDetailsProvider: common.C
 
 export async function inputPassword(userName: string, actionName?: string) {
 	const selected = await vscode.window.showInputBox({
-        title: actionName ? `${actionName}: Input Password` : undefined,
-		prompt: `Input password for '${userName}' to access OCI container registries`,
+        title: actionName ? `${actionName}: Input Auth Token` : undefined,
+		prompt: `Input Auth Token for '${userName}' to access OCI container registries`,
 		password: true,
 		ignoreFocusOut: true
     });
