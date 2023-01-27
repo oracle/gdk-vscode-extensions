@@ -21,7 +21,7 @@ import * as ociUtils from './ociUtils';
 import * as buildServices from './buildServices';
 import * as ociService from './ociService';
 import * as deploymentServices from './deploymentServices';
-import * as deployArtifactServices from './deployArtifactServices';
+// import * as deployArtifactServices from './deployArtifactServices';
 import * as artifactServices from './artifactServices';
 import * as containerServices from './containerServices';
 import * as knowledgeBaseServices from './knowledgeBaseServices';
@@ -106,7 +106,7 @@ export function initialize(context: vscode.ExtensionContext) {
 
     buildServices.initialize(context);
     deploymentServices.initialize(context);
-    deployArtifactServices.initialize(context);
+    // deployArtifactServices.initialize(context);
     artifactServices.initialize(context);
     containerServices.initialize(context);
     knowledgeBaseServices.initialize(context);
@@ -156,14 +156,14 @@ export async function importServices(oci: ociContext.Context, projectResources: 
     } catch (err) {
         dialogs.showErrorMessage('Failed to import deployment pipelines', err);
     }
-    try {
-        const deployArtifactServicesData = await deployArtifactServices.importServices(oci, projectResources, codeRepositoryResources);
-        if (deployArtifactServicesData) {
-            data[deployArtifactServicesData.getDataName()] = deployArtifactServicesData.getData();
-        }
-    } catch (err) {
-        dialogs.showErrorMessage('Failed to import build artifacts', err);
-    }
+    // try {
+    //     const deployArtifactServicesData = await deployArtifactServices.importServices(oci, projectResources, codeRepositoryResources);
+    //     if (deployArtifactServicesData) {
+    //         data[deployArtifactServicesData.getDataName()] = deployArtifactServicesData.getData();
+    //     }
+    // } catch (err) {
+    //     dialogs.showErrorMessage('Failed to import build artifacts', err);
+    // }
     try {
         const artifactServicesData = await artifactServices.importServices(oci, projectResources, codeRepositoryResources);
         if (artifactServicesData) {
@@ -233,7 +233,7 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
         this.services = [
             buildServices.create(folder, oci, this.servicesData[buildServices.DATA_NAME], serviceDataChanged),
             deploymentServices.create(folder, oci, this.servicesData[deploymentServices.DATA_NAME], serviceDataChanged),
-            deployArtifactServices.create(folder, oci, this.servicesData[deployArtifactServices.DATA_NAME], serviceDataChanged),
+            // deployArtifactServices.create(folder, oci, this.servicesData[deployArtifactServices.DATA_NAME], serviceDataChanged),
             artifactServices.create(folder, oci, this.servicesData[artifactServices.DATA_NAME], serviceDataChanged),
             containerServices.create(folder, oci, this.servicesData[containerServices.DATA_NAME], serviceDataChanged),
             knowledgeBaseServices.create(folder, oci, this.servicesData[knowledgeBaseServices.DATA_NAME], serviceDataChanged),
