@@ -14,6 +14,7 @@ import * as gitUtils from '../gitUtils'
 import * as model from '../model';
 import * as projectUtils from '../projectUtils';
 import * as dialogs from '../dialogs';
+import * as kubernetesUtils from "../kubernetesUtils";
 import * as logUtils from '../logUtils';
 import * as gcnServices from '../gcnServices';
 import * as ociServices from './ociServices';
@@ -21,6 +22,7 @@ import * as ociUtils from './ociUtils';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
 import * as ociDialogs from './ociDialogs';
+import * as ociNodes from './ociNodes';
 import * as sshUtils from './sshUtils';
 import * as okeUtils from './okeUtils';
 
@@ -168,6 +170,14 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
     }
 
     if (deployData.okeCluster && !deployData.secretName) {
+        if (!await kubernetesUtils.isCurrentCluster(deployData.okeCluster)) {
+            const setup = 'Setup local access to destination OKE cluster';
+            if (setup === await dialogs.showErrorMessage('Kuberners extension not configured to access the destination OKE cluster.', setup)) {
+                ociNodes.openInConsole({ getAddress: () => `https://cloud.oracle.com/containers/clusters/${deployData.okeCluster}/quick-start?region=${provider.getRegion().regionId}` });
+            }
+            dump();
+            return false;
+        }
         deployData.secretName = await ociDialogs.getKubeSecret(provider, 'vscode-generated-ocirsecret', deployData.namespace, ACTION_NAME);
         if (deployData.secretName === undefined) {
             dump();

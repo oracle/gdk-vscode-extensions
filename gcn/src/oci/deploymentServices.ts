@@ -288,7 +288,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         })
     }
 
-    async function createDeployArtifact(oci: ociContext.Context, repositoryName: string, imageName: string): Promise<string | null | undefined> {
+    async function createDeployArtifact(oci: ociContext.Context, repositoryName: string, imageName: string, okeCluster: string): Promise<string | null | undefined> {
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: 'Creating project deploy artifact...',
@@ -297,6 +297,14 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
             return new Promise(async (resolve) => {
                 try {
                     const namespace = await ociUtils.getObjectStorageNamespace(oci.getProvider());
+                    if (!await kubernetesUtils.isCurrentCluster(okeCluster)) {
+                        const setup = 'Setup local access to destination OKE cluster';
+                        if (setup === await dialogs.showErrorMessage('Kuberners extension not configured to access the destination OKE cluster.', setup)) {
+                            ociNodes.openInConsole({ getAddress: () => `https://cloud.oracle.com/containers/clusters/${okeCluster}/quick-start?region=${oci.getProvider().getRegion().regionId}` });
+                        }
+                        resolve(undefined);
+                        return;
+                    }
                     const secretName = await ociDialogs.getKubeSecret(oci.getProvider(), 'vscode-generated-ocirsecret', namespace, 'New Deployment to OKE');
                     if (!secretName) {
                         resolve(undefined);
@@ -332,7 +340,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         return env.deployArtifactType === devops.models.DeployArtifact.DeployArtifactType.KubernetesManifest && env.freeformTags?.gcn_tooling_image_name === imageName;
     })?.id;
     if (!deployConfigArtifact) {
-        const artifact = await createDeployArtifact(oci, repositoryName, imageName);
+        const artifact = await createDeployArtifact(oci, repositoryName, imageName, okeCluster);
         if (!artifact) {
             return undefined;
         }
@@ -738,7 +746,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                         resolve(false);
                         const setup = 'Setup local access to destination OKE cluster';
                         if (setup === await dialogs.showErrorMessage('Kuberners extension not configured to access the destination OKE cluster.', setup)) {
-                            ociNodes.openInConsole({ getAddress: () => `https://cloud.oracle.com/containers/clusters/${okeDeployEnvironment.clusterId}?region=${this.oci.getProvider().getRegion().regionId}` });
+                            ociNodes.openInConsole({ getAddress: () => `https://cloud.oracle.com/containers/clusters/${okeDeployEnvironment.clusterId}/quick-start?region=${this.oci.getProvider().getRegion().regionId}` });
                         }
                         return;
                     }
