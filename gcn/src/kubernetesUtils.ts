@@ -70,7 +70,7 @@ export async function getSecret(secretName: string): Promise<any> {
 export async function createSecret(secretName: string, registryName: string, userName: string, password: string): Promise<any> {
     const kubectl = await getKubectlAPI();
     if (kubectl) {
-        const command = `create secret docker-registry ${secretName} --docker-server=${registryName} --docker-username=${userName} --docker-password='${password}'`;
+        const command = `create secret docker-registry ${secretName} --docker-server=${registryName} --docker-username=${userName} --docker-password="${password}"`;
         const result: k8s.KubectlV1.ShellResult | undefined = await kubectl.invokeCommand(command);
         if (result && result.code === 0) {
             return true;
