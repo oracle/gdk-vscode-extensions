@@ -299,7 +299,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     const namespace = await ociUtils.getObjectStorageNamespace(oci.getProvider());
                     if (!await kubernetesUtils.isCurrentCluster(okeCluster)) {
                         const setup = 'Setup local access to destination OKE cluster';
-                        if (setup === await dialogs.showErrorMessage('Kuberners extension not configured to access the destination OKE cluster.', setup)) {
+                        if (setup === await dialogs.showErrorMessage('Kuberners extension not configured to access the destination OKE cluster.', undefined, setup)) {
                             ociNodes.openInConsole({ getAddress: () => `https://cloud.oracle.com/containers/clusters/${okeCluster}/quick-start?region=${oci.getProvider().getRegion().regionId}` });
                         }
                         resolve(undefined);
@@ -745,7 +745,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                     if (!await kubernetesUtils.isCurrentCluster(okeDeployEnvironment.clusterId)) {
                         resolve(false);
                         const setup = 'Setup local access to destination OKE cluster';
-                        if (setup === await dialogs.showErrorMessage('Kuberners extension not configured to access the destination OKE cluster.', setup)) {
+                        if (setup === await dialogs.showErrorMessage('Kuberners extension not configured to access the destination OKE cluster.', undefined, setup)) {
                             ociNodes.openInConsole({ getAddress: () => `https://cloud.oracle.com/containers/clusters/${okeDeployEnvironment.clusterId}/quick-start?region=${this.oci.getProvider().getRegion().regionId}` });
                         }
                         return;

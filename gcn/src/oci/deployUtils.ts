@@ -172,7 +172,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
     if (deployData.okeCluster && !deployData.secretName) {
         if (!await kubernetesUtils.isCurrentCluster(deployData.okeCluster)) {
             const setup = 'Setup local access to destination OKE cluster';
-            if (setup === await dialogs.showErrorMessage('Kuberners extension not configured to access the destination OKE cluster.', setup)) {
+            if (setup === await dialogs.showErrorMessage('Kuberners extension not configured to access the destination OKE cluster.', undefined, setup)) {
                 ociNodes.openInConsole({ getAddress: () => `https://cloud.oracle.com/containers/clusters/${deployData.okeCluster}/quick-start?region=${provider.getRegion().regionId}` });
             }
             dump();
