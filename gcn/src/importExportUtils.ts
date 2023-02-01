@@ -55,9 +55,14 @@ export async function importDevopsProject() {
 
 export async function deployFolders(workspaceState: vscode.Memento, folders?: gcnServices.FolderData | gcnServices.FolderData[]) {
     if (!anotherOperationInProgress()) {
+        if (!(await vscode.commands.getCommands()).includes('nbls.gcn.project.artifacts')) {
+            vscode.window.showErrorMessage('Project inspection is not ready yet (NBLS has not fully started), please try again later.');
+            return;
+        }
         deployInProgress = true;
         await servicesView.showWelcomeView('gcn.deployInProgress');
         try {
+            const supportedFolders: gcnServices.FolderData[] = [];
             if (folders === undefined) {
                 const dumpedFolders = gcnServices.dumpedFolders(workspaceState);
                 if (dumpedFolders) {
@@ -84,11 +89,22 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: gc
                 dialogs.showErrorMessage('No folders to deploy.');
                 return;
             }
+            for (const folder of folders) {
+                try {
+                    await vscode.commands.executeCommand('nbls.gcn.project.artifacts', folder.folder.uri);
+                    supportedFolders.push(folder);
+                } catch (err) {
+                    dialogs.showErrorMessage(`Folder ${folder.folder.name} does not immediately contain a Java project, deploy to OCI not supported.`);
+                }
+            }
+            if (!supportedFolders.length) {
+                return;
+            }
             const cloudSupport = await dialogs.selectCloudSupport('Deploy to OCI');
             if (!cloudSupport) {
                 return;
             }
-            const workspaceFolders = gcnServices.folderDataToWorkspaceFolders(folders) as vscode.WorkspaceFolder[];
+            const workspaceFolders = gcnServices.folderDataToWorkspaceFolders(supportedFolders) as vscode.WorkspaceFolder[];
             const dump = gcnServices.dumpDeployData(workspaceState, workspaceFolders.map(f => f.name));
             try {
                 const deployed = await cloudSupport.deployFolders(workspaceFolders, dump);
