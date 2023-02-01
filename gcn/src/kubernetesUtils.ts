@@ -75,6 +75,9 @@ export async function createSecret(secretName: string, registryName: string, use
         if (result && result.code === 0) {
             return true;
         }
+        if (result && result.stderr.length) {
+            dialogs.showErrorMessage(result.stderr);
+        }
     }
     return undefined;
 }
