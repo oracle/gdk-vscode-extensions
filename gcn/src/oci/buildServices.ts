@@ -700,16 +700,21 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                         logUtils.logInfo(`[build] Build '${buildName}' finished: ${state}`);
                         buildName = undefined; // report the success just once
                     }
-                    deliveredArtifacts = buildRun?.buildOutputs?.deliveredArtifacts?.items.map((artifact: any) => {
-                        switch (artifact.artifactType) {
-                            case 'GENERIC_ARTIFACT':
-                                return { id: artifact.deliveredArtifactId, type: artifact.artifactType };
-                            case 'OCIR':
-                                return { id: artifact.imageUri, type: artifact.artifactType };
-                            default:
-                                return { id: undefined, type: undefined};
-                        }
-                    }).filter(value => value.type);
+                    const artifactId = buildRun.buildOutputs?.exportedVariables?.items.find(variable => variable.name === 'ARTIFACT_ID')?.value;
+                    if (artifactId && artifactId.startsWith('"') && artifactId.endsWith('"')) {
+                        deliveredArtifacts = [ { id: artifactId.slice(1, artifactId.length - 1), type: 'GENERIC_ARTIFACT' } ];
+                    } else {
+                        deliveredArtifacts = buildRun.buildOutputs?.deliveredArtifacts?.items.map((artifact: any) => {
+                            switch (artifact.artifactType) {
+                                case 'GENERIC_ARTIFACT':
+                                    return { id: artifact.deliveredArtifactId, type: artifact.artifactType };
+                                case 'OCIR':
+                                    return { id: artifact.imageUri, type: artifact.artifactType };
+                                default:
+                                    return { id: undefined, type: undefined};
+                            }
+                        }).filter(value => value.type);
+                    }
                 } else {
                     this.showSucceededFlag = true;
                 }

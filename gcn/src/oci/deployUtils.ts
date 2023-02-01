@@ -33,7 +33,9 @@ export type SaveConfig = (folder: string, config: any) => boolean;
 
 export async function deployFolders(folders: vscode.WorkspaceFolder[], resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData): Promise<boolean> {
     logUtils.logInfo('[deploy] Invoked deploy folders to OCI');
-    
+
+    const bypassArtifacts = vscode.workspace.getConfiguration('gcn').get('bypassDeliverArtifactsStage');
+
     const nblsErr = await projectUtils.checkNBLS();
     if (nblsErr) {
         dialogs.showErrorMessage(nblsErr);
@@ -241,14 +243,20 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 projectFolders.push(projectFolder);
                 totalSteps += 3; // code repository, cloud services config, populating code repository
                 if (projectFolder.projectType === 'GCN') {
-                    totalSteps += 6; // Jar artifact, build spec and pipeline, NI artifact, build spec and pipeline
+                    totalSteps += 4; // Jar build spec and pipeline, NI build spec and pipeline
+                    if (!bypassArtifacts) {
+                        totalSteps += 2; // Jar artifact, NI artifact
+                    }
                     if (deployData.okeCluster && deployData.secretName) {
                         totalSteps += 6; // OKE deploy spec and artifact, deploy to OKE pipeline, dev OKE deploy spec and artifact, dev deploy to OKE pipeline
                     }
                     totalSteps += 4; // Docker jvm image, build spec, and pipeline, jvm container repository
                     totalSteps += 4 * projectUtils.getCloudSpecificSubProjectNames(projectFolder).length; // Docker native image, build spec, and pipeline, native container repository per cloud specific subproject
                 } else if (projectFolder.projectType === 'Micronaut' || projectFolder.projectType === 'SpringBoot') {
-                    totalSteps += 14; // Jar artifact, build spec and pipeline, NI artifact, build spec and pipeline, Docker native image, build spec and pipeline, Docker jvm image, build spec and pipeline, native container repository, jvm container repository
+                    totalSteps += 12; // Jar build spec and pipeline, NI build spec and pipeline, Docker native image, build spec and pipeline, Docker jvm image, build spec and pipeline, native container repository, jvm container repository
+                    if (!bypassArtifacts) {
+                        totalSteps += 2; // Jar artifact, NI artifact
+                    }
                     if (deployData.okeCluster && deployData.secretName) {
                         totalSteps += 6; // OKE deploy spec and artifact, deploy to OKE pipeline, dev OKE deploy spec and artifact, dev deploy to OKE pipeline
                     }
@@ -262,7 +270,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         folderData.projectBuildCommand = buildCommand;
                     }
                     if (buildCommand) {
-                        totalSteps += 7; // Jar artifact, build spec and pipeline, Docker jvm image, build spec and pipeline, jvm container repository
+                        totalSteps += 6; // Jar build spec and pipeline, Docker jvm image, build spec and pipeline, jvm container repository
+                        if (!bypassArtifacts) {
+                            totalSteps += 1; // Jar artifact
+                        }
                         if (deployData.okeCluster && deployData.secretName) {
                             totalSteps += 3; // dev OKE deploy spec and artifact, dev deploy to OKE pipeline
                         }
@@ -277,7 +288,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         folderData.projectBuildNativeExecutableCommand = niBuildCommand;
                     }
                     if (niBuildCommand) {
-                        totalSteps += 7; // NI artifact, build spec and pipeline, Docker native image, build spec and pipeline, native container repository
+                        totalSteps += 6; // NI build spec and pipeline, Docker native image, build spec and pipeline, native container repository
+                        if (!bypassArtifacts) {
+                            totalSteps += 1; // NI artifact
+                        }
                         if (deployData.okeCluster && deployData.secretName) {
                             totalSteps += 3; // OKE deploy spec and artifact, deploy to OKE pipeline
                         }
@@ -822,63 +836,77 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     });
                     const devbuildspec_template = 'devbuild_spec.yaml';
                     const devbuildArtifactName = `${repositoryName}_dev_fatjar`;
-                    logUtils.logInfo(`[deploy] Creating fat JAR build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                    const devbuildTemplate = expandTemplate(resourcesPath, devbuildspec_template, {
-                        project_build_command: project_devbuild_command,
-                        project_artifact_location: project_devbuild_artifact_location,
-                        deploy_artifact_name: devbuildArtifactName
-                    }, folder);
-                    if (!devbuildTemplate) {
-                        resolve(`Failed to configure fat JAR build spec for ${repositoryName}`);
-                        return;
-                    }
-
-                    if (folderData.devbuildArtifact) {
-                        progress.report({
-                            message: `Using already created fat JAR artifact for ${repositoryName}...`
-                        });
-                        try {
-                            const artifact = await ociUtils.getDeployArtifact(provider, folderData.devbuildArtifact);
-                            if (!artifact) {
-                                folderData.devbuildArtifact = undefined;
-                            }
-                        } catch (err) {
-                            folderData.devbuildArtifact = undefined;
-                        }
-                    }
-                    if (folderData.devbuildArtifact) {
-                        progress.report({
-                            increment,
-                        });
-                        logUtils.logInfo(`[deploy] Using already created fat JAR artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                    } else {
-                        // --- Create fat JAR artifact
-                        progress.report({
-                            increment,
-                            message: `Creating fat JAR artifact for ${repositoryName}...`
-                        });
-                        const devbuildArtifactPath = `${repositoryName}-dev.jar`;
-                        const devbuildArtifactDescription = `Fat JAR artifact for devops project ${projectName} & repository ${repositoryName}`;
-                        try {
-                            logUtils.logInfo(`[deploy] Creating fat JAR artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                            folderData.devbuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactRepository, projectOCID, devbuildArtifactPath, devbuildArtifactName, devbuildArtifactDescription, {
-                                'gcn_tooling_deployID': deployData.tag,
-                                'gcn_tooling_codeRepoID': codeRepository.id
-                            })).id;
-                            if (!codeRepoResources.artifacts) {
-                                codeRepoResources.artifacts = [];
-                            }
-                            codeRepoResources.artifacts.push({
-                                ocid: folderData.devbuildArtifact,
-                                originalName: devbuildArtifactName
-                            });
-                        } catch (err) {
-                            resolve(dialogs.getErrorMessage(`Failed to create fat JAR artifact for ${repositoryName}`, err));
-                            folderData.devbuildArtifact = false;
-                            dump(deployData);
+                    if (bypassArtifacts) {
+                        logUtils.logInfo(`[deploy] Creating fat JAR build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        const devbuildTemplate = expandTemplate(resourcesPath, 'devbuild_spec_no_output_artifacts.yaml', {
+                            project_build_command: project_devbuild_command,
+                            project_artifact_location: project_devbuild_artifact_location,
+                            artifact_repository_id: artifactRepository,
+                            artifact_path: `${repositoryName}-dev.jar`
+                        }, folder, devbuildspec_template);
+                        if (!devbuildTemplate) {
+                            resolve(`Failed to configure fat JAR build spec for ${repositoryName}`);
                             return;
                         }
-                        dump(deployData);
+                    } else {
+                        logUtils.logInfo(`[deploy] Creating fat JAR build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        const devbuildTemplate = expandTemplate(resourcesPath, devbuildspec_template, {
+                            project_build_command: project_devbuild_command,
+                            project_artifact_location: project_devbuild_artifact_location,
+                            deploy_artifact_name: devbuildArtifactName
+                        }, folder);
+                        if (!devbuildTemplate) {
+                            resolve(`Failed to configure fat JAR build spec for ${repositoryName}`);
+                            return;
+                        }
+
+                        if (folderData.devbuildArtifact) {
+                            progress.report({
+                                message: `Using already created fat JAR artifact for ${repositoryName}...`
+                            });
+                            try {
+                                const artifact = await ociUtils.getDeployArtifact(provider, folderData.devbuildArtifact);
+                                if (!artifact) {
+                                    folderData.devbuildArtifact = undefined;
+                                }
+                            } catch (err) {
+                                folderData.devbuildArtifact = undefined;
+                            }
+                        }
+                        if (folderData.devbuildArtifact) {
+                            progress.report({
+                                increment,
+                            });
+                            logUtils.logInfo(`[deploy] Using already created fat JAR artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        } else {
+                            // --- Create fat JAR artifact
+                            progress.report({
+                                increment,
+                                message: `Creating fat JAR artifact for ${repositoryName}...`
+                            });
+                            const devbuildArtifactPath = `${repositoryName}-dev.jar`;
+                            const devbuildArtifactDescription = `Fat JAR artifact for devops project ${projectName} & repository ${repositoryName}`;
+                            try {
+                                logUtils.logInfo(`[deploy] Creating fat JAR artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.devbuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactRepository, projectOCID, devbuildArtifactPath, devbuildArtifactName, devbuildArtifactDescription, {
+                                    'gcn_tooling_deployID': deployData.tag,
+                                    'gcn_tooling_codeRepoID': codeRepository.id
+                                })).id;
+                                if (!codeRepoResources.artifacts) {
+                                    codeRepoResources.artifacts = [];
+                                }
+                                codeRepoResources.artifacts.push({
+                                    ocid: folderData.devbuildArtifact,
+                                    originalName: devbuildArtifactName
+                                });
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to create fat JAR artifact for ${repositoryName}`, err));
+                                folderData.devbuildArtifact = false;
+                                dump(deployData);
+                                return;
+                            }
+                            dump(deployData);
+                        }
                     }
 
                     const devbuildPipelineName = 'Build Fat JAR';
@@ -957,31 +985,33 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         }
                         dump(deployData);
                     }
-                    if (folderData.devbuildPipelineArtifactsStage) {
-                        try {
-                            const stage = await ociUtils.getBuildPipelineStage(provider, folderData.devbuildPipelineArtifactsStage);
-                            if (!stage) {
+                    if (!bypassArtifacts) {
+                        if (folderData.devbuildPipelineArtifactsStage) {
+                            try {
+                                const stage = await ociUtils.getBuildPipelineStage(provider, folderData.devbuildPipelineArtifactsStage);
+                                if (!stage) {
+                                    folderData.devbuildPipelineArtifactsStage = undefined;
+                                }
+                            } catch (err) {
                                 folderData.devbuildPipelineArtifactsStage = undefined;
                             }
-                        } catch (err) {
-                            folderData.devbuildPipelineArtifactsStage = undefined;
                         }
-                    }
-                    if (folderData.devbuildPipelineArtifactsStage) {
-                        logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                    } else {
-                        try {
-                            logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                            folderData.devbuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, folderData.devbuildPipeline, folderData.devbuildPipelineBuildStage, folderData.devbuildArtifact, devbuildArtifactName, {
-                                'gcn_tooling_deployID': deployData.tag
-                            })).id;
-                        } catch (err) {
-                            resolve(dialogs.getErrorMessage(`Failed to create fat JAR pipeline artifacts stage for ${repositoryName}`, err));
-                            folderData.devbuildPipelineArtifactsStage = false;
+                        if (folderData.devbuildPipelineArtifactsStage) {
+                            logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        } else {
+                            try {
+                                logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.devbuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, folderData.devbuildPipeline, folderData.devbuildPipelineBuildStage, folderData.devbuildArtifact, devbuildArtifactName, {
+                                    'gcn_tooling_deployID': deployData.tag
+                                })).id;
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to create fat JAR pipeline artifacts stage for ${repositoryName}`, err));
+                                folderData.devbuildPipelineArtifactsStage = false;
+                                dump(deployData);
+                                return;
+                            }
                             dump(deployData);
-                            return;
                         }
-                        dump(deployData);
                     }
                     buildPipelines.push({ 'ocid': folderData.devbuildPipeline, 'displayName': devbuildPipelineName });
                 }
@@ -1002,63 +1032,77 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     });
                     const nibuildspec_template = 'nibuild_spec.yaml';
                     const nibuildArtifactName = `${repositoryName}_dev_executable`;
-                    logUtils.logInfo(`[deploy] Creating native executable build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                    const nibuildTemplate = expandTemplate(resourcesPath, nibuildspec_template, {
-                        project_build_command: project_build_native_executable_command,
-                        project_artifact_location: project_native_executable_artifact_location,
-                        deploy_artifact_name: nibuildArtifactName
-                    }, folder);
-                    if (!nibuildTemplate) {
-                        resolve(`Failed to configure native executable build spec for ${repositoryName}`);
-                        return;
-                    }
-
-                    if (folderData.nibuildArtifact) {
-                        progress.report({
-                            message: `Using already created native executable artifact for ${repositoryName}...`
-                        });
-                        try {
-                            const artifact = await ociUtils.getDeployArtifact(provider, folderData.nibuildArtifact);
-                            if (!artifact) {
-                                folderData.nibuildArtifact = undefined;
-                            }
-                        } catch (err) {
-                            folderData.nibuildArtifact = undefined;
-                        }
-                    }
-                    if (folderData.nibuildArtifact) {
-                        progress.report({
-                            increment,
-                        });
-                        logUtils.logInfo(`[deploy] Using already created native executable artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                    } else {
-                        // --- Create native image artifact
-                        progress.report({
-                            increment,
-                            message: `Creating native executable artifact for ${repositoryName}...`
-                        });
-                        const nibuildArtifactPath = `${repositoryName}-dev`;
-                        const nibuildArtifactDescription = `Native executable artifact for devops project ${projectName} & repository ${repositoryName}`;
-                        try {
-                            logUtils.logInfo(`[deploy] Creating native executable artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                            folderData.nibuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactRepository, projectOCID, nibuildArtifactPath, nibuildArtifactName, nibuildArtifactDescription, {
-                                'gcn_tooling_deployID': deployData.tag,
-                                'gcn_tooling_codeRepoID': codeRepository.id
-                            })).id;
-                            if (!codeRepoResources.artifacts) {
-                                codeRepoResources.artifacts = [];
-                            }
-                            codeRepoResources.artifacts.push({
-                                ocid: folderData.nibuildArtifact,
-                                originalName: nibuildArtifactName
-                            });
-                        } catch (err) {
-                            resolve(dialogs.getErrorMessage(`Failed to create native executable artifact for ${repositoryName}`, err));
-                            folderData.nibuildArtifact = false;
-                            dump(deployData);
+                    if (bypassArtifacts) {
+                        logUtils.logInfo(`[deploy] Creating native executable build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        const nibuildTemplate = expandTemplate(resourcesPath, 'nibuild_spec_no_output_artifacts.yaml', {
+                            project_build_command: project_build_native_executable_command,
+                            project_artifact_location: project_native_executable_artifact_location,
+                            artifact_repository_id: artifactRepository,
+                            artifact_path: `${repositoryName}-dev`
+                        }, folder, nibuildspec_template);
+                        if (!nibuildTemplate) {
+                            resolve(`Failed to configure native executable build spec for ${repositoryName}`);
                             return;
                         }
-                        dump(deployData);
+                    } else {
+                        logUtils.logInfo(`[deploy] Creating native executable build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        const nibuildTemplate = expandTemplate(resourcesPath, nibuildspec_template, {
+                            project_build_command: project_build_native_executable_command,
+                            project_artifact_location: project_native_executable_artifact_location,
+                            deploy_artifact_name: nibuildArtifactName
+                        }, folder);
+                        if (!nibuildTemplate) {
+                            resolve(`Failed to configure native executable build spec for ${repositoryName}`);
+                            return;
+                        }
+
+                        if (folderData.nibuildArtifact) {
+                            progress.report({
+                                message: `Using already created native executable artifact for ${repositoryName}...`
+                            });
+                            try {
+                                const artifact = await ociUtils.getDeployArtifact(provider, folderData.nibuildArtifact);
+                                if (!artifact) {
+                                    folderData.nibuildArtifact = undefined;
+                                }
+                            } catch (err) {
+                                folderData.nibuildArtifact = undefined;
+                            }
+                        }
+                        if (folderData.nibuildArtifact) {
+                            progress.report({
+                                increment,
+                            });
+                            logUtils.logInfo(`[deploy] Using already created native executable artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        } else {
+                            // --- Create native image artifact
+                            progress.report({
+                                increment,
+                                message: `Creating native executable artifact for ${repositoryName}...`
+                            });
+                            const nibuildArtifactPath = `${repositoryName}-dev`;
+                            const nibuildArtifactDescription = `Native executable artifact for devops project ${projectName} & repository ${repositoryName}`;
+                            try {
+                                logUtils.logInfo(`[deploy] Creating native executable artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.nibuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactRepository, projectOCID, nibuildArtifactPath, nibuildArtifactName, nibuildArtifactDescription, {
+                                    'gcn_tooling_deployID': deployData.tag,
+                                    'gcn_tooling_codeRepoID': codeRepository.id
+                                })).id;
+                                if (!codeRepoResources.artifacts) {
+                                    codeRepoResources.artifacts = [];
+                                }
+                                codeRepoResources.artifacts.push({
+                                    ocid: folderData.nibuildArtifact,
+                                    originalName: nibuildArtifactName
+                                });
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to create native executable artifact for ${repositoryName}`, err));
+                                folderData.nibuildArtifact = false;
+                                dump(deployData);
+                                return;
+                            }
+                            dump(deployData);
+                        }
                     }
 
                     const nibuildPipelineName = 'Build Native Executable';
@@ -1137,31 +1181,33 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         }
                         dump(deployData);
                     }
-                    if (folderData.nibuildPipelineArtifactsStage) {
-                        try {
-                            const stage = await ociUtils.getBuildPipelineStage(provider, folderData.nibuildPipelineArtifactsStage);
-                            if (!stage) {
+                    if (!bypassArtifacts) {
+                        if (folderData.nibuildPipelineArtifactsStage) {
+                            try {
+                                const stage = await ociUtils.getBuildPipelineStage(provider, folderData.nibuildPipelineArtifactsStage);
+                                if (!stage) {
+                                    folderData.nibuildPipelineArtifactsStage = undefined;
+                                }
+                            } catch (err) {
                                 folderData.nibuildPipelineArtifactsStage = undefined;
                             }
-                        } catch (err) {
-                            folderData.nibuildPipelineArtifactsStage = undefined;
                         }
-                    }
-                    if (folderData.nibuildPipelineArtifactsStage) {
-                        logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                    } else {
-                        try {
-                            logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                            folderData.nibuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, folderData.nibuildPipeline, folderData.nibuildPipelineBuildStage, folderData.nibuildArtifact, nibuildArtifactName, {
-                                'gcn_tooling_deployID': deployData.tag
-                            })).id;
-                        } catch (err) {
-                            resolve(dialogs.getErrorMessage(`Failed to create native executables pipeline artifacts stage for ${repositoryName}`, err));
-                            folderData.nibuildPipelineArtifactsStage = false;
+                        if (folderData.nibuildPipelineArtifactsStage) {
+                            logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        } else {
+                            try {
+                                logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.nibuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, folderData.nibuildPipeline, folderData.nibuildPipelineBuildStage, folderData.nibuildArtifact, nibuildArtifactName, {
+                                    'gcn_tooling_deployID': deployData.tag
+                                })).id;
+                            } catch (err) {
+                                resolve(dialogs.getErrorMessage(`Failed to create native executables pipeline artifacts stage for ${repositoryName}`, err));
+                                folderData.nibuildPipelineArtifactsStage = false;
+                                dump(deployData);
+                                return;
+                            }
                             dump(deployData);
-                            return;
                         }
-                        dump(deployData);
                     }
                     buildPipelines.push({ 'ocid': folderData.nibuildPipeline, 'displayName': nibuildPipelineName });
                 }

@@ -1,0 +1,68 @@
+#####################################################################
+#
+# Graal Cloud Native Build Pipeline Spec for Maven & Gradle
+# Builds application fat jar and deploys it to Artifact Registry
+#
+# Build pipeline accepts these optional paramateres:
+# GRAALVM_VERSION - Major GraalVM version number, e.g. 22 for 22.2.0 release
+# JAVA_VERSION - Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11
+#
+# Set these Parameters for Build Pipeline either in OCI UI or when calling the build from IDE
+# Example GraalVM EE 22.x.y JDK 11:
+# GRAALVM_VERSION : "22"
+# JAVA_VERSION : "11"
+# Example GraalVM EE 21.x.y JDK 17:
+# GRAALVM_VERSION : "21"
+# JAVA_VERSION : "17"
+#
+# GraalVM Enterprise Edition is installed from OCI yum repo. It is possible to check available
+# RPM packages using OCI Console command: $ yum list available | grep graalvm.*ee.*native-image
+#
+# GraalVM RPM filename looks like: 'graalvm22-ee-11-native-image'
+# GraalVM installation dir as created by RPM package looks like: '/usr/lib64/graalvm/graalvm/graalvm22-ee-java11'
+#####################################################################
+version: 0.1
+component: build
+timeoutInSeconds: 15000
+runAs: root
+shell: bash
+env:
+  exportedVariables:
+    - JAVA_HOME
+    - ARTIFACT_ID
+steps:
+  - type: Command
+    name: "Install GraalVM EE - JDK"
+    timeoutInSeconds: 300
+    command: |
+      if [ ! -n "${GRAALVM_VERSION}" ]; then export GRAALVM_VERSION=22; fi
+      if [ ! -n "${JAVA_VERSION}" ]; then export JAVA_VERSION=17; fi
+      echo "GraalVM Version: ${GRAALVM_VERSION}, Java Version: ${JAVA_VERSION}"
+      yum -y install graalvm${GRAALVM_VERSION}-ee-${JAVA_VERSION}-jdk
+      export JAVA_HOME=/usr/lib64/graalvm/graalvm${GRAALVM_VERSION}-ee-java${JAVA_VERSION}
+      echo "Exported JAVA_HOME: ${JAVA_HOME}"
+  - type: Command
+    name: "Set the PATH"
+    timeoutInSeconds: 40
+    command: |
+      export PATH=${JAVA_HOME}/bin:${PATH}
+      echo "Updated PATH: ${PATH}"
+  - type: Command
+    name: "Package application"
+    timeoutInSeconds: 600
+    command: |
+      echo "Executing build command: {{{project_build_command}}}"
+      {{{project_build_command}}}
+    onFailure:
+      - type: Command
+        command: |
+          echo "Handling Failure"
+          echo "Failure successfully handled"
+        timeoutInSeconds: 40
+        runAs: root
+  - type: Command
+    name: "Upload application native executable to artifact repository"
+    timeoutInSeconds: 3600
+    command: |
+      echo "Upload artifact command: oci artifacts generic artifact upload-by-path --repository-id {{{artifact_repository_id}}} --artifact-path {{{artifact_path}}} --artifact-version dev --content-body ${OCI_PRIMARY_SOURCE_DIR}/{{{project_artifact_location}}} --query data.id"
+      export ARTIFACT_ID=`oci artifacts generic artifact upload-by-path --repository-id {{{artifact_repository_id}}} --artifact-path {{{artifact_path}}} --artifact-version dev --content-body ${OCI_PRIMARY_SOURCE_DIR}/{{{project_artifact_location}}} --query data.id`
