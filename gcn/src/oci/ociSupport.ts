@@ -17,6 +17,7 @@ import * as dataSupport from './dataSupport';
 import * as ociServices from './ociServices';
 import * as importUtils from './importUtils';
 import * as deployUtils from './deployUtils';
+import * as ociFeatures from './ociFeatures';
 
 
 const TYPE = 'oci';
@@ -30,6 +31,7 @@ let devopsDecorations: boolean = false;
 
 export function create(context: vscode.ExtensionContext): model.CloudSupport {
     initialize(context);
+    ociFeatures.initialize();
     ociServices.initialize(context);
     return new OciSupport();
 }

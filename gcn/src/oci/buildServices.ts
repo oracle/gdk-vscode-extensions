@@ -23,6 +23,7 @@ import * as dataSupport from './dataSupport';
 import * as ociNodes from './ociNodes';
 import * as artifactServices from './artifactServices';
 import * as containerInstanceServices from './containerInstanceServices';
+import * as ociFeatures from './ociFeatures';
 
 
 export const DATA_NAME = 'buildPipelines';
@@ -156,9 +157,12 @@ export function findByNode(node: nodes.BaseNode): Service | undefined {
 }
 
 async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeline[]): Promise<BuildPipeline[] | undefined> {
-    function shouldIgnore(ocid: string) {
+    function shouldIgnore(ocid: string, name?: string) {
         for (const item of ignore) {
             if (item.ocid === ocid) {
+                return true;
+            }
+            if (!ociFeatures.NI_PIPELINES_ENABLED && name && name.includes('Native Executable')) {
                 return true;
             }
         }
@@ -190,7 +194,7 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
     if (existing) {
         let idx = 1;
         for (const item of existing) {
-            if (!shouldIgnore(item.id)) {
+            if (!shouldIgnore(item.id, item.displayName)) {
                 let itemDisplayName = item.displayName;
                 if (itemDisplayName) {
                     const codeRepoPrefix = item.freeformTags?.gcn_tooling_codeRepoPrefix;

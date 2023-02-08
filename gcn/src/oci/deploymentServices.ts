@@ -22,6 +22,7 @@ import * as dataSupport from './dataSupport';
 import * as ociNodes from './ociNodes';
 import * as deployUtils from './deployUtils';
 import * as okeUtils from './okeUtils';
+import * as ociFeatures from './ociFeatures';
 
 
 export const DATA_NAME = 'deploymentPipelines';
@@ -395,9 +396,12 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
 }
 
 async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode.WorkspaceFolder, ignore: DeploymentPipeline[]): Promise<DeploymentPipeline[] | undefined> {
-    function shouldIgnore(ocid: string) {
+    function shouldIgnore(ocid: string, name?: string) {
         for (const item of ignore) {
             if (item.ocid === ocid) {
+                return true;
+            }
+            if (!ociFeatures.NI_PIPELINES_ENABLED && name && name.includes('Native Executable')) {
                 return true;
             }
         }
@@ -436,7 +440,7 @@ async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode
     if (existing) {
         let idx = 1;
         for (const item of existing) {
-            if (!shouldIgnore(item.id)) {
+            if (!shouldIgnore(item.id, item.displayName)) {
                 let itemDisplayName = item.displayName;
                 if (itemDisplayName) {
                     const codeRepoPrefix = item.freeformTags?.gcn_tooling_codeRepoPrefix;

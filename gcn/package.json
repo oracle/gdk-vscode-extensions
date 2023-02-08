@@ -705,7 +705,7 @@
 				},
 				{
 					"command": "gcn.oci.runSingleBuildArtifact",
-					"when": "viewItem == gcn.oci.buildPipelineNode-single-image-available",
+					"when": "gcn.oci.containerInstancesEnabled && viewItem == gcn.oci.buildPipelineNode-single-image-available",
 					"group": "inline@3"
 				},
 				{
@@ -715,7 +715,7 @@
 				},
 				{
 					"command": "gcn.oci.runSingleBuildArtifact",
-					"when": "viewItem == gcn.oci.buildPipelineNode-single-image-available",
+					"when": "gcn.oci.containerInstancesEnabled && viewItem == gcn.oci.buildPipelineNode-single-image-available",
 					"group": "context@1@4"
 				},
 				{
@@ -774,22 +774,22 @@
 				},
 				{
 					"command": "gcn.oci.runDockerImage",
-					"when": "viewItem == gcn.oci.containerImageNode",
+					"when": "gcn.oci.containerInstancesEnabled && viewItem == gcn.oci.containerImageNode",
 					"group": "inline@3"
 				},
 				{
 					"command": "gcn.oci.runDockerImage",
-					"when": "viewItem == gcn.oci.containerImageNode",
+					"when": "gcn.oci.containerInstancesEnabled && viewItem == gcn.oci.containerImageNode",
 					"group": "context@1@3"
 				},
 				{
 					"command": "gcn.oci.runDockerImage",
-					"when": "viewItem == gcn.oci.ocirDeployArtifactNode",
+					"when": "gcn.oci.containerInstancesEnabled && viewItem == gcn.oci.ocirDeployArtifactNode",
 					"group": "inline@3"
 				},
 				{
 					"command": "gcn.oci.runDockerImage",
-					"when": "viewItem == gcn.oci.ocirDeployArtifactNode",
+					"when": "gcn.oci.containerInstancesEnabled && viewItem == gcn.oci.ocirDeployArtifactNode",
 					"group": "context@1@3"
 				}
 			]

@@ -25,6 +25,7 @@ import * as ociDialogs from './ociDialogs';
 import * as ociNodes from './ociNodes';
 import * as sshUtils from './sshUtils';
 import * as okeUtils from './okeUtils';
+import * as ociFeatures from './ociFeatures';
 
 
 const ACTION_NAME = 'Deploy to OCI';
@@ -1145,7 +1146,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             codeRepoResources.buildPipelines.push({
                                 ocid: folderData.nibuildPipeline,
                                 originalName: pipelineName,
-                                autoImport: 'true'
+                                autoImport: ociFeatures.NI_PIPELINES_ENABLED ? 'true' : undefined
                             });
                         } catch (err) {
                             resolve(dialogs.getErrorMessage(`Failed to create native executables pipeline for ${repositoryName}`, err));
@@ -1209,7 +1210,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             dump(deployData);
                         }
                     }
-                    buildPipelines.push({ 'ocid': folderData.nibuildPipeline, 'displayName': nibuildPipelineName });
+                    if (ociFeatures.NI_PIPELINES_ENABLED) {
+                        buildPipelines.push({ 'ocid': folderData.nibuildPipeline, 'displayName': nibuildPipelineName });
+                    }
                 }
 
                 if (folder.projectType === 'GCN') {
@@ -1397,7 +1400,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         codeRepoResources.buildPipelines.push({
                                             ocid: subData.docker_nibuildPipeline,
                                             originalName: pipelineName,
-                                            autoImport: subName === 'oci' ? 'true' : undefined
+                                            autoImport: ociFeatures.NI_PIPELINES_ENABLED && subName === 'oci' ? 'true' : undefined
                                         });
                                     } catch (err) {
                                         resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executable build pipeline for ${repositoryName}`, err));
@@ -1461,7 +1464,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 }
 
                                 if (subName === 'oci') {
-                                    buildPipelines.push({ 'ocid': subData.docker_nibuildPipeline, 'displayName': docker_nibuildPipelineName });
+                                    if (ociFeatures.NI_PIPELINES_ENABLED) {
+                                        buildPipelines.push({ 'ocid': subData.docker_nibuildPipeline, 'displayName': docker_nibuildPipelineName });
+                                    }
 
                                     if (deployData.okeClusterEnvironment) {
 
@@ -1574,7 +1579,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                                 codeRepoResources.deploymentPipelines.push({
                                                     ocid: subData.oke_deployNativePipeline,
                                                     originalName: pipelineName,
-                                                    autoImport: 'true'
+                                                    autoImport: ociFeatures.NI_PIPELINES_ENABLED ? 'true' : undefined
                                                 });
                                             } catch (err) {
                                                 resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
@@ -1610,7 +1615,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             }
                                             dump(deployData);
                                         }
-                                        deployPipelines.push({ 'ocid': subData.oke_deployNativePipeline, 'displayName': oke_deployNativePipelineName });
+                                        if (ociFeatures.NI_PIPELINES_ENABLED) {
+                                            deployPipelines.push({ 'ocid': subData.oke_deployNativePipeline, 'displayName': oke_deployNativePipelineName });
+                                        }
                                     }
                                 }
                             }
@@ -1784,7 +1791,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             }
                                             codeRepoResources.buildPipelines.push({
                                                 ocid: subData.docker_jvmbuildPipeline,
-                                                originalName: pipelineName
+                                                originalName: pipelineName,
+                                                autoImport: 'true'
                                             });
                                         } catch (err) {
                                             resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker jvm image build pipeline for ${repositoryName}`, err));
@@ -1846,6 +1854,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         }
                                         dump(deployData);
                                     }
+                                    buildPipelines.push({ 'ocid': subData.docker_jvmbuildPipeline, 'displayName': docker_jvmbuildPipelineName });
 
                                     if (deployData.okeClusterEnvironment) {
 
@@ -1957,7 +1966,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                                 }
                                                 codeRepoResources.deploymentPipelines.push({
                                                     ocid: subData.oke_deployJvmPipeline,
-                                                    originalName: pipelineName
+                                                    originalName: pipelineName,
+                                                    autoImport: 'true'
                                                 });
                                             } catch (err) {
                                                 resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker jvm image deployment to OKE pipeline for ${repositoryName}`, err));
@@ -1993,6 +2003,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             }
                                             dump(deployData);
                                         }
+                                        deployPipelines.push({ 'ocid': subData.oke_deployJvmPipeline, 'displayName': oke_deployJvmPipelineName });
                                     }
                                 }
                             }
@@ -2166,7 +2177,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 codeRepoResources.buildPipelines.push({
                                     ocid: folderData.docker_nibuildPipeline,
                                     originalName: pipelineName,
-                                    autoImport: 'true'
+                                    autoImport: ociFeatures.NI_PIPELINES_ENABLED ? 'true' : undefined
                                 });
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to create docker native executable build pipeline for ${repositoryName}`, err));
@@ -2228,7 +2239,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             }
                             dump(deployData);
                         }
-                        buildPipelines.push({ 'ocid': folderData.docker_nibuildPipeline, 'displayName': docker_nibuildPipelineName });
+                        if (ociFeatures.NI_PIPELINES_ENABLED) {
+                            buildPipelines.push({ 'ocid': folderData.docker_nibuildPipeline, 'displayName': docker_nibuildPipelineName });
+                        }
 
                         if (deployData.okeClusterEnvironment) {
 
@@ -2341,7 +2354,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     codeRepoResources.deploymentPipelines.push({
                                         ocid: folderData.oke_deployNativePipeline,
                                         originalName: pipelineName,
-                                        autoImport: 'true'
+                                        autoImport: ociFeatures.NI_PIPELINES_ENABLED ? 'true' : undefined
                                     });
                                 } catch (err) {
                                     resolve(dialogs.getErrorMessage(`Failed to create docker native executables deployment to OKE pipeline for ${repositoryName}`, err));
@@ -2377,7 +2390,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 }
                                 dump(deployData);
                             }
-                            deployPipelines.push({ 'ocid': folderData.oke_deployNativePipeline, 'displayName': oke_deployNativePipelineName });
+                            if (ociFeatures.NI_PIPELINES_ENABLED) {
+                                deployPipelines.push({ 'ocid': folderData.oke_deployNativePipeline, 'displayName': oke_deployNativePipelineName });
+                            }
                         }
                     }
 
@@ -2541,7 +2556,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 }
                                 codeRepoResources.buildPipelines.push({
                                     ocid: folderData.docker_jvmbuildPipeline,
-                                    originalName: pipelineName
+                                    originalName: pipelineName,
+                                    autoImport: 'true'
                                 });
                             } catch (err) {
                                 resolve(dialogs.getErrorMessage(`Failed to create docker jvm image build pipeline for ${repositoryName}`, err));
@@ -2603,6 +2619,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             }
                             dump(deployData);
                         }
+                        buildPipelines.push({ 'ocid': folderData.docker_jvmbuildPipeline, 'displayName': docker_jvmbuildPipelineName })
 
                         if (deployData.okeClusterEnvironment) {
 
@@ -2714,7 +2731,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     }
                                     codeRepoResources.deploymentPipelines.push({
                                         ocid: folderData.oke_deployJvmPipeline,
-                                        originalName: pipelineName
+                                        originalName: pipelineName,
+                                        autoImport: 'true'
                                     });
                                 } catch (err) {
                                     resolve(dialogs.getErrorMessage(`Failed to create docker jvm image deployment to OKE pipeline for ${repositoryName}`, err));
@@ -2750,6 +2768,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 }
                                 dump(deployData);
                             }
+                            deployPipelines.push({ 'ocid': folderData.oke_deployJvmPipeline, 'displayName': oke_deployJvmPipelineName });
                         }
                     }
                 }
