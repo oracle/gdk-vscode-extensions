@@ -123,7 +123,7 @@ export async function pushLocalBranch(target: vscode.Uri): Promise<boolean | und
     }
 }
 
-export async function populateNewRepository(address: string, source: string, folderData: any, ...skipWorkTree: string[]): Promise<string | undefined> {
+export async function populateNewRepository(address: string, source: string, folderData: any, user: () => Promise<any>, ...skipWorkTree: string[]): Promise<string | undefined> {
     logUtils.logInfo(`[git] Populate new repository ${address} from ${source}`);
     const gitPath = getPath();
     if (!gitPath) {
@@ -137,6 +137,34 @@ export async function populateNewRepository(address: string, source: string, fol
             return dialogs.getErrorMessage('Error while initializing repository', err);
         }
         folderData.git = {};
+    }
+    if (!folderData.git.userName) {
+        try {
+            const command = `${gitPath} config user.name`;
+            await execute(command, source);
+        } catch (err) {
+            try {
+                const userName = (await user()).name;
+                const command = `${gitPath} config user.name "${userName}"`;
+                await execute(command, source);
+            } catch (err) {
+                return dialogs.getErrorMessage('Error while configuring user.name', err);
+            }
+        }
+    }
+    if (!folderData.git.userEmail) {
+        try {
+            const command = `${gitPath} config user.email`;
+            await execute(command, source);
+        } catch (err) {
+            try {
+                const userEmail = (await user()).email.toLowerCase();
+                const command = `${gitPath} config user.email "${userEmail}"`;
+                await execute(command, source);
+            } catch (err) {
+                return dialogs.getErrorMessage('Error while configuring user.email', err);
+            }
+        }
     }
     if (address !== folderData.git.remote) {
         try {

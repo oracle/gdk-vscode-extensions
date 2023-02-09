@@ -47,8 +47,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
     const dumpData: any = dump(null);
     const deployData: any = dumpData || {};
 
-    if (!deployData.git) {
-        for (const folder of folders) {
+    for (const folder of folders) {
+        if (!deployData.repositories || !deployData.repositories[removeSpaces(folder.name)]?.git) {
             if (gitUtils.getHEAD(folder.uri, true)) {
                 dialogs.showErrorMessage(`Folder ${folder.name} being deployed is already versioned and cannot be deployed to OCI.`);
                 logUtils.logInfo(`[deploy] Folder ${folder.name} being deployed is already versioned and cannot be deployed to OCI.`);
@@ -2793,7 +2793,13 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 }
                 logUtils.logInfo(`[deploy] Populating source code repository ${deployData.compartment.name}/${projectName}/${repositoryName} from ${repositoryDir}`);
                 gitUtils.addGitIgnoreEntry(folder.uri.fsPath, '.vscode/gcn.json');
-                const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir, folderData/*, storage*/);
+                const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir, folderData, async () => {
+                    if (!deployData.user) {
+                        const user = await ociUtils.getUser(provider);
+                        deployData.user = { name: user.description, email: user.email };
+                    }
+                    return deployData.user;
+                }, /*, storage*/);
                 if (pushErr) {
                     resolve(`Failed to push source code repository ${repositoryName}: ${pushErr}`);
                     dump(deployData);
