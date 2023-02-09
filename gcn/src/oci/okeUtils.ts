@@ -10,6 +10,7 @@ import * as common from 'oci-common';
 import * as dialogs from '../dialogs';
 import * as ociUtils from './ociUtils';
 import * as ociDialogs from './ociDialogs';
+import * as ociFeatures from './ociFeatures';
 
 
 const ACTION_NAME = 'Select OKE Cluster';
@@ -47,7 +48,9 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
     if (allowSkip && !existingContentChoices?.length) {
         const createOption = 'Create New or Select in Other Compartment';
         const cancelOption = 'Skip OKE Support';
-        const sel = await vscode.window.showWarningMessage('No OKE cluster available in target compartment. Choose how to proceed:', createOption, cancelOption);
+        const options = ociFeatures.MANAGE_VIEW_ITEMS_ENABLED ? [createOption, cancelOption] : [createOption];
+        const msg = ociFeatures.MANAGE_VIEW_ITEMS_ENABLED ? 'No OKE cluster available in target compartment. Choose how to proceed:' : 'No OKE cluster available in target compartment.'
+        const sel = await vscode.window.showWarningMessage(msg, ...options);
         if (!sel) {
             return undefined;
         } else if (sel === cancelOption) {

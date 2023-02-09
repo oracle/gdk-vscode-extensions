@@ -396,6 +396,10 @@
 					"when": "false"
 				},
 				{
+					"command": "gcn.addContent_Global",
+					"when": "gcn.manageViewItemsEnabled"
+				},
+				{
 					"command": "gcn.oci.openInBrowser",
 					"when": "false"
 				},
@@ -518,7 +522,7 @@
 				},
 				{
 					"command": "gcn.addContent_Global",
-					"when": "view == gcn-services && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
+					"when": "view == gcn-services && gcn.manageViewItemsEnabled && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
 					"group": "navigation@3"
 				},
 				{
@@ -575,12 +579,12 @@
 				},
 				{
 					"command": "gcn.addContent",
-					"when": "viewItem in gcn.addContentNodes",
+					"when": "gcn.manageViewItemsEnabled && viewItem in gcn.addContentNodes",
 					"group": "inline@1"
 				},
 				{
 					"command": "gcn.addContent",
-					"when": "viewItem in gcn.addContentNodes",
+					"when": "gcn.manageViewItemsEnabled && viewItem in gcn.addContentNodes",
 					"group": "context@1@1"
 				},
 				{
@@ -615,7 +619,7 @@
 				},
 				{
 					"command": "gcn.removeNode",
-					"when": "viewItem in gcn.removableNodes",
+					"when": "gcn.manageViewItemsEnabled && viewItem in gcn.removableNodes",
 					"group": "context@2@2"
 				},
 				{

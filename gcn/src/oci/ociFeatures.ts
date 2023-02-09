@@ -10,11 +10,16 @@ import * as vscode from 'vscode';
 
 export const CONTAINER_INSTANCES_ENABLED: boolean = containerInstancesEnabled();
 export const NI_PIPELINES_ENABLED: boolean = niPipelinesEnabled();
+export const NON_PIPELINE_RESOURCES_ENABLED: boolean = nonPipelineResourcesEnabled();
+export const MANAGE_VIEW_ITEMS_ENABLED: boolean = manageViewItemsEnabled();
 
 
 export function initialize() {
     if (CONTAINER_INSTANCES_ENABLED) {
         vscode.commands.executeCommand('setContext', 'gcn.oci.containerInstancesEnabled', true);
+    }
+    if (MANAGE_VIEW_ITEMS_ENABLED) {
+        vscode.commands.executeCommand('setContext', 'gcn.manageViewItemsEnabled', true);
     }
 }
 
@@ -25,4 +30,12 @@ function containerInstancesEnabled(): boolean {
 
 function niPipelinesEnabled(): boolean {
     return vscode.workspace.getConfiguration('gcn').get<boolean>('niPipelinesEnabled') === true;
+}
+
+function nonPipelineResourcesEnabled(): boolean {
+    return vscode.workspace.getConfiguration('gcn').get<boolean>('nonPipelineResourcesEnabled') !== false;
+}
+
+function manageViewItemsEnabled(): boolean {
+    return vscode.workspace.getConfiguration('gcn').get<boolean>('manageViewItemsEnabled') !== false;
 }

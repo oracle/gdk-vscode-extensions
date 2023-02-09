@@ -20,6 +20,7 @@ import * as dataSupport from './dataSupport';
 import * as artifactServices from './artifactServices';
 import * as containerServices from './containerServices';
 import * as ociNodes from './ociNodes';
+import * as ociFeatures from './ociFeatures';
 
 
 export const DATA_NAME = 'deployArtifacts';
@@ -233,9 +234,9 @@ class Service extends ociService.Service {
     }
 
     getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
-        return [
+        return ociFeatures.NON_PIPELINE_RESOURCES_ENABLED ? [
             new dialogs.QuickPickObject(`$(${ICON}) Add Build Artifact`, undefined, 'Add existing build artifact', () => this.addContent())
-        ];
+        ] : undefined;
     }
 
     protected buildNodesImpl(oci: ociContext.Context, itemsData: any[], treeChanged: nodes.TreeChanged): nodes.BaseNode[] {

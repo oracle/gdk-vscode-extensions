@@ -20,6 +20,7 @@ import * as ociNodes from './ociNodes';
 import * as ociDialogs from './ociDialogs';
 import * as ociAuthentication from './ociAuthentication';
 import * as path from 'path';
+import * as ociFeatures from './ociFeatures';
 
 
 export const DATA_NAME = 'knowledgeBases';
@@ -477,9 +478,9 @@ class Service extends ociService.Service {
     }
 
     getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
-        return [
+        return ociFeatures.NON_PIPELINE_RESOURCES_ENABLED ? [
             new dialogs.QuickPickObject(`$(${ICON}) Add Knowledge Base`, undefined, 'Add existing knowledge base', () => this.addContent())
-        ];
+        ] : undefined;
     }
 
     public getAuditsKnowledgeBase(): string | undefined {
