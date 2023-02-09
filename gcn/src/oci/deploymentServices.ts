@@ -222,7 +222,9 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
     const choices: dialogs.QuickPickObject[] = [];
     if (existingBuildPipelines) {
         for (const pipeline of existingBuildPipelines) {
-            choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${pipeline.displayName}`, undefined, pipeline.description, pipeline.id));
+            if (ociFeatures.NI_PIPELINES_ENABLED || !pipeline.displayName?.includes('Native Executable')) {
+                choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${pipeline.displayName}`, undefined, pipeline.description, pipeline.id));
+            }
         }
     }
     let buildPipelineId: string | undefined = undefined;
