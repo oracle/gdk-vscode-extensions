@@ -63,7 +63,9 @@ suite = {
     "graalvm-pack" : {
       "dependencies" : [
         "graalvm",
-        "micronaut"
+        "micronaut",
+        "gcn",
+        "gcn-database-drivers"
       ],
       "class": "VSCodeExtensionProject",
     },
@@ -77,6 +79,7 @@ suite = {
           "dependency:graalvm/*",
           "dependency:micronaut/*",
           "dependency:gcn/*",
+          "dependency:gcn-database-drivers/*",
           "dependency:graalvm-pack/*"
         ]
       }
