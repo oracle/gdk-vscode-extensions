@@ -305,7 +305,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 }
                 totalSteps += 1; // list of generated resources
             }
-            totalSteps += 11; // notification topic, devops project, project log, dynamic groups and policies, artifact repository, OKE cluster environment, knowledge base, list of generated resources
+            totalSteps += 9; // notification topic, devops project, project log, dynamic groups and policies, artifact repository, OKE cluster environment, knowledge base, list of generated resources
             logUtils.logInfo(`[deploy] Computed total nuber of steps: ${totalSteps}`);
             const increment = 100 / totalSteps;
 
@@ -492,40 +492,20 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
             if (incrementalDeploy) {
                 progress.report({
-                    increment: increment * 4
+                    increment: increment * 2
                 });
             } else {
-                // --- Create build pipelines dynamic group
+                // --- Create shared dynamic group for code repositories, build and deployment pipelines
                 progress.report({
                     increment,
-                    message: 'Setting up dynamic group for build pipelines...'
+                    message: 'Setting up shared dynamic group for code repositories, build and deployment pipelines...'
                 });
-                logUtils.logInfo(`[deploy] Setting up dynamic group for build pipelines for ${deployData.compartment.name}/${projectName}`);
-                const buildPipelinesGroup = await ociUtils.getDefaultBuildPipelinesGroup(provider, deployData.compartment.ocid, true).catch(err => {
-                    dialogs.showErrorMessage('Failed to resolve group for build pipelines', err);
-                });
-
-                // --- Create deployment pipelines dynamic group
-                progress.report({
-                    increment,
-                    message: 'Setting up dynamic group for deployment pipelines...'
-                });
-                logUtils.logInfo(`[deploy] Setting up dynamic group for deployment pipelines for ${deployData.compartment.name}/${projectName}`);
-                const deployPipelinesGroup = await ociUtils.getDefaultDeployPipelinesGroup(provider, deployData.compartment.ocid, true).catch(err => {
-                    dialogs.showErrorMessage('Failed to resolve group for deployment pipelines', err);
+                logUtils.logInfo(`[deploy] Setting up shared dynamic group for code repositories, build and deployment pipelines for ${deployData.compartment.name}/${projectName}`);
+                const dynamicGroup = await ociUtils.getDefaultToolingGroup(provider, deployData.compartment.ocid, true).catch(err => {
+                    dialogs.showErrorMessage('Failed to resolve group for code repositories, build and deployment pipelines', err);
                 });
 
-                // --- Create code repositories dynamic group
-                progress.report({
-                    increment,
-                    message: 'Setting up dynamic group for code repositories...'
-                });
-                logUtils.logInfo(`[deploy] Setting up dynamic group for code repositories for ${deployData.compartment.name}/${projectName}`);
-                const codeRepositoriesGroup = await ociUtils.getDefaultCodeRepositoriesGroup(provider, deployData.compartment.ocid, true).catch(err => {
-                    dialogs.showErrorMessage('Failed to resolve group for code repositories', err);
-                });
-
-                if (buildPipelinesGroup && deployPipelinesGroup && codeRepositoriesGroup) {
+                if (dynamicGroup) {
                     // --- Setting up policy for accessing resources in compartment
                     progress.report({
                         increment,
@@ -533,7 +513,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     });
                     try {
                         logUtils.logInfo(`[deploy] Setting up policy for accessing resources in compartment for ${deployData.compartment.name}/${projectName}`);
-                        const compartmentAccessPolicy = await ociUtils.getCompartmentAccessPolicy(provider, deployData.compartment.ocid, buildPipelinesGroup.name, deployPipelinesGroup.name, codeRepositoriesGroup.name, true);
+                        const compartmentAccessPolicy = await ociUtils.getCompartmentAccessPolicy(provider, deployData.compartment.ocid, dynamicGroup.name, true);
                         if (!compartmentAccessPolicy) {
                             resolve('Failed to resolve policy for accessing resources in compartment.');
                             return;
