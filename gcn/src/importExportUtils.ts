@@ -91,7 +91,13 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: gc
             }
             for (const folder of folders) {
                 try {
-                    await vscode.commands.executeCommand('nbls.gcn.project.artifacts', folder.folder.uri);
+                    await vscode.window.withProgress({
+                        location: vscode.ProgressLocation.Notification,
+                        title: `Inspecting folder ${folder.folder.name}...`,
+                        cancellable: false
+                    }, (_progress, _token) => {
+                        return vscode.commands.executeCommand('nbls.gcn.project.artifacts', folder.folder.uri);
+                    });
                     supportedFolders.push(folder);
                 } catch (err) {
                     dialogs.showErrorMessage(`Folder ${folder.folder.name} does not immediately contain a Java project, deploy to OCI not supported.`);
