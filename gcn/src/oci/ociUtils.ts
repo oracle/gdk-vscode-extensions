@@ -2075,6 +2075,16 @@ export async function getContainer(authenticationDetailsProvider: common.ConfigF
     return client.getContainer(request).then(response => response.container);
 }
 
+export async function getContainerLog(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, containerID: string): Promise<any> {
+    const client = new containerinstances.ContainerInstanceClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    
+    const request: containerinstances.requests.RetrieveLogsRequest = {
+        containerId: containerID
+    };
+    
+    return client.retrieveLogs(request).then(response => response.value);
+}
+
 export async function containerInstancesWaitForResourceCompletionStatus(
     authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider,
     resourceDescription: string, requestId: string): Promise<string> {

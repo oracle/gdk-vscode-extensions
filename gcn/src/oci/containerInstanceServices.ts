@@ -33,6 +33,44 @@ export function initialize(context: vscode.ExtensionContext) {
             }
         }
     }));
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.showContainerInstanceLog', () => {
+        logUtils.logInfo(`[containerinstance] Invoked Show Container Instance Log, selecting folder`);
+        dialogs.selectFolder('Show Container Instance Log', 'Select deployed folder', true).then(folder => {
+            if (folder) {
+                const uri = folder.folder.uri;
+                logUtils.logInfo(`[containerinstance] Selected folder ${uri.fsPath}`);
+                findByFolder(uri).then(services => {
+                    if (services) {
+                        for (const service of services) {
+                            service.showCILog();
+                        }
+                    }
+                });
+            } else if (folder === null) {
+                logUtils.logInfo(`[containerinstance] No deployed folders`);
+                vscode.window.showWarningMessage('No deployed folder available.');
+            }
+        });
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.deleteContainerInstance', () => {
+        logUtils.logInfo(`[containerinstance] Invoked Delete Container Instance, selecting folder`);
+        dialogs.selectFolder('Delete Container Instance', 'Select deployed folder', true).then(folder => {
+            if (folder) {
+                const uri = folder.folder.uri;
+                logUtils.logInfo(`[containerinstance] Selected folder ${uri.fsPath}`);
+                findByFolder(uri).then(services => {
+                    if (services) {
+                        for (const service of services) {
+                            service.deleteCI();
+                        }
+                    }
+                });
+            } else if (folder === null) {
+                logUtils.logInfo(`[containerinstance] No deployed folders`);
+                vscode.window.showWarningMessage('No deployed folder available.');
+            }
+        });
+    }));
 }
 
 export async function importServices(_oci: ociContext.Context, _projectResources: any | undefined, _codeRepositoryResources: any | undefined): Promise<dataSupport.DataProducer | undefined> {
@@ -50,10 +88,98 @@ export function findByNode(node: nodes.BaseNode): Service | undefined {
     return service instanceof Service ? service as Service : undefined;
 }
 
+async function findByFolder(folder: vscode.Uri): Promise<Service[] | undefined> {
+    const services = await ociServices.findByFolder(folder);
+    if (!services) {
+        return undefined;
+    }
+    const ciServices: Service[] = [];
+    for (const service of services) {
+        const ciService = service.getService(DATA_NAME);
+        if (ciService instanceof Service) {
+            ciServices.push(ciService as Service);
+        }
+    }
+    return ciServices;
+}
+
 class Service extends ociService.Service {
+
+    private currentCIOutputs: vscode.OutputChannel[] = [];
 
     constructor(folder: vscode.WorkspaceFolder, oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged) {
         super(folder, oci, DATA_NAME, serviceData, dataChanged);
+    }
+
+    public async showCILog() {
+        const containerInstanceID = this.settingsData?.containerInstance;
+        if (!containerInstanceID) {
+            vscode.window.showInformationMessage(`No Container Instance currently used for folder ${this.folder.name}.`);
+            logUtils.logInfo(`[containerinstance] No Container Instance currently used for folder ${this.folder.name}.`);
+        } else {
+            vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: 'Reading Container Instance logs...',
+                cancellable: false
+            }, async (_progress, _token) => {
+                try {
+                    const containers = await ociUtils.listContainerInstanceContainers(this.oci.getProvider(), this.oci.getCompartment(), containerInstanceID);
+                    for (const output of this.currentCIOutputs) {
+                        console.log('>>> CLEARING output ' + output.name)
+                        output.dispose();
+                    }
+                    this.currentCIOutputs.length = 0;
+                    for (const container of containers) {
+                        const log = await ociUtils.getContainerLog(this.oci.getProvider(), container.id);
+                        const chunks: any[] = [];
+                        log.on('data', (buf: any) => chunks.push(buf));
+                        log.on('end', () => {
+                            const content = Buffer.concat(chunks).toString();
+                            const output = vscode.window.createOutputChannel(container.displayName);
+                            output.append(content);
+                            output.show();
+                            this.currentCIOutputs.push(output);
+                        });
+                    }
+                } catch (err) {
+                    dialogs.showErrorMessage(`Failed to read log of Container Instance currently used for folder ${this.folder.name}.`, err);
+                }
+            });
+        }
+    }
+
+    public async deleteCI() {
+        const containerInstanceID = this.settingsData?.containerInstance;
+        if (!containerInstanceID) {
+            vscode.window.showInformationMessage(`No Container Instance currently used for folder ${this.folder.name}.`);
+            logUtils.logInfo(`[containerinstance] No Container Instance currently used for folder ${this.folder.name}.`);
+        } else {
+            const confirmOption = 'Delete Container Instance';
+            const cancelOption = 'Cancel';
+            const sel = await vscode.window.showWarningMessage(`Confirm deleting Container Instance currently used for folder ${this.folder.name}:`, confirmOption, cancelOption);
+            if (!sel || sel === cancelOption) {
+                logUtils.logInfo('[containerinstance] Canceled deleting Container Instance');
+                return;
+            }
+            logUtils.logInfo('[containerinstance] Deleting Container Instance record from settings');
+            this.settingsData = undefined;
+            if (this.dataChanged) {
+                this.dataChanged(this);
+            }
+            logUtils.logInfo('[containerinstance] Deleting Container Instance ' + containerInstanceID);
+            try {
+                await vscode.window.withProgress({
+                    location: vscode.ProgressLocation.Notification,
+                    title: 'Deleting Container Instance...',
+                    cancellable: false
+                }, (_progress, _token) => {
+                    return ociUtils.deleteContainerInstance(this.oci.getProvider(), containerInstanceID);
+                });
+                vscode.window.showInformationMessage(`Deleted Container Instance currently used for folder ${this.folder.name}.`);
+            } catch (err) {
+                dialogs.showErrorMessage(`Failed to delete Container Instance currently used for folder ${this.folder.name}.`, err);
+            }
+        }
     }
 
     public async runAndOpenContainerInstance(imageUrl: string | Promise<string>) {
