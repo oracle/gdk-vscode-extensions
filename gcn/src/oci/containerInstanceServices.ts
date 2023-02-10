@@ -286,7 +286,12 @@ class Service extends ociService.Service {
                     dialogs.openInBrowser(publicIp);
                 }
             } catch (err) {
-                dialogs.showErrorMessage('Failed to open docker image', err);
+                const msg = dialogs.getErrorMessage('Failed to open docker image', err);
+                dialogs.showErrorMessage(`${msg} Please invoke the action again.`);
+                this.settingsData = undefined;
+                if (this.dataChanged) {
+                    this.dataChanged(this);
+                }
             }
         });
     }
