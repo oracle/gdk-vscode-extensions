@@ -61,7 +61,7 @@ steps:
         timeoutInSeconds: 40
         runAs: root
   - type: Command
-    name: "Upload application native executable to artifact repository"
+    name: "Upload application fat JAR to artifact repository"
     timeoutInSeconds: 3600
     command: |
       echo "Upload artifact command: oci artifacts generic artifact upload-by-path --repository-id {{{artifact_repository_id}}} --artifact-path {{{artifact_path}}} --artifact-version dev --content-body ${OCI_PRIMARY_SOURCE_DIR}/{{{project_artifact_location}}} --query data.id"
