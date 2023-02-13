@@ -742,6 +742,11 @@
 				},
 				{
 					"command": "gcn.oci.pullSingleBuildArtifact",
+					"when": "!gcn.oci.containerInstancesEnabled && viewItem == gcn.oci.buildPipelineNode-single-image-available",
+					"group": "inline@3"
+				},
+				{
+					"command": "gcn.oci.pullSingleBuildArtifact",
 					"when": "viewItem == gcn.oci.buildPipelineNode-single-image-available",
 					"group": "context@1@3"
 				},
