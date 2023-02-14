@@ -88,19 +88,19 @@ export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<
 export async function getProjectBuildCommand(folder: ProjectFolder, subfolder: string = 'oci'):  Promise<string | undefined> {
     if (isMaven(folder)) {
         if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {
-            return 'chmod 777 ./mvnw && ./mvnw package --no-transfer-progress';
+            return 'chmod 777 ./mvnw && ./mvnw package --no-transfer-progress -DskipTests';
         }
         if (folder.projectType === 'GCN') {
-            return `chmod 777 ./mvnw && ./mvnw package -pl ${subfolder} -am --no-transfer-progress`;
+            return `chmod 777 ./mvnw && ./mvnw package -pl ${subfolder} -am --no-transfer-progress -DskipTests`;
         }
         return await vscode.window.showInputBox({ title: 'Provide Command to Build Project', value: 'mvn package'});
     }
     if (isGradle(folder)) {
         if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {
-            return 'chmod 777 ./gradlew && ./gradlew build';
+            return 'chmod 777 ./gradlew && ./gradlew build -x test';
         }
         if (folder.projectType === 'GCN') {
-            return `chmod 777 ./gradlew && ./gradlew ${subfolder}:build`;
+            return `chmod 777 ./gradlew && ./gradlew ${subfolder}:build -x test`;
         }
         return await vscode.window.showInputBox({ title: 'Provide Command to Build Project', value: 'gradle build'});
     }
