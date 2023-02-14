@@ -56,7 +56,7 @@ export async function importDevopsProject() {
 export async function deployFolders(workspaceState: vscode.Memento, folders?: gcnServices.FolderData | gcnServices.FolderData[]) {
     if (!anotherOperationInProgress()) {
         if (!(await vscode.commands.getCommands()).includes('nbls.gcn.project.artifacts')) {
-            vscode.window.showErrorMessage('Project inspection is not ready yet (NBLS has not fully started), please try again later.');
+            vscode.window.showErrorMessage('Project inspection is not ready yet, please try again later.');
             return;
         }
         deployInProgress = true;
