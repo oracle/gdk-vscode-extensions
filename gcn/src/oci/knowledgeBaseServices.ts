@@ -54,8 +54,9 @@ export function initialize(context: vscode.ExtensionContext) {
         });
     }
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.projectAudit.execute', (...params: any[]) => {
-        if (params[0]?.uri) {
-            const uri = vscode.Uri.parse(params[0].uri);
+        let u = params[0]?.uri || params[0]?.data?.['resourceUri']; // support also NB standard nodes
+        if (u) {
+            const uri = vscode.Uri.parse(u);
             logUtils.logInfo(`[audit] Invoked Audit for folder ${uri.fsPath}`);
             auditFolder(uri);
         }
