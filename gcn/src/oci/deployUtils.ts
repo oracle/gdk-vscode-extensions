@@ -897,7 +897,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         });
                         try {
                             const pipeline = await ociUtils.getBuildPipeline(provider, folderData.devbuildPipeline);
-                            if (devbuildPipelineName !== pipeline.displayName) {
+                            if (!pipeline) {
                                 folderData.devbuildPipeline = undefined;
                             }
                         } catch (err) {
@@ -1093,7 +1093,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         });
                         try {
                             const pipeline = await ociUtils.getBuildPipeline(provider, folderData.nibuildPipeline);
-                            if (nibuildPipelineName !== pipeline.displayName) {
+                            if (!pipeline) {
                                 folderData.nibuildPipeline = undefined;
                             }
                         } catch (err) {
@@ -1224,7 +1224,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         message: `Using already created native container repository for ${repositoryName}...`
                                     });
                                     try {
-                                        nativeContainerRepository = await ociUtils.getContainerRepository(provider, subData.containerRepository);
+                                        nativeContainerRepository = await ociUtils.getContainerRepository(provider, subData.nativeContainerRepository);
                                         if (!nativeContainerRepository) {
                                             subData.nativeContainerRepository = undefined;
                                         }
@@ -1346,7 +1346,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     });
                                     try {
                                         const pipeline = await ociUtils.getBuildPipeline(provider, subData.docker_nibuildPipeline);
-                                        if (docker_nibuildPipelineName !== pipeline.displayName) {
+                                        if (!pipeline) {
                                             subData.docker_nibuildPipeline = undefined;
                                         }
                                     } catch (err) {
@@ -1521,7 +1521,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             });
                                             try {
                                                 const pipeline = await ociUtils.getDeployPipeline(provider, subData.oke_deployNativePipeline);
-                                                if (oke_deployNativePipelineName !== pipeline.displayName) {
+                                                if (!pipeline) {
                                                     subData.oke_deployNativePipeline = undefined;
                                                 }
                                             } catch (err) {
@@ -1618,7 +1618,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             message: `Using already created jvm container repository for ${repositoryName}...`
                                         });
                                         try {
-                                            jvmContainerRepository = await ociUtils.getContainerRepository(provider, subData.containerRepository);
+                                            jvmContainerRepository = await ociUtils.getContainerRepository(provider, subData.jvmContainerRepository);
                                             if (!jvmContainerRepository) {
                                                 subData.jvmContainerRepository = undefined;
                                             }
@@ -1738,7 +1738,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         });
                                         try {
                                             const pipeline = await ociUtils.getBuildPipeline(provider, subData.docker_jvmbuildPipeline);
-                                            if (docker_jvmbuildPipelineName !== pipeline.displayName) {
+                                            if (!pipeline) {
                                                 subData.docker_jvmbuildPipeline = undefined;
                                             }
                                         } catch (err) {
@@ -1909,7 +1909,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             });
                                             try {
                                                 const pipeline = await ociUtils.getDeployPipeline(provider, subData.oke_deployJvmPipeline);
-                                                if (oke_deployJvmPipelineName !== pipeline.displayName) {
+                                                if (!pipeline) {
                                                     subData.oke_deployJvmPipeline = undefined;
                                                 }
                                             } catch (err) {
@@ -2123,7 +2123,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             });
                             try {
                                 const pipeline = await ociUtils.getBuildPipeline(provider, folderData.docker_nibuildPipeline);
-                                if (docker_nibuildPipelineName !== pipeline.displayName) {
+                                if (!pipeline) {
                                     folderData.docker_nibuildPipeline = undefined;
                                 }
                             } catch (err) {
@@ -2296,7 +2296,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 });
                                 try {
                                     const pipeline = await ociUtils.getDeployPipeline(provider, folderData.oke_deployNativePipeline);
-                                    if (oke_deployNativePipelineName !== pipeline.displayName) {
+                                    if (!pipeline) {
                                         folderData.oke_deployNativePipeline = undefined;
                                     }
                                 } catch (err) {
@@ -2503,7 +2503,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             });
                             try {
                                 const pipeline = await ociUtils.getBuildPipeline(provider, folderData.docker_jvmbuildPipeline);
-                                if (docker_jvmbuildPipelineName !== pipeline.displayName) {
+                                if (!pipeline) {
                                     folderData.docker_jvmbuildPipeline = undefined;
                                 }
                             } catch (err) {
@@ -2674,7 +2674,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 });
                                 try {
                                     const pipeline = await ociUtils.getDeployPipeline(provider, folderData.oke_deployJvmPipeline);
-                                    if (oke_deployJvmPipelineName !== pipeline.displayName) {
+                                    if (!pipeline) {
                                         folderData.oke_deployJvmPipeline = undefined;
                                     }
                                 } catch (err) {
