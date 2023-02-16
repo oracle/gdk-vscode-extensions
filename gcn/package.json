@@ -810,6 +810,11 @@
 					"when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/"
 				},
 				{
+					"command": "gcn.oci.projectAudit.execute",
+					"when": "viewItem =~ /is:project/ && viewItem =~ /^(?!.*is:projectRoot)/",
+					"group": "K@50"
+				},
+				{
 					"command": "gcn.oci.runDockerImage",
 					"when": "gcn.oci.containerInstancesEnabled && viewItem == gcn.oci.containerImageNode",
 					"group": "inline@3"
