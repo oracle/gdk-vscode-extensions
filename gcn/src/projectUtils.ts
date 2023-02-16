@@ -172,19 +172,24 @@ function tryReadGradleVersion(folder : string, version: string = '0.1') : string
     return version;
 }
 
-export async function getProjectBuildArtifactLocation(folder: ProjectFolder, subfolder: string = 'oci'): Promise<string | undefined> {
+export async function getProjectBuildArtifactLocation(folder: ProjectFolder, subfolder: string = 'oci', shaded : boolean = true): Promise<string | undefined> {
     const projectPath: string = folder.uri.path;
     let artifacts: any[] | undefined = undefined;
+    let opts : any = {};
+    if (shaded) {
+        // hint the query to return the uber-jar, if available.
+        opts['tags'] = '<shaded>';
+    }
     if (folder.projectType === 'GCN') {
         const uri = folder.subprojects.find(sub => sub.name === subfolder)?.uri;
         if (uri) {
-            artifacts = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, uri);
+            artifacts = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, uri.toString(), opts);
         } else {
             // specified subfolder not present
             return undefined;
         }
     } else {
-        artifacts = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, folder.uri.toString());
+        artifacts = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, folder.uri.toString(), opts);
     }
     if (artifacts && artifacts.length === 1) {
         const loc: vscode.Uri = vscode.Uri.parse(artifacts[0].location);
