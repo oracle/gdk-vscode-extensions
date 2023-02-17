@@ -167,7 +167,7 @@ export async function build(folders: gcnServices.FolderData[], deployedFoldersCo
                         folderNode.setChildren([ new PartiallyDeployedNode() ]);
                         folderNode.contextValue = FolderNode.CONTEXTS[2];
                     } else {
-                        folderNode.setChildren([ new NotDeployedNode() ]);
+                        folderNode.setChildren([ new NotDeployedNode(folderNode) ]);
                     }
                 }
             }
@@ -290,8 +290,14 @@ class NoServicesNode extends nodes.TextNode {
 
 class NotDeployedNode extends nodes.TextNode {
 
-    constructor() {
-        super('<not deployed to OCI>');
+    constructor(folderNode: FolderNode) {
+        super('<not deployed, click to deploy to OCI>');
+        this.tooltip = 'Click to deploy the folder to OCI';
+        this.command = {
+            title: 'Deploy to OCI',
+            command: 'gcn.deployToCloud',
+            arguments: [ folderNode ]
+        }
     }
 
 }
