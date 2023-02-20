@@ -507,7 +507,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			title,
 			step: 9,
 			totalSteps: totalSteps(state),
-            placeholder: 'Pick cloud environment',
+            placeholder: 'Pick Cloud Provider(s) to use',
             items: choices,
             activeItems: findSelectedItems(choices, state.clouds),
             canSelectMany: true,
