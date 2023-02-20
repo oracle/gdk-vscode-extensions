@@ -10,7 +10,6 @@ import * as devops from 'oci-devops';
 import * as artifacts from 'oci-artifacts';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
-import * as dockerUtils from '../dockerUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociDialogs from './ociDialogs';
@@ -410,14 +409,13 @@ class OcirDeployArtifactNode extends DeployArtifactNode {
             try {
                 const deployArtifact = await this.getResource();
                 const deployArtifactSource = deployArtifact.deployArtifactSource as devops.models.OcirDeployArtifactSource;
-                const imageURL = deployArtifactSource.imageUri;
-                return (await ociDialogs.dockerAuthenticate(this.oci.getProvider(), imageURL, 'Pull Latest Docker Image')) ? imageURL : undefined;
+                return deployArtifactSource.imageUri;
             } catch (err) {
                 return new Error(dialogs.getErrorMessage('Failed to resolve build artifact', err));
             }
         }).then(result => {
             if (typeof result === 'string') {
-                dockerUtils.pullImage(result);
+                ociDialogs.pullImage(this.oci.getProvider(), result, 'Pull Latest Docker Image');
             } else if (result instanceof Error) {
                 dialogs.showError(result);
             }

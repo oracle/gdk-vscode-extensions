@@ -337,7 +337,7 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                         if (folderData.nibuildPipelineBuildStage) {
                             try {
                                 progress.report({ message: `Deleting native executables pipeline build stage for ${repositoryName}...` });
-                                logUtils.logInfo(`[undeploy] Deleting build stage of build pipeline for native executables o ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[undeploy] Deleting build stage of build pipeline for native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 await ociUtils.deleteBuildPipelineStage(provider, folderData.nibuildPipelineBuildStage, true);
                             } catch (err) {
                                 toCheck = true;

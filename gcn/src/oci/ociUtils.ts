@@ -191,6 +191,37 @@ export async function getTenancy(authenticationDetailsProvider: common.ConfigFil
     return client.getTenancy(request).then(response => response.tenancy);
 }
 
+export async function createAuthToken(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, userID?: string): Promise<identity.models.AuthToken> {
+    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: identity.requests.CreateAuthTokenRequest = {
+        userId: userID ? userID : authenticationDetailsProvider.getUser(),
+        createAuthTokenDetails: {
+            description: 'Temporary AuthToken created by VS Code'
+        }
+    };
+    return client.createAuthToken(request).then(response => response.authToken);
+}
+
+export async function getAuthToken(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, tokenID: string, userID?: string): Promise<identity.models.AuthToken | undefined> {
+    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: identity.requests.ListAuthTokensRequest = {
+        userId: userID ? userID : authenticationDetailsProvider.getUser(),
+    };
+    return client.listAuthTokens(request).then(response => response.items.find(token => token.id === tokenID));
+}
+
+export async function deleteAuthToken(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, tokenID: string, userID?: string, wait: boolean = true) {
+    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: identity.requests.DeleteAuthTokenRequest = {
+        userId: userID ? userID : authenticationDetailsProvider.getUser(),
+        authTokenId: tokenID
+    };
+    const response = client.deleteAuthToken(request);
+    if (wait) {
+        await response;
+    }
+}
+
 export async function getObjectStorageNamespace(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID?: string): Promise<string> {
     const client = new objectstorage.ObjectStorageClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: objectstorage.requests.GetNamespaceRequest = {
@@ -2005,15 +2036,10 @@ export async function createContainerInstance(authenticationDetailsProvider: com
         subnetId: subnetID
     }
 
-    const endpointIdx = imageURL.indexOf('/');
-    const registryEndpoint = endpointIdx < 0 ? `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io` : imageURL.slice(0, endpointIdx);
-    const namespaceIdx = imageURL.indexOf('/', endpointIdx + 1);
-    const namespace = namespaceIdx < 0 ? await getObjectStorageNamespace(authenticationDetailsProvider) : imageURL.slice(endpointIdx + 1, namespaceIdx);
-    
     const imagePullSecretDetails: containerinstances.models.CreateBasicImagePullSecretDetails = {
         secretType: 'BASIC',
-        registryEndpoint,
-        username: Buffer.from(`${namespace}/${username}`).toString('base64'),
+        registryEndpoint: `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io`,
+        username: Buffer.from(username).toString('base64'),
         password: Buffer.from(password).toString('base64')
     }
 
@@ -2148,6 +2174,10 @@ export function isRunning(state?: string) {
 
 export function isUp(state?: string) {
     return state === 'ACTIVE' || state === 'CREATING';
+}
+
+export function isActive(state?: string) {
+    return state === 'ACTIVE';
 }
 
 export function isSuccess(state?: string) {

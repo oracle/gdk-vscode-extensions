@@ -181,7 +181,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
             dump();
             return false;
         }
-        deployData.secretName = await ociDialogs.getKubeSecret(provider, deployData.okeCluster, 'vscode-generated-ocirsecret', deployData.namespace, ACTION_NAME);
+        deployData.secretName = await ociDialogs.getKubeSecret(provider, deployData.okeCluster, 'vscode-generated-ocirsecret', ACTION_NAME, deployData.namespace);
         if (deployData.secretName === undefined) {
             dump();
             return false;

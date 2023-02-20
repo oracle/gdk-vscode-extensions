@@ -188,6 +188,7 @@ class Service extends ociService.Service {
             title: 'Processing docker image',
             cancellable: false
         }, async (progress, _token) => {
+            let credentials;
             try {
                 logUtils.logInfo('[containerinstance] Resolving image URL');
                 progress.report({
@@ -243,9 +244,8 @@ class Service extends ociService.Service {
                         return;
                     }
                 } else {
-                    const user = await ociUtils.getUser(authenticationDetailsProvider, authenticationDetailsProvider.getUser());
-                    const password = await ociDialogs.inputPassword(user.name, 'Run and Open in Browser');
-                    if (password === undefined) {
+                    credentials = await ociDialogs.getUserCredentials(authenticationDetailsProvider, 'Run and Open in Browser');
+                    if (credentials === undefined) {
                         return;
                     }
                     logUtils.logInfo('[containerinstance] No existing Container Instance found for image URL ' + dockerImageUrl);
@@ -260,7 +260,7 @@ class Service extends ociService.Service {
                     const subnet = await getOrCreateCISubnet(authenticationDetailsProvider, compartment);
                     const ciName = `CI-VSCode-${Date.now()}`;
                     logUtils.logInfo('[containerinstance] Creating new Container Instance for image URL ' + dockerImageUrl);
-                    const containerInstanceHandle = await ociUtils.createContainerInstance(authenticationDetailsProvider, compartment, dockerImageUrl, subnet.id, ciName, user.name, password);
+                    const containerInstanceHandle = await ociUtils.createContainerInstance(authenticationDetailsProvider, compartment, dockerImageUrl, subnet.id, ciName, credentials.username, credentials.password);
                     const containerInstanceID = containerInstanceHandle.containerInstance.id;
                     this.settingsData = {
                         containerInstance: containerInstanceID,
@@ -291,6 +291,12 @@ class Service extends ociService.Service {
                 this.settingsData = undefined;
                 if (this.dataChanged) {
                     this.dataChanged(this);
+                }
+            } finally {
+                if (credentials?.tokenId) {
+                    try {
+                        ociUtils.deleteAuthToken(this.oci.getProvider(), credentials.tokenId);
+                    } catch (nerr) {}
                 }
             }
         });

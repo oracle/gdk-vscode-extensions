@@ -14,7 +14,6 @@ import * as logUtils from '../logUtils';
 import * as ociNodes from './ociNodes';
 import * as ociUtils from './ociUtils';
 
-
 export async function selectOciProfileFromList(profiles: string[], autoselect: boolean, actionName?: string): Promise<string | null | undefined> {
     if (!profiles.length) {
         return null;
@@ -249,7 +248,31 @@ export async function selectCodeRepositories(authenticationDetailsProvider: comm
     return undefined;
 }
 
-export async function getKubeSecret(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, okeCluster: string, secretName: string, namespace?: string, actionName?: string): Promise<string | null | undefined> {
+export async function getUserCredentials(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, actionName?: string, namespace?: string): Promise<{ username: string, password: string, tokenId?: string } | undefined> {
+    try {
+        const user = await ociUtils.getUser(authenticationDetailsProvider, authenticationDetailsProvider.getUser());
+        let authToken: any;
+        try {
+            authToken = await ociUtils.createAuthToken(authenticationDetailsProvider);
+        } catch (err) {}
+        const password = authToken?.token ? authToken?.token : await inputPassword(user.name, actionName);
+        if (password === undefined) {
+            return undefined;
+        }
+        if (!namespace) {
+            namespace = await ociUtils.getObjectStorageNamespace(authenticationDetailsProvider);
+        }
+        if (authToken) {
+            await ociUtils.completion(1000, () => ociUtils.getAuthToken(authenticationDetailsProvider, authToken.id).then(token => token?.lifecycleState));
+        }
+        return { username: `${namespace}/${user.name}`, password, tokenId: authToken?.id };
+    } catch (err) {
+        dialogs.showErrorMessage('Failed to get username and password', err);
+        return undefined;
+    }
+}
+
+export async function getKubeSecret(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, okeCluster: string, secretName: string, actionName?: string, namespace?: string): Promise<string | null | undefined> {
     return vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: 'Creating K8s secret to enable pulling Docker Images from private OCIR repository...',
@@ -266,16 +289,15 @@ export async function getKubeSecret(authenticationDetailsProvider: common.Config
             }
             const secret = await kubernetesUtils.getSecret(secretName);
             if (!secret) {
-                const user = await ociUtils.getUser(authenticationDetailsProvider, authenticationDetailsProvider.getUser());
-                const password = await inputPassword(user.name, actionName);
-                if (password === undefined) {
+                const credentials = await getUserCredentials(authenticationDetailsProvider, actionName, namespace);
+                if (credentials === undefined) {
                     resolve(undefined);
                     return;
                 }
                 if (!namespace) {
                     namespace = await ociUtils.getObjectStorageNamespace(authenticationDetailsProvider);
                 }
-                const success = await kubernetesUtils.createSecret(secretName, `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io`, `${namespace}/${user.name}`, password);
+                const success = await kubernetesUtils.createSecret(secretName, `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io`, credentials.username, credentials.password);
                 if (!success) {
                     dialogs.showErrorMessage('Cannot create K8s secret to enable pulling Docker Images from private OCIR repository.');
                     resolve(null);
@@ -287,23 +309,72 @@ export async function getKubeSecret(authenticationDetailsProvider: common.Config
     });
 }
 
-export async function dockerAuthenticate(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, imageURL: string, actionName?: string): Promise<boolean> {
-    const endpointIdx = imageURL.indexOf('/');
-    const registryEndpoint = endpointIdx < 0 ? `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io` : imageURL.slice(0, endpointIdx);
-    if (!dockerUtils.isAuthenticated(registryEndpoint)) {
-        const namespaceIdx = imageURL.indexOf('/', endpointIdx + 1);
-        const namespace = namespaceIdx < 0 ? await ociUtils.getObjectStorageNamespace(authenticationDetailsProvider) : imageURL.slice(endpointIdx + 1, namespaceIdx);
-        const user = await ociUtils.getUser(authenticationDetailsProvider, authenticationDetailsProvider.getUser());
-        const password = await inputPassword(user.name, actionName);
-        if (password === undefined) {
-            return false;
-        }
-        dockerUtils.login(registryEndpoint, `${namespace}/${user.name}`, password);
-    }
-    return true;
+export async function pullImage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, image: string, actionName?: string): Promise<void> {
+    return vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: actionName,
+        cancellable: true
+    }, (progress, token) => {
+        const registryEndpoint = `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io`;
+        return new Promise<string | null | undefined>(async resolve => {
+            let tokenId: string | undefined;
+            try {
+                progress.report({ message: 'Getting user credentials...' });
+                const credentials = await getUserCredentials(authenticationDetailsProvider, actionName);
+                if (credentials === undefined) {
+                    resolve(null);
+                    return;
+                }
+                tokenId = credentials.tokenId;
+                if (token.isCancellationRequested) {
+                    resolve(tokenId);
+                    return;
+                }
+                progress.report({ message: 'Docker login...' });
+                dockerUtils.login(registryEndpoint, credentials.username, credentials.password);
+                if (token.isCancellationRequested) {
+                    resolve(tokenId);
+                    return;
+                }
+                progress.report({ message: 'Pulling image...' });
+                const process = dockerUtils.pullImage(image);
+                token.onCancellationRequested(() => {
+                    if (!process.killed) {
+                        process.kill();
+                    }
+                });
+                let errMsg = '';
+                process.stderr?.on('data', (data) => {
+                    errMsg += data;
+                });
+                process.on('close', () => {
+                    if (errMsg) {
+                        dialogs.showErrorMessage(errMsg);
+                    }
+                    resolve(tokenId);
+                });
+            } catch(err) {
+                dialogs.showErrorMessage(undefined, err);
+                resolve(tokenId);
+            }
+        }).then(async tokenId => {
+            if (tokenId !== null) {
+                try {
+                    progress.report({ message: 'Docker logout...' });
+                    dockerUtils.logout(registryEndpoint);
+                } catch(err) {}
+            }
+            if (tokenId) {
+                try {
+                    progress.report({ message: 'Deleting token...' });
+                    await ociUtils.deleteAuthToken(authenticationDetailsProvider,tokenId);
+                } catch(err) {}
+            }
+        });
+    });
 }
 
-export async function inputPassword(userName: string, actionName?: string) {
+async function inputPassword(userName: string, actionName?: string) {
 	const selected = await vscode.window.showInputBox({
         title: actionName ? `${actionName}: Input Auth Token` : undefined,
 		prompt: `Input Auth Token for '${userName}' to access OCI container registries`,
