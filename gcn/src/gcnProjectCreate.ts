@@ -21,8 +21,8 @@ require('../lib/gcn.ui.api');
  /**
   * Global option
   */
- const LAST_PROJECT_PARENTDIR: string = 'lastMicronautProjectParentDir';
-
+ const LAST_PROJECT_PARENTDIR: string = 'lastCreateProjectParentDirs';
+ 
 /**
  * Common type for list item display. Value is the code/id, label is the user-facing label, description goes to QuickPickItem.detail.
  */
@@ -101,6 +101,7 @@ const ADD_TO_CURRENT_WORKSPACE = 'Add to current workspace';
 
 export async function createProject(context: vscode.ExtensionContext): Promise<void> {
     var options: CreateOptions | undefined;
+
     options = await initialize().then(() => {
         return selectCreateOptions();
     });
@@ -216,11 +217,13 @@ async function writeProjectContents(options: CreateOptions, location: string) {
 }
 
 async function selectLocation(context: vscode.ExtensionContext, options: CreateOptions) {
-    const lastProjectParentDir: string | undefined = context.globalState.get(LAST_PROJECT_PARENTDIR);
+    const lastDirs: any = context.globalState.get(LAST_PROJECT_PARENTDIR) || new Map<string, string>();
+    const dirId = `${vscode.env.remoteName || ''}:${vscode.env.machineId}`
+    const dirName : string | undefined = lastDirs[dirId];
     let defaultDir: vscode.Uri | undefined;
-    if (lastProjectParentDir) {
+    if (dirName) {
         try {
-            defaultDir = vscode.Uri.parse(lastProjectParentDir, true);
+            defaultDir = vscode.Uri.parse(dirName, true);
         } catch (e) {
             defaultDir = undefined;
         }
@@ -236,7 +239,8 @@ async function selectLocation(context: vscode.ExtensionContext, options: CreateO
         openLabel: 'Create Here'
     });
     if (location && location.length > 0) {
-        await context.globalState.update(LAST_PROJECT_PARENTDIR, location[0].toString());
+        lastDirs[dirId] = location[0].toString();
+        await context.globalState.update(LAST_PROJECT_PARENTDIR, lastDirs);
         let appName = options.basePackage;
         if (appName) {
             appName += '.' + options.projectName;

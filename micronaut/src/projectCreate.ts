@@ -26,7 +26,7 @@ const CREATE: string = '/create';
 const OPEN_IN_NEW_WINDOW = 'Open in new window';
 const OPEN_IN_CURRENT_WINDOW: string = 'Open in current window';
 const ADD_TO_CURRENT_WORKSPACE = 'Add to current workspace';
-const LAST_PROJECT_PARENTDIR: string = 'lastMicronautProjectParentDir';
+const LAST_PROJECT_PARENTDIR: string = 'lastCreateProjectParentDirs';
 
 let cliMNVersion: {label: string, serviceUrl: string, description: string} | undefined;
 
@@ -70,7 +70,7 @@ export async function createProject(context: vscode.ExtensionContext) {
                 const out = cp.execFileSync(options.url, options.args, { cwd: path.dirname(options.target), env: {JAVA_HOME: getJavaHome() } });
                 created = out.toString().indexOf('Application created') >= 0;
             } catch (e) {
-                vscode.window.showErrorMessage(`Cannot create Micronaut project: ${e.message}`);
+                vscode.window.showErrorMessage(`Cannot create Micronaut project: ${(e as any).message}`);
             }
         }
         if (created) {
@@ -275,11 +275,14 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 
     if (state.micronautVersion && state.applicationType && state.projectName && state.basePackage &&
         state.language && state.features && state.buildTool && state.testFramework) {
-        const lastProjectParentDir: string | undefined = context.globalState.get(LAST_PROJECT_PARENTDIR);
+
+        const lastDirs: any = context.globalState.get(LAST_PROJECT_PARENTDIR) || new Map<string, string>();
+        const dirId = `${vscode.env.remoteName || ''}:${vscode.env.machineId}`
+        const dirName : string | undefined = lastDirs[dirId];
         let defaultDir: vscode.Uri | undefined;
-        if (lastProjectParentDir) {
+        if (dirName) {
             try {
-                defaultDir = vscode.Uri.parse(lastProjectParentDir, true);
+                defaultDir = vscode.Uri.parse(dirName, true);
             } catch (e) {
                 defaultDir = undefined;
             }
@@ -295,7 +298,8 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
             openLabel: 'Create Here'
         });
         if (location && location.length > 0) {
-            await context.globalState.update(LAST_PROJECT_PARENTDIR, location[0].toString());
+            lastDirs[dirId] = location[0].toString();
+            await context.globalState.update(LAST_PROJECT_PARENTDIR, lastDirs);
             let appName = state.basePackage;
             if (appName) {
                 appName += '.' + state.projectName;
@@ -431,7 +435,7 @@ async function getFeatures(micronautVersion: {label: string, serviceUrl: string}
         const features: {label: string, detail?: string, name: string}[] = getMNFeatures(micronautVersion.serviceUrl, applicationType.name, javaVersion.target);
         return features.sort((f1: any, f2: any) => f1.label < f2.label ? -1 : 1);
     } catch (e) {
-        let msg = e.message.toString();
+        let msg = (e as any).message.toString();
         const err = `Unsupported JDK version: ${javaVersion.target}. Supported values are `;
         const idx = msg.indexOf(err);
         if (idx != 0) {
@@ -444,7 +448,7 @@ async function getFeatures(micronautVersion: {label: string, serviceUrl: string}
                 javaVersion.target = supportedVersion; // update the target platform
                 return features.sort((f1: any, f2: any) => f1.label < f2.label ? -1 : 1);
             } catch (e) {
-                msg = e.message.toString();
+                msg = (e as any).message.toString();
             }
         }
         vscode.window.showErrorMessage(`Cannot get Micronaut features: ${msg}`);
