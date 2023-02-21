@@ -439,6 +439,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 try {
                     logUtils.logInfo(`[deploy] Creating project log for ${deployData.compartment.name}/${projectName}`);
                     const logName = `${projectName}Log`;
+                    deployData.projectLogWorkRequest = false;
                     deployData.projectLogWorkRequest = await ociUtils.createProjectLog(provider, deployData.compartment.ocid, deployData.logGroup, projectOCID, logName, {
                         'gcn_tooling_deployID': deployData.tag
                     });
@@ -570,6 +571,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 });
                 try {
                     logUtils.logInfo(`[deploy] Creating artifact repository for ${deployData.compartment.name}/${projectName}`);
+                    deployData.artifactsRepository = false;
                     const artifactsRepository = await ociUtils.createArtifactsRepository(provider, deployData.compartment.ocid, projectName, {
                         'gcn_tooling_deployID': deployData.tag,
                         'gcn_tooling_projectOCID': projectOCID
@@ -620,6 +622,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     });
                     try {
                         logUtils.logInfo(`[deploy] Creating OKE cluster environment for ${deployData.compartment.name}/${projectName}`);
+                        deployData.okeClusterEnvironment = false;
                         const okeClusterEnvironment = await ociUtils.createOkeDeployEnvironment(provider, projectOCID, projectName, deployData.okeCluster, {
                             'gcn_tooling_deployID': deployData.tag
                         });
@@ -690,6 +693,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 const knowledgeBaseDescription = `Vulnerability audits for devops project ${projectName}`;
                 try {
                     logUtils.logInfo(`[deploy] Creating ADM knowledge base for ${deployData.compartment.name}/${projectName}`);
+                    deployData.knowledgeBaseWorkRequest = false;
                     deployData.knowledgeBaseWorkRequest = await ociUtils.createKnowledgeBase(provider, deployData.compartment?.ocid || "", projectName, {
                         'gcn_tooling_deployID': deployData.tag,
                         'gcn_tooling_projectOCID': projectOCID,
@@ -769,6 +773,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     const description = `Source code repository ${repositoryName}`;
                     try {
                         logUtils.logInfo(`[deploy] Creating source code repository ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        folderData.codeRepository = false;
                         const repo = await ociUtils.createCodeRepository(provider, projectOCID, repositoryName, 'master', description, {
                             'gcn_tooling_deployID': deployData.tag,
                             'gcn_tooling_deployIncomplete': 'true'
@@ -869,6 +874,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             const devbuildArtifactDescription = `Fat JAR artifact for devops project ${projectName} & repository ${repositoryName}`;
                             try {
                                 logUtils.logInfo(`[deploy] Creating fat JAR artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.devbuildArtifact = false;
                                 folderData.devbuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactRepository, projectOCID, devbuildArtifactPath, devbuildArtifactName, devbuildArtifactDescription, {
                                     'gcn_tooling_deployID': deployData.tag,
                                     'gcn_tooling_codeRepoID': codeRepository.id
@@ -919,6 +925,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         try {
                             logUtils.logInfo(`[deploy] Creating build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             const pipelineName = `${repositoryNamePrefix}${devbuildPipelineName}`;
+                            folderData.devbuildPipeline = false;
                             folderData.devbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, devbuildPipelineDescription, {
                                 'gcn_tooling_deployID': deployData.tag,
                                 'gcn_tooling_codeRepoID': codeRepository.id,
@@ -955,6 +962,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     } else {
                         try {
                             logUtils.logInfo(`[deploy] Creating build stage of build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            folderData.devbuildPipelineBuildStage = false;
                             folderData.devbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.devbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${devbuildspec_template}`, {
                                 'gcn_tooling_deployID': deployData.tag
                             })).id;
@@ -982,6 +990,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         } else {
                             try {
                                 logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.devbuildPipelineArtifactsStage = false;
                                 folderData.devbuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, folderData.devbuildPipeline, folderData.devbuildPipelineBuildStage, folderData.devbuildArtifact, devbuildArtifactName, {
                                     'gcn_tooling_deployID': deployData.tag
                                 })).id;
@@ -1065,6 +1074,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             const nibuildArtifactDescription = `Native executable artifact for devops project ${projectName} & repository ${repositoryName}`;
                             try {
                                 logUtils.logInfo(`[deploy] Creating native executable artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.nibuildArtifact = false;
                                 folderData.nibuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactRepository, projectOCID, nibuildArtifactPath, nibuildArtifactName, nibuildArtifactDescription, {
                                     'gcn_tooling_deployID': deployData.tag,
                                     'gcn_tooling_codeRepoID': codeRepository.id
@@ -1115,6 +1125,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         try {
                             logUtils.logInfo(`[deploy] Creating build pipeline for native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             const pipelineName = `${repositoryNamePrefix}${nibuildPipelineName}`;
+                            folderData.nibuildPipeline = false;
                             folderData.nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, nibuildPipelineDescription, {
                                 'gcn_tooling_deployID': deployData.tag,
                                 'gcn_tooling_codeRepoID': codeRepository.id,
@@ -1151,6 +1162,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     } else {
                         try {
                             logUtils.logInfo(`[deploy] Creating build stage of build pipeline for native executables o ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            folderData.nibuildPipelineBuildStage = false;
                             folderData.nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${nibuildspec_template}`, {
                                 'gcn_tooling_deployID': deployData.tag
                             })).id;
@@ -1178,6 +1190,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         } else {
                             try {
                                 logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.nibuildPipelineArtifactsStage = false;
                                 folderData.nibuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, folderData.nibuildPipeline, folderData.nibuildPipelineBuildStage, folderData.nibuildArtifact, nibuildArtifactName, {
                                     'gcn_tooling_deployID': deployData.tag
                                 })).id;
@@ -1246,6 +1259,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     const containerRepositoryName = incrementalDeploy || folders.length > 1 ? `${projectName}-${repositoryName}-${subName}` : `${projectName}-${subName}`;
                                     try {
                                         logUtils.logInfo(`[deploy] Creating native container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        subData.nativeContainerRepository = false;
                                         nativeContainerRepository = await ociUtils.createContainerRepository(provider, deployData.compartment.ocid, containerRepositoryName);
                                         subData.nativeContainerRepository = nativeContainerRepository.id;
                                         if (!codeRepoResources.containerRepositories) {
@@ -1319,6 +1333,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     const docker_nibuildArtifactDescription = `Docker native executable artifact for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}`;
                                     try {
                                         logUtils.logInfo(`[deploy] Creating ${subName} docker native executable artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        subData.docker_nibuildArtifact = false;
                                         subData.docker_nibuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, projectOCID, docker_nibuildImage, docker_nibuildArtifactName, docker_nibuildArtifactDescription, {
                                             'gcn_tooling_deployID': deployData.tag,
                                             'gcn_tooling_codeRepoID': codeRepository.id
@@ -1368,6 +1383,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     try {
                                         logUtils.logInfo(`[deploy] Creating build pipeline for ${subName} docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         const pipelineName = `${repositoryNamePrefix}${docker_nibuildPipelineName}`;
+                                        subData.docker_nibuildPipeline = false;
                                         subData.docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_nibuildPipelineDescription, {
                                             'gcn_tooling_deployID': deployData.tag,
                                             'gcn_tooling_codeRepoID': codeRepository.id,
@@ -1405,6 +1421,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 } else {
                                     try {
                                         logUtils.logInfo(`[deploy] Creating build stage of build pipeline for ${subName} docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        subData.docker_nibuildPipelineBuildStage = false;
                                         subData.docker_nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, subData.docker_nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${subName}_${docker_nibuildspec_template}`, {
                                             'gcn_tooling_deployID': deployData.tag
                                         })).id;
@@ -1431,6 +1448,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 } else {
                                     try {
                                         logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for ${subName} docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        subData.docker_nibuildPipelineArtifactsStage = false;
                                         subData.docker_nibuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, subData.docker_nibuildPipeline, subData.docker_nibuildPipelineBuildStage, subData.docker_nibuildArtifact, docker_nibuildArtifactName, {
                                             'gcn_tooling_deployID': deployData.tag
                                         })).id;
@@ -1493,6 +1511,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             const oke_deployNativeConfigArtifactDescription = `OKE native deployment configuration artifact for devops project ${projectName} & repository ${repositoryName}`;
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating OKE native deployment configuration artifact for ${subName} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                subData.oke_deployNativeConfigArtifact = false;
                                                 subData.oke_deployNativeConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_deployNativeConfigInlineContent, oke_deployNativeConfigArtifactName, oke_deployNativeConfigArtifactDescription, {
                                                     'gcn_tooling_deployID': deployData.tag,
                                                     'gcn_tooling_codeRepoID': codeRepository.id,
@@ -1543,6 +1562,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for ${subName} docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 const pipelineName = `${repositoryNamePrefix}${oke_deployNativePipelineName}`;
+                                                subData.oke_deployNativePipeline = false;
                                                 subData.oke_deployNativePipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, pipelineName, oke_deployNativePipelineDescription, [{
                                                     name: 'DOCKER_TAG',
                                                     defaultValue: 'latest'
@@ -1584,6 +1604,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         } else {
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${subName} docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                subData.deployNativeToOkeStage = false;
                                                 subData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage(provider, subData.oke_deployNativePipeline, deployData.okeClusterEnvironment, subData.oke_deployNativeConfigArtifact, {
                                                     'gcn_tooling_deployID': deployData.tag
                                                 })).id;
@@ -1640,6 +1661,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         const containerRepositoryName = incrementalDeploy || folders.length > 1 ? `${projectName}-${repositoryName}-${subName}-jvm` : `${projectName}-${subName}-jvm`;
                                         try {
                                             logUtils.logInfo(`[deploy] Creating jvm container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            subData.jvmContainerRepository = false;
                                             jvmContainerRepository = await ociUtils.createContainerRepository(provider, deployData.compartment.ocid, containerRepositoryName);
                                             subData.jvmContainerRepository = jvmContainerRepository.id;
                                             if (!codeRepoResources.containerRepositories) {
@@ -1711,6 +1733,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         const docker_jvmbuildArtifactDescription = `Docker jvm image artifact for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}`;
                                         try {
                                             logUtils.logInfo(`[deploy] Creating ${subName} docker jvm image artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            subData.docker_jvmbuildArtifact = false;
                                             subData.docker_jvmbuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, projectOCID, docker_jvmbuildImage, docker_jvmbuildArtifactName, docker_jvmbuildArtifactDescription, {
                                                 'gcn_tooling_deployID': deployData.tag,
                                                 'gcn_tooling_codeRepoID': codeRepository.id
@@ -1760,6 +1783,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         try {
                                             logUtils.logInfo(`[deploy] Creating build pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                             const pipelineName = `${repositoryNamePrefix}${docker_jvmbuildPipelineName}`;
+                                            subData.docker_jvmbuildPipeline = false;
                                             subData.docker_jvmbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_jvmbuildPipelineDescription, {
                                                 'gcn_tooling_deployID': deployData.tag,
                                                 'gcn_tooling_codeRepoID': codeRepository.id,
@@ -1797,6 +1821,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     } else {
                                         try {
                                             logUtils.logInfo(`[deploy] Creating build stage of build pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            subData.docker_jvmbuildPipelineBuildStage = false;
                                             subData.docker_jvmbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, subData.docker_jvmbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${subName}_${docker_jvmbuildspec_template}`, {
                                                 'gcn_tooling_deployID': deployData.tag
                                             })).id;
@@ -1823,6 +1848,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     } else {
                                         try {
                                             logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            subData.docker_jvmbuildPipelineArtifactsStage = false;
                                             subData.docker_jvmbuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, subData.docker_jvmbuildPipeline, subData.docker_jvmbuildPipelineBuildStage, subData.docker_jvmbuildArtifact, docker_jvmbuildArtifactName, {
                                                 'gcn_tooling_deployID': deployData.tag
                                             })).id;
@@ -1881,6 +1907,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             const oke_deployJvmConfigArtifactDescription = `OKE jvm deployment configuration artifact for devops project ${projectName} & repository ${repositoryName}`;
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating OKE jvm deployment configuration artifact for ${subName} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                subData.oke_deployJvmConfigArtifact = false;
                                                 subData.oke_deployJvmConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_deployJvmConfigInlineContent, oke_deployJvmConfigArtifactName, oke_deployJvmConfigArtifactDescription, {
                                                     'gcn_tooling_deployID': deployData.tag,
                                                     'gcn_tooling_codeRepoID': codeRepository.id,
@@ -1931,6 +1958,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 const pipelineName = `${repositoryNamePrefix}${oke_deployJvmPipelineName}`;
+                                                subData.oke_deployJvmPipeline = false;
                                                 subData.oke_deployJvmPipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, pipelineName, oke_deployJvmPipelineDescription, [{
                                                     name: 'DOCKER_TAG',
                                                     defaultValue: 'latest'
@@ -1972,6 +2000,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         } else {
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                subData.deployJvmToOkeStage = false;
                                                 subData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage(provider, subData.oke_deployJvmPipeline, deployData.okeClusterEnvironment, subData.oke_deployJvmConfigArtifact, {
                                                     'gcn_tooling_deployID': deployData.tag
                                                 })).id;
@@ -2025,6 +2054,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             const containerRepositoryName = incrementalDeploy || folders.length > 1 ? `${projectName}-${repositoryName}` : projectName;
                             try {
                                 logUtils.logInfo(`[deploy] Creating native container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.nativeContainerRepository = false;
                                 nativeContainerRepository = await ociUtils.createContainerRepository(provider, deployData.compartment.ocid, containerRepositoryName);
                                 folderData.nativeContainerRepository = nativeContainerRepository.id;
                                 if (!codeRepoResources.containerRepositories) {
@@ -2096,6 +2126,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             const docker_nibuildArtifactDescription = `Docker native executable artifact for devops project ${projectName} & repository ${repositoryName}`;
                             try {
                                 logUtils.logInfo(`[deploy] Creating docker native executable artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.docker_nibuildArtifact = false;
                                 folderData.docker_nibuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, projectOCID, docker_nibuildImage, docker_nibuildArtifactName, docker_nibuildArtifactDescription, {
                                     'gcn_tooling_deployID': deployData.tag,
                                     'gcn_tooling_codeRepoID': codeRepository.id
@@ -2145,6 +2176,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             try {
                                 logUtils.logInfo(`[deploy] Creating build pipeline for docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 const pipelineName = `${repositoryNamePrefix}${docker_nibuildPipelineName}`;
+                                folderData.docker_nibuildPipeline = false;
                                 folderData.docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_nibuildPipelineDescription, {
                                     'gcn_tooling_deployID': deployData.tag,
                                     'gcn_tooling_codeRepoID': codeRepository.id,
@@ -2182,6 +2214,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         } else {
                             try {
                                 logUtils.logInfo(`[deploy] Creating build stage of build pipeline for docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.docker_nibuildPipelineBuildStage = false;
                                 folderData.docker_nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.docker_nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${docker_nibuildspec_template}`, {
                                     'gcn_tooling_deployID': deployData.tag
                                 })).id;
@@ -2208,6 +2241,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         } else {
                             try {
                                 logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.docker_nibuildPipelineArtifactsStage = false;
                                 folderData.docker_nibuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, folderData.docker_nibuildPipeline, folderData.docker_nibuildPipelineBuildStage, folderData.docker_nibuildArtifact, docker_nibuildArtifactName, {
                                     'gcn_tooling_deployID': deployData.tag
                                 })).id;
@@ -2268,6 +2302,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 const oke_deployNativeConfigArtifactDescription = `OKE native deployment configuration artifact for devops project ${projectName} & repository ${repositoryName}`;
                                 try {
                                     logUtils.logInfo(`[deploy] Creating OKE native deployment configuration artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    folderData.oke_deployNativeConfigArtifact = false;
                                     folderData.oke_deployNativeConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_deployNativeConfigInlineContent, oke_deployNativeConfigArtifactName, oke_deployNativeConfigArtifactDescription, {
                                         'gcn_tooling_deployID': deployData.tag,
                                         'gcn_tooling_codeRepoID': codeRepository.id,
@@ -2318,6 +2353,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 try {
                                     logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     const pipelineName = `${repositoryNamePrefix}${oke_deployNativePipelineName}`;
+                                    folderData.oke_deployNativePipeline = false;
                                     folderData.oke_deployNativePipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, pipelineName, oke_deployNativePipelineDescription, [{
                                         name: 'DOCKER_TAG',
                                         defaultValue: 'latest'
@@ -2359,6 +2395,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             } else {
                                 try {
                                     logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    folderData.deployNativeToOkeStage = false;
                                     folderData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage(provider, folderData.oke_deployNativePipeline, deployData.okeClusterEnvironment, folderData.oke_deployNativeConfigArtifact, {
                                         'gcn_tooling_deployID': deployData.tag
                                     })).id;
@@ -2405,6 +2442,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             const containerRepositoryName = incrementalDeploy || folders.length > 1 ? `${projectName}-${repositoryName}-jvm` : `${projectName}-jvm`;
                             try {
                                 logUtils.logInfo(`[deploy] Creating jvm container repository for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.jvmContainerRepository = false;
                                 jvmContainerRepository = await ociUtils.createContainerRepository(provider, deployData.compartment.ocid, containerRepositoryName);
                                 folderData.jvmContainerRepository = jvmContainerRepository.id;
                                 if (!codeRepoResources.containerRepositories) {
@@ -2476,6 +2514,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             const docker_jvmbuildArtifactDescription = `Docker jvm image artifact for devops project ${projectName} & repository ${repositoryName}`;
                             try {
                                 logUtils.logInfo(`[deploy] Creating docker jvm image artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.docker_jvmbuildArtifact = false;
                                 folderData.docker_jvmbuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, projectOCID, docker_jvmbuildImage, docker_jvmbuildArtifactName, docker_jvmbuildArtifactDescription, {
                                     'gcn_tooling_deployID': deployData.tag,
                                     'gcn_tooling_codeRepoID': codeRepository.id
@@ -2525,6 +2564,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             try {
                                 logUtils.logInfo(`[deploy] Creating build pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 const pipelineName = `${repositoryNamePrefix}${docker_jvmbuildPipelineName}`;
+                                folderData.docker_jvmbuildPipeline = false;
                                 folderData.docker_jvmbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_jvmbuildPipelineDescription, {
                                     'gcn_tooling_deployID': deployData.tag,
                                     'gcn_tooling_codeRepoID': codeRepository.id,
@@ -2562,6 +2602,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         } else {
                             try {
                                 logUtils.logInfo(`[deploy] Creating build stage of build pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.docker_jvmbuildPipelineBuildStage = false;
                                 folderData.docker_jvmbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.docker_jvmbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${docker_jvmbuildspec_template}`, {
                                     'gcn_tooling_deployID': deployData.tag
                                 })).id;
@@ -2588,6 +2629,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         } else {
                             try {
                                 logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                folderData.docker_jvmbuildPipelineArtifactsStage = false;
                                 folderData.docker_jvmbuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, folderData.docker_jvmbuildPipeline, folderData.docker_jvmbuildPipelineBuildStage, folderData.docker_jvmbuildArtifact, docker_jvmbuildArtifactName, {
                                     'gcn_tooling_deployID': deployData.tag
                                 })).id;
@@ -2646,6 +2688,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 const oke_deployJvmConfigArtifactDescription = `OKE jvm deployment configuration artifact for devops project ${projectName} & repository ${repositoryName}`;
                                 try {
                                     logUtils.logInfo(`[deploy] Creating OKE jvm deployment configuration artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    folderData.oke_deployJvmConfigArtifact = false;
                                     folderData.oke_deployJvmConfigArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_deployJvmConfigInlineContent, oke_deployJvmConfigArtifactName, oke_deployJvmConfigArtifactDescription, {
                                         'gcn_tooling_deployID': deployData.tag,
                                         'gcn_tooling_codeRepoID': codeRepository.id,
@@ -2696,6 +2739,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 try {
                                     logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     const pipelineName = `${repositoryNamePrefix}${oke_deployJvmPipelineName}`;
+                                    folderData.oke_deployJvmPipeline = false;
                                     folderData.oke_deployJvmPipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, pipelineName, oke_deployJvmPipelineDescription, [{
                                         name: 'DOCKER_TAG',
                                         defaultValue: 'latest'
@@ -2737,6 +2781,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             } else {
                                 try {
                                     logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    folderData.deployJvmToOkeStage = false;
                                     folderData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage(provider, folderData.oke_deployJvmPipeline, deployData.okeClusterEnvironment, folderData.oke_deployJvmConfigArtifact, {
                                         'gcn_tooling_deployID': deployData.tag
                                     })).id;
