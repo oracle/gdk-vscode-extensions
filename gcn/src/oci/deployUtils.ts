@@ -141,6 +141,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
             }
             const selectedProject = await ociDialogs.selectDevOpsProjectFromList(provider, projects, true, ACTION_NAME);
             if (selectedProject) {
+                if (projects.length === 1) {
+                    // folder(s) would be deployed immediately without any confirmation (compartment & devops project are preselected)
+                    const confirmOption = folders.length === 1 ? 'Deploy Folder' : 'Deploy Folders';
+                    const cancelOption = 'Cancel';
+                    const foldersMsg = folders.length === 1 ? `folder ${folders[0].name}` : `${folders.length} folders`;
+                    const choice = await vscode.window.showInformationMessage(`Confirm deploy ${foldersMsg} to an existing OCI devops project:`, confirmOption, cancelOption);
+                    if (choice !== confirmOption) {
+                        return false;
+                    }
+                }
                 devopsProjectName = selectedProject.name;
                 devopsProjectOCID = selectedProject.ocid;
                 deployData.compartment = { ocid: selectedProject.compartment, name: selectedProject.compartment };
