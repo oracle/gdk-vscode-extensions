@@ -2032,40 +2032,20 @@ export async function containerInstancesWaitForResourceCompletionStatus(
     authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider,
     resourceDescription: string, requestId: string): Promise<string> {
     
-    // TODO: handle timeout, use increasing polling time.
     const client = new containerinstances.ContainerInstanceClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const waiter = new containerinstances.ContainerInstanceWaiter(client);
+    
     const request: containerinstances.requests.GetWorkRequestRequest = {
         workRequestId: requestId,
     };
 
-    let requestState: containerinstances.models.WorkRequest | undefined;
+    const response = await waiter.forWorkRequest(request);
+    if (response.workRequest.status !== containerinstances.models.OperationStatus.Succeeded) {
+        throw new Error(`Creation of ${resourceDescription} failed`);
+    }
 
-    // TODO: make this configurable, in vscode/workspace options
-    const maxWaitingTimeMillis = 60 * 1000; 
-    const initialPollTime = 2000;
-    W: for (let waitCount = (maxWaitingTimeMillis / initialPollTime); waitCount > 0; waitCount--) {
-        // console.log(`>>> getRequest ${req.workRequestId}`);
-        const response = await client.getWorkRequest(request);
-        // console.log(`>>> getRequest ${req.workRequestId} = ${response.workRequest.status}`);
-        switch (response.workRequest.status) {
-            case containerinstances.models.OperationStatus.Succeeded:
-            case containerinstances.models.OperationStatus.Failed:
-            case containerinstances.models.OperationStatus.Canceled:
-                requestState = response.workRequest;
-                break W;
-        }
-        await delay(2000);
-    }
-    if (!requestState) {
-        throw `Timeout while creating ${resourceDescription}`;
-    }
-    if (requestState.status !== containerinstances.models.OperationStatus.Succeeded) {
-        // PENDING: make some abortion exception that can carry WorkRequest errors, should be caught top-level & reported to the user instead of plain message.
-        let msg : string = `Creation of ${resourceDescription} failed`;
-        throw msg;
-    }
     // PENDING: what exactly do the 'affected resources' mean ???
-    return requestState.resources[0].identifier;
+    return response.workRequest.resources[0].identifier;
 }
 
 export async function completion(initialPollTime: number, getState: () => Promise<string | undefined>, checkFirst?: boolean): Promise<string | undefined> {
