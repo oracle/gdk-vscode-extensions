@@ -21,7 +21,6 @@ import { containerengine, objectstorage } from 'oci-sdk';
 
 const DEFAULT_NOTIFICATION_TOPIC = 'NotificationTopic';
 const DEFAULT_LOG_GROUP = 'Default_Group';
-const DEFAULT_TOOLING_GROUP = 'GCN-VSCodeToolingGroup';
 const DEFAULT_COMPARTMENT_ACCESS_POLICY = 'CompartmentAccessPolicy';
 const BUILD_IMAGE = 'OL7_X86_64_STANDARD_10';
 
@@ -1194,45 +1193,6 @@ export async function getDefaultLogGroup(authenticationDetailsProvider: common.C
     return undefined;
 }
 
-export async function listDynamicGroups(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name?: string): Promise<identity.models.DynamicGroup[]> {
-    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    const request: identity.requests.ListDynamicGroupsRequest = {
-        compartmentId: compartmentID,
-        name: name,
-        limit: 1000
-    };
-    const result: identity.models.DynamicGroup[] = [];
-    do {
-        const response = await client.listDynamicGroups(request);
-        result.push(...response.items);
-        request.page = response.opcNextPage;
-    } while (request.page);
-    return result;
-}
-
-export async function createDynamicGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name: string, description: string, matchingRule: string): Promise<identity.models.DynamicGroup> {
-    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    const requestDetails: identity.models.CreateDynamicGroupDetails = {
-        compartmentId: compartmentID,
-        name,
-        description,
-        matchingRule
-    };
-    const request: identity.requests.CreateDynamicGroupRequest = {
-        createDynamicGroupDetails: requestDetails
-    };
-    return client.createDynamicGroup(request).then(response => response.dynamicGroup);
-}
-
-export async function updateDynamicGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, groupID: string, details: identity.models.UpdateDynamicGroupDetails): Promise<identity.models.DynamicGroup> {
-    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    const request: identity.requests.UpdateDynamicGroupRequest = {
-        dynamicGroupId: groupID,
-        updateDynamicGroupDetails: details
-    };
-    return client.updateDynamicGroup(request).then(response => response.dynamicGroup);
-}
-
 export async function processWithinHomeRegion(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, task: () => Promise<any>): Promise<any> {
     const homeRegionKey = (await getTenancy(authenticationDetailsProvider)).homeRegionKey;
     if (!homeRegionKey) {
@@ -1252,23 +1212,6 @@ export async function processWithinHomeRegion(authenticationDetailsProvider: com
     } finally {
         authenticationDetailsProvider.setRegion(currentRegion);
     }
-}
-
-export async function getDefaultToolingGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean): Promise<identity.models.DynamicGroup | undefined> {
-    const tenancy = authenticationDetailsProvider.getTenantId();
-    const rule = `All {resource.compartment.id = '${compartmentID}', Any {resource.type = 'devopsdeploypipeline', resource.type = 'devopsbuildpipeline', resource.type = 'devopsrepository'}}`;
-    const group = (await listDynamicGroups(authenticationDetailsProvider, tenancy, DEFAULT_TOOLING_GROUP)).find(g => DEFAULT_TOOLING_GROUP === g.name);
-    if (group) {
-        if (group.matchingRule.indexOf(rule) < 0) {
-            const len = group.matchingRule.length;
-            await processWithinHomeRegion(authenticationDetailsProvider, () => updateDynamicGroup(authenticationDetailsProvider, group.id, { matchingRule: `${group.matchingRule.slice(0, len - 1)}, ${rule}${group.matchingRule.slice(len - 1)}`}));
-        }
-        return group;
-    }
-    if (create) {
-        return await processWithinHomeRegion(authenticationDetailsProvider, () => createDynamicGroup(authenticationDetailsProvider, tenancy, DEFAULT_TOOLING_GROUP, 'Default group for code repositories, build and deployment pipelines created from VS Code', `Any {${rule}}`));
-    }
-    return undefined;
 }
 
 export async function listPolicies(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name?: string): Promise<identity.models.Policy[]> {
@@ -1310,12 +1253,12 @@ export async function updatePolicy(authenticationDetailsProvider: common.ConfigF
     return client.updatePolicy(request).then(response => response.policy);
 }
 
-export async function getCompartmentAccessPolicy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, toolingGroupName: string, create?: boolean): Promise<string | undefined> {
+export async function getCompartmentAccessPolicy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean): Promise<string | undefined> {
     const rules = [
-        `Allow dynamic-group ${toolingGroupName} to manage devops-family in compartment id ${compartmentID}`,
-        `Allow dynamic-group ${toolingGroupName} to manage generic-artifacts in compartment id ${compartmentID}`,
-        `Allow dynamic-group ${toolingGroupName} to manage repos in compartment id ${compartmentID}`,
-        `Allow dynamic-group ${toolingGroupName} to manage clusters in compartment id ${compartmentID}`
+        `Allow any-user to manage devops-family in compartment id ${compartmentID} where ALL {Any {request.principal.type='devopsbuildpipeline', request.principal.type='devopsdeploypipeline', request.principal.type='devopsrepository'}, request.principal.compartment.id='${compartmentID}'}`,
+        `Allow any-user to manage generic-artifacts in compartment id ${compartmentID} where ALL {Any {request.principal.type='devopsbuildpipeline', request.principal.type='devopsdeploypipeline', request.principal.type='devopsrepository'}, request.principal.compartment.id='${compartmentID}'}`,
+        `Allow any-user to manage repos in compartment id ${compartmentID} where ALL {Any {request.principal.type='devopsbuildpipeline', request.principal.type='devopsdeploypipeline', request.principal.type='devopsrepository'}, request.principal.compartment.id='${compartmentID}'}`,
+        `Allow any-user to manage clusters in compartment id ${compartmentID} where ALL {Any {request.principal.type='devopsbuildpipeline', request.principal.type='devopsdeploypipeline', request.principal.type='devopsrepository'}, request.principal.compartment.id='${compartmentID}'}`
     ];
     const policy = (await listPolicies(authenticationDetailsProvider, compartmentID, DEFAULT_COMPARTMENT_ACCESS_POLICY)).find(p => DEFAULT_COMPARTMENT_ACCESS_POLICY === p.name);
     if (policy) {
