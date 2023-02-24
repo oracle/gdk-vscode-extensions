@@ -18,6 +18,8 @@ import * as genericartifactscontent from 'oci-genericartifactscontent';
 import * as containerinstances from 'oci-containerinstances'
 import { containerengine, objectstorage } from 'oci-sdk';
 
+import * as ociFeatures from './ociFeatures';
+
 
 const DEFAULT_NOTIFICATION_TOPIC = 'NotificationTopic';
 const DEFAULT_LOG_GROUP = 'Default_Group';
@@ -1470,7 +1472,7 @@ export async function createBuildPipeline(authenticationDetailsProvider: common.
     return client.createBuildPipeline(request).then(response => response.buildPipeline);
 }
 
-export async function createBuildPipelineBuildStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, repositoryID: string, repositoryName: string, repositoryUrl: string, buildSpecFile: string, tags?: { [key:string]: string }): Promise<devops.models.BuildPipelineStage> {
+export async function createBuildPipelineBuildStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, repositoryID: string, repositoryName: string, repositoryUrl: string, buildSpecFile: string, useNIShape: boolean, tags?: { [key:string]: string }): Promise<devops.models.BuildPipelineStage> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: devops.models.CreateBuildStageDetails = {
         displayName: 'Build',
@@ -1499,6 +1501,9 @@ export async function createBuildPipelineBuildStage(authenticationDetailsProvide
         buildPipelineStageType: devops.models.CreateBuildStageDetails.buildPipelineStageType,
         freeformTags: tags
     };
+    if (useNIShape) {
+        (requestDetails as any).buildRunnerShapeConfig = ociFeatures.niRunnerShapeConfig();
+    }
     const request: devops.requests.CreateBuildPipelineStageRequest = {
         createBuildPipelineStageDetails: requestDetails
     };

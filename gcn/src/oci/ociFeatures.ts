@@ -13,6 +13,9 @@ export const NI_PIPELINES_ENABLED: boolean = niPipelinesEnabled();
 export const NON_PIPELINE_RESOURCES_ENABLED: boolean = nonPipelineResourcesEnabled();
 export const MANAGE_VIEW_ITEMS_ENABLED: boolean = manageViewItemsEnabled();
 
+const NI_RUNNER_SHAPE_DEFAULT_OCPUS = 2;
+const NI_RUNNER_SHAPE_DEFAULT_MEMORY_GB = 16;
+
 
 export function initialize() {
     if (CONTAINER_INSTANCES_ENABLED) {
@@ -29,7 +32,20 @@ function containerInstancesEnabled(): boolean {
 }
 
 function niPipelinesEnabled(): boolean {
-    return vscode.workspace.getConfiguration('gcn').get<boolean>('niPipelinesEnabled') === true;
+    return vscode.workspace.getConfiguration('gcn').get<boolean>('niPipelinesEnabled') !== false;
+    // return vscode.workspace.getConfiguration('gcn').get<boolean>('niPipelinesEnabled') === true;
+}
+
+export function niRunnerShapeConfig(): any {
+    const shape = vscode.workspace.getConfiguration('gcn').get<any>('niRunnerShapeConfig') || {};
+    if (!shape.ocpus) {
+        shape.ocpus = NI_RUNNER_SHAPE_DEFAULT_OCPUS;
+    }
+    if (!shape.memoryInGBs) {
+        shape.memoryInGBs = NI_RUNNER_SHAPE_DEFAULT_MEMORY_GB;
+    }
+    shape.buildRunnerType = 'CUSTOM';
+    return shape;
 }
 
 function nonPipelineResourcesEnabled(): boolean {
