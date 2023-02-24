@@ -842,8 +842,9 @@
 		"compile": "webpack --mode development",
 		"info": "webpack --display-modules",
 		"watch": "webpack --mode development --watch",
-		"test-compile": "tsc -p ./",
-		"lint": "tslint -p ./"
+		"test-compile": "tsc -p . --outDir out",
+		"lint": "tslint -p ./",
+		"test": "node ./out/test/runTest.js"
 	},
 	"dependencies": {
 		"mustache": "4.0.1",
@@ -854,6 +855,8 @@
 		"xml2js": "^0.4.23"
 	},
 	"devDependencies": {
+		"@types/glob": "^8.0.1",
+		"@types/mocha": "^10.0.1",
 		"@types/mustache": "^4.0.1",
 		"@types/node": "^12.12.0",
 		"@types/semver": "7.3.12",
@@ -861,6 +864,10 @@
 		"@types/which": "^2.0.1",
 		"@types/xml2js": "^0.4.11",
 		"@vscode/codicons": "0.0.20",
+		"@vscode/test-electron": "^2.2.3",
+		"encoding": "^0.1.13",
+		"glob": "^8.1.0",
+		"mocha": "^10.1.0",
 		"ts-loader": "^9.3.1",
 		"tslint": "^5.12.1",
 		"typescript": "^4.7.2",
