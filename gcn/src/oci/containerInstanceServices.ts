@@ -292,12 +292,6 @@ class Service extends ociService.Service {
                 if (this.dataChanged) {
                     this.dataChanged(this);
                 }
-            } finally {
-                if (credentials?.tokenId) {
-                    try {
-                        ociUtils.deleteAuthToken(this.oci.getProvider(), credentials.tokenId);
-                    } catch (nerr) {}
-                }
             }
         });
     }

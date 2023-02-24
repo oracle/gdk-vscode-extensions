@@ -248,24 +248,23 @@ export async function selectCodeRepositories(authenticationDetailsProvider: comm
     return undefined;
 }
 
-export async function getUserCredentials(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, actionName?: string, namespace?: string): Promise<{ username: string, password: string, tokenId?: string } | undefined> {
+export async function getUserCredentials(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, actionName?: string, namespace?: string): Promise<{ username: string, password: string } | undefined> {
+    try {
+        const token = await ociUtils.createBearerToken(authenticationDetailsProvider);
+        if (token) {
+            return { username: 'BEARER_TOKEN', password: token };
+        }
+    } catch (err) {}
     try {
         const user = await ociUtils.getUser(authenticationDetailsProvider, authenticationDetailsProvider.getUser());
-        let authToken: any;
-        try {
-            authToken = await ociUtils.createAuthToken(authenticationDetailsProvider);
-        } catch (err) {}
-        const password = authToken?.token ? authToken?.token : await inputPassword(user.name, actionName);
+        const password = await inputPassword(user.name, actionName);
         if (password === undefined) {
             return undefined;
         }
         if (!namespace) {
             namespace = await ociUtils.getObjectStorageNamespace(authenticationDetailsProvider);
         }
-        if (authToken) {
-            await ociUtils.completion(1000, () => ociUtils.getAuthToken(authenticationDetailsProvider, authToken.id).then(token => token?.lifecycleState));
-        }
-        return { username: `${namespace}/${user.name}`, password, tokenId: authToken?.id };
+        return { username: `${namespace}/${user.name}`, password };
     } catch (err) {
         dialogs.showErrorMessage('Failed to get username and password', err);
         return undefined;
@@ -316,24 +315,20 @@ export async function pullImage(authenticationDetailsProvider: common.ConfigFile
         cancellable: true
     }, (progress, token) => {
         const registryEndpoint = `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io`;
-        return new Promise<string | null | undefined>(async resolve => {
-            let tokenId: string | undefined;
+            return new Promise<boolean | undefined>(async resolve => {
+            let loggedIn = false;
             try {
                 progress.report({ message: 'Getting user credentials...' });
                 const credentials = await getUserCredentials(authenticationDetailsProvider, actionName);
-                if (credentials === undefined) {
-                    resolve(null);
-                    return;
-                }
-                tokenId = credentials.tokenId;
-                if (token.isCancellationRequested) {
-                    resolve(tokenId);
+                if (!credentials || token.isCancellationRequested) {
+                    resolve(loggedIn);
                     return;
                 }
                 progress.report({ message: 'Docker login...' });
                 dockerUtils.login(registryEndpoint, credentials.username, credentials.password);
+                loggedIn = true;
                 if (token.isCancellationRequested) {
-                    resolve(tokenId);
+                    resolve(loggedIn);
                     return;
                 }
                 progress.report({ message: 'Pulling image...' });
@@ -351,23 +346,17 @@ export async function pullImage(authenticationDetailsProvider: common.ConfigFile
                     if (errMsg) {
                         dialogs.showErrorMessage(errMsg);
                     }
-                    resolve(tokenId);
+                    resolve(loggedIn);
                 });
             } catch(err) {
                 dialogs.showErrorMessage(undefined, err);
-                resolve(tokenId);
+                resolve(loggedIn);
             }
-        }).then(async tokenId => {
-            if (tokenId !== null) {
+        }).then(async loggedIn => {
+            if (loggedIn) {
                 try {
                     progress.report({ message: 'Docker logout...' });
                     dockerUtils.logout(registryEndpoint);
-                } catch(err) {}
-            }
-            if (tokenId) {
-                try {
-                    progress.report({ message: 'Deleting token...' });
-                    await ociUtils.deleteAuthToken(authenticationDetailsProvider,tokenId);
                 } catch(err) {}
             }
         });

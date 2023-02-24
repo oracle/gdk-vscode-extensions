@@ -17,7 +17,8 @@ import * as loggingsearch from 'oci-loggingsearch';
 import * as genericartifactscontent from 'oci-genericartifactscontent';
 import * as containerinstances from 'oci-containerinstances'
 import { containerengine, objectstorage } from 'oci-sdk';
-
+import fetch from 'node-fetch';
+import { Headers, Request } from 'node-fetch';
 
 const DEFAULT_NOTIFICATION_TOPIC = 'NotificationTopic';
 const DEFAULT_LOG_GROUP = 'Default_Group';
@@ -191,35 +192,24 @@ export async function getTenancy(authenticationDetailsProvider: common.ConfigFil
     return client.getTenancy(request).then(response => response.tenancy);
 }
 
-export async function createAuthToken(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, userID?: string): Promise<identity.models.AuthToken> {
-    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    const request: identity.requests.CreateAuthTokenRequest = {
-        userId: userID ? userID : authenticationDetailsProvider.getUser(),
-        createAuthTokenDetails: {
-            description: 'Temporary AuthToken created by VS Code'
-        }
-    };
-    return client.createAuthToken(request).then(response => response.authToken);
-}
-
-export async function getAuthToken(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, tokenID: string, userID?: string): Promise<identity.models.AuthToken | undefined> {
-    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    const request: identity.requests.ListAuthTokensRequest = {
-        userId: userID ? userID : authenticationDetailsProvider.getUser(),
-    };
-    return client.listAuthTokens(request).then(response => response.items.find(token => token.id === tokenID));
-}
-
-export async function deleteAuthToken(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, tokenID: string, userID?: string, wait: boolean = true) {
-    const client = new identity.IdentityClient({ authenticationDetailsProvider: authenticationDetailsProvider });
-    const request: identity.requests.DeleteAuthTokenRequest = {
-        userId: userID ? userID : authenticationDetailsProvider.getUser(),
-        authTokenId: tokenID
-    };
-    const response = client.deleteAuthToken(request);
-    if (wait) {
-        await response;
+export async function createBearerToken(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, registryEndpoint?: string): Promise<string> {
+    if (!registryEndpoint) {
+        registryEndpoint = `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io`;
     }
+    const signer = new common.DefaultRequestSigner(authenticationDetailsProvider);
+    const httpRequest: common.HttpRequest = {
+        uri: `https://${registryEndpoint}/20180419/docker/token`,
+        headers: new Headers(),
+        method: "GET"
+    };
+    await signer.signHttpRequest(httpRequest);
+    const response = await fetch(new Request(httpRequest.uri, {
+        method: httpRequest.method,
+        headers: httpRequest.headers,
+        body: httpRequest.body
+    }));
+    const data: any = await response.json();
+    return data?.token;
 }
 
 export async function getObjectStorageNamespace(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID?: string): Promise<string> {
