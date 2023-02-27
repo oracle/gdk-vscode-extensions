@@ -314,10 +314,15 @@ function getClouds() {
     const items = gcnApi.clouds().toArray();
     for (let i = 0; i < items.length; i++) {
         let v = items[i];
-        ret.push({
+        const cloud = {
             label: v.getLabel().$as('string') as string,
             value: v.getValueName().$as('string') as string
-        });
+        }
+        if (cloud.label === 'OCI') {
+            ret.unshift(cloud);
+        } else {
+            ret.push(cloud);
+        }
     }
     return ret;
 }
@@ -348,6 +353,9 @@ function findSelection(from: ValueAndLabel[], selected: ValueAndLabel[] | ValueA
 function findSelectedItems(from: ValueAndLabel[], selected: ValueAndLabel[] | ValueAndLabel | undefined) {
     const ret : ValueAndLabel[]= [];
     if (!selected) {
+        if (from[0]?.label === 'OCI') {
+            ret.push(from[0]);
+        }
         return ret;
     }
     if (!Array.isArray(selected)) {
