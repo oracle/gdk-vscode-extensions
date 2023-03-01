@@ -1,6 +1,7 @@
 import * as path from 'path';
+import * as cp from 'child_process'
 
-import { runTests } from '@vscode/test-electron';
+import { runTests, downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron';
 
 async function main() {
 	try {
@@ -14,8 +15,32 @@ async function main() {
 
 		const testWorkspace = path.resolve(__dirname, '../../fixtures/base-oci-template');
 
+		// Install NBLS extension
+		const vscodeExecutablePath = await downloadAndUnzipVSCode('1.75.1');
+		console.log(vscodeExecutablePath);
+		const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
+
+		let extensionList : string[] = [
+			'asf.apache-netbeans-java',
+			'redhat.java',
+			'oracle-labs-graalvm.graalvm-pack',
+			'oracle-labs-graalvm.graalvm',
+			'vscjava.vscode-java-pack',
+			'vscjava.vscode-java-debug',
+			'/vscjava.vscode-maven',
+			'C:/users/stevo/downloads/gcn-0.0.1-215.vsix'
+		];
+
+		for (let extensionId of extensionList) {
+			cp.spawnSync(cli, [...args, '--install-extension', extensionId], {
+				encoding: 'utf-8',
+				stdio: 'inherit'
+			});
+		}
+
 		// Download VS Code, unzip it and run the integration test
 		await runTests({
+			vscodeExecutablePath,
 			extensionDevelopmentPath,
 			extensionTestsPath: extensionTestsPath,
 			launchArgs: [testWorkspace]
