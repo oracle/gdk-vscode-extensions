@@ -69,7 +69,7 @@ suite('Extension Test Suite', function() {
 
                 assert.ok(containsGciCommands, "No GCN commands have been loaded");
 
-        }).timeout(15000); // initial loading of the gcn extension
+        }).timeout(15000);
 
         // Check if GCN welcome page opens
         test("GCN Welcome page", async () => {

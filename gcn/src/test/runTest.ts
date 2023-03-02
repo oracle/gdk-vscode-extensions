@@ -26,9 +26,9 @@ async function main() {
 			'oracle-labs-graalvm.graalvm-pack',
 			'oracle-labs-graalvm.graalvm',
 			'vscjava.vscode-java-pack',
-			'vscjava.vscode-java-debug',
-			'/vscjava.vscode-maven',
-			'C:/users/stevo/downloads/gcn-0.0.1-215.vsix'
+			'vscjava.vscode-java-debug'
+			// Path to GCN VSIX
+			//'C:/users/stevo/downloads/gcn-0.0.1-215.vsix'
 		];
 
 		for (let extensionId of extensionList) {
