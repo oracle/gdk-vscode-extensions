@@ -15,6 +15,14 @@
 				"kind": "build",
 				"isDefault": true
 			}
+		},
+		{
+			"label": "tasks: compile-tests",
+			"dependsOn": [
+				"npm: test-clean",
+				"npm: test-compile",
+			],
+			"problemMatcher": []
 		}
 	]
 }

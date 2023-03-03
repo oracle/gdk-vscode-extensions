@@ -842,6 +842,7 @@
 		"compile": "webpack --mode development",
 		"info": "webpack --display-modules",
 		"watch": "webpack --mode development --watch",
+		"test-clean": "rm -r out",
 		"test-compile": "tsc -p . --outDir out",
 		"lint": "tslint -p ./",
 		"test": "node ./out/test/runTest.js"

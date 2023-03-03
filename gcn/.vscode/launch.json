@@ -35,7 +35,8 @@
             "resolveSourceMapLocations": [
                 "${workspaceFolder}/**",
                 "!**/node_modules/**"
-            ]
+            ],
+			"preLaunchTask": "tasks: compile-tests"
 		}
 	]
 }
