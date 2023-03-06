@@ -17,7 +17,8 @@ import * as loggingsearch from 'oci-loggingsearch';
 import * as genericartifactscontent from 'oci-genericartifactscontent';
 import * as containerinstances from 'oci-containerinstances'
 import { containerengine, objectstorage } from 'oci-sdk';
-
+import fetch from 'node-fetch';
+import { Headers, Request } from 'node-fetch';
 
 const DEFAULT_NOTIFICATION_TOPIC = 'NotificationTopic';
 const DEFAULT_LOG_GROUP = 'Default_Group';
@@ -188,6 +189,26 @@ export async function getTenancy(authenticationDetailsProvider: common.ConfigFil
         tenancyId: tenantID ? tenantID : authenticationDetailsProvider.getTenantId()
     };
     return client.getTenancy(request).then(response => response.tenancy);
+}
+
+export async function createBearerToken(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, registryEndpoint?: string): Promise<string> {
+    if (!registryEndpoint) {
+        registryEndpoint = `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io`;
+    }
+    const signer = new common.DefaultRequestSigner(authenticationDetailsProvider);
+    const httpRequest: common.HttpRequest = {
+        uri: `https://${registryEndpoint}/20180419/docker/token`,
+        headers: new Headers(),
+        method: "GET"
+    };
+    await signer.signHttpRequest(httpRequest);
+    const response = await fetch(new Request(httpRequest.uri, {
+        method: httpRequest.method,
+        headers: httpRequest.headers,
+        body: httpRequest.body
+    }));
+    const data: any = await response.json();
+    return data?.token;
 }
 
 export async function getObjectStorageNamespace(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID?: string): Promise<string> {
@@ -1948,15 +1969,10 @@ export async function createContainerInstance(authenticationDetailsProvider: com
         subnetId: subnetID
     }
 
-    const endpointIdx = imageURL.indexOf('/');
-    const registryEndpoint = endpointIdx < 0 ? `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io` : imageURL.slice(0, endpointIdx);
-    const namespaceIdx = imageURL.indexOf('/', endpointIdx + 1);
-    const namespace = namespaceIdx < 0 ? await getObjectStorageNamespace(authenticationDetailsProvider) : imageURL.slice(endpointIdx + 1, namespaceIdx);
-    
     const imagePullSecretDetails: containerinstances.models.CreateBasicImagePullSecretDetails = {
         secretType: 'BASIC',
-        registryEndpoint,
-        username: Buffer.from(`${namespace}/${username}`).toString('base64'),
+        registryEndpoint: `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io`,
+        username: Buffer.from(username).toString('base64'),
         password: Buffer.from(password).toString('base64')
     }
 
@@ -2071,6 +2087,10 @@ export function isRunning(state?: string) {
 
 export function isUp(state?: string) {
     return state === 'ACTIVE' || state === 'CREATING';
+}
+
+export function isActive(state?: string) {
+    return state === 'ACTIVE';
 }
 
 export function isSuccess(state?: string) {

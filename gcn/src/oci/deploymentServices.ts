@@ -273,7 +273,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         return undefined;
     }
 
-    const secretName = await ociDialogs.getKubeSecret(oci.getProvider(), okeCluster, 'vscode-generated-ocirsecret', undefined, 'New Deployment to OKE');
+    const secretName = await ociDialogs.getKubeSecret(oci.getProvider(), okeCluster, 'vscode-generated-ocirsecret', 'New Deployment to OKE');
     if (!secretName) {
         return undefined;
     }
