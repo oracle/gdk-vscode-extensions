@@ -125,7 +125,6 @@ class Service extends ociService.Service {
                 try {
                     const containers = await ociUtils.listContainerInstanceContainers(this.oci.getProvider(), this.oci.getCompartment(), containerInstanceID);
                     for (const output of this.currentCIOutputs) {
-                        console.log('>>> CLEARING output ' + output.name)
                         output.dispose();
                     }
                     this.currentCIOutputs.length = 0;
