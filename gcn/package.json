@@ -842,6 +842,7 @@
 		"compile": "webpack --mode development",
 		"info": "webpack --display-modules",
 		"watch": "webpack --mode development --watch",
+		"watch-tests": "tsc --outDir out --watch",
 		"test-clean": "rm -r out",
 		"test-compile": "tsc -p . --outDir out",
 		"lint": "tslint -p ./",
@@ -871,7 +872,6 @@
 		"mocha": "^10.1.0",
 		"ts-loader": "^9.3.1",
 		"tslint": "^5.12.1",
-		"typescript": "^4.7.2",
 		"webpack": "^5.74.0",
 		"webpack-cli": "^4.10.0"
 	},

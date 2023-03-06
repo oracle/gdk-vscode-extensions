@@ -50,7 +50,7 @@ suite('Extension Test Suite', function() {
 	// revert for tests
 	this.timeout(2000);
 
-        test("Extension loeaded", async () => {
+        test("Extension loaded", async () => {
                 let extension = vscode.extensions.getExtension('oracle-labs-graalvm.gcn');
                 assert(extension, "No GCN extension found!");
 
@@ -67,7 +67,7 @@ suite('Extension Test Suite', function() {
                                 containsGciCommands = true;
                 }
 
-                assert.ok(containsGciCommands, "No GCN commands have been loaded");
+                assert.ok(containsGciCommands, "No GCN command has been loaded");
 
         }).timeout(15000);
 
