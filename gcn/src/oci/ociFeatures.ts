@@ -33,7 +33,6 @@ function containerInstancesEnabled(): boolean {
 
 function niPipelinesEnabled(): boolean {
     return vscode.workspace.getConfiguration('gcn').get<boolean>('niPipelinesEnabled') !== false;
-    // return vscode.workspace.getConfiguration('gcn').get<boolean>('niPipelinesEnabled') === true;
 }
 
 export function niRunnerShapeConfig(): any {
