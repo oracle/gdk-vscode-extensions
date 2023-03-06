@@ -17,7 +17,10 @@ import * as loggingsearch from 'oci-loggingsearch';
 import * as genericartifactscontent from 'oci-genericartifactscontent';
 import * as containerinstances from 'oci-containerinstances'
 import { containerengine, objectstorage } from 'oci-sdk';
+import fetch from 'node-fetch';
+import { Headers, Request } from 'node-fetch';
 
+import * as ociFeatures from './ociFeatures';
 
 const DEFAULT_NOTIFICATION_TOPIC = 'NotificationTopic';
 const DEFAULT_LOG_GROUP = 'Default_Group';
@@ -188,6 +191,26 @@ export async function getTenancy(authenticationDetailsProvider: common.ConfigFil
         tenancyId: tenantID ? tenantID : authenticationDetailsProvider.getTenantId()
     };
     return client.getTenancy(request).then(response => response.tenancy);
+}
+
+export async function createBearerToken(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, registryEndpoint?: string): Promise<string> {
+    if (!registryEndpoint) {
+        registryEndpoint = `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io`;
+    }
+    const signer = new common.DefaultRequestSigner(authenticationDetailsProvider);
+    const httpRequest: common.HttpRequest = {
+        uri: `https://${registryEndpoint}/20180419/docker/token`,
+        headers: new Headers(),
+        method: "GET"
+    };
+    await signer.signHttpRequest(httpRequest);
+    const response = await fetch(new Request(httpRequest.uri, {
+        method: httpRequest.method,
+        headers: httpRequest.headers,
+        body: httpRequest.body
+    }));
+    const data: any = await response.json();
+    return data?.token;
 }
 
 export async function getObjectStorageNamespace(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID?: string): Promise<string> {
@@ -1470,7 +1493,7 @@ export async function createBuildPipeline(authenticationDetailsProvider: common.
     return client.createBuildPipeline(request).then(response => response.buildPipeline);
 }
 
-export async function createBuildPipelineBuildStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, repositoryID: string, repositoryName: string, repositoryUrl: string, buildSpecFile: string, tags?: { [key:string]: string }): Promise<devops.models.BuildPipelineStage> {
+export async function createBuildPipelineBuildStage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, repositoryID: string, repositoryName: string, repositoryUrl: string, buildSpecFile: string, useNIShape: boolean, tags?: { [key:string]: string }): Promise<devops.models.BuildPipelineStage> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: devops.models.CreateBuildStageDetails = {
         displayName: 'Build',
@@ -1499,6 +1522,9 @@ export async function createBuildPipelineBuildStage(authenticationDetailsProvide
         buildPipelineStageType: devops.models.CreateBuildStageDetails.buildPipelineStageType,
         freeformTags: tags
     };
+    if (useNIShape) {
+        (requestDetails as any).buildRunnerShapeConfig = ociFeatures.niRunnerShapeConfig();
+    }
     const request: devops.requests.CreateBuildPipelineStageRequest = {
         createBuildPipelineStageDetails: requestDetails
     };
@@ -1948,15 +1974,10 @@ export async function createContainerInstance(authenticationDetailsProvider: com
         subnetId: subnetID
     }
 
-    const endpointIdx = imageURL.indexOf('/');
-    const registryEndpoint = endpointIdx < 0 ? `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io` : imageURL.slice(0, endpointIdx);
-    const namespaceIdx = imageURL.indexOf('/', endpointIdx + 1);
-    const namespace = namespaceIdx < 0 ? await getObjectStorageNamespace(authenticationDetailsProvider) : imageURL.slice(endpointIdx + 1, namespaceIdx);
-    
     const imagePullSecretDetails: containerinstances.models.CreateBasicImagePullSecretDetails = {
         secretType: 'BASIC',
-        registryEndpoint,
-        username: Buffer.from(`${namespace}/${username}`).toString('base64'),
+        registryEndpoint: `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io`,
+        username: Buffer.from(username).toString('base64'),
         password: Buffer.from(password).toString('base64')
     }
 
@@ -2032,40 +2053,20 @@ export async function containerInstancesWaitForResourceCompletionStatus(
     authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider,
     resourceDescription: string, requestId: string): Promise<string> {
     
-    // TODO: handle timeout, use increasing polling time.
     const client = new containerinstances.ContainerInstanceClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const waiter = new containerinstances.ContainerInstanceWaiter(client);
+    
     const request: containerinstances.requests.GetWorkRequestRequest = {
         workRequestId: requestId,
     };
 
-    let requestState: containerinstances.models.WorkRequest | undefined;
+    const response = await waiter.forWorkRequest(request);
+    if (response.workRequest.status !== containerinstances.models.OperationStatus.Succeeded) {
+        throw new Error(`Creation of ${resourceDescription} failed`);
+    }
 
-    // TODO: make this configurable, in vscode/workspace options
-    const maxWaitingTimeMillis = 60 * 1000; 
-    const initialPollTime = 2000;
-    W: for (let waitCount = (maxWaitingTimeMillis / initialPollTime); waitCount > 0; waitCount--) {
-        // console.log(`>>> getRequest ${req.workRequestId}`);
-        const response = await client.getWorkRequest(request);
-        // console.log(`>>> getRequest ${req.workRequestId} = ${response.workRequest.status}`);
-        switch (response.workRequest.status) {
-            case containerinstances.models.OperationStatus.Succeeded:
-            case containerinstances.models.OperationStatus.Failed:
-            case containerinstances.models.OperationStatus.Canceled:
-                requestState = response.workRequest;
-                break W;
-        }
-        await delay(2000);
-    }
-    if (!requestState) {
-        throw `Timeout while creating ${resourceDescription}`;
-    }
-    if (requestState.status !== containerinstances.models.OperationStatus.Succeeded) {
-        // PENDING: make some abortion exception that can carry WorkRequest errors, should be caught top-level & reported to the user instead of plain message.
-        let msg : string = `Creation of ${resourceDescription} failed`;
-        throw msg;
-    }
     // PENDING: what exactly do the 'affected resources' mean ???
-    return requestState.resources[0].identifier;
+    return response.workRequest.resources[0].identifier;
 }
 
 export async function completion(initialPollTime: number, getState: () => Promise<string | undefined>, checkFirst?: boolean): Promise<string | undefined> {
@@ -2091,6 +2092,10 @@ export function isRunning(state?: string) {
 
 export function isUp(state?: string) {
     return state === 'ACTIVE' || state === 'CREATING';
+}
+
+export function isActive(state?: string) {
+    return state === 'ACTIVE';
 }
 
 export function isSuccess(state?: string) {

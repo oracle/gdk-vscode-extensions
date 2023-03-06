@@ -191,7 +191,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
             dump();
             return false;
         }
-        deployData.secretName = await ociDialogs.getKubeSecret(provider, deployData.okeCluster, 'vscode-generated-ocirsecret', deployData.namespace, ACTION_NAME);
+        deployData.secretName = await ociDialogs.getKubeSecret(provider, deployData.okeCluster, 'vscode-generated-ocirsecret', ACTION_NAME, deployData.namespace);
         if (deployData.secretName === undefined) {
             dump();
             return false;
@@ -961,7 +961,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         try {
                             logUtils.logInfo(`[deploy] Creating build stage of build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             folderData.devbuildPipelineBuildStage = false;
-                            folderData.devbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.devbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${devbuildspec_template}`, {
+                            folderData.devbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.devbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${devbuildspec_template}`, false, {
                                 'gcn_tooling_deployID': deployData.tag
                             })).id;
                         } catch (err) {
@@ -1161,7 +1161,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         try {
                             logUtils.logInfo(`[deploy] Creating build stage of build pipeline for native executables o ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             folderData.nibuildPipelineBuildStage = false;
-                            folderData.nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${nibuildspec_template}`, {
+                            folderData.nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${nibuildspec_template}`, true, {
                                 'gcn_tooling_deployID': deployData.tag
                             })).id;
                         } catch (err) {
@@ -1420,7 +1420,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     try {
                                         logUtils.logInfo(`[deploy] Creating build stage of build pipeline for ${subName} docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         subData.docker_nibuildPipelineBuildStage = false;
-                                        subData.docker_nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, subData.docker_nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${subName}_${docker_nibuildspec_template}`, {
+                                        subData.docker_nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, subData.docker_nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${subName}_${docker_nibuildspec_template}`, true, {
                                             'gcn_tooling_deployID': deployData.tag
                                         })).id;
                                     } catch (err) {
@@ -1820,7 +1820,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         try {
                                             logUtils.logInfo(`[deploy] Creating build stage of build pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                             subData.docker_jvmbuildPipelineBuildStage = false;
-                                            subData.docker_jvmbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, subData.docker_jvmbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${subName}_${docker_jvmbuildspec_template}`, {
+                                            subData.docker_jvmbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, subData.docker_jvmbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${subName}_${docker_jvmbuildspec_template}`, false, {
                                                 'gcn_tooling_deployID': deployData.tag
                                             })).id;
                                         } catch (err) {
@@ -2213,7 +2213,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             try {
                                 logUtils.logInfo(`[deploy] Creating build stage of build pipeline for docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.docker_nibuildPipelineBuildStage = false;
-                                folderData.docker_nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.docker_nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${docker_nibuildspec_template}`, {
+                                folderData.docker_nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.docker_nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${docker_nibuildspec_template}`, true, {
                                     'gcn_tooling_deployID': deployData.tag
                                 })).id;
                             } catch (err) {
@@ -2601,7 +2601,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             try {
                                 logUtils.logInfo(`[deploy] Creating build stage of build pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.docker_jvmbuildPipelineBuildStage = false;
-                                folderData.docker_jvmbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.docker_jvmbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${docker_jvmbuildspec_template}`, {
+                                folderData.docker_jvmbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.docker_jvmbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${docker_jvmbuildspec_template}`, false, {
                                     'gcn_tooling_deployID': deployData.tag
                                 })).id;
                             } catch (err) {

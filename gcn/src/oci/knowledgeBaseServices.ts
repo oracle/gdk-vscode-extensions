@@ -141,9 +141,33 @@ async function executeFolderAudit(uri: vscode.Uri) {
     return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri.toString(), auditsKnowledgeBase, 
         { 
             profile: profile,
-            auditName: folderName2AuditName(uri)
+            auditName: folderName2AuditName(uri),
+            returnData: true,
+            displaySummary: false,
+            suppressErrors: true
         }
-    );
+    ).then(result => reportAuditResults(result), error => reportAuditError(error))
+}
+
+function reportAuditError(error : any) {
+    if (error?.data && 'message' in error.data) {
+        vscode.window.showErrorMessage(`Audit failed: ${error.data.message}`)
+    }
+}
+
+function reportAuditResults(result : any) {
+    if (result?.errorMessage) {
+        vscode.window.showErrorMessage(`Audit of ${result.projectName} failed: ${result.errorMessage}`)
+        return
+    }
+    if (!result.vulnerableCount) {
+        vscode.window.showInformationMessage(`Vulnerability audit for project ${result.projectName} is done.\nNo vulnerability was found.`)
+        return;
+    } else if (result.vulnerableCount > 1) {
+        vscode.window.showWarningMessage(`Vulnerability audit for project ${result.projectName} is done.\nOne vulnerability was found.\nThe vulnerability is listed in Problems window.`)
+    } else {
+        vscode.window.showWarningMessage(`Vulnerability audit for project ${result.projectName} is done.\n${result.vulnerableCount} vulnerabilities were found.\nThe vulnerability is listed in Problems window.`)
+    }
 }
 
 function folderName2AuditName(uri : vscode.Uri) : string {
@@ -518,9 +542,12 @@ class Service extends ociService.Service {
         return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri.toString(), 
             auditsKnowledgeBase, 
             {
-                profile: this.oci.getProfile()
+                profile: this.oci.getProfile(),
+                returnData: true,
+                displaySummary: false,
+                suppressErrors: true
             }
-        )
+        ).then(result => reportAuditResults(result), error => reportAuditError(error))
     }
 
     async displayProjectAudit() {
@@ -531,9 +558,12 @@ class Service extends ociService.Service {
         vscode.commands.executeCommand('nbls.gcn.projectAudit.display', this.folder.uri.toString(), auditsKnowledgeBase, 
             { 
                 force : true,
-                profile: this.oci.getProfile()
+                profile: this.oci.getProfile(),
+                returnData: true,
+                displaySummary: false,
+                suppressErrors: true
             }
-        );
+        ).then(result => reportAuditResults(result), error => reportAuditError(error))
         const prjs: any[] = await vscode.commands.executeCommand('nbls.project.info', this.folder.uri.toString(), { recursive : true, projectStructure : true });
 
         if (prjs.length < 2) {
@@ -543,9 +573,12 @@ class Service extends ociService.Service {
             vscode.commands.executeCommand('nbls.gcn.projectAudit.display', i.projectDirectory, auditsKnowledgeBase,  
                 { 
                     force : true,
-                    profile: this.oci.getProfile()
+                    profile: this.oci.getProfile(),
+                    returnData: true,
+                    displaySummary: false,
+                    suppressErrors: true
                 }
-            );
+            ).then(result => reportAuditResults(result), error => reportAuditError(error))
         }
     }
 

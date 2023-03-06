@@ -5,32 +5,16 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import * as dialogs from './dialogs';
+import * as cp from 'child_process';
 
-const defaultConfigLocation = path.join(os.homedir(), '.docker', 'config.json');
-
-export function pullImage(imageId: string) {
-    const terminal = dialogs.getGCNTerminal();
-    terminal.show();
-    terminal.sendText(`docker pull ${imageId}`);
+export function pullImage(imageId: string): cp.ChildProcess {
+    return cp.spawn('docker', ['pull', imageId], { detached: true });
 }
 
 export function login(registryName: string, userName: string, password: string) {
-    const terminal = dialogs.getGCNTerminal();
-    terminal.show();
-    terminal.sendText(`docker login --username ${userName} --password "${password}" ${registryName}`);
+   cp.execSync(`docker login --username ${userName} --password "${password}" ${registryName}`);
 }
 
-export function isAuthenticated(registryName: string): boolean {
-    if (fs.existsSync(defaultConfigLocation)) {
-        const configurationString = fs.readFileSync(defaultConfigLocation).toString();
-        const configuration = JSON.parse(configurationString);
-        if (configuration.auths && configuration.auths[registryName]) {
-            return true;
-        }
-    }
-    return false;
+export function logout(registryName: string) {
+   cp.execSync(`docker logout ${registryName}`);
 }

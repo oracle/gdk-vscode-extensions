@@ -9,7 +9,6 @@ import * as vscode from 'vscode';
 import * as artifacts from 'oci-artifacts';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
-import * as dockerUtils from '../dockerUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociDialogs from './ociDialogs';
@@ -354,8 +353,7 @@ class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource 
                     const repositoryName = resource.repositoryName;
                     const version = resource.version;
                     if (version) {
-                        const target = `${regionKey}.ocir.io/${namespace}/${repositoryName}:${version}`; // https://docs.oracle.com/en-us/iaas/Content/Registry/Tasks/registrypullingimagesusingthedockercli.htm
-                        return (await ociDialogs.dockerAuthenticate(this.oci.getProvider(), target, 'Pull Docker Image')) ? target : undefined;
+                        return `${regionKey}.ocir.io/${namespace}/${repositoryName}:${version}`; // https://docs.oracle.com/en-us/iaas/Content/Registry/Tasks/registrypullingimagesusingthedockercli.htm
                     } else {
                         return new Error('Failed to resolve docker pull command - unknown image version.');
                     }
@@ -367,7 +365,7 @@ class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource 
             }
         }).then(result => {
             if (typeof result === 'string') {
-                dockerUtils.pullImage(result as string);
+                ociDialogs.pullImage(this.oci.getProvider(), result as string, 'Pull Docker Image');
             } else if (result instanceof Error) {
                 dialogs.showError(result);
             }
