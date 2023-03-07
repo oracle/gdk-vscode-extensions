@@ -17,8 +17,7 @@ import * as loggingsearch from 'oci-loggingsearch';
 import * as genericartifactscontent from 'oci-genericartifactscontent';
 import * as containerinstances from 'oci-containerinstances'
 import { containerengine, objectstorage } from 'oci-sdk';
-import fetch from 'node-fetch';
-import { Headers, Request } from 'node-fetch';
+import 'isomorphic-fetch';
 
 import * as ociFeatures from './ociFeatures';
 
