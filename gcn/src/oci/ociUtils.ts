@@ -1277,10 +1277,10 @@ export async function updatePolicy(authenticationDetailsProvider: common.ConfigF
 
 export async function getCompartmentAccessPolicy(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean): Promise<string | undefined> {
     const rules = [
-        `Allow any-user to manage devops-family in compartment id ${compartmentID} where ALL {Any {request.principal.type='devopsbuildpipeline', request.principal.type='devopsdeploypipeline', request.principal.type='devopsrepository'}, request.principal.compartment.id='${compartmentID}'}`,
-        `Allow any-user to manage generic-artifacts in compartment id ${compartmentID} where ALL {Any {request.principal.type='devopsbuildpipeline', request.principal.type='devopsdeploypipeline', request.principal.type='devopsrepository'}, request.principal.compartment.id='${compartmentID}'}`,
-        `Allow any-user to manage repos in compartment id ${compartmentID} where ALL {Any {request.principal.type='devopsbuildpipeline', request.principal.type='devopsdeploypipeline', request.principal.type='devopsrepository'}, request.principal.compartment.id='${compartmentID}'}`,
-        `Allow any-user to manage clusters in compartment id ${compartmentID} where ALL {Any {request.principal.type='devopsbuildpipeline', request.principal.type='devopsdeploypipeline', request.principal.type='devopsrepository'}, request.principal.compartment.id='${compartmentID}'}`
+        `Allow any-user to read devops-family in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
+        `Allow any-user to manage generic-artifacts in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
+        `Allow any-user to manage repos in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
+        `Allow any-user to manage clusters in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`
     ];
     const policy = (await listPolicies(authenticationDetailsProvider, compartmentID, DEFAULT_COMPARTMENT_ACCESS_POLICY)).find(p => DEFAULT_COMPARTMENT_ACCESS_POLICY === p.name);
     if (policy) {
