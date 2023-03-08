@@ -15,7 +15,7 @@ import * as ons from 'oci-ons';
 import * as logging from 'oci-logging';
 import * as loggingsearch from 'oci-loggingsearch';
 import * as genericartifactscontent from 'oci-genericartifactscontent';
-import * as containerinstances from 'oci-containerinstances'
+import * as containerinstances from 'oci-containerinstances';
 import { containerengine, objectstorage } from 'oci-sdk';
 import 'isomorphic-fetch';
 
@@ -1803,7 +1803,23 @@ export async function createVCN(authenticationDetailsProvider: common.ConfigFile
     const request: core.requests.CreateVcnRequest = {
         createVcnDetails: requestDetails
     }
-    return client.createVcn(request).then(result => result.vcn);
+    return client.createVcn(request).then(response => response.vcn);
+}
+
+export async function getVCN(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, vcnID: string): Promise<core.models.Vcn> {
+    const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: core.requests.GetVcnRequest = {
+        vcnId: vcnID
+    }
+    return client.getVcn(request).then(response => response.vcn);
+}
+
+export async function deleteVCN(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, vcnID: string): Promise<string> {
+    const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: core.requests.DeleteVcnRequest = {
+        vcnId: vcnID
+    };
+    return client.deleteVcn(request).then(response => response.opcRequestId);
 }
 
 export async function createInternetGateway(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, vcnID: string, name?: string, tags?: { [key:string] : string }): Promise<core.models.InternetGateway> {
@@ -1818,7 +1834,33 @@ export async function createInternetGateway(authenticationDetailsProvider: commo
     const request: core.requests.CreateInternetGatewayRequest = {
         createInternetGatewayDetails: requestDetails
     }
-    return client.createInternetGateway(request).then(result => result.internetGateway);
+    return client.createInternetGateway(request).then(response => response.internetGateway);
+}
+
+export async function listInternetGateways(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, vcnID: string, name?: string): Promise<core.models.InternetGateway[]> {
+    const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: core.requests.ListInternetGatewaysRequest = {
+        compartmentId: compartmentID,
+        vcnId: vcnID,
+        lifecycleState: core.models.InternetGateway.LifecycleState.Available,
+        displayName: name,
+        limit: 100
+    };
+    const result: core.models.InternetGateway[] = [];
+    do {
+        const response = await client.listInternetGateways(request);
+        result.push(...response.items);
+        request.page = response.opcNextPage;
+    } while (request.page);
+    return result;
+}
+
+export async function deleteInternetGateway(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, igID: string): Promise<string> {
+    const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: core.requests.DeleteInternetGatewayRequest = {
+        igId: igID
+    };
+    return client.deleteInternetGateway(request).then(response => response.opcRequestId);
 }
 
 export async function listSubnets(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, name?: string): Promise<core.models.Subnet[]> {
@@ -1850,7 +1892,23 @@ export async function createSubnet(authenticationDetailsProvider: common.ConfigF
     const request: core.requests.CreateSubnetRequest = {
         createSubnetDetails: requestDetails
     }
-    return client.createSubnet(request).then(result => result.subnet);
+    return client.createSubnet(request).then(response => response.subnet);
+}
+
+export async function getSubnet(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, subnetID: string): Promise<core.models.Subnet> {
+    const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: core.requests.GetSubnetRequest = {
+        subnetId: subnetID
+    };
+    return client.getSubnet(request).then(response => response.subnet);
+}
+
+export async function deleteSubnet(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, subnetID: string): Promise<string> {
+    const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    const request: core.requests.DeleteSubnetRequest = {
+        subnetId: subnetID
+    };
+    return client.deleteSubnet(request).then(response => response.opcRequestId);
 }
 
 export async function getSecurityList(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, securityListID: string): Promise<core.models.SecurityList> {

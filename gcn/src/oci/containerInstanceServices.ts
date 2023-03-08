@@ -172,8 +172,9 @@ class Service extends ociService.Service {
                     title: 'Deleting Container Instance...',
                     cancellable: false
                 }, (_progress, _token) => {
-                    return ociUtils.deleteContainerInstance(this.oci.getProvider(), containerInstanceID);
+                    return deleteCI(this.oci.getProvider(), containerInstanceID, true);
                 });
+                logUtils.logInfo(`[containerinstance] Deleted Container Instance currently used for folder ${this.folder.name}.`);
                 vscode.window.showInformationMessage(`Deleted Container Instance currently used for folder ${this.folder.name}.`);
             } catch (err) {
                 dialogs.showErrorMessage(`Failed to delete Container Instance currently used for folder ${this.folder.name}.`, err);
@@ -250,7 +251,8 @@ class Service extends ociService.Service {
                     logUtils.logInfo('[containerinstance] No existing Container Instance found for image URL ' + dockerImageUrl);
                     if (lastContainerInstanceID) {
                         logUtils.logInfo('[containerinstance] Deleting previous Container Instance ' + lastContainerInstanceID);
-                        ociUtils.deleteContainerInstance(authenticationDetailsProvider, lastContainerInstanceID);
+                        deleteCI(authenticationDetailsProvider, lastContainerInstanceID, false);
+                        logUtils.logInfo('[containerinstance] Deleted Container Instance ' + lastContainerInstanceID);
                     }
                     progress.report({
                         message: 'Creating new Container Instance'
@@ -364,4 +366,54 @@ async function getOrCreateCIVCN(authenticationDetailsProvider: common.ConfigFile
     return vcn;
 }
 
+async function deleteCI(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, containerInstanceID: string, deleteResources: boolean): Promise<void> {
+    // Resolve Subnet before deleting the CI
+    logUtils.logInfo('[containerinstance] Resolving container instance');
+    const ci = deleteResources ? await ociUtils.getContainerInstance(authenticationDetailsProvider, containerInstanceID) : undefined;
+    if (deleteResources) logUtils.logInfo('[containerinstance] Resolving VNIC');
+    const vnic = ci?.vnics[0].vnicId ? await ociUtils.getVNIC(authenticationDetailsProvider, ci.vnics[0].vnicId) : undefined;
+    if (deleteResources) logUtils.logInfo('[containerinstance] Resolving subnet');
+    const subnet = vnic?.subnetId ? await ociUtils.getSubnet(authenticationDetailsProvider, vnic.subnetId) : undefined;
+    
+    // Delete the CI
+    logUtils.logInfo('[containerinstance] Deleting container instance');
+    const deleteCI = await ociUtils.deleteContainerInstance(authenticationDetailsProvider, containerInstanceID);
 
+    if (subnet) {
+        // Wait for the CI to be deleted
+        logUtils.logInfo('[containerinstance] Waiting for container instance to be deleted');
+        await ociUtils.containerInstancesWaitForResourceCompletionStatus(authenticationDetailsProvider, 'container instance', deleteCI);;
+
+        // All other resources seem to be deleted immediately, no need to wait for workRequests (doesn't seem to work)
+        
+        // Resolve resources before deleting the Subnet
+        logUtils.logInfo('[containerinstance] Resolving route table');
+        const routeTable = await ociUtils.getRouteTable(authenticationDetailsProvider, subnet.routeTableId);
+        logUtils.logInfo('[containerinstance] Resolving VCN');
+        const vcn = await ociUtils.getVCN(authenticationDetailsProvider, subnet.vcnId);
+        
+        // Throws error if being used by other resources, intentional to prevent data loss
+        logUtils.logInfo('[containerinstance] Deleting subnet');
+        await ociUtils.deleteSubnet(authenticationDetailsProvider, subnet.id);
+
+        // Only one gateway is expected, throw error otherwise to prevent data loss
+        logUtils.logInfo('[containerinstance] Resolving internet gateway');
+        const gateways = await ociUtils.listInternetGateways(authenticationDetailsProvider, vcn.compartmentId, vcn.id);
+        if (gateways.length !== 1) {
+            logUtils.logError('[containerinstance] More than one gateways defined, not deleting the VCN');
+            throw new Error(`VCN has ${gateways.length} internet gateways defined, but one was expected. Not deleting the VCN.`);
+        }
+
+        // Clear the RouteTable
+        logUtils.logInfo('[containerinstance] Clearing route table');
+        await ociUtils.updateRouteTable(authenticationDetailsProvider, routeTable.id, []);
+
+        // Delete Gateway
+        logUtils.logInfo('[containerinstance] Deleting internet gateway');
+        await ociUtils.deleteInternetGateway(authenticationDetailsProvider, gateways[0].id);
+
+        // Delete VCN, do not wait
+        logUtils.logInfo('[containerinstance] Deleting VCN');
+        ociUtils.deleteVCN(authenticationDetailsProvider, vcn.id);
+    }
+}
