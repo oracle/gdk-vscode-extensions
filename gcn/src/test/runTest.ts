@@ -2,7 +2,6 @@ import * as path from 'path';
 import * as cp from 'child_process'
 
 import { runTests, downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron';
-import * as assert from 'assert';
 
 async function main() {
 	try {
@@ -27,22 +26,19 @@ async function main() {
 			'oracle-labs-graalvm.graalvm-pack',
 			'oracle-labs-graalvm.graalvm',
 			'vscjava.vscode-java-pack',
-			'vscjava.vscode-java-debug'
-			// Path to GCN VSIX
-			//'C:/users/stevo/downloads/gcn-0.0.1-215.vsix'
+			'vscjava.vscode-java-debug',
+			'ms-kubernetes-tools.vscode-kubernetes-tools'
 		];
 
 		// check if custom ASF NBLS extension is given
 		if ( process.env["NBLS_VSIX_PATH"] ) {
-			extensionList.push(process.env["NBLS_VSIX_PATH"]);
+			extensionList.push(process.env["NBLS_VSIX_PATH"] as string);
 		} else {
 			extensionList.push('asf.apache-netbeans-java');
 		}
 		// check for GCN Path
 		if ( process.env["GCN_VSIX_PATH"]) {
-			extensionList.push(process.env["GCN_VSIX_PATH"]);
-		} else {
-			assert.fail("Cannot find GCN VSIX path. Environment variable `GCN_VSIX_PATH` not set.");
+			extensionList.push(process.env["GCN_VSIX_PATH"] as string);
 		}
 
 		for (let extensionId of extensionList) {

@@ -48,17 +48,17 @@ suite('Extension Test Suite', function() {
 	        await waitForStatup(wf![0]);
 	})
 	// revert for tests
-	this.timeout(2000);
+	this.timeout(5000);
 
+        // This test must be run first, in order to activate the extension (and wait for the activation to complete)
         test("Extension loaded", async () => {
                 let extension = vscode.extensions.getExtension('oracle-labs-graalvm.gcn');
                 assert(extension, "No GCN extension found!");
 
-                extension.activate();
+                await extension.activate();
         });
         // Check if gcn commands have been loaded
         test("GCN commands loaded", async () =>{
-                assert.ok(true, 'asd');
                 let commands = await vscode.commands.getCommands(true);
 
                 let containsGciCommands = false;
@@ -69,7 +69,7 @@ suite('Extension Test Suite', function() {
 
                 assert.ok(containsGciCommands, "No GCN command has been loaded");
 
-        }).timeout(15000);
+        });
 
         // Check if GCN welcome page opens
         test("GCN Welcome page", async () => {
@@ -90,5 +90,5 @@ suite('Extension Test Suite', function() {
 			assert.strictEqual(projectFolder.projectType, "GCN", "Specified project should be deployable to OCI");
 		}
 
-	})
+	});
 });
