@@ -13,3 +13,4 @@ package-lock.json
 /graalvm/nbcode/
 /gcn-database-drivers/nbcode
 /nbcode-gcn-database/nbcode-gcn-database-drivers/target/
+/gcn/fixtures/base-oci-template/oci/bin/
