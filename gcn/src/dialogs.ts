@@ -234,6 +234,27 @@ export async function confirmDeployToOCI(): Promise<boolean> {
 	return await vscode.window.showInformationMessage(msg, confirm, cancel) === confirm;
 }
 
+const BUILD_PIPELINE_CUSTOM_SHAPE_CONFIRMATION = 'buildPipelineCustomShapeConfirmation';
+
+export function isRunBuildPipelineCustomShapeConfirmedPermanently(): boolean {
+	return persistenceUtils.getWorkspaceObject(BUILD_PIPELINE_CUSTOM_SHAPE_CONFIRMATION) === true;
+}
+
+export async function confirmRunBuildPipelineCustomShape(): Promise<boolean> {
+	const confirm = 'Confirm';
+	const confirmPermanently = 'Confirm Permanently';
+	const cancel = 'Cancel';
+	const msg = 'This pipeline uses a custom build runner shape and running it may impose additional costs. Confirm to proceed:';
+	const choice = await vscode.window.showInformationMessage(msg, confirm, confirmPermanently, cancel);
+	if (!choice || choice === cancel) {
+		return false;
+	}
+	if (choice === confirmPermanently) {
+		await persistenceUtils.setWorkspaceObject(BUILD_PIPELINE_CUSTOM_SHAPE_CONFIRMATION, true)
+	}
+	return true;
+}
+
 export class QuickPickObject implements vscode.QuickPickItem {
     constructor(
         public readonly label: string,

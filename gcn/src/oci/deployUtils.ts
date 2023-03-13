@@ -1119,7 +1119,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             increment,
                             message: `Creating build pipeline for native executables of ${repositoryName}...`
                         });
-                        const nibuildPipelineDescription = `Build pipeline to build native executable for devops project ${projectName} & repository ${repositoryName}`;
+                        const nibuildPipelineDescription = `Build pipeline to build native executable for devops project ${projectName} & repository ${repositoryName}. Initially configured to use custom build runner shape - running it may impose additional costs!`;
                         try {
                             logUtils.logInfo(`[deploy] Creating build pipeline for native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             const pipelineName = `${repositoryNamePrefix}${nibuildPipelineName}`;
@@ -1377,7 +1377,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         increment,
                                         message: `Creating build pipeline for ${subName} docker native executable of ${repositoryName}...`
                                     });
-                                    const docker_nibuildPipelineDescription = `Build pipeline to build docker native executable for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}`;
+                                    const docker_nibuildPipelineDescription = `Build pipeline to build docker native executable for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}. Initially configured to use custom build runner shape - running it may impose additional costs!`;
                                     try {
                                         logUtils.logInfo(`[deploy] Creating build pipeline for ${subName} docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         const pipelineName = `${repositoryNamePrefix}${docker_nibuildPipelineName}`;
@@ -2170,7 +2170,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 increment,
                                 message: `Creating build pipeline for docker native executable of ${repositoryName}...`
                             });
-                            const docker_nibuildPipelineDescription = `Build pipeline to build docker native executable for devops project ${projectName} & repository ${repositoryName}`;
+                            const docker_nibuildPipelineDescription = `Build pipeline to build docker native executable for devops project ${projectName} & repository ${repositoryName}. Initially configured to use custom build runner shape - running it may impose additional costs!`;
                             try {
                                 logUtils.logInfo(`[deploy] Creating build pipeline for docker native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 const pipelineName = `${repositoryNamePrefix}${docker_nibuildPipelineName}`;

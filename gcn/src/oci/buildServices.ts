@@ -439,6 +439,13 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                 }, (_progress, _token) => {
                     return new Promise(async resolve => {
                         try {
+                            if (!dialogs.isRunBuildPipelineCustomShapeConfirmedPermanently() && await this.usesCustomRunnerShape()) {
+                                const confirm = await dialogs.confirmRunBuildPipelineCustomShape();
+                                if (!confirm) {
+                                    resolve(false);
+                                    return;
+                                }
+                            }
                             const repository = await ociUtils.getCodeRepository(this.oci.getProvider(), this.oci.getCodeRepository());
                             let commitInfo;
                             if (head?.name && head.commit) {
@@ -764,4 +771,17 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
             // TODO: handle
         }
     }
+
+    private async usesCustomRunnerShape(): Promise<boolean> {
+        const stages = await ociUtils.listBuildPipelineStages(this.oci.getProvider(), this.object.ocid);
+        for (const stage of stages) {
+            if (stage.buildPipelineStageType === devops.models.BuildStage.buildPipelineStageType) {
+                if ((stage as any).buildRunnerShapeConfig?.buildRunnerType === 'CUSTOM') {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 }
