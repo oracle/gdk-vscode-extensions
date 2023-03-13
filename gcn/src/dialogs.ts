@@ -227,6 +227,13 @@ export async function selectCloudSupport(actionName?: string): Promise<model.Clo
     return selection?.object;
 }
 
+export async function confirmDeployToOCI(): Promise<boolean> {
+	const confirm = 'Continue';
+	const cancel = 'Cancel';
+	const msg = 'Local sources will be pushed to a remote OCI code repository. Read [the documentation](https://graal-cloud-staging.us.oracle.com/getting-started/setting-oci-devops-pipeline-in-vscode/#6-deploy-to-oci) for more details. Click Continue to proceed:';
+	return await vscode.window.showInformationMessage(msg, confirm, cancel) === confirm;
+}
+
 export class QuickPickObject implements vscode.QuickPickItem {
     constructor(
         public readonly label: string,

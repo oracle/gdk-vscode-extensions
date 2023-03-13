@@ -110,6 +110,9 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: gc
             if (!cloudSupport) {
                 return;
             }
+            if (!await dialogs.confirmDeployToOCI()) {
+                return;
+            }
             const workspaceFolders = gcnServices.folderDataToWorkspaceFolders(supportedFolders) as vscode.WorkspaceFolder[];
             const dump = gcnServices.dumpDeployData(workspaceState, workspaceFolders.map(f => f.name));
             try {
