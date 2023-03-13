@@ -75,7 +75,29 @@ suite('Extension Test Suite', function() {
         test("GCN Welcome page", async () => {
                 await vscode.commands.executeCommand("gcn.showWelcomePage");
 
-                assert.strictEqual(vscode.window.tabGroups.activeTabGroup.activeTab?.label, "OCI Services for GCN", "Welcome page is not being shown");
+                // The marvellous vscode completes the command, but still has the active tab set to the previous content,
+                // so let's wait a while in a timeouted loop....
+                let res = new Promise((resolve, reject) => {
+                        let counter = 3; // by default test timeout is 5 secs, increase if set to > 4.
+                        function w() {
+                                // let label = vscode.window.tabGroups.activeTabGroup.activeTab?.label;
+                                // console.log(`Waiting for the active editor to change: counter=${counter}, label =${label}`)
+                                if (counter > 0 && vscode.window.tabGroups.activeTabGroup.activeTab?.label !== 'OCI Services for GCN') {
+                                        counter--;
+                                        setTimeout(w, 1000);
+                                        return;
+                                }
+                                try {
+                                        assert.strictEqual(vscode.window.tabGroups.activeTabGroup.activeTab?.label, "OCI Services for GCN", "Welcome page is not being shown");
+                                        resolve(true);
+                                } catch (err : any) {
+                                        reject(err);
+                                }
+                        }
+                        w();
+                })
+                return res;
+
         });
 
 	// Check if the workspace has an OCI deployable project inside 
