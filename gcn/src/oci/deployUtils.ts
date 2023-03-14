@@ -897,7 +897,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     const devbuildPipelineName = 'Build Fat JAR';
                     if (folderData.devbuildPipeline) {
                         progress.report({
-                            message: `Using already created build pipeline for fat JARs of ${repositoryName}...`
+                            message: `Using already created build pipeline for fat JAR of ${repositoryName}...`
                         });
                         try {
                             const pipeline = await ociUtils.getBuildPipeline(provider, folderData.devbuildPipeline);
@@ -912,16 +912,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         progress.report({
                             increment,
                         });
-                        logUtils.logInfo(`[deploy] Using already created build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        logUtils.logInfo(`[deploy] Using already created build pipeline for fat JAR of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                     } else {
                         // --- Create fat JAR pipeline
                         progress.report({
                             increment,
-                            message: `Creating build pipeline for fat JARs of ${repositoryName}...`
+                            message: `Creating build pipeline for fat JAR of ${repositoryName}...`
                         });
                         const devbuildPipelineDescription = `Build pipeline to build fat JAR for devops project ${projectName} & repository ${repositoryName}`;
                         try {
-                            logUtils.logInfo(`[deploy] Creating build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Creating build pipeline for fat JAR of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             const pipelineName = `${repositoryNamePrefix}${devbuildPipelineName}`;
                             folderData.devbuildPipeline = false;
                             folderData.devbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, devbuildPipelineDescription, {
@@ -934,8 +934,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             }
                             codeRepoResources.buildPipelines.push({
                                 ocid: folderData.devbuildPipeline,
-                                originalName: pipelineName,
-                                autoImport: 'true'
+                                originalName: pipelineName
                             });
                         } catch (err) {
                             resolve(dialogs.getErrorMessage(`Failed to create fat JAR pipeline for ${repositoryName}`, err));
@@ -956,10 +955,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         }
                     }
                     if (folderData.devbuildPipelineBuildStage) {
-                        logUtils.logInfo(`[deploy] Using already created build stage of build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        logUtils.logInfo(`[deploy] Using already created build stage of build pipeline for fat JAR of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                     } else {
                         try {
-                            logUtils.logInfo(`[deploy] Creating build stage of build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Creating build stage of build pipeline for fat JAR of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             folderData.devbuildPipelineBuildStage = false;
                             folderData.devbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.devbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${devbuildspec_template}`, false, {
                                 'gcn_tooling_deployID': deployData.tag
@@ -984,10 +983,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             }
                         }
                         if (folderData.devbuildPipelineArtifactsStage) {
-                            logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for fat JAR of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         } else {
                             try {
-                                logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for fat JARs of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for fat JAR of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.devbuildPipelineArtifactsStage = false;
                                 folderData.devbuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, folderData.devbuildPipeline, folderData.devbuildPipelineBuildStage, folderData.devbuildArtifact, devbuildArtifactName, {
                                     'gcn_tooling_deployID': deployData.tag
@@ -1001,7 +1000,6 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             dump(deployData);
                         }
                     }
-                    buildPipelines.push({ 'ocid': folderData.devbuildPipeline, 'displayName': devbuildPipelineName });
                 }
 
                 const project_native_executable_artifact_location = pathForTargetPlatform(await projectUtils.getProjectNativeExecutableArtifactLocation(folder));
@@ -1134,8 +1132,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             }
                             codeRepoResources.buildPipelines.push({
                                 ocid: folderData.nibuildPipeline,
-                                originalName: pipelineName,
-                                autoImport: ociFeatures.NI_PIPELINES_ENABLED ? 'true' : undefined
+                                originalName: pipelineName
                             });
                         } catch (err) {
                             resolve(dialogs.getErrorMessage(`Failed to create native executable pipeline for ${repositoryName}`, err));
@@ -1200,9 +1197,6 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             }
                             dump(deployData);
                         }
-                    }
-                    if (ociFeatures.NI_PIPELINES_ENABLED) {
-                        buildPipelines.push({ 'ocid': folderData.nibuildPipeline, 'displayName': nibuildPipelineName });
                     }
                 }
 
