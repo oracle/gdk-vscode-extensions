@@ -15,7 +15,6 @@ import * as projectUtils from '../projectUtils';
 import * as logUtils from '../logUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
-import * as ociDialogs from './ociDialogs';
 import * as ociService from './ociService';
 import * as ociServices  from './ociServices';
 import * as dataSupport from './dataSupport';
@@ -23,6 +22,7 @@ import * as ociNodes from './ociNodes';
 import * as deployUtils from './deployUtils';
 import * as okeUtils from './okeUtils';
 import * as ociFeatures from './ociFeatures';
+import * as vcnUtils from './vcnUtils';
 
 
 export const DATA_NAME = 'deploymentPipelines';
@@ -117,7 +117,7 @@ export function findByNode(node: nodes.BaseNode): Service | undefined {
 
 async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vscode.WorkspaceFolder): Promise<DeploymentPipeline[] | undefined> {
     const okeCluster = await okeUtils.selectOkeCluster(oci.getProvider(), oci.getCompartment(), oci.getProvider().getRegion().regionId);
-    if (!okeCluster) {
+    if (!okeCluster?.id) {
         return undefined;
     }
     async function getProjectAndRepositoryName(oci: ociContext.Context): Promise<string[] | undefined> {
@@ -148,56 +148,6 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
     const projectName = info[0];
     const projectType = info[1];
     const repositoryName = info[2];
-
-    async function listDeployEnvironments(oci: ociContext.Context): Promise<devops.models.DeployEnvironmentSummary[] | undefined> {
-        return await vscode.window.withProgress({
-            location: vscode.ProgressLocation.Notification,
-            title: 'Reading project deploy environments...',
-            cancellable: false
-        }, (_progress, _token) => {
-            return new Promise(async (resolve) => {
-                try {
-                    const items = await ociUtils.listDeployEnvironments(oci.getProvider(), oci.getDevOpsProject());
-                    resolve(items);
-                    return;
-                } catch (err) {
-                    resolve(undefined);
-                    dialogs.showErrorMessage('Failed to read deploy environments', err);
-                    return;
-                }
-            });
-        })
-    }
-    const existingDeployEnvironments = (await listDeployEnvironments(oci))?.filter(env => {
-        if (env.deployEnvironmentType === devops.models.OkeClusterDeployEnvironmentSummary.deployEnvironmentType) {
-            return (env as devops.models.OkeClusterDeployEnvironmentSummary).clusterId === okeCluster;
-        }
-        return false;
-    });
-
-    async function createDeployEnvironment(oci: ociContext.Context, projectName: string, okeCluster: string): Promise<devops.models.DeployEnvironment | undefined> {
-        return await vscode.window.withProgress({
-            location: vscode.ProgressLocation.Notification,
-            title: 'Creating OKE cluster deploy environment...',
-            cancellable: false
-        }, (_progress, _token) => {
-            return new Promise(async (resolve) => {
-                try {
-                    const deployEnv = await ociUtils.createOkeDeployEnvironment(oci.getProvider(), oci.getDevOpsProject(), projectName, okeCluster);
-                    resolve(deployEnv);
-                    return;
-                } catch (err) {
-                    resolve(undefined);
-                    dialogs.showErrorMessage('Failed to create OKE cluster deploy environment', err);
-                    return;
-                }
-            });
-        })
-    }
-    const okeClusterEnvironment = existingDeployEnvironments?.length ? existingDeployEnvironments[0] : await createDeployEnvironment(oci, projectName, okeCluster);
-    if (!okeClusterEnvironment) {
-        return undefined;
-    }
 
     async function listBuildPipelines(oci: ociContext.Context): Promise<devops.models.BuildPipelineSummary[] | undefined> {
         return await vscode.window.withProgress({
@@ -273,8 +223,58 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         return undefined;
     }
 
-    const secretName = await ociDialogs.getKubeSecret(oci.getProvider(), okeCluster, 'vscode-generated-ocirsecret', 'New Deployment to OKE');
-    if (!secretName) {
+    const subnet = (await vcnUtils.selectNetwork(oci.getProvider(), oci.getCompartment(), okeCluster.vcnID))?.subnetID;
+    if (!subnet) {
+        return undefined;
+    }
+
+    async function listDeployEnvironments(oci: ociContext.Context): Promise<devops.models.DeployEnvironmentSummary[] | undefined> {
+        return await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Reading project deploy environments...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async (resolve) => {
+                try {
+                    const items = await ociUtils.listDeployEnvironments(oci.getProvider(), oci.getDevOpsProject());
+                    resolve(items);
+                    return;
+                } catch (err) {
+                    resolve(undefined);
+                    dialogs.showErrorMessage('Failed to read deploy environments', err);
+                    return;
+                }
+            });
+        })
+    }
+    const existingDeployEnvironments = (await listDeployEnvironments(oci))?.filter(env => {
+        if (env.deployEnvironmentType === devops.models.OkeClusterDeployEnvironmentSummary.deployEnvironmentType) {
+            return (env as devops.models.OkeClusterDeployEnvironmentSummary).clusterId === okeCluster.id;
+        }
+        return false;
+    });
+
+    async function createDeployEnvironment(oci: ociContext.Context, projectName: string, okeCluster: string): Promise<devops.models.DeployEnvironment | undefined> {
+        return await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Creating OKE cluster deploy environment...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async (resolve) => {
+                try {
+                    const deployEnv = await ociUtils.createOkeDeployEnvironment(oci.getProvider(), oci.getDevOpsProject(), projectName, okeCluster);
+                    resolve(deployEnv);
+                    return;
+                } catch (err) {
+                    resolve(undefined);
+                    dialogs.showErrorMessage('Failed to create OKE cluster deploy environment', err);
+                    return;
+                }
+            });
+        })
+    }
+    const okeClusterEnvironment = existingDeployEnvironments?.length ? existingDeployEnvironments[0] : await createDeployEnvironment(oci, projectName, okeCluster.id);
+    if (!okeClusterEnvironment) {
         return undefined;
     }
 
@@ -296,10 +296,43 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         })
     }
 
-    async function createDeployArtifact(oci: ociContext.Context, repositoryName: string, imageName: string, secretName: string): Promise<string | null | undefined> {
+    async function createDeploySetupCommandSpecArtifact(oci: ociContext.Context, repositoryName: string, repoEndpoint: string, cluster: string, secretName: string): Promise<string | null | undefined> {
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: 'Creating project deploy artifact...',
+            title: 'Creating deploy setup command specifacation artifact...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async (resolve) => {
+                try {
+                    const inlineContent = deployUtils.expandTemplate(RESOURCES_FOLDER, 'oke_docker_secret_setup.yaml', {
+                        repo_endpoint: repoEndpoint,
+                        region: oci.getProvider().getRegion().regionId,
+                        cluster_id: cluster,
+                        secret_name: secretName
+                    });
+                    if (!inlineContent) {
+                        resolve(undefined);
+                        dialogs.showErrorMessage(`Failed to create OKE deployment setup command spec`);
+                        return;
+                    }
+                    const artifactName = `${repositoryName}_oke_deploy_docker_secret_setup_command`;
+                    const artifactDescription = `OKE deployment docker secret setup command specification artifact for devops project ${projectName} & repository ${repositoryName}`;
+                    const artifact = (await ociUtils.createOkeDeploySetupCommandArtifact(oci.getProvider(), oci.getDevOpsProject(), inlineContent, artifactName, artifactDescription, {
+                        'gcn_tooling_oke_cluster': cluster
+                    })).id;
+                    resolve(artifact);
+                } catch (err) {
+                    resolve(null);
+                    dialogs.showErrorMessage('Failed to create setup command specifacation artifact', err);
+                }
+            });
+        })
+    }
+
+    async function createDeployConfigArtifact(oci: ociContext.Context, repositoryName: string, imageName: string, secretName: string): Promise<string | null | undefined> {
+        return await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Creating deploy config artifact...',
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
@@ -324,24 +357,37 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     resolve(artifact);
                 } catch (err) {
                     resolve(null);
-                    dialogs.showErrorMessage('Failed to create deploy artifact', err);
+                    dialogs.showErrorMessage('Failed to create deploy config artifact', err);
                 }
             });
         })
     }
 
-    let deployConfigArtifact = (await listDeployArtifacts(oci))?.find(env => {
+    const secretName = `${repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')}-vscode-generated-ocirsecret`;
+    const deployArtifacts = await listDeployArtifacts(oci);
+    let setupCommandSpecArtifact = deployArtifacts?.find(env => {
+        return env.deployArtifactType === devops.models.DeployArtifact.DeployArtifactType.CommandSpec && env.freeformTags?.gcn_tooling_oke_cluster === okeCluster.id;
+    })?.id;
+    if (!setupCommandSpecArtifact) {
+        const artifact = await createDeploySetupCommandSpecArtifact(oci, repositoryName, `${oci.getProvider().getRegion().regionCode}.ocir.io`, okeCluster.id, secretName);
+        if (!artifact) {
+            return undefined;
+        }
+        setupCommandSpecArtifact = artifact;
+    }
+
+    let deployConfigArtifact = deployArtifacts?.find(env => {
         return env.deployArtifactType === devops.models.DeployArtifact.DeployArtifactType.KubernetesManifest && env.freeformTags?.gcn_tooling_image_name === imageName;
     })?.id;
     if (!deployConfigArtifact) {
-        const artifact = await createDeployArtifact(oci, repositoryName, imageName, secretName);
+        const artifact = await createDeployConfigArtifact(oci, repositoryName, imageName, secretName);
         if (!artifact) {
             return undefined;
         }
         deployConfigArtifact = artifact;
     }
 
-    async function createDeployPipeline(oci: ociContext.Context, projectName: string, repositoryName: string, okeClusterEnvironment: string, deployConfigArtifact: string, buildPipeline: devops.models.BuildPipelineSummary): Promise<{ocid: string, displayName: string}[] | undefined> {
+    async function createDeployPipeline(oci: ociContext.Context, projectName: string, repositoryName: string, okeClusterEnvironment: string, setupCommandSpecArtifact: string, deployConfigArtifact: string, subnet: string, buildPipeline: devops.models.BuildPipelineSummary): Promise<{ocid: string, displayName: string}[] | undefined> {
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: `Creating deployment to OKE pipeline...`,
@@ -374,8 +420,16 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     dialogs.showErrorMessage(`Failed to create deployment to OKE pipeline for ${repositoryName}`, err);
                     return;
                 }
+                let setupSecretStage;
                 try {
-                    await ociUtils.createDeployToOkeStage(oci.getProvider(), deployPipeline.id, okeClusterEnvironment, deployConfigArtifact);
+                    setupSecretStage = await ociUtils.createSetupKubernetesDockerSecretStage(oci.getProvider(), deployPipeline.id, setupCommandSpecArtifact, subnet);
+                } catch (err) {
+                    resolve(undefined);
+                    dialogs.showErrorMessage(`Failed to create deployment to OKE stage for ${repositoryName}`, err);
+                    return;
+                }
+                try {
+                    await ociUtils.createDeployToOkeStage(oci.getProvider(), deployPipeline.id, setupSecretStage.id, okeClusterEnvironment, deployConfigArtifact);
                 } catch (err) {
                     resolve(undefined);
                     dialogs.showErrorMessage(`Failed to create deployment to OKE stage for ${repositoryName}`, err);
@@ -385,7 +439,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
             });
         })
     }
-    return await createDeployPipeline(oci, projectName, repositoryName, okeClusterEnvironment.id, deployConfigArtifact, buildPipeline);
+    return await createDeployPipeline(oci, projectName, repositoryName, okeClusterEnvironment.id, setupCommandSpecArtifact, deployConfigArtifact, subnet, buildPipeline);
 }
 
 async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode.WorkspaceFolder, ignore: DeploymentPipeline[]): Promise<DeploymentPipeline[] | undefined> {

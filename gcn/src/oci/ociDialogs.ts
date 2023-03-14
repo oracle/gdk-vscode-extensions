@@ -9,9 +9,7 @@ import * as vscode from 'vscode';
 import * as common from 'oci-common';
 import * as dialogs from '../dialogs';
 import * as dockerUtils from '../dockerUtils';
-import * as kubernetesUtils from '../kubernetesUtils';
 import * as logUtils from '../logUtils';
-import * as ociNodes from './ociNodes';
 import * as ociUtils from './ociUtils';
 
 export async function selectOciProfileFromList(profiles: string[], autoselect: boolean, actionName?: string): Promise<string | null | undefined> {
@@ -269,43 +267,6 @@ export async function getUserCredentials(authenticationDetailsProvider: common.C
         dialogs.showErrorMessage('Failed to get username and password', err);
         return undefined;
     }
-}
-
-export async function getKubeSecret(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, okeCluster: string, secretName: string, actionName?: string, namespace?: string): Promise<string | null | undefined> {
-    return vscode.window.withProgress({
-        location: vscode.ProgressLocation.Notification,
-        title: 'Creating K8s secret to enable pulling Docker Images from private OCIR repository...',
-        cancellable: false
-    }, (_progress, _token) => {
-        return new Promise(async resolve => {
-            if (!await kubernetesUtils.isCurrentCluster(okeCluster)) {
-                const setup = 'Setup local access to destination OKE cluster';
-                if (setup === await dialogs.showErrorMessage('Kuberners extension not configured to access the destination OKE cluster.', undefined, setup)) {
-                    ociNodes.openInConsole({ getAddress: () => `https://cloud.oracle.com/containers/clusters/${okeCluster}/quick-start?region=${authenticationDetailsProvider.getRegion().regionId}` });
-                }
-                resolve(undefined);
-                return;
-            }
-            const secret = await kubernetesUtils.getSecret(secretName);
-            if (!secret) {
-                const credentials = await getUserCredentials(authenticationDetailsProvider, actionName, namespace);
-                if (credentials === undefined) {
-                    resolve(undefined);
-                    return;
-                }
-                if (!namespace) {
-                    namespace = await ociUtils.getObjectStorageNamespace(authenticationDetailsProvider);
-                }
-                const success = await kubernetesUtils.createSecret(secretName, `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io`, credentials.username, credentials.password);
-                if (!success) {
-                    dialogs.showErrorMessage('Cannot create K8s secret to enable pulling Docker Images from private OCIR repository.');
-                    resolve(null);
-                    return;
-                }
-            }
-            resolve(secretName);
-        });
-    });
 }
 
 export async function pullImage(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, image: string, actionName?: string): Promise<void> {
