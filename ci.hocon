@@ -1,16 +1,4 @@
-mx : {
-  packages : {
-    mx: "HEAD"
-  }
-}
-
-oraclejdk11 : {
-  downloads : {
-    JAVA_HOME : {"name": "labsjdk", "version": "ce-11.0.12+5-jvmci-21.3-b01", "platformspecific": true }
-  }
-}
-
-common : ${mx} ${oraclejdk11} {
+common : {
   timelimit : "30:00",
   catch_files : [
     "Graal diagnostic output saved in (?P<filename>.+\.zip)"
@@ -56,7 +44,7 @@ vscodeCommon: {
 vscodeBuildGate : ${vscodeCommon} {
   targets : [ gate ],
   run : [
-    ["mx", "gate"]
+    ["npm", "run", "build"]
   ]
 }
 

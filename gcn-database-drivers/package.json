@@ -38,7 +38,8 @@
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "build": "npm install && ../node_modules/.bin/vsce package --allow-star-activation"
   },
   "dependencies": {
 		"copy-webpack-plugin": "^10.2.4",

@@ -846,7 +846,8 @@
 		"test-clean": "rm -r out",
 		"test-compile": "tsc -p . --outDir out",
 		"lint": "tslint -p ./",
-		"test": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/test/runTest.js"
+		"test": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/test/runTest.js",
+		"build": "npm install && ../node_modules/.bin/vsce package --allow-star-activation --baseImagesUrl https://github.com/graalvm/vscode-extensions/raw/master/gcn"
 	},
 	"dependencies": {
 		"isomorphic-fetch": "^3.0.0",

@@ -188,7 +188,8 @@
 		"info": "webpack --display-modules",
 		"watch": "webpack --mode development --watch",
 		"test-compile": "tsc -p ./",
-		"lint": "tslint -p ./"
+		"lint": "tslint -p ./",
+		"build": "npm install && ../node_modules/.bin/vsce package --allow-star-activation --baseImagesUrl https://github.com/graalvm/vscode-extensions/raw/master/micronaut"
 	},
 	"dependencies": {
 		"decompress": "4.2.1",
