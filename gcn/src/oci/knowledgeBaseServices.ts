@@ -41,7 +41,7 @@ type VulnerabilityAudit = {
 
 export function initialize(context: vscode.ExtensionContext) {
     function auditFolder(uri: vscode.Uri) {
-        logUtils.logInfo(`[audit] Resolving OCI service for audit of folder ${uri.fsPath}`);
+        logUtils.logInfo(`[audit] Resolving OCI resource for audit of folder ${uri.fsPath}`);
         getFolderAuditsService(uri).then(service => {
             if (service) {
                 // Executing for a deployed folder

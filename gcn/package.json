@@ -42,7 +42,7 @@
 		"onCommand:gcn.addContent_Global",
 		"onCommand:gcn.oci.openCodeRepositoryInConsole_Global",
 		"onCommand:gcn.oci.openDevOpsProjectInConsole_Global",
-		"onView:gcn-services"
+		"onView:oci-devops-resources"
 	],
 	"main": "./dist/extension",
 	"contributes": {
@@ -141,13 +141,13 @@
 			},
 			{
 				"command": "gcn.addContent",
-				"title": "Add OCI Service...",
+				"title": "Add OCI Resource...",
 				"icon": "$(add)",
 				"category": "OCI for GCN"
 			},
 			{
 				"command": "gcn.addContent_Global",
-				"title": "Add OCI Service...",
+				"title": "Add OCI Resource...",
 				"icon": "$(add)",
 				"category": "OCI for GCN"
 			},
@@ -339,37 +339,37 @@
 		],
 		"viewsWelcome": [
 			{
-				"view": "gcn-services",
-				"contents": "Initializing services...",
+				"view": "oci-devops-resources",
+				"contents": "Initializing resources...",
 				"when": "!gcn.servicesInitialized"
 			},
 			{
-				"view": "gcn-services",
+				"view": "oci-devops-resources",
 				"contents": "Deploy to OCI in progress...",
 				"when": "gcn.servicesInitialized && gcn.deployInProgress"
 			},
 			{
-				"view": "gcn-services",
+				"view": "oci-devops-resources",
 				"contents": "Import from OCI in progress...",
 				"when": "gcn.servicesInitialized && gcn.importInProgress"
 			},
 			{
-				"view": "gcn-services",
+				"view": "oci-devops-resources",
 				"contents": "Undeploy from OCI in progress...",
 				"when": "gcn.servicesInitialized && gcn.undeployInProgress"
 			},
 			{
-				"view": "gcn-services",
+				"view": "oci-devops-resources",
 				"contents": "Import existing folder(s) from OCI, including remote build & deploy image functionality.\n[Import from OCI](command:gcn.importFromCloud)\n\nLearn more about [Oracle Cloud Infrastructure](https://www.oracle.com/cloud) and [Graal Cloud Native](https://developer.oracle.com/languages/graalvm/graal-cloud-native.html).",
 				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed && workspaceFolderCount == 0"
 			},
 			{
-				"view": "gcn-services",
+				"view": "oci-devops-resources",
 				"contents": "Deploy the folder(s) to OCI to enable remote build & deploy image functionality.\n[Deploy to OCI](command:gcn.deployToCloud_Global)\n\nLearn more about [Oracle Cloud Infrastructure](https://www.oracle.com/cloud) and [Graal Cloud Native](https://developer.oracle.com/languages/graalvm/graal-cloud-native.html).",
 				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
 			},
 			{
-				"view": "gcn-services",
+				"view": "oci-devops-resources",
 				"contents": "Previous deployment to OCI failed. Check the failure, resolve the problem and continue with:\n[Resume Deploy to OCI](command:gcn.resumeDeployToCloud_Global)\n[Delete Partial Deployment](command:gcn.undeployPartialFromCloud_Global)\n\n",
 				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && gcn.deployFailed && workspaceFolderCount > 0"
 			}
@@ -377,8 +377,8 @@
 		"views": {
 			"explorer": [
 				{
-					"id": "gcn-services",
-					"name": "OCI Services",
+					"id": "oci-devops-resources",
+					"name": "OCI DevOps resources",
 					"icon": "resources/GCN_logo.png"
 				}
 			]
@@ -530,47 +530,47 @@
 			"view/title": [
 				{
 					"command": "gcn.deployToCloud_Global",
-					"when": "view == gcn-services && gcn.servicesInitialized && gcn.globalDeployAction && nbJavaLSReady && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed",
+					"when": "view == oci-devops-resources && gcn.servicesInitialized && gcn.globalDeployAction && nbJavaLSReady && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed",
 					"group": "gcn_group_oci3@1"
 				},
 				{
 					"command": "gcn.importFromCloud",
-					"when": "view == gcn-services && gcn.servicesInitialized && gcn.globalImportAction && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed",
+					"when": "view == oci-devops-resources && gcn.servicesInitialized && gcn.globalImportAction && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed",
 					"group": "gcn_group_oci3@2"
 				},
 				{
 					"command": "gcn.addContent_Global",
-					"when": "view == gcn-services && gcn.manageViewItemsEnabled && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
+					"when": "view == oci-devops-resources && gcn.manageViewItemsEnabled && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
 					"group": "navigation@3"
 				},
 				{
 					"command": "gcn.oci.openCodeRepositoryInConsole_Global",
-					"when": "view == gcn-services && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
+					"when": "view == oci-devops-resources && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
 					"group": "gcn_group_oci1@1"
 				},
 				{
 					"command": "gcn.oci.openDevOpsProjectInConsole_Global",
-					"when": "view == gcn-services && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
+					"when": "view == oci-devops-resources && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
 					"group": "gcn_group_oci1@2"
 				},
 				{
 					"command": "gcn.oci.enableDevOpsDecorations",
-					"when": "view == gcn-services && gcn.servicesInitialized && workspaceFolderCount > 1 && gcn.serviceFoldersCount > 0 && !gcn.oci.devOpsDecorations && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
+					"when": "view == oci-devops-resources && gcn.servicesInitialized && workspaceFolderCount > 1 && gcn.serviceFoldersCount > 0 && !gcn.oci.devOpsDecorations && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
 					"group": "gcn_group_oci4@1"
 				},
 				{
 					"command": "gcn.oci.disableDevOpsDecorations",
-					"when": "view == gcn-services && gcn.servicesInitialized && workspaceFolderCount > 1 && gcn.serviceFoldersCount > 0 && gcn.oci.devOpsDecorations && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
+					"when": "view == oci-devops-resources && gcn.servicesInitialized && workspaceFolderCount > 1 && gcn.serviceFoldersCount > 0 && gcn.oci.devOpsDecorations && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
 					"group": "gcn_group_oci4@1"
 				},
 				{
 					"command": "gcn.oci.showContainerInstanceLog",
-					"when": "view == gcn-services && gcn.oci.containerInstancesEnabled && gcn.serviceFoldersCount > 0",
+					"when": "view == oci-devops-resources && gcn.oci.containerInstancesEnabled && gcn.serviceFoldersCount > 0",
 					"group": "gcn_group_oci2@1"
 				},
 				{
 					"command": "gcn.oci.deleteContainerInstance",
-					"when": "view == gcn-services && gcn.oci.containerInstancesEnabled && gcn.serviceFoldersCount > 0",
+					"when": "view == oci-devops-resources && gcn.oci.containerInstancesEnabled && gcn.serviceFoldersCount > 0",
 					"group": "gcn_group_oci2@2"
 				}
 			],
