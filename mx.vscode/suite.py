@@ -45,9 +45,6 @@ suite = {
   "defaultLicense" : "UPL",
 
   "projects" : {
-    "graalvm" : {
-      "class": "VSCodeExtensionProject",
-    },
     "gcn-database-drivers" : {
       "class": "VSCodeExtensionProject",
     },
@@ -55,18 +52,6 @@ suite = {
       "class": "VSCodeExtensionProject",
     },
     "gcn" : {
-      "dependencies" : [
-        "graalvm",
-      ],
-      "class": "VSCodeExtensionProject",
-    },
-    "graalvm-pack" : {
-      "dependencies" : [
-        "graalvm",
-        "micronaut",
-        "gcn",
-        "gcn-database-drivers"
-      ],
       "class": "VSCodeExtensionProject",
     },
   },
@@ -76,11 +61,9 @@ suite = {
       "type": "zip",
       "layout" : {
         "./" : [
-          "dependency:graalvm/*",
           "dependency:micronaut/*",
           "dependency:gcn/*",
-          "dependency:gcn-database-drivers/*",
-          "dependency:graalvm-pack/*"
+          "dependency:gcn-database-drivers/*"
         ]
       }
     },
