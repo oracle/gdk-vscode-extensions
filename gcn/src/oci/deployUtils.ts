@@ -2797,7 +2797,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             const oke_deployJvmConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_jvm_config_template, {
                                 image_name: docker_jvmbuildImage,
                                 app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
-                                secret_name: deployData.secretName
+                                secret_name: folderData.secretName
                             });
                             if (!oke_deployJvmConfigInlineContent) {
                                 resolve(`Failed to create OKE jvm deployment configuration development spec for ${repositoryName}`);
