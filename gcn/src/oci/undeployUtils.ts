@@ -662,8 +662,8 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                         }
                         if (folderData.oke_deploySetupCommandArtifact) {
                             try {
-                                progress.report({ message: `Deleting OKE deployment setup command spec artifact for ${repositoryName}...` });
-                                logUtils.logInfo(`[undeploy] Deleting OKE deployment setup command spec artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                progress.report({ message: `Deleting OKE deployment setup secret command spec artifact for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting OKE deployment setup secret command spec artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 await ociUtils.deleteDeployArtifact(provider, folderData.oke_deploySetupCommandArtifact, true);
                             } catch (err) {
                                 toCheck = true;

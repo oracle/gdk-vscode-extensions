@@ -1200,7 +1200,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     // --- Create OKE deployment setup command spec
                     progress.report({
                         increment,
-                        message: `Creating OKE deployment setup command spec for ${repositoryName}...`
+                        message: `Creating OKE deployment setup secret command spec for ${repositoryName}...`
                     });
                     const oke_deploy_setup_command_template = 'oke_docker_secret_setup.yaml';
                     const oke_deploySetupCommandInlineContent = expandTemplate(resourcesPath, oke_deploy_setup_command_template, {
@@ -1210,12 +1210,12 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         secret_name: folderData.secretName
                     });
                     if (!oke_deploySetupCommandInlineContent) {
-                        resolve(`Failed to create OKE deployment setup command spec for ${repositoryName}`);
+                        resolve(`Failed to create OKE deployment setup secret command spec for ${repositoryName}`);
                         return;
                     }
                     if (folderData.oke_deploySetupCommandArtifact) {
                         progress.report({
-                            message: `Using already created OKE deployment setup command spec artifact for ${repositoryName}...`
+                            message: `Using already created OKE deployment setup secret command spec artifact for ${repositoryName}...`
                         });
                         try {
                             const artifact = await ociUtils.getDeployArtifact(provider, folderData.oke_deploySetupCommandArtifact);
@@ -1230,17 +1230,17 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         progress.report({
                             increment,
                         });
-                        logUtils.logInfo(`[deploy] Using already created OKE deployment setup command spec artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        logUtils.logInfo(`[deploy] Using already created OKE deployment setup secret command spec artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                     } else {
                         // --- Create OKE deployment setup command spec artifact
                         progress.report({
                             increment,
-                            message: `Creating OKE deployment setup command spec artifact for ${repositoryName}...`
+                            message: `Creating OKE deployment setup secret command spec artifact for ${repositoryName}...`
                         });
                         const oke_deploySetupCommandArtifactName = `${repositoryName}_oke_deploy_docker_secret_setup_command`;
-                        const oke_deploySetupCommandArtifactDescription = `OKE deployment docker secret setup command specification artifact for devops project ${projectName} & repository ${repositoryName}`;
+                        const oke_deploySetupCommandArtifactDescription = `OKE deployment setup secret command specification artifact for devops project ${projectName} & repository ${repositoryName}`;
                         try {
-                            logUtils.logInfo(`[deploy] Creating OKE deployment setup command spec artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Creating OKE deployment setup secret command spec artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             folderData.oke_deploySetupCommandArtifact = false;
                             folderData.oke_deploySetupCommandArtifact = (await ociUtils.createOkeDeploySetupCommandArtifact(provider, projectOCID, oke_deploySetupCommandInlineContent, oke_deploySetupCommandArtifactName, oke_deploySetupCommandArtifactDescription, {
                                 'gcn_tooling_deployID': deployData.tag,
@@ -1255,7 +1255,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 originalName: oke_deploySetupCommandArtifactName
                             });
                         } catch (err) {
-                            resolve(dialogs.getErrorMessage(`Failed to create OKE deployment setup command spec artifact for ${repositoryName}`, err));
+                            resolve(dialogs.getErrorMessage(`Failed to create OKE deployment setup secret command spec artifact for ${repositoryName}`, err));
                             folderData.oke_deploySetupCommandArtifact = false;
                             dump(deployData);
                             return;
@@ -1656,16 +1656,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             }
                                         }
                                         if (subData.setupSecretForDeployNativeStage) {
-                                            logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${subName} docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         } else {
                                             try {
-                                                logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${subName} docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 subData.setupSecretForDeployNativeStage = false;
                                                 subData.setupSecretForDeployNativeStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, subData.oke_deployNativePipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnetId, {
                                                     'gcn_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
-                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker native executables setup secret stage for ${repositoryName}`, err));
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with native executable setup secret stage for ${repositoryName}`, err));
                                                 subData.setupSecretForDeployNativeStage = false;
                                                 dump(deployData);
                                                 return;
@@ -2079,16 +2079,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             }
                                         }
                                         if (subData.setupSecretForDeployJvmStage) {
-                                            logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         } else {
                                             try {
-                                                logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 subData.setupSecretForDeployJvmStage = false;
                                                 subData.setupSecretForDeployJvmStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, subData.oke_deployJvmPipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnetId, {
                                                     'gcn_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
-                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} docker jvm image setup secret stage for ${repositoryName}`, err));
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with JVM setup secret stage for ${repositoryName}`, err));
                                                 subData.setupSecretForDeployJvmStage = false;
                                                 dump(deployData);
                                                 return;
@@ -2501,16 +2501,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 }
                             }
                             if (folderData.setupSecretForDeployNativeStage) {
-                                logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             } else {
                                 try {
-                                    logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.setupSecretForDeployNativeStage = false;
                                     folderData.setupSecretForDeployNativeStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, folderData.oke_deployNativePipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnetId, {
                                         'gcn_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {
-                                    resolve(dialogs.getErrorMessage(`Failed to create docker native executables setup secret stage for ${repositoryName}`, err));
+                                    resolve(dialogs.getErrorMessage(`Failed to create container image with native executable setup secret stage for ${repositoryName}`, err));
                                     folderData.setupSecretForDeployNativeStage = false;
                                     dump(deployData);
                                     return;
@@ -2914,16 +2914,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 }
                             }
                             if (folderData.setupSecretForDeployJvmStage) {
-                                logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             } else {
                                 try {
-                                    logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.setupSecretForDeployJvmStage = false;
                                     folderData.setupSecretForDeployJvmStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, folderData.oke_deployJvmPipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnetId, {
                                         'gcn_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {
-                                    resolve(dialogs.getErrorMessage(`Failed to create docker jvm image setup secret stage for ${repositoryName}`, err));
+                                    resolve(dialogs.getErrorMessage(`Failed to create container image with JVM setup secret stage for ${repositoryName}`, err));
                                     folderData.setupSecretForDeployJvmStage = false;
                                     dump(deployData);
                                     return;
