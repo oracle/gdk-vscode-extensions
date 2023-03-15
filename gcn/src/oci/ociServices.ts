@@ -30,7 +30,7 @@ import * as containerInstanceServices from './containerInstanceServices';
 
 export const DATA_NAME = 'services';
 
-export const ADD_ACTION_NAME = 'Add OCI Service';
+export const ADD_ACTION_NAME = 'Add OCI Resource';
 
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openInConsole', (...params: any[]) => {
@@ -227,7 +227,7 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
             }
             dataChanged(this);
             if (this.treeChanged && (dataProducer as ociService.Service).getNodes().length === 0) {
-                this.treeChanged(); // reload nodes to remove service container if displayed, and eventually show '<no OCI services defined>'
+                this.treeChanged(); // reload nodes to remove service container if displayed, and eventually show '<no OCI resources defined>'
             }
         }
         this.services = [
@@ -283,7 +283,7 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
                             description: '[unknown OCI target]',
                             tooltip: 'Local folder deployed to OCI'
                         }, true);
-                        logUtils.logError(`[folder oci services] ${dialogs.getErrorMessage('Failed to resolve container decoration', err)}`);
+                        logUtils.logError(`[folder oci resources] ${dialogs.getErrorMessage('Failed to resolve container decoration', err)}`);
                     }
                 }
                 lazilyDecorateContainer(this.oci.getProvider(), this.oci.getDevOpsProject(), this.oci.getCodeRepository(), this.decorableContainer);
@@ -304,7 +304,7 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
         } else {
             const selection = await vscode.window.showQuickPick(choices, {
                 title: ADD_ACTION_NAME,
-                placeHolder: 'Select OCI service to add'
+                placeHolder: 'Select OCI resource to add'
             })
             if (selection?.object) {
                 selection.object();
@@ -331,7 +331,7 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
                 serviceNodes.push(...service.getNodes());
             }
             if (serviceNodes.length === 0) {
-                return [ new nodes.TextNode('<no OCI services defined>') ];
+                return [ new nodes.TextNode('<no OCI resources defined>') ];
             }
         }
         return serviceNodes;

@@ -396,10 +396,10 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
             return new Promise(async (resolve) => {
                 const codeRepoPrefix = (buildPipeline.freeformTags?.gcn_tooling_codeRepoPrefix || '');
                 const displayNamePrefix = codeRepoPrefix + 'Build ';
-                const displayName = buildPipeline.displayName?.startsWith(displayNamePrefix) ? buildPipeline.displayName.slice(displayNamePrefix.length) : `${projectType === 'GCN' ? ' OCI ' : ' '}Docker Image`;
+                const displayName = buildPipeline.displayName?.startsWith(displayNamePrefix) ? buildPipeline.displayName.slice(displayNamePrefix.length) : `${projectType === 'GCN' ? ' OCI ' : ' '}Container`;
                 const deployPipelineName = `Deploy ${displayName} to OKE`;
                 const descriptionPrefix = 'Build pipeline to build ';
-                const descriptionPart = buildPipeline.description?.startsWith(descriptionPrefix) ? buildPipeline.description.slice(descriptionPrefix.length) : `docker image for ${projectType === 'GCN' ? 'OCI & ' : ''}devops project ${projectName} & repository ${repositoryName}`;
+                const descriptionPart = buildPipeline.description?.startsWith(descriptionPrefix) ? buildPipeline.description.slice(descriptionPrefix.length) : `container for ${projectType === 'GCN' ? 'OCI & ' : ''}devops project ${projectName} & repository ${repositoryName}`;
                 const deployPipelineDescription = `Deployment pipeline to deploy ${descriptionPart} to OKE`;
                 const tags: { [key:string]: string } = {
                     'gcn_tooling_codeRepoID': oci.getCodeRepository(),
@@ -538,7 +538,7 @@ async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode
     const newDeployment = async (): Promise<DeploymentPipeline[] | undefined> => {
         return createOkeDeploymentPipelines(oci, folder);
     };
-    newContentChoices.push(new dialogs.QuickPickObject(`$(add) New Deployment to OKE`, undefined, 'Create and setup new pipeline to deploy built docker native executables to the OKE', newDeployment));
+    newContentChoices.push(new dialogs.QuickPickObject(`$(add) New Deployment to OKE`, undefined, 'Create and setup new pipeline to deploy built container with native executable or JVM to OKE', newDeployment));
     const choices: dialogs.QuickPickObject[] = [];
     if (newContentChoices.length) {
         if (existingContentChoices.length) {

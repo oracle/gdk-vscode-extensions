@@ -77,7 +77,7 @@ export function initialize(context: vscode.ExtensionContext) {
         }
 	}));
 
-    context.subscriptions.push(vscode.window.registerTreeDataProvider('gcn-services', nodeProvider));
+    context.subscriptions.push(vscode.window.registerTreeDataProvider('oci-devops-resources', nodeProvider));
 }
 
 export function findCloudServicesByNode(node: nodes.BaseNode | undefined): model.CloudServices | undefined {
@@ -117,7 +117,7 @@ export async function hideWelcomeView(viewContext: string) {
 async function addContent(folder: gcnServices.FolderData | null | undefined, services: model.CloudServices | undefined) {
     if (!services) {
         if (!folder) {
-            folder = await dialogs.selectFolder('Add OCI Service');
+            folder = await dialogs.selectFolder('Add OCI Resource');
             if (!folder) {
                 if (folder === null) {
                     vscode.window.showWarningMessage('No deployed folder available.');
@@ -125,7 +125,7 @@ async function addContent(folder: gcnServices.FolderData | null | undefined, ser
                 return;
             }
         }
-        services = await dialogs.selectServices(folder, 'Add OCI Service');
+        services = await dialogs.selectServices(folder, 'Add OCI Resource');
         if (!services) {
             return;
         }
