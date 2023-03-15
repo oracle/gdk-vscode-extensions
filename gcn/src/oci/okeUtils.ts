@@ -15,7 +15,7 @@ import * as ociFeatures from './ociFeatures';
 
 const ACTION_NAME = 'Select OKE Cluster';
 
-export async function selectOkeCluster(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, region: string, autoSelect: boolean = false, compartmentName: string | undefined = undefined, allowSkip: boolean = false): Promise<string | null | undefined> {
+export async function selectOkeCluster(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, region: string, autoSelect: boolean = false, compartmentName: string | undefined = undefined, allowSkip: boolean = false): Promise<{id: string, vcnID?: string} | null | undefined> {
     const existingContentChoices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: 'Reading available OKE clusters...',
@@ -34,7 +34,7 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
                 for (const cluster of clusters) {
                     if (cluster.name && cluster.id) {
                         const description = `Kubernetes version: ${cluster.kubernetesVersion ? cluster.kubernetesVersion : 'unknown'}`;
-                        choices.push(new dialogs.QuickPickObject(`$(globe) ${cluster.name}`, undefined, description, cluster.id));
+                        choices.push(new dialogs.QuickPickObject(`$(globe) ${cluster.name}`, undefined, description, { id: cluster.id, vcnID: cluster.vcnId }));
                     }
                 }
                 resolve(choices);
@@ -71,7 +71,7 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
     };
     const newContentChoice: dialogs.QuickPickObject = new dialogs.QuickPickObject(`$(add) New OKE Cluster`, undefined, 'Create new OKE cluster in this compartment', newContent);
     
-    const switchCompartment = async (): Promise<string | null | undefined> => {
+    const switchCompartment = async (): Promise<{id: string, vcnID?: string} | null | undefined> => {
         const compartment = await ociDialogs.selectCompartment(authenticationDetailsProvider, ACTION_NAME, [ compartmentID ]);
         if (compartment) {
             return selectOkeCluster(authenticationDetailsProvider, compartment.ocid, region, false, compartment.name, false);

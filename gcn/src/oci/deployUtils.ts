@@ -14,7 +14,6 @@ import * as gitUtils from '../gitUtils'
 import * as model from '../model';
 import * as projectUtils from '../projectUtils';
 import * as dialogs from '../dialogs';
-import * as kubernetesUtils from "../kubernetesUtils";
 import * as logUtils from '../logUtils';
 import * as gcnServices from '../gcnServices';
 import * as ociServices from './ociServices';
@@ -22,10 +21,10 @@ import * as ociUtils from './ociUtils';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
 import * as ociDialogs from './ociDialogs';
-import * as ociNodes from './ociNodes';
 import * as sshUtils from './sshUtils';
 import * as okeUtils from './okeUtils';
 import * as ociFeatures from './ociFeatures';
+import * as vcnUtils from './vcnUtils';
 
 
 const ACTION_NAME = 'Deploy to OCI';
@@ -166,8 +165,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
     if (deployData.okeCluster) {
         try {
-            const state = (await ociUtils.getCluster(provider, deployData.okeCluster)).lifecycleState;
-            if (!ociUtils.isUp(state)) {
+            const cluster = await ociUtils.getCluster(provider, deployData.okeCluster);
+            if (!ociUtils.isUp(cluster.lifecycleState)) {
                 deployData.okeCluster = undefined;
             }
         } catch (err) {
@@ -175,26 +174,18 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
         }
     }
     if (!deployData.okeCluster) {
-        deployData.okeCluster = await okeUtils.selectOkeCluster(provider, deployData.compartment.ocid, provider.getRegion().regionId, true, deployData.compartment.name, true);
+        const cluster = await okeUtils.selectOkeCluster(provider, deployData.compartment.ocid, provider.getRegion().regionId, true, deployData.compartment.name, true);
+        deployData.okeCluster = cluster?.id;
         if (deployData.okeCluster === undefined) {
             dump();
             return false;
         }
-    }
-
-    if (deployData.okeCluster && !deployData.secretName) {
-        if (!await kubernetesUtils.isCurrentCluster(deployData.okeCluster)) {
-            const setup = 'Setup local access to destination OKE cluster';
-            if (setup === await dialogs.showErrorMessage('Kuberners extension not configured to access the destination OKE cluster.', undefined, setup)) {
-                ociNodes.openInConsole({ getAddress: () => `https://cloud.oracle.com/containers/clusters/${deployData.okeCluster}/quick-start?region=${provider.getRegion().regionId}` });
+        if (deployData.okeCluster) {
+            deployData.subnetId = (await vcnUtils.selectNetwork(provider, deployData.compartment.ocid, cluster?.vcnID, true, deployData.compartment.name))?.subnetID;
+            if (deployData.subnetId === undefined) {
+                dump();
+                return false;
             }
-            dump();
-            return false;
-        }
-        deployData.secretName = await ociDialogs.getKubeSecret(provider, deployData.okeCluster, 'vscode-generated-ocirsecret', ACTION_NAME, deployData.namespace);
-        if (deployData.secretName === undefined) {
-            dump();
-            return false;
         }
     }
 
@@ -258,8 +249,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     if (!bypassArtifacts) {
                         totalSteps += 2; // Jar artifact, NI artifact
                     }
-                    if (deployData.okeCluster && deployData.secretName) {
-                        totalSteps += 6; // OKE deploy spec and artifact, deploy to OKE pipeline, dev OKE deploy spec and artifact, dev deploy to OKE pipeline
+                    if (deployData.okeCluster) {
+                        totalSteps += 8; // OKE setup command spec and artifact, OKE deploy spec and artifact, deploy to OKE pipeline, dev OKE deploy spec and artifact, dev deploy to OKE pipeline
                     }
                     totalSteps += 4; // Docker jvm image, build spec, and pipeline, jvm container repository
                     totalSteps += 4 * projectUtils.getCloudSpecificSubProjectNames(projectFolder).length; // Docker native image, build spec, and pipeline, native container repository per cloud specific subproject
@@ -268,8 +259,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     if (!bypassArtifacts) {
                         totalSteps += 2; // Jar artifact, NI artifact
                     }
-                    if (deployData.okeCluster && deployData.secretName) {
-                        totalSteps += 6; // OKE deploy spec and artifact, deploy to OKE pipeline, dev OKE deploy spec and artifact, dev deploy to OKE pipeline
+                    if (deployData.okeCluster) {
+                        totalSteps += 8; // OKE setup command spec and artifact, OKE deploy spec and artifact, deploy to OKE pipeline, dev OKE deploy spec and artifact, dev deploy to OKE pipeline
                     }
                 } else {
                     const baLocation = await projectUtils.getProjectBuildArtifactLocation(projectFolder);
@@ -285,7 +276,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         if (!bypassArtifacts) {
                             totalSteps += 1; // Jar artifact
                         }
-                        if (deployData.okeCluster && deployData.secretName) {
+                        if (deployData.okeCluster) {
                             totalSteps += 3; // dev OKE deploy spec and artifact, dev deploy to OKE pipeline
                         }
                         buildCommands.set(projectFolder, buildCommand);
@@ -303,10 +294,13 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         if (!bypassArtifacts) {
                             totalSteps += 1; // NI artifact
                         }
-                        if (deployData.okeCluster && deployData.secretName) {
+                        if (deployData.okeCluster) {
                             totalSteps += 3; // OKE deploy spec and artifact, deploy to OKE pipeline
                         }
                         niBuildCommands.set(projectFolder, niBuildCommand);
+                    }
+                    if (deployData.okeCluster) {
+                        totalSteps += 2; // OKE setup command spec and artifact
                     }
                     if (!buildCommand && !niBuildCommand) {
                         resolve(`Cannot deploy unsupported project without build or native executable build command specified: ${folder.name}`);
@@ -593,7 +587,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
             }
             const artifactRepository: string = artifactRepositoryOCID as string;
 
-            if (deployData.okeCluster && deployData.secretName) {
+            if (deployData.okeCluster) {
                 if (deployData.okeClusterEnvironment) {
                     progress.report({
                         message: `Using already created OKE cluster environment for ${projectName}...`
@@ -1200,6 +1194,76 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     }
                 }
 
+                if (deployData.okeClusterEnvironment) {
+                    folderData.secretName = `${repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')}-vscode-generated-ocirsecret`;
+
+                    // --- Create OKE deployment setup command spec
+                    progress.report({
+                        increment,
+                        message: `Creating OKE deployment setup secret command spec for ${repositoryName}...`
+                    });
+                    const oke_deploy_setup_command_template = 'oke_docker_secret_setup.yaml';
+                    const oke_deploySetupCommandInlineContent = expandTemplate(resourcesPath, oke_deploy_setup_command_template, {
+                        repo_endpoint: `${provider.getRegion().regionCode}.ocir.io`,
+                        region: provider.getRegion().regionId,
+                        cluster_id: deployData.okeCluster,
+                        secret_name: folderData.secretName
+                    });
+                    if (!oke_deploySetupCommandInlineContent) {
+                        resolve(`Failed to create OKE deployment setup secret command spec for ${repositoryName}`);
+                        return;
+                    }
+                    if (folderData.oke_deploySetupCommandArtifact) {
+                        progress.report({
+                            message: `Using already created OKE deployment setup secret command spec artifact for ${repositoryName}...`
+                        });
+                        try {
+                            const artifact = await ociUtils.getDeployArtifact(provider, folderData.oke_deploySetupCommandArtifact);
+                            if (!artifact) {
+                                folderData.oke_deploySetupCommandArtifact = undefined;
+                            }
+                        } catch (err) {
+                            folderData.oke_deploySetupCommandArtifact = undefined;
+                        }
+                    }
+                    if (folderData.oke_deploySetupCommandArtifact) {
+                        progress.report({
+                            increment,
+                        });
+                        logUtils.logInfo(`[deploy] Using already created OKE deployment setup secret command spec artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                    } else {
+                        // --- Create OKE deployment setup command spec artifact
+                        progress.report({
+                            increment,
+                            message: `Creating OKE deployment setup secret command spec artifact for ${repositoryName}...`
+                        });
+                        const oke_deploySetupCommandArtifactName = `${repositoryName}_oke_deploy_docker_secret_setup_command`;
+                        const oke_deploySetupCommandArtifactDescription = `OKE deployment setup secret command specification artifact for devops project ${projectName} & repository ${repositoryName}`;
+                        try {
+                            logUtils.logInfo(`[deploy] Creating OKE deployment setup secret command spec artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            folderData.oke_deploySetupCommandArtifact = false;
+                            folderData.oke_deploySetupCommandArtifact = (await ociUtils.createOkeDeploySetupCommandArtifact(provider, projectOCID, oke_deploySetupCommandInlineContent, oke_deploySetupCommandArtifactName, oke_deploySetupCommandArtifactDescription, {
+                                'gcn_tooling_deployID': deployData.tag,
+                                'gcn_tooling_codeRepoID': codeRepository.id,
+                                'gcn_tooling_oke_cluster': deployData.okeCluster
+                            })).id;
+                            if (!codeRepoResources.artifacts) {
+                                codeRepoResources.artifacts = [];
+                            }
+                            codeRepoResources.artifacts.push({
+                                ocid: folderData.oke_deploySetupCommandArtifact,
+                                originalName: oke_deploySetupCommandArtifactName
+                            });
+                        } catch (err) {
+                            resolve(dialogs.getErrorMessage(`Failed to create OKE deployment setup secret command spec artifact for ${repositoryName}`, err));
+                            folderData.oke_deploySetupCommandArtifact = false;
+                            dump(deployData);
+                            return;
+                        }
+                        dump(deployData);
+                    }
+                }
+
                 if (folder.projectType === 'GCN') {
                     logUtils.logInfo(`[deploy] Recognized GCN project in ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                     for (const subName of projectUtils.getCloudSpecificSubProjectNames(folder)) {
@@ -1469,7 +1533,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         const oke_deployNativeConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_native_config_template, {
                                             image_name: docker_nibuildImage,
                                             app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
-                                            secret_name: deployData.secretName
+                                            secret_name: folderData.secretName
                                         });
                                         if (!oke_deployNativeConfigInlineContent) {
                                             resolve(`Failed to create OKE native deployment configuration spec for ${subName} of ${repositoryName}`);
@@ -1581,6 +1645,33 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             }
                                             dump(deployData);
                                         }
+                                        if (subData.setupSecretForDeployNativeStage) {
+                                            try {
+                                                const stage = await ociUtils.getDeployStage(provider, subData.setupSecretForDeployNativeStage);
+                                                if (!stage) {
+                                                    subData.setupSecretForDeployNativeStage = undefined;
+                                                }
+                                            } catch (err) {
+                                                subData.setupSecretForDeployNativeStage = undefined;
+                                            }
+                                        }
+                                        if (subData.setupSecretForDeployNativeStage) {
+                                            logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        } else {
+                                            try {
+                                                logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                subData.setupSecretForDeployNativeStage = false;
+                                                subData.setupSecretForDeployNativeStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, subData.oke_deployNativePipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnetId, {
+                                                    'gcn_tooling_deployID': deployData.tag
+                                                })).id;
+                                            } catch (err) {
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with native executable setup secret stage for ${repositoryName}`, err));
+                                                subData.setupSecretForDeployNativeStage = false;
+                                                dump(deployData);
+                                                return;
+                                            }
+                                            dump(deployData);
+                                        }
                                         if (subData.deployNativeToOkeStage) {
                                             try {
                                                 const stage = await ociUtils.getDeployStage(provider, subData.deployNativeToOkeStage);
@@ -1597,7 +1688,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 subData.deployNativeToOkeStage = false;
-                                                subData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage(provider, subData.oke_deployNativePipeline, deployData.okeClusterEnvironment, subData.oke_deployNativeConfigArtifact, {
+                                                subData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage(provider, subData.oke_deployNativePipeline, subData.setupSecretForDeployNativeStage, deployData.okeClusterEnvironment, subData.oke_deployNativeConfigArtifact, {
                                                     'gcn_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
@@ -1865,7 +1956,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         const oke_deployJvmConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_jvm_config_template, {
                                             image_name: docker_jvmbuildImage,
                                             app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
-                                            secret_name: deployData.secretName
+                                            secret_name: folderData.secretName
                                         });
                                         if (!oke_deployJvmConfigInlineContent) {
                                             resolve(`Failed to create OKE jvm deployment configuration spec for ${subName} of ${repositoryName}`);
@@ -1977,6 +2068,33 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             }
                                             dump(deployData);
                                         }
+                                        if (subData.setupSecretForDeployJvmStage) {
+                                            try {
+                                                const stage = await ociUtils.getDeployStage(provider, subData.setupSecretForDeployJvmStage);
+                                                if (!stage) {
+                                                    subData.setupSecretForDeployJvmStage = undefined;
+                                                }
+                                            } catch (err) {
+                                                subData.setupSecretForDeployJvmStage = undefined;
+                                            }
+                                        }
+                                        if (subData.setupSecretForDeployJvmStage) {
+                                            logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        } else {
+                                            try {
+                                                logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                subData.setupSecretForDeployJvmStage = false;
+                                                subData.setupSecretForDeployJvmStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, subData.oke_deployJvmPipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnetId, {
+                                                    'gcn_tooling_deployID': deployData.tag
+                                                })).id;
+                                            } catch (err) {
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with JVM setup secret stage for ${repositoryName}`, err));
+                                                subData.setupSecretForDeployJvmStage = false;
+                                                dump(deployData);
+                                                return;
+                                            }
+                                            dump(deployData);
+                                        }
                                         if (subData.deployJvmToOkeStage) {
                                             try {
                                                 const stage = await ociUtils.getDeployStage(provider, subData.deployJvmToOkeStage);
@@ -1993,7 +2111,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 subData.deployJvmToOkeStage = false;
-                                                subData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage(provider, subData.oke_deployJvmPipeline, deployData.okeClusterEnvironment, subData.oke_deployJvmConfigArtifact, {
+                                                subData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage(provider, subData.oke_deployJvmPipeline, subData.setupSecretForDeployJvmStage, deployData.okeClusterEnvironment, subData.oke_deployJvmConfigArtifact, {
                                                     'gcn_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
@@ -2260,7 +2378,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             const oke_deployNativeConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_native_config_template, {
                                 image_name: docker_nibuildImage,
                                 app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
-                                secret_name: deployData.secretName
+                                secret_name: folderData.secretName
                             });
                             if (!oke_deployNativeConfigInlineContent) {
                                 resolve(`Failed to create OKE native deployment configuration spec for ${repositoryName}`);
@@ -2372,6 +2490,33 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 }
                                 dump(deployData);
                             }
+                            if (folderData.setupSecretForDeployNativeStage) {
+                                try {
+                                    const stage = await ociUtils.getDeployStage(provider, folderData.setupSecretForDeployNativeStage);
+                                    if (!stage) {
+                                        folderData.setupSecretForDeployNativeStage = undefined;
+                                    }
+                                } catch (err) {
+                                    folderData.setupSecretForDeployNativeStage = undefined;
+                                }
+                            }
+                            if (folderData.setupSecretForDeployNativeStage) {
+                                logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            } else {
+                                try {
+                                    logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    folderData.setupSecretForDeployNativeStage = false;
+                                    folderData.setupSecretForDeployNativeStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, folderData.oke_deployNativePipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnetId, {
+                                        'gcn_tooling_deployID': deployData.tag
+                                    })).id;
+                                } catch (err) {
+                                    resolve(dialogs.getErrorMessage(`Failed to create container image with native executable setup secret stage for ${repositoryName}`, err));
+                                    folderData.setupSecretForDeployNativeStage = false;
+                                    dump(deployData);
+                                    return;
+                                }
+                                dump(deployData);
+                            }
                             if (folderData.deployNativeToOkeStage) {
                                 try {
                                     const stage = await ociUtils.getDeployStage(provider, folderData.deployNativeToOkeStage);
@@ -2388,7 +2533,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 try {
                                     logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.deployNativeToOkeStage = false;
-                                    folderData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage(provider, folderData.oke_deployNativePipeline, deployData.okeClusterEnvironment, folderData.oke_deployNativeConfigArtifact, {
+                                    folderData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage(provider, folderData.oke_deployNativePipeline, folderData.setupSecretForDeployNativeStage, deployData.okeClusterEnvironment, folderData.oke_deployNativeConfigArtifact, {
                                         'gcn_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {
@@ -2646,7 +2791,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             const oke_deployJvmConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_jvm_config_template, {
                                 image_name: docker_jvmbuildImage,
                                 app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
-                                secret_name: deployData.secretName
+                                secret_name: folderData.secretName
                             });
                             if (!oke_deployJvmConfigInlineContent) {
                                 resolve(`Failed to create OKE jvm deployment configuration development spec for ${repositoryName}`);
@@ -2758,6 +2903,33 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 }
                                 dump(deployData);
                             }
+                            if (folderData.setupSecretForDeployJvmStage) {
+                                try {
+                                    const stage = await ociUtils.getDeployStage(provider, folderData.setupSecretForDeployJvmStage);
+                                    if (!stage) {
+                                        folderData.setupSecretForDeployJvmStage = undefined;
+                                    }
+                                } catch (err) {
+                                    folderData.setupSecretForDeployJvmStage = undefined;
+                                }
+                            }
+                            if (folderData.setupSecretForDeployJvmStage) {
+                                logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            } else {
+                                try {
+                                    logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    folderData.setupSecretForDeployJvmStage = false;
+                                    folderData.setupSecretForDeployJvmStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, folderData.oke_deployJvmPipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnetId, {
+                                        'gcn_tooling_deployID': deployData.tag
+                                    })).id;
+                                } catch (err) {
+                                    resolve(dialogs.getErrorMessage(`Failed to create container image with JVM setup secret stage for ${repositoryName}`, err));
+                                    folderData.setupSecretForDeployJvmStage = false;
+                                    dump(deployData);
+                                    return;
+                                }
+                                dump(deployData);
+                            }
                             if (folderData.deployJvmToOkeStage) {
                                 try {
                                     const stage = await ociUtils.getDeployStage(provider, folderData.deployJvmToOkeStage);
@@ -2774,7 +2946,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 try {
                                     logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.deployJvmToOkeStage = false;
-                                    folderData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage(provider, folderData.oke_deployJvmPipeline, deployData.okeClusterEnvironment, folderData.oke_deployJvmConfigArtifact, {
+                                    folderData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage(provider, folderData.oke_deployJvmPipeline, folderData.setupSecretForDeployJvmStage, deployData.okeClusterEnvironment, folderData.oke_deployJvmConfigArtifact, {
                                         'gcn_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {

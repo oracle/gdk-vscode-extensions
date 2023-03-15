@@ -54,30 +54,3 @@ export async function isCurrentCluster(clusterId: string): Promise<boolean> {
     }
     return false;
 }
-
-export async function getSecret(secretName: string): Promise<any> {
-    const kubectl = await getKubectlAPI();
-    if (kubectl) {
-        const command = `get secret ${secretName} -o json`;
-        const result: k8s.KubectlV1.ShellResult | undefined = await kubectl.invokeCommand(command);
-        if (result && result.code === 0) {
-            return JSON.parse(result.stdout);
-        }
-    }
-    return undefined;
-}
-
-export async function createSecret(secretName: string, registryName: string, userName: string, password: string): Promise<any> {
-    const kubectl = await getKubectlAPI();
-    if (kubectl) {
-        const command = `create secret docker-registry ${secretName} --docker-server=${registryName} --docker-username=${userName} --docker-password="${password}"`;
-        const result: k8s.KubectlV1.ShellResult | undefined = await kubectl.invokeCommand(command);
-        if (result && result.code === 0) {
-            return true;
-        }
-        if (result && result.stderr.length) {
-            dialogs.showErrorMessage(result.stderr);
-        }
-    }
-    return undefined;
-}

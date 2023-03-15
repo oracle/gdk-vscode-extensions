@@ -53,6 +53,19 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                             for (const subName in folderData.subs) {
                                 const subData = folderData.subs[subName];
                                 if (subData) {
+                                    if (subData.setupSecretForDeployJvmStage) {
+                                        try {
+                                            progress.report({ message: `Deleting ${subName} docker jvm image setup secret stage for ${repositoryName}...` });
+                                            logUtils.logInfo(`[undeploy] Deleting setup secret stage of deployment to OKE pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            await ociUtils.deleteDeployStage(provider, subData.setupSecretForDeployJvmStage, true);
+                                        } catch (err) {
+                                            toCheck = true;
+                                        }
+                                        delete subData.setupSecretForDeployJvmStage;
+                                        dump(deployData);
+                                    } else if (subData.setupSecretForDeployJvmStage !== undefined) {
+                                        toCheck = true;
+                                    }
                                     if (subData.deployJvmToOkeStage) {
                                         try {
                                             progress.report({ message: `Deleting ${subName} docker jvm image deployment to OKE stage for ${repositoryName}...` });
@@ -64,6 +77,19 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                                         delete subData.deployJvmToOkeStage;
                                         dump(deployData);
                                     } else if (subData.deployJvmToOkeStage !== undefined) {
+                                        toCheck = true;
+                                    }
+                                    if (subData.setupSecretForDeployNativeStage) {
+                                        try {
+                                            progress.report({ message: `Deleting ${subName} docker native executables setup secret stage for ${repositoryName}...` });
+                                            logUtils.logInfo(`[undeploy] Deleting setup secret stage of deployment to OKE pipeline for ${subName} docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            await ociUtils.deleteDeployStage(provider, subData.setupSecretForDeployNativeStage, true);
+                                        } catch (err) {
+                                            toCheck = true;
+                                        }
+                                        delete subData.setupSecretForDeployNativeStage;
+                                        dump(deployData);
+                                    } else if (subData.setupSecretForDeployNativeStage !== undefined) {
                                         toCheck = true;
                                     }
                                     if (subData.deployNativeToOkeStage) {
@@ -82,6 +108,19 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                                 }
                             }
                         }
+                        if (folderData.setupSecretForDeployJvmStage) {
+                            try {
+                                progress.report({ message: `Deleting docker jvm image setup secret stage for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting setup secret stage of deployment to OKE pipeline for docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteDeployStage(provider, folderData.setupSecretForDeployJvmStage, true);
+                            } catch (err) {
+                                toCheck = true;
+                            }
+                            delete folderData.setupSecretForDeployJvmStage;
+                            dump(deployData);
+                        } else if (folderData.setupSecretForDeployJvmStage !== undefined) {
+                            toCheck = true;
+                        }
                         if (folderData.deployJvmToOkeStage) {
                             try {
                                 progress.report({ message: `Deleting docker jvm image deployment to OKE stage for ${repositoryName}...` });
@@ -93,6 +132,19 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                             delete folderData.deployJvmToOkeStage;
                             dump(deployData);
                         } else if (folderData.deployJvmToOkeStage !== undefined) {
+                            toCheck = true;
+                        }
+                        if (folderData.setupSecretForDeployNativeStage) {
+                            try {
+                                progress.report({ message: `Deleting docker native executables setup secret stage for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting setup secret stage of deployment to OKE pipeline for docker native executables of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteDeployStage(provider, folderData.setupSecretForDeployNativeStage, true);
+                            } catch (err) {
+                                toCheck = true;
+                            }
+                            delete folderData.setupSecretForDeployNativeStage;
+                            dump(deployData);
+                        } else if (folderData.setupSecretForDeployNativeStage !== undefined) {
                             toCheck = true;
                         }
                         if (folderData.deployNativeToOkeStage) {
@@ -606,6 +658,19 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                             delete folderData.oke_deployNativeConfigArtifact;
                             dump(deployData);
                         } else if (folderData.oke_deployNativeConfigArtifact !== undefined) {
+                            toCheck = true;
+                        }
+                        if (folderData.oke_deploySetupCommandArtifact) {
+                            try {
+                                progress.report({ message: `Deleting OKE deployment setup secret command spec artifact for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting OKE deployment setup secret command spec artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteDeployArtifact(provider, folderData.oke_deploySetupCommandArtifact, true);
+                            } catch (err) {
+                                toCheck = true;
+                            }
+                            delete folderData.oke_deploySetupCommandArtifact;
+                            dump(deployData);
+                        } else if (folderData.oke_deploySetupCommandArtifact !== undefined) {
                             toCheck = true;
                         }
                         if (folderData.docker_jvmbuildArtifact) {
@@ -1140,7 +1205,8 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             `${repositoryName}_dev_fatjar`,
             `${repositoryName}_dev_executable`,
             `${repositoryName}_oke_deploy_ni_configuration`,
-            `${repositoryName}_oke_deploy_jvm_configuration`
+            `${repositoryName}_oke_deploy_jvm_configuration`,
+            `${repositoryName}_oke_deploy_docker_secret_setup_command`
         ];
         if (cloudSubNames.length) {
             for (const subName of cloudSubNames) {
