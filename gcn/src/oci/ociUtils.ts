@@ -1304,6 +1304,12 @@ export async function getCompartmentAccessPolicy(authenticationDetailsProvider: 
         `Allow any-user to read devops-family in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
         `Allow any-user to manage generic-artifacts in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
         `Allow any-user to manage repos in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
+        `Allow any-user to manage compute-container-instances in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
+        `Allow any-user to manage compute-containers in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
+        `Allow any-user to use vnics in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
+        `Allow any-user to use subnets in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
+        `Allow any-user to use dhcp-options in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
+        `Allow any-user to read all-artifacts in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
         `Allow any-user to manage clusters in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`
     ];
     const policy = (await listPolicies(authenticationDetailsProvider, compartmentID, DEFAULT_COMPARTMENT_ACCESS_POLICY)).find(p => DEFAULT_COMPARTMENT_ACCESS_POLICY === p.name);
