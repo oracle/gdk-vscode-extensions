@@ -106,6 +106,10 @@ export async function createProject(context: vscode.ExtensionContext): Promise<v
         return selectCreateOptions();
     });
 
+    if (!options) {
+        return;
+    }
+
     /*
     for debugging
 
@@ -122,14 +126,16 @@ export async function createProject(context: vscode.ExtensionContext): Promise<v
     };
     */
 
-    if (!options) {
-        return;
-    }
-
     const targetLocation = await selectLocation(context, options);
     if (!targetLocation) {
         return;
     }
+
+    return createProjectBase(options, targetLocation);
+}
+
+export async function createProjectBase(options : CreateOptions, targetLocation : string): Promise<void> {
+
     if (fs.existsSync(targetLocation)) {
         if (!fs.statSync(targetLocation).isDirectory()) {
             dialogs.showErrorMessage(`The selected location ${targetLocation} is not a directory.`);
