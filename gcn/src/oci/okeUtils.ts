@@ -46,10 +46,10 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
     });
 
     if (allowSkip && !existingContentChoices?.length) {
-        const createOption = 'Create New or Select in Other Compartment';
+        const createOption = 'Create an OKE Cluster / Select a New Compartment';
         const cancelOption = 'Skip OKE Support';
         const options = ociFeatures.MANAGE_VIEW_ITEMS_ENABLED ? [createOption, cancelOption] : [createOption];
-        const msg = ociFeatures.MANAGE_VIEW_ITEMS_ENABLED ? 'No OKE cluster available in target compartment. Choose how to proceed:' : 'No OKE cluster available in target compartment.'
+        const msg = 'No OKE cluster in compartment.';
         const sel = await vscode.window.showWarningMessage(msg, ...options);
         if (!sel) {
             return undefined;
