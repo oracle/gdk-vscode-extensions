@@ -4,6 +4,7 @@
 
 const path = require('path');
 const webpack = require('webpack');
+const ESLintPlugin = require('eslint-webpack-plugin');
 
 /**@type {import('webpack').Configuration}*/
 const config = {
@@ -45,6 +46,9 @@ const config = {
             }]
         }]
     },
+    plugins: [
+        new ESLintPlugin({extensions: ['ts']})
+    ],
 }
 const devConf = {
     target: 'node', // vscode extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
@@ -95,7 +99,8 @@ const devConf = {
         minimize: false
     },
     plugins: [
-        new webpack.AutomaticPrefetchPlugin()
+        new webpack.AutomaticPrefetchPlugin(),
+        new ESLintPlugin({extensions: ['ts']})
     ],
     cache: {
         type: 'filesystem',

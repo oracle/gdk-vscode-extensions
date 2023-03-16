@@ -23,7 +23,7 @@
 		"url": "https://github.com/graalvm/vscode-extensions/issues"
 	},
 	"engines": {
-		"vscode": "^1.64.0"
+		"vscode": "^1.76.0"
 	},
 	"categories": [
 		"Programming Languages",
@@ -119,11 +119,11 @@
 				"title": "Register Database for Micronaut",
 				"category": "Micronaut"
 			},
-                        {
- 				"command": "extension.micronaut.oci.register",
- 				"title": "Register Database for Micronaut",
- 				"category": "Micronaut"
- 			}
+			{
+				"command": "extension.micronaut.oci.register",
+				"title": "Register Database for Micronaut",
+				"category": "Micronaut"
+			}
 		],
 		"menus": {
 			"commandPalette": [
@@ -163,10 +163,10 @@
 					"command": "extension.micronaut.odb.register",
 					"when": "false"
 				},
-                                {
- 					"command": "extension.micronaut.oci.register",
- 					"when": "false"
- 				}
+				{
+					"command": "extension.micronaut.oci.register",
+					"when": "false"
+				}
 			],
 			"view/item/context": [
 				{
@@ -174,11 +174,11 @@
 					"when": "view == oracleDBObjectExplorer && viewItem =~ /Connection/ && dbAddConnectionPresent",
 					"group": "connection_3@1"
 				},
-                                {
- 					"command": "extension.micronaut.oci.register",
- 					"when": "view == oracleCloudExplorer && viewItem =~ /(ociNonDedicatedDatabaseItem|ociDedicatedDatabaseItem)/ && dbAddConnectionPresent",
- 					"group": "CloudExplorer1@11"
- 				}
+				{
+					"command": "extension.micronaut.oci.register",
+					"when": "view == oracleCloudExplorer && viewItem =~ /(ociNonDedicatedDatabaseItem|ociDedicatedDatabaseItem)/ && dbAddConnectionPresent",
+					"group": "CloudExplorer1@11"
+				}
 			]
 		}
 	},
@@ -188,28 +188,33 @@
 		"info": "webpack --display-modules",
 		"watch": "webpack --mode development --watch",
 		"test-compile": "tsc -p ./",
-		"lint": "tslint -p ./",
-		"build": "npm install && ../node_modules/.bin/vsce package --allow-star-activation --baseImagesUrl https://github.com/graalvm/vscode-extensions/raw/master/micronaut"
+		"prebuild": "npm install",
+		"build": "../node_modules/.bin/vsce package --allow-star-activation --baseImagesUrl https://github.com/graalvm/vscode-extensions/raw/master/micronaut",
+		"lint": "eslint src --ext ts"
 	},
 	"dependencies": {
 		"decompress": "4.2.1",
-		"vscode-kubernetes-tools-api": "^1.0.0",
-		"mustache": "4.0.1"
+		"mustache": "4.0.1",
+		"vscode-kubernetes-tools-api": "^1.0.0"
 	},
 	"devDependencies": {
-		"@types/glob": "^7.1.1",
-		"@types/node": "^12.12.0",
-		"@types/vscode": "^1.64.0",
 		"@types/decompress": "4.2.3",
+		"@types/glob": "^7.1.1",
 		"@types/mustache": "^4.0.1",
+		"@types/node": "^14.16.0",
+		"@types/vscode": "^1.76.0",
+		"@typescript-eslint/eslint-plugin": "^5.54.1",
+		"@typescript-eslint/parser": "^5.54.1",
+		"ajv": "^8.12.0",
+		"eslint": "^8.35.0",
+		"eslint-webpack-plugin": "^4.0.0",
 		"glob": "^7.1.4",
-		"typescript": "^4.7.2",
-		"tslint": "^5.12.1",
-		"ts-loader": "^9.3.1",
-		"webpack": "^5.74.0",
-		"webpack-cli": "^4.10.0"
+		"ts-loader": "^9.4.2",
+		"typescript": "^4.9.5",
+		"webpack": "^5.76.0",
+		"webpack-cli": "^5.0.1"
 	},
-    "extensionDependencies": [
-      "oracle-labs-graalvm.graalvm"
-    ]
+	"extensionDependencies": [
+		"oracle-labs-graalvm.graalvm"
+	]
 }
