@@ -68,7 +68,7 @@ export async function resolve(actionName?: string, profile?: string): Promise<Au
     try {
         const defaultConfig = getDefaultConfigFile();
         if (!fs.existsSync(defaultConfig)) {
-            return new Authentication(undefined, `Required config file missing: ${defaultConfig}.`);
+            return new Authentication(undefined, `Required config file missing: ${defaultConfig}. Follow [the documentation](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm) to create the config file.`);
         }
         const profiles = listProfiles(defaultConfig);
         if (profiles.length) {
@@ -86,7 +86,7 @@ export async function resolve(actionName?: string, profile?: string): Promise<Au
             }
             return new Authentication(provider);
         } else {
-            return new Authentication(undefined, `No profiles defined in config file ${defaultConfig}.`);
+            return new Authentication(undefined, `No profiles defined in config file ${defaultConfig}. Follow [the documentation](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm) to setup the config file.`);
         }
     } catch (err) {
         return new Authentication(undefined, dialogs.getErrorMessage('Failed to initialize OCI authentication', err));
