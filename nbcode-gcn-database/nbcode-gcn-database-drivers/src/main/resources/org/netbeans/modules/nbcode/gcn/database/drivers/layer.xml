@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2023 Oracle and/or its affiliates. All rights reserved.
+    Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
+
+-->
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.2//EN" "http://www.netbeans.org/dtds/filesystem-1_2.dtd">
+<filesystem>
+    <folder name="Databases">
+        <folder name="JDBCDrivers">
+            <!-- MySQL registration replaces the one found in the org.netbeans.modules.db.drivers module, but delivers concrete jar URLs -->
+            <file name="mysql.xml" url="mysql2.xml"/>
+            <file name="ojdbc.xml" url="ojdbc.xml"/>
+        </folder>
+    </folder>
+</filesystem>

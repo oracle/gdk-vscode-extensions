@@ -11,3 +11,6 @@ package-lock.json
 .gitignore
 /nbcode-graalvm/nbcode-graalvm-ojdbc/target/
 /graalvm/nbcode/
+/gcn-database-drivers/nbcode
+/nbcode-gcn-database/nbcode-gcn-database-drivers/target/
+/gcn/fixtures/base-oci-template/oci/bin/

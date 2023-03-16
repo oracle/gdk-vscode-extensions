@@ -956,7 +956,8 @@ export async function troubleshootNBLSCpuSampler() {
         let delay: number;
         const delayChoices: QuickPickNumber[] = getTroubleshootNBLSCpuSamplerDelays();
         const delaySelection = await vscode.window.showQuickPick(delayChoices, {
-            placeHolder: 'Select the delay before starting CPU sampler'
+            placeHolder: 'Select the delay before starting CPU sampler',
+            ignoreFocusOut: true
         });
         if (delaySelection) {
             delay = delaySelection.value;
@@ -967,7 +968,8 @@ export async function troubleshootNBLSCpuSampler() {
         let duration: number;
         const durationChoices: QuickPickNumber[] = getTroubleshootNBLSCpuSamplerDurations();
         const durationSelection = await vscode.window.showQuickPick(durationChoices, {
-            placeHolder: 'Select the duration of CPU sampling'
+            placeHolder: 'Select the duration of CPU sampling',
+            ignoreFocusOut: true
         });
         if (durationSelection) {
             duration = durationSelection.value;

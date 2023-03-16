@@ -26,7 +26,7 @@ const CREATE: string = '/create';
 const OPEN_IN_NEW_WINDOW = 'Open in new window';
 const OPEN_IN_CURRENT_WINDOW: string = 'Open in current window';
 const ADD_TO_CURRENT_WORKSPACE = 'Add to current workspace';
-const LAST_PROJECT_PARENTDIR: string = 'lastMicronautProjectParentDir';
+const LAST_PROJECT_PARENTDIR: string = 'lastCreateProjectParentDirs';
 
 let cliMNVersion: {label: string, serviceUrl: string, description: string} | undefined;
 
@@ -285,11 +285,14 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 
     if (state.micronautVersion && state.applicationType && state.projectName && state.basePackage &&
         state.language && state.features && state.buildTool && state.testFramework) {
-        const lastProjectParentDir: string | undefined = context.globalState.get(LAST_PROJECT_PARENTDIR);
+
+        const lastDirs: any = context.globalState.get(LAST_PROJECT_PARENTDIR) || new Map<string, string>();
+        const dirId = `${vscode.env.remoteName || ''}:${vscode.env.machineId}`
+        const dirName : string | undefined = lastDirs[dirId];
         let defaultDir: vscode.Uri | undefined;
-        if (lastProjectParentDir) {
+        if (dirName) {
             try {
-                defaultDir = vscode.Uri.parse(lastProjectParentDir, true);
+                defaultDir = vscode.Uri.parse(dirName, true);
             } catch (e) {
                 defaultDir = undefined;
             }
@@ -305,7 +308,8 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
             openLabel: 'Create Here'
         });
         if (location && location.length > 0) {
-            await context.globalState.update(LAST_PROJECT_PARENTDIR, location[0].toString());
+            lastDirs[dirId] = location[0].toString();
+            await context.globalState.update(LAST_PROJECT_PARENTDIR, lastDirs);
             let appName = state.basePackage;
             if (appName) {
                 appName += '.' + state.projectName;
