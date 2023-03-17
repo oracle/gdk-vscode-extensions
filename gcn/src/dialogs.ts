@@ -251,10 +251,10 @@ export async function confirmDeployToOCI(): Promise<boolean> {
 	return true;
 }
 
-const BUILD_PIPELINE_CUSTOM_SHAPE_CONFIRMATION = 'buildPipelineCustomShapeConfirmation';
+const BUILD_PIPELINE_CUSTOM_SHAPE_CONFIRMATION = 'startBuildPipelineUsingCustomShapeConfirmedPermanently';
 
 export function isRunBuildPipelineCustomShapeConfirmedPermanently(): boolean {
-	return persistenceUtils.getWorkspaceObject(BUILD_PIPELINE_CUSTOM_SHAPE_CONFIRMATION) === true;
+	return persistenceUtils.getWorkspaceConfiguration().get<boolean>(BUILD_PIPELINE_CUSTOM_SHAPE_CONFIRMATION, false) === true;
 }
 
 export async function confirmRunBuildPipelineCustomShape(): Promise<boolean> {
@@ -267,7 +267,7 @@ export async function confirmRunBuildPipelineCustomShape(): Promise<boolean> {
 		return false;
 	}
 	if (choice === confirmPermanently) {
-		await persistenceUtils.setWorkspaceObject(BUILD_PIPELINE_CUSTOM_SHAPE_CONFIRMATION, true)
+		persistenceUtils.getWorkspaceConfiguration().update(BUILD_PIPELINE_CUSTOM_SHAPE_CONFIRMATION, true, vscode.ConfigurationTarget.Global);
 	}
 	return true;
 }
