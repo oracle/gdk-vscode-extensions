@@ -46,7 +46,7 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
     });
 
     if (allowSkip && !existingContentChoices?.length) {
-        const createOption = 'Create an OKE Cluster / Select a New Compartment';
+        const createOption = 'Create New or Choose Existing OKE Cluster';
         const cancelOption = 'Skip OKE Support';
         const options = ociFeatures.MANAGE_VIEW_ITEMS_ENABLED ? [createOption, cancelOption] : [createOption];
         const msg = 'No OKE cluster in compartment.';
