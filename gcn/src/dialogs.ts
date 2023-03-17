@@ -227,11 +227,28 @@ export async function selectCloudSupport(actionName?: string): Promise<model.Clo
     return selection?.object;
 }
 
+const PUSH_SOURCES_TO_OCI_CONFIRMATION = 'pushLocalSourcesToOciConfirmedPermanently';
+
+function isConfirmDeployToOCI(): boolean {
+	return persistenceUtils.getWorkspaceConfiguration().get<boolean>(PUSH_SOURCES_TO_OCI_CONFIRMATION, false) === true;
+}
+
 export async function confirmDeployToOCI(): Promise<boolean> {
-	const confirm = 'Continue';
+	if (isConfirmDeployToOCI()){
+		return true;
+	}
+	const confirm = 'Confirm';
+	const confirmPermanently = 'Confirm Permanently';
 	const cancel = 'Cancel';
-	const msg = 'Local sources will be pushed to a remote OCI code repository. Read [the documentation](https://graal-cloud-staging.us.oracle.com/getting-started/setting-oci-devops-pipeline-in-vscode/#6-deploy-to-oci) for more details. Click Continue to proceed:';
-	return await vscode.window.showInformationMessage(msg, confirm, cancel) === confirm;
+	const msg = 'Local sources will be pushed to a remote OCI code repository. Read [the documentation](https://graal-cloud-staging.us.oracle.com/getting-started/setting-oci-devops-pipeline-in-vscode/#6-deploy-to-oci) for more details. Confirm to proceed:';
+	const choice = await vscode.window.showInformationMessage(msg, confirm, confirmPermanently, cancel);
+	if (!choice || choice === cancel) {
+		return false;
+	}
+	if (choice === confirmPermanently) {
+		persistenceUtils.getWorkspaceConfiguration().update(PUSH_SOURCES_TO_OCI_CONFIRMATION, true, vscode.ConfigurationTarget.Global);
+	}
+	return true;
 }
 
 const BUILD_PIPELINE_CUSTOM_SHAPE_CONFIRMATION = 'buildPipelineCustomShapeConfirmation';
