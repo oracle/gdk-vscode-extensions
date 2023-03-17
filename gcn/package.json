@@ -89,6 +89,12 @@
 					"default": false,
 					"description": "Unselect to restore confirmations before pushing local sources to a remote OCI code repository",
 					"scope": "machine"
+				},
+				"gcn.startBuildPipelineUsingCustomShapeConfirmedPermanently": {
+					"type": "boolean",
+					"default": false,
+					"description": "Unselect to restore confirmations before starting build pipelines using a custom build runner shape",
+					"scope": "machine"
 				}
 			}
 		},
