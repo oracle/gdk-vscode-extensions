@@ -83,6 +83,12 @@
 					"type": "boolean",
 					"default": true,
 					"description": "Bypass Deliver artifacts stage in Build pipelines producing Generic artifacts"
+				},
+				"gcn.pushLocalSourcesToOciConfirmedPermanently": {
+					"type": "boolean",
+					"default": false,
+					"description": "Unselect to restore confirmations before pushing local sources to a remote OCI code repository",
+					"scope": "machine"
 				}
 			}
 		},

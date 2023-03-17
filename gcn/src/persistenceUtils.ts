@@ -21,3 +21,7 @@ export function getWorkspaceObject<T>(key: string): T | undefined {
 export async function setWorkspaceObject(key: string, value: any): Promise<void> {
     return workspaceState?.update(key, value);
 }
+
+export function getWorkspaceConfiguration(): vscode.WorkspaceConfiguration {
+	return vscode.workspace.getConfiguration('gcn');
+}
