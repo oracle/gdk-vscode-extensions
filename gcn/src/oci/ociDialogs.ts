@@ -199,7 +199,7 @@ export async function selectCodeRepositories(authenticationDetailsProvider: comm
                     let idx = 0;
                     for (const repository of repositories) {
                         if (!ignore || !ignore.includes(repository.id)) {
-                            if (repository.freeformTags?.gcn_tooling_deployIncomplete !== 'true') {
+                            if (repository.freeformTags?.devops_tooling_deployIncomplete !== 'true') {
                                 const name = repository.name ? repository.name : `CodeRepository${idx++}`;
                                 const description = repository.description ? repository.description : 'Code Repository';
                                 const choice = new dialogs.QuickPickObject(name, description, undefined, { ocid: repository.id, name: name, httpUrl: repository.httpUrl, sshUrl: repository.sshUrl });

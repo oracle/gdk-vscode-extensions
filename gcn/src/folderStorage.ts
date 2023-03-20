@@ -12,7 +12,7 @@ import * as model from './model';
 
 
 const VSCODE_METADATA_FOLDER = '.vscode';
-const CONFIG_FILE = 'gcn.json';
+const CONFIG_FILE = 'devops.json';
 const CONFIG_FILE_INDENTATION = 4;
 
 export class FolderStorage {

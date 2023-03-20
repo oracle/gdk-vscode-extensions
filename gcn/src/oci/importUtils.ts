@@ -166,11 +166,11 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
             for (const repository of repositories) {
                 const folder = path.join(targetDirectory, repository.name); // TODO: name and toplevel dir might differ!
                 folders.push(folder);
-
+                const devopsConfig = folderStorage.getDefaultLocation();
                 if (folderStorage.storageExists(folder)) {
                     // GCN configuration already exists in the cloud repository
                     // NOTE: overwriting the OCI authentication for the local profile
-                    logUtils.logInfo(`[import] Updating OCI profile in gcn.json in the locally cloned code repository '${repository.name}'`);
+                    logUtils.logInfo(`[import] Updating OCI profile in ${devopsConfig} in the locally cloned code repository '${repository.name}'`);
                     const configuration = folderStorage.read(folder);
                     const cloudServices: any[] = configuration.cloudServices;
                     for (const cloudService of cloudServices) {
@@ -180,9 +180,8 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                     }
                     folderStorage.store(folder, configuration, true);
                     servicesData.push(undefined);
-                    // Do not track local changes to .vscode/gcn.json
-                    const gcnConfig = folderStorage.getDefaultLocation();
-                    gitUtils.skipWorkTree(folder, gcnConfig); // [GCN-1141] Only works if file present in the remote repo
+                    // Do not track local changes to .vscode/devops.json
+                    gitUtils.skipWorkTree(folder, devopsConfig); // [GCN-1141] Only works if file present in the remote repo
                 } else {
                     // GCN configuration does not exist in the cloud repository
                     // Using GeneratedResources* artifacts if available
@@ -194,14 +193,14 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                     try {
                         let artifacts = await ociUtils.listDeployArtifacts(oci.getProvider(), oci.getDevOpsProject());
                         for (const artifact of artifacts) {
-                            if (artifact.freeformTags?.gcn_tooling_codeRepoResourcesList && artifact.freeformTags?.gcn_tooling_codeRepoID === repository.ocid) {
+                            if (artifact.freeformTags?.devops_tooling_codeRepoResourcesList && artifact.freeformTags?.devops_tooling_codeRepoID === repository.ocid) {
                                 const content = (artifact.deployArtifactSource as devops.models.InlineDeployArtifactSource).base64EncodedContent;
                                 const stringContent = Buffer.from(content, 'base64').toString('binary');
                                 codeRepositoryResources = JSON.parse(stringContent);
                                 if (projectResources) {
                                     break;
                                 }
-                            } else if (!projectResources && artifact.freeformTags?.gcn_tooling_projectResourcesList) {
+                            } else if (!projectResources && artifact.freeformTags?.devops_tooling_projectResourcesList) {
                                 const content = (artifact.deployArtifactSource as devops.models.InlineDeployArtifactSource).base64EncodedContent;
                                 const stringContent = Buffer.from(content, 'base64').toString('binary');
                                 projectResources = JSON.parse(stringContent);
@@ -222,11 +221,11 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                     progress.report({
                         message: `Importing services for code repository ${repository.name}...`
                     });
-                    logUtils.logInfo(`[import] Importing OCI devops resources and creating gcn.json in the locally cloned code repository '${repository.name}'`);
+                    logUtils.logInfo(`[import] Importing OCI devops resources and creating ${devopsConfig} in the locally cloned code repository '${repository.name}'`);
                     const services = await importServices(authentication, oci, projectResources, codeRepositoryResources);
                     servicesData.push(services);
-                    // Do not track local changes to .vscode/gcn.json
-                    gitUtils.addGitIgnoreEntry(folder, '.vscode/gcn.json');
+                    // Do not track local changes to .vscode/devops.json
+                    gitUtils.addGitIgnoreEntry(folder, devopsConfig);
                 }
             }
 

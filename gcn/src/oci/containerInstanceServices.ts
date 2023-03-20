@@ -303,7 +303,7 @@ async function getOrCreateCISubnet(authenticationDetailsProvider: common.ConfigF
     logUtils.logInfo('[containerinstance] Listing available subnets');
     const subnets = await ociUtils.listSubnets(authenticationDetailsProvider, compartmentID);
     for (const subnet of subnets) {
-        if (subnet.freeformTags?.gcn_tooling_ci_resource) {
+        if (subnet.freeformTags?.devops_tooling_ci_resource) {
             logUtils.logInfo('[containerinstance] Reusing existing subnet');
             return subnet;
         }
@@ -313,7 +313,7 @@ async function getOrCreateCISubnet(authenticationDetailsProvider: common.ConfigF
     const vcn = await getOrCreateCIVCN(authenticationDetailsProvider, compartmentID);
     logUtils.logInfo('[containerinstance] Creating subnet');
     const subnet = await ociUtils.createSubnet(authenticationDetailsProvider, compartmentID, vcn.id, `subnet-ci-vscode-${Date.now()}`, {
-        'gcn_tooling_ci_resource': 'true'
+        'devops_tooling_ci_resource': 'true'
     });
 
     if (subnet.securityListIds?.[0]) {
@@ -340,13 +340,13 @@ async function getOrCreateCIVCN(authenticationDetailsProvider: common.ConfigFile
     logUtils.logInfo('[containerinstance] Listing available VCNs');
     const vcns = await ociUtils.listVCNs(authenticationDetailsProvider, compartmentID);
     for (const vcn of vcns) {
-        if (vcn.freeformTags?.gcn_tooling_ci_resource) {
+        if (vcn.freeformTags?.devops_tooling_ci_resource) {
             logUtils.logInfo('[containerinstance] Reusing existing VCN');
             return vcn;
         }
     }
     const vcn = await ociUtils.createVCN(authenticationDetailsProvider, compartmentID, `vcn-ci-vscode-${Date.now()}`, {
-        'gcn_tooling_ci_resource': 'true'
+        'devops_tooling_ci_resource': 'true'
     });
     logUtils.logInfo('[containerinstance] Creating internet gateway');
     const igw = await ociUtils.createInternetGateway(authenticationDetailsProvider, compartmentID, vcn.id, `igw-ci-vscode-${Date.now()}`);

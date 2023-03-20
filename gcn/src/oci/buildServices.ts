@@ -77,7 +77,7 @@ export async function importServices(oci: ociContext.Context, _projectResources:
                     const pipeline = await ociUtils.getBuildPipeline(oci.getProvider(), buildPipeline.ocid);
                     let pipelineDisplayName = pipeline.displayName;
                     if (pipelineDisplayName) {
-                        const codeRepoPrefix = pipeline.freeformTags?.gcn_tooling_codeRepoPrefix;
+                        const codeRepoPrefix = pipeline.freeformTags?.devops_tooling_codeRepoPrefix;
                         if (codeRepoPrefix && pipelineDisplayName.startsWith(codeRepoPrefix)) {
                             pipelineDisplayName = pipelineDisplayName.substring(codeRepoPrefix.length);
                         }
@@ -117,7 +117,7 @@ export async function importServices(oci: ociContext.Context, _projectResources:
             for (const pipeline of pipelines) {
                 let pipelineDisplayName = pipeline.displayName;
                 if (pipelineDisplayName) {
-                    const codeRepoPrefix = pipeline.freeformTags?.gcn_tooling_codeRepoPrefix;
+                    const codeRepoPrefix = pipeline.freeformTags?.devops_tooling_codeRepoPrefix;
                     if (codeRepoPrefix && pipelineDisplayName.startsWith(codeRepoPrefix)) {
                         pipelineDisplayName = pipelineDisplayName.substring(codeRepoPrefix.length);
                     }
@@ -196,7 +196,7 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
             if (!shouldIgnore(item.id, item.displayName)) {
                 let itemDisplayName = item.displayName;
                 if (itemDisplayName) {
-                    const codeRepoPrefix = item.freeformTags?.gcn_tooling_codeRepoPrefix;
+                    const codeRepoPrefix = item.freeformTags?.devops_tooling_codeRepoPrefix;
                     if (codeRepoPrefix && itemDisplayName.startsWith(codeRepoPrefix)) {
                         itemDisplayName = itemDisplayName.substring(codeRepoPrefix.length);
                     }

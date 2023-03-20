@@ -298,7 +298,7 @@ export async function deleteDevOpsProjectsByDeployIDTag(authenticationDetailsPro
         request.page = response.opcNextPage;
     } while (request.page);
     for (const project of projects) {
-        if (project.freeformTags && project.freeformTags['gcn_tooling_deployID'] === tag
+        if (project.freeformTags && project.freeformTags['devops_tooling_deployID'] === tag
             && project.lifecycleState !== devops.models.Project.LifecycleState.Deleting
             && project.lifecycleState !== devops.models.Project.LifecycleState.Deleted) {
                 await deleteDevOpsProject(authenticationDetailsProvider, project.id, true);
@@ -366,7 +366,7 @@ export async function deleteCodeRepositoriesByDeployIDTag(authenticationDetailsP
         request.page = response.opcNextPage;
     } while (request.page);
     for (const artifact of repositories) {
-        if (artifact.freeformTags && artifact.freeformTags['gcn_tooling_deployID'] === tag
+        if (artifact.freeformTags && artifact.freeformTags['devops_tooling_deployID'] === tag
             && artifact.lifecycleState !== devops.models.Repository.LifecycleState.Deleted) {
                 await deleteCodeRepository(authenticationDetailsProvider, artifact.id, true);
         }
@@ -418,7 +418,7 @@ export async function deleteBuildPipelinesByDeployIDTag(authenticationDetailsPro
         request.page = response.opcNextPage;
     } while (request.page);
     for (const pipeline of pipelines) {
-        if (pipeline.freeformTags && pipeline.freeformTags['gcn_tooling_deployID'] === tag
+        if (pipeline.freeformTags && pipeline.freeformTags['devops_tooling_deployID'] === tag
             && pipeline.lifecycleState !== devops.models.BuildPipeline.LifecycleState.Deleting
             && pipeline.lifecycleState !== devops.models.DeployStage.LifecycleState.Deleted) {
                 await deleteBuildPipeline(authenticationDetailsProvider, pipeline.id, true);
@@ -472,7 +472,7 @@ export async function deleteBuildPipelineStagesByDeployIDTag(authenticationDetai
         request.page = response.opcNextPage;
     } while (request.page);
     const revDeps: Map<string, number> = new Map();
-    stages = stages.filter(s => s.freeformTags && s.freeformTags['gcn_tooling_deployID'] === tag
+    stages = stages.filter(s => s.freeformTags && s.freeformTags['devops_tooling_deployID'] === tag
         && s.lifecycleState !== devops.models.BuildPipelineStage.LifecycleState.Deleting
         && s.lifecycleState !== devops.models.BuildPipelineStage.LifecycleState.Deleted);
     stages.forEach(s => {
@@ -509,7 +509,7 @@ export async function listBuildPipelinesByCodeRepository(authenticationDetailsPr
     const buildPipelineSummaries: devops.models.BuildPipelineSummary[] = [];
     if (buildPipelines) {
         for (const buildPipeline of buildPipelines) {
-            const codeRepoID = buildPipeline.freeformTags?.gcn_tooling_codeRepoID;
+            const codeRepoID = buildPipeline.freeformTags?.devops_tooling_codeRepoID;
             if (codeRepoID) {
                 if (codeRepoID === repositoryID) {
                     buildPipelineSummaries.push(buildPipeline);
@@ -590,7 +590,7 @@ export async function deleteDeployPipelinesByDeployIDTag(authenticationDetailsPr
         request.page = response.opcNextPage;
     } while (request.page);
     for (const pipeline of pipelines) {
-        if (pipeline.freeformTags && pipeline.freeformTags['gcn_tooling_deployID'] === tag
+        if (pipeline.freeformTags && pipeline.freeformTags['devops_tooling_deployID'] === tag
             && pipeline.lifecycleState !== devops.models.DeployPipeline.LifecycleState.Deleting
             && pipeline.lifecycleState !== devops.models.DeployPipeline.LifecycleState.Deleted) {
                 await deleteDeployPipeline(authenticationDetailsProvider, pipeline.id, true);
@@ -635,7 +635,7 @@ export async function deleteDeployStagesByDeployIDTag(authenticationDetailsProvi
         request.page = response.opcNextPage;
     } while (request.page);
     const revDeps: Map<string, number> = new Map();
-    stages = stages.filter(s => s.freeformTags && s.freeformTags['gcn_tooling_deployID'] === tag
+    stages = stages.filter(s => s.freeformTags && s.freeformTags['devops_tooling_deployID'] === tag
         && s.lifecycleState !== devops.models.DeployStage.LifecycleState.Deleting
         && s.lifecycleState !== devops.models.DeployStage.LifecycleState.Deleted);
     stages.forEach(s => {
@@ -721,7 +721,7 @@ export async function deleteArtifactsRepositoriesByDeployIDTag(authenticationDet
         request.page = response.opcNextPage;
     } while (request.page);
     for (const artifact of repositories) {
-        if (artifact.freeformTags && artifact.freeformTags['gcn_tooling_deployID'] === tag
+        if (artifact.freeformTags && artifact.freeformTags['devops_tooling_deployID'] === tag
             && artifact.lifecycleState !== artifacts.models.Repository.LifecycleState.Deleting
             && artifact.lifecycleState !== artifacts.models.Repository.LifecycleState.Deleted) {
                 await deleteArtifactsRepository(authenticationDetailsProvider, compartmentID, artifact.id, true);
@@ -786,7 +786,7 @@ export async function deleteDeployArtifactsByDeployIDTag(authenticationDetailsPr
         request.page = response.opcNextPage;
     } while (request.page);
     for (const artifact of artifacts) {
-        if (artifact.freeformTags && artifact.freeformTags['gcn_tooling_deployID'] === tag
+        if (artifact.freeformTags && artifact.freeformTags['devops_tooling_deployID'] === tag
             && artifact.lifecycleState !== devops.models.DeployArtifact.LifecycleState.Deleting
             && artifact.lifecycleState !== devops.models.DeployArtifact.LifecycleState.Deleted) {
                 await deleteDeployArtifact(authenticationDetailsProvider, artifact.id, true);
@@ -915,7 +915,7 @@ export async function deleteDeployEnvironmentsByDeployIDTag(authenticationDetail
         request.page = response.opcNextPage;
     } while (request.page);
     for (const environment of environments) {
-        if (environment.freeformTags && environment.freeformTags['gcn_tooling_deployID'] === tag
+        if (environment.freeformTags && environment.freeformTags['devops_tooling_deployID'] === tag
             && environment.lifecycleState !== devops.models.DeployEnvironment.LifecycleState.Deleting
             && environment.lifecycleState !== devops.models.DeployEnvironment.LifecycleState.Deleted) {
                 await deleteDeployEnvironment(authenticationDetailsProvider, environment.id, true);
@@ -968,7 +968,7 @@ export async function deleteKnowledgeBasesByDeployIDTag(authenticationDetailsPro
         request.page = response.opcNextPage;
     } while (request.page);
     for (const knowledgeBase of knowledgeBases) {
-        if (knowledgeBase.freeformTags && knowledgeBase.freeformTags['gcn_tooling_deployID'] === tag
+        if (knowledgeBase.freeformTags && knowledgeBase.freeformTags['devops_tooling_deployID'] === tag
             && knowledgeBase.lifecycleState !== adm.models.KnowledgeBase.LifecycleState.Deleting
             && knowledgeBase.lifecycleState !== adm.models.KnowledgeBase.LifecycleState.Deleted) {
                 await deleteKnowledgeBase(authenticationDetailsProvider, knowledgeBase.id, true);
@@ -1389,7 +1389,7 @@ export async function deleteLogsByDeployIDTag(authenticationDetailsProvider: com
         request.page = response.opcNextPage;
     } while (request.page);
     for (const log of logs) {
-        if (log.freeformTags && log.freeformTags['gcn_tooling_deployID'] === tag
+        if (log.freeformTags && log.freeformTags['devops_tooling_deployID'] === tag
             && log.lifecycleState !== logging.models.LogLifecycleState.Deleting) {
                 await deleteLog(authenticationDetailsProvider, log.id, logGroupID, true);
         }
