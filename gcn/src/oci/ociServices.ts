@@ -12,7 +12,7 @@ import * as model from '../model';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
 import * as servicesView from '../servicesView';
-import * as logUtils from '../logUtils'
+import * as logUtils from '../logUtils';
 import * as ociContext from './ociContext';
 import * as dataSupport from './dataSupport';
 import * as ociNodes from './ociNodes';
@@ -82,7 +82,7 @@ export function initialize(context: vscode.ExtensionContext) {
         const projects: string[] = [];
         const folderData = await gcnServices.getFolderData();
         for (const folder of folderData) {
-            const ociServices = findByFolderData(folder)
+            const ociServices = findByFolderData(folder);
             for (const ociService of ociServices) {
                 const project = ociService.getContext().getDevOpsProject();
                 if (!projects.includes(project)) {
@@ -229,7 +229,7 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
             if (this.treeChanged && (dataProducer as ociService.Service).getNodes().length === 0) {
                 this.treeChanged(); // reload nodes to remove service container if displayed, and eventually show '<no OCI resources defined>'
             }
-        }
+        };
         this.services = [
             buildServices.create(folder, oci, this.servicesData[buildServices.DATA_NAME], serviceDataChanged),
             deploymentServices.create(folder, oci, this.servicesData[deploymentServices.DATA_NAME], serviceDataChanged),
@@ -305,7 +305,7 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
             const selection = await vscode.window.showQuickPick(choices, {
                 title: ADD_ACTION_NAME,
                 placeHolder: 'Select OCI resource to add'
-            })
+            });
             if (selection?.object) {
                 selection.object();
             }

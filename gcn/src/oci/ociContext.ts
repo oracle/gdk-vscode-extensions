@@ -90,7 +90,7 @@ export class Context implements dataSupport.DataProducer {
             compartment: this.compartmentID,
             devopsProject: this.devopsProjectID,
             codeRepository: this.codeRepositoryID
-        }
+        };
         return data;
     }
 

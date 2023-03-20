@@ -30,14 +30,14 @@ export const ACTION_NAME = 'Run Project Audit';
 const ICON = 'book';
 
 type KnowledgeBase = {
-    ocid: string,
-    displayName: string
-}
+    ocid: string;
+    displayName: string;
+};
 
 type VulnerabilityAudit = {
-    ocid: string,
-    displayName: string
-}
+    ocid: string;
+    displayName: string;
+};
 
 export function initialize(context: vscode.ExtensionContext) {
     function auditFolder(uri: vscode.Uri) {
@@ -146,27 +146,27 @@ async function executeFolderAudit(uri: vscode.Uri) {
             displaySummary: false,
             suppressErrors: true
         }
-    ).then(result => reportAuditResults(result), error => reportAuditError(error))
+    ).then(result => reportAuditResults(result), error => reportAuditError(error));
 }
 
 function reportAuditError(error : any) {
     if (error?.data && 'message' in error.data) {
-        vscode.window.showErrorMessage(`Audit failed: ${error.data.message}`)
+        vscode.window.showErrorMessage(`Audit failed: ${error.data.message}`);
     }
 }
 
 function reportAuditResults(result : any) {
     if (result?.errorMessage) {
-        vscode.window.showErrorMessage(`Audit of ${result.projectName} failed: ${result.errorMessage}`)
-        return
+        vscode.window.showErrorMessage(`Audit of ${result.projectName} failed: ${result.errorMessage}`);
+        return;
     }
     if (!result.vulnerableCount) {
-        vscode.window.showInformationMessage(`Vulnerability audit for project ${result.projectName} is done.\nNo vulnerability was found.`)
+        vscode.window.showInformationMessage(`Vulnerability audit for project ${result.projectName} is done.\nNo vulnerability was found.`);
         return;
     } else if (result.vulnerableCount > 1) {
-        vscode.window.showWarningMessage(`Vulnerability audit for project ${result.projectName} is done.\nOne vulnerability was found.\nThe vulnerability is listed in Problems window.`)
+        vscode.window.showWarningMessage(`Vulnerability audit for project ${result.projectName} is done.\nOne vulnerability was found.\nThe vulnerability is listed in Problems window.`);
     } else {
-        vscode.window.showWarningMessage(`Vulnerability audit for project ${result.projectName} is done.\n${result.vulnerableCount} vulnerabilities were found.\nThe vulnerability is listed in Problems window.`)
+        vscode.window.showWarningMessage(`Vulnerability audit for project ${result.projectName} is done.\n${result.vulnerableCount} vulnerabilities were found.\nThe vulnerability is listed in Problems window.`);
     }
 }
 
@@ -177,7 +177,7 @@ function folderName2AuditName(uri : vscode.Uri) : string {
         folderName = parts.pop();
     }
     const d = new Date();
-    const auditName = `${folderName}_${d.getFullYear()}${pad2(d.getMonth())}${pad2(d.getDay())}_${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}_${d.getMilliseconds()}`
+    const auditName = `${folderName}_${d.getFullYear()}${pad2(d.getMonth())}${pad2(d.getDay())}_${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}_${d.getMilliseconds()}`;
     return auditName;
 }
 
@@ -245,7 +245,7 @@ export async function importServices(oci: ociContext.Context, projectResources: 
                         settings: {
                             folderAuditsKnowledgeBase: knowledgeBase
                         }
-                    }
+                    };
                 }
             };
             return result;
@@ -267,7 +267,7 @@ export async function importServices(oci: ociContext.Context, projectResources: 
                         settings: {
                             folderAuditsKnowledgeBase: knowledgeBase
                         }
-                    }
+                    };
                 }
             };
             return result;
@@ -344,7 +344,7 @@ async function selectAuditKnowledgeBase(oci: ociContext.Context): Promise<string
                     return;
                 }
             });
-        })
+        });
     }
     const existing = await listKnowledgeBases(oci);
     if (!existing) {
@@ -363,7 +363,7 @@ async function selectAuditKnowledgeBase(oci: ociContext.Context): Promise<string
         const selection = await vscode.window.showQuickPick(choices, {
             title: `${ACTION_NAME}: Select Knowledge Base`,
             placeHolder: 'Select existing knowledge base to perform project audits'
-        })
+        });
         return selection?.object.id;
     }
 }
@@ -405,7 +405,7 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
                     return;
                 }
             });
-        })
+        });
     }
     const knowledgeBases: KnowledgeBase[] = [];
     const descriptions: string[] = [];
@@ -462,12 +462,12 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
         }
     }
     if (choices.length === 0) {
-        vscode.window.showWarningMessage('All knowledge bases already added or no knowledge bases available.')
+        vscode.window.showWarningMessage('All knowledge bases already added or no knowledge bases available.');
     } else {
         const selection = await vscode.window.showQuickPick(choices, {
             title: `${ociServices.ADD_ACTION_NAME}: Select Knowledge Base`,
             placeHolder: 'Select existing knowledge base to add'
-        })
+        });
         if (selection) {
             if (typeof selection.object === 'function') {
                 return await selection.object();
@@ -547,7 +547,7 @@ class Service extends ociService.Service {
                 displaySummary: false,
                 suppressErrors: true
             }
-        ).then(result => reportAuditResults(result), error => reportAuditError(error))
+        ).then(result => reportAuditResults(result), error => reportAuditError(error));
     }
 
     async displayProjectAudit() {
@@ -563,7 +563,7 @@ class Service extends ociService.Service {
                 displaySummary: false,
                 suppressErrors: true
             }
-        ).then(result => reportAuditResults(result), error => reportAuditError(error))
+        ).then(result => reportAuditResults(result), error => reportAuditError(error));
         const prjs: any[] = await vscode.commands.executeCommand('nbls.project.info', this.folder.uri.toString(), { recursive : true, projectStructure : true });
 
         if (prjs.length < 2) {
@@ -578,7 +578,7 @@ class Service extends ociService.Service {
                     displaySummary: false,
                     suppressErrors: true
                 }
-            ).then(result => reportAuditResults(result), error => reportAuditError(error))
+            ).then(result => reportAuditResults(result), error => reportAuditError(error));
         }
     }
 
@@ -603,7 +603,7 @@ class Service extends ociService.Service {
                 const object: KnowledgeBase = {
                     ocid: ocid,
                     displayName: displayName
-                }
+                };
                 nodes.push(new KnowledgeBaseNode(object, oci, treeChanged));
             }
         }
@@ -629,7 +629,7 @@ class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, 
     }
 
     async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
-        const children: nodes.BaseNode[] = []
+        const children: nodes.BaseNode[] = [];
         const provider = this.oci.getProvider();
         const compartment = this.oci.getCompartment();
         const knowledgeBase = this.object.ocid;
@@ -640,7 +640,7 @@ class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, 
                 const auditObject = {
                     ocid: audit.id,
                     displayName: audit.displayName ? audit.displayName : `Audit ${idx++}`
-                }
+                };
                 children.push(new VulnerabilityAuditNode(auditObject, this.oci, audit));
             }
         }
@@ -710,7 +710,7 @@ class VulnerabilityAuditNode extends nodes.BaseNode implements nodes.ShowReportN
                     const vulnerableArtifactsCount = audit.vulnerableArtifactsCount;
                     if (vulnerableArtifactsCount === 0) {
                         this.iconPath = new vscode.ThemeIcon(VulnerabilityAuditNode.ICON, new vscode.ThemeColor('charts.green'));
-                        this.tooltip = 'No vulnerabilities found'
+                        this.tooltip = 'No vulnerabilities found';
                     } else {
                         const maxV2Score = audit.maxObservedCvssV2Score;
                         const maxV3Score = audit.maxObservedCvssV3Score;

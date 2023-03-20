@@ -1,9 +1,11 @@
 //@ts-check
+/* eslint-disable @typescript-eslint/naming-convention */
 
 'use strict';
 
 const path = require('path');
 const webpack = require('webpack');
+const ESLintPlugin = require('eslint-webpack-plugin');
 
 /**@type {import('webpack').Configuration}*/
 const config = {
@@ -45,7 +47,10 @@ const config = {
             }]
         }]
     },
-}
+    plugins: [
+        new ESLintPlugin({extensions: ['ts']})
+    ],
+};
 const devConf = {
     target: 'node', // vscode extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
 
@@ -95,7 +100,8 @@ const devConf = {
         minimize: false
     },
     plugins: [
-        new webpack.AutomaticPrefetchPlugin()
+        new webpack.AutomaticPrefetchPlugin(),
+        new ESLintPlugin({extensions: ['ts']})
     ],
     cache: {
         type: 'filesystem',
@@ -105,7 +111,7 @@ const devConf = {
             // By default webpack and loaders are build dependencies
         },
     },
-}
+};
 // https://webpack.js.org/configuration/mode/#mode-none
 module.exports = (env, argv) => {
     if (argv.mode === 'development') {

@@ -5,6 +5,7 @@
 const path = require('path');
 const maven = require('maven');
 const CopyPlugin = require("copy-webpack-plugin");
+const ESLintPlugin = require('eslint-webpack-plugin');
 
 //@ts-check
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -31,6 +32,7 @@ const extensionConfig = {
                 }
             ],
         }),
+        new ESLintPlugin({extensions: ['ts']})
     ],
   entry: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
   output: {

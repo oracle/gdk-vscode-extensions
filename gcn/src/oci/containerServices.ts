@@ -25,14 +25,14 @@ export const ICON = 'extensions';
 export const ITEM_ICON = 'primitive-square';
 
 type ContainerRepository = {
-    ocid: string,
-    displayName: string
-}
+    ocid: string;
+    displayName: string;
+};
 
 type ContainerImage = {
-    ocid: string,
-    displayName: string
-}
+    ocid: string;
+    displayName: string;
+};
 
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.pullDockerImage', (...params: any[]) => {
@@ -89,7 +89,7 @@ async function selectContainerRepositories(oci: ociContext.Context, ignore: Cont
                     return;
                 }
             });
-        })
+        });
     }
     const containerRepositories: ContainerRepository[] = [];
     const existing = await listContainerRepositories(oci);
@@ -140,12 +140,12 @@ async function selectContainerRepositories(oci: ociContext.Context, ignore: Cont
         }
     }
     if (choices.length === 0) {
-        vscode.window.showWarningMessage('All container repositories already added or no container repositories available.')
+        vscode.window.showWarningMessage('All container repositories already added or no container repositories available.');
     } else {
         const selection = await vscode.window.showQuickPick(choices, {
             title: `${ociServices.ADD_ACTION_NAME}: Select Container Repository`,
             placeHolder: 'Select existing container repository to add'
-        })
+        });
         if (selection) {
             if (typeof selection.object === 'function') {
                 return await selection.object();
@@ -192,7 +192,7 @@ class Service extends ociService.Service {
                 const object: ContainerRepository = {
                     ocid: ocid,
                     displayName: displayName
-                }
+                };
                 nodes.push(new ContainerRepositoryNode(object, oci, treeChanged));
             }
         }
@@ -218,12 +218,12 @@ class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.Removable
     }
 
     async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
-        const children: nodes.BaseNode[] = []
+        const children: nodes.BaseNode[] = [];
         const provider = this.oci.getProvider();
         const compartment = this.oci.getCompartment();
         const repository = this.object.ocid;
         try {
-            const images = await ociUtils.listContainerImages(provider, compartment, repository)
+            const images = await ociUtils.listContainerImages(provider, compartment, repository);
             for (const image of images) {
                 const ocid = image.id;
                 let displayName = image.displayName;
@@ -235,7 +235,7 @@ class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.Removable
                 const imageObject = {
                     ocid: ocid,
                     displayName: displayName
-                }
+                };
                 children.push(new ContainerImageNode(imageObject, this.oci, image));
             }
         } catch (err) {

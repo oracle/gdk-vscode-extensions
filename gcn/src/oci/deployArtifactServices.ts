@@ -27,10 +27,10 @@ export const DATA_NAME = 'deployArtifacts';
 const ICON = 'layout';
 
 type DeployArtifact = {
-    ocid: string,
-    displayName: string,
-    type: string
-}
+    ocid: string;
+    displayName: string;
+    type: string;
+};
 
 export function initialize(context: vscode.ExtensionContext): void {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.downloadLatestGenericArtifact', (...params: any[]) => {
@@ -103,7 +103,7 @@ async function selectDeployArtifacts(oci: ociContext.Context, ignore: DeployArti
                     return;
                 }
             });
-        })
+        });
     }
     const deployArtifacts: DeployArtifact[] = [];
     const descriptions: string[] = [];
@@ -162,12 +162,12 @@ async function selectDeployArtifacts(oci: ociContext.Context, ignore: DeployArti
         }
     }
     if (choices.length === 0) {
-        vscode.window.showWarningMessage('All build artifacts already added or no build artifacts available.')
+        vscode.window.showWarningMessage('All build artifacts already added or no build artifacts available.');
     } else {
         const selection = await vscode.window.showQuickPick(choices, {
             title: `${ociServices.ADD_ACTION_NAME}: Select Build Artifact`,
             placeHolder: 'Select existing build artifact to add'
-        })
+        });
         if (selection) {
             if (typeof selection.object === 'function') {
                 return await selection.object();
@@ -189,7 +189,7 @@ function getIconKey(object: DeployArtifact): string | undefined {
         }
         default: {
             // TODO: missing support for devops.models.InlineDeployArtifactSource and devops.models.HelmRepositoryDeployArtifactSource
-            return undefined
+            return undefined;
         }
     }
 }
@@ -204,7 +204,7 @@ function createNode(object: DeployArtifact, oci: ociContext.Context, treeChanged
         }
         default: {
             // TODO: missing support for devops.models.InlineDeployArtifactSource and devops.models.HelmRepositoryDeployArtifactSource
-            return undefined
+            return undefined;
         }
     }
 }
@@ -249,7 +249,7 @@ class Service extends ociService.Service {
                     ocid: ocid,
                     displayName: displayName,
                     type: type
-                }
+                };
                 const node = createNode(object, oci, treeChanged);
                 if (node) {
                     nodes.push(node);

@@ -20,7 +20,7 @@ enum ProjectType {
 }
 
 export interface RunInfo {
-    appName: string,
+    appName: string;
     deploymentFile: string;
     kubectl: kubernetes.KubectlV1;
     port: number;
@@ -55,7 +55,7 @@ export async function collectInfo(appName: string, debug?: boolean): Promise<Run
     const port = await getPort(deploymentFile);
     if (!port) {
         vscode.window.showErrorMessage(`containerPort was not found in  ${deploymentFile}.`);
-        return Promise.reject()
+        return Promise.reject();
     }
     let podName: string | undefined;
     if (appName) {
@@ -167,7 +167,7 @@ class GradleHelper implements WrapperHelper {
                     case 'name': name = parts[1]; break;
                     case 'version': version = parts[1]; break;
                 }
-            })
+            });
             return {name, version, root: projectDir};
         }   
         return Promise.reject();
@@ -238,7 +238,7 @@ export async function findResourceFileByKind(kind: string) {
     for (const file of files) {
         let rl = readline.createInterface({
             input: fs.createReadStream(file.fsPath),
-        })
+        });
         for await (const line of rl) {
             if (line.includes('kind') && line.includes(kind)) {
                 resourceFiles.push(file.fsPath);
@@ -259,7 +259,7 @@ async function pickOneFile(files: string[]): Promise<string | undefined> {
     for (const file of files) {
         items.push({label: path.parse(file).base, value: file});
     }
-    let selected = await vscode.window.showQuickPick(items, { placeHolder: `Select deployment file` })
+    let selected = await vscode.window.showQuickPick(items, { placeHolder: `Select deployment file` });
     return selected?.value;
 }
 
@@ -276,7 +276,7 @@ export async function askToExecCommand(command: string, message: string) {
 async function getPort(deploymentFile: string): Promise<number | undefined> {
     let rl = readline.createInterface({
         input: fs.createReadStream(deploymentFile),
-    })
+    });
     let ports = [];
     for await (const line of rl) {
         let matches = line.match(/\s*containerPort:\s+(\d+)/);
@@ -294,7 +294,7 @@ async function getPort(deploymentFile: string): Promise<number | undefined> {
 }
 
 export async function getPod(kubectl: kubernetes.KubectlV1, appName: string) {
-    let command = `get pods --selector=app=${appName} -o jsonpath='{..items[*].metadata.name}'`
+    let command = `get pods --selector=app=${appName} -o jsonpath='{..items[*].metadata.name}'`;
     let result = await  kubectl.invokeCommand(command);
     let pods: string[] = [];
     if (result && result.code == 0) {

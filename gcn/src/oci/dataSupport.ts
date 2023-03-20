@@ -10,7 +10,7 @@ export interface DataProducer {
 
     getDataName(): string;
 
-    getData(): any | undefined
+    getData(): any | undefined;
 
 }
 

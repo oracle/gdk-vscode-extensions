@@ -18,13 +18,13 @@ async function waitForStatup(wf? : vscode.WorkspaceFolder) : Promise<void> {
 
                async function dowait() {
                        try {
-                               await vscode.commands.executeCommand('nbls.project.info', wf2.uri.toString(), { projectStructure: true })
+                               await vscode.commands.executeCommand('nbls.project.info', wf2.uri.toString(), { projectStructure: true });
                                resolve();
                        } catch (e) {
                                if (counter < 60) {
                                        counter++;
-                                       console.log(`Still waiting for NBLS start, ${counter} seconds elapsed.`)
-                                       setTimeout(dowait, 1000)
+                                       console.log(`Still waiting for NBLS start, ${counter} seconds elapsed.`);
+                                       setTimeout(dowait, 1000);
                                        return;
                                } else {
                                        reject(e);
@@ -46,7 +46,7 @@ suite('Extension Test Suite', function() {
 	this.timeout(30000);
 	this.beforeAll(async () => {
 	        await waitForStatup(wf![0]);
-	})
+	});
 	// revert for tests
 	this.timeout(5000);
 
@@ -95,7 +95,7 @@ suite('Extension Test Suite', function() {
                                 }
                         }
                         w();
-                })
+                });
                 return res;
 
         });

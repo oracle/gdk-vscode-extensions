@@ -36,13 +36,13 @@ interface ValueAndLabel {
  * Internal state of the Wizard
  */
 interface State {
-    micronautVersion: { label: string, serviceUrl: string};
+    micronautVersion: { label: string; serviceUrl: string};
     applicationType: ValueAndLabel;
     
     javaVersion: {
-        label: string, 
-        value: string, 
-        target: string
+        label: string; 
+        value: string; 
+        target: string;
     };
     projectName: string;
     basePackage: string;
@@ -60,7 +60,7 @@ interface State {
  * Creation options that the Wizard produces
  */
 interface CreateOptions {
-    micronautVersion: { label: string, serviceUrl: string};
+    micronautVersion: { label: string; serviceUrl: string};
     applicationType: string;
     javaVersion?: string;
     projectName: string;
@@ -224,7 +224,7 @@ async function writeProjectContents(options: CreateOptions, location: string) {
 
 async function selectLocation(context: vscode.ExtensionContext, options: CreateOptions) {
     const lastDirs: any = context.globalState.get(LAST_PROJECT_PARENTDIR) || new Map<string, string>();
-    const dirId = `${vscode.env.remoteName || ''}:${vscode.env.machineId}`
+    const dirId = `${vscode.env.remoteName || ''}:${vscode.env.machineId}`;
     const dirName : string | undefined = lastDirs[dirId];
     let defaultDir: vscode.Uri | undefined;
     if (dirName) {
@@ -269,7 +269,7 @@ async function selectLocation(context: vscode.ExtensionContext, options: CreateO
 }
 
 function convertLabelledValues(items: any[]): ValueAndLabel[] {
-    const ret: {label: string, value: string}[]  = [];
+    const ret: {label: string; value: string}[]  = [];
     for (let i = 0; i < items.length; i++) {
         let v = items[i];
         ret.push({
@@ -323,7 +323,7 @@ function getClouds() {
         const cloud = {
             label: v.getLabel().$as('string') as string,
             value: v.getValueName().$as('string') as string
-        }
+        };
         if (cloud.label === 'OCI') {
             ret.unshift(cloud);
         } else {
@@ -342,7 +342,7 @@ function getServices(): ValueAndLabel[] {
             label: item.getLabel().$as('string'),
             value: item.getValueName().$as('string'),
             detail: item.getDescription().$as('string'),
-        })
+        });
     }
     return ret;
 }
@@ -380,7 +380,7 @@ function findSelectedItems(from: ValueAndLabel[], selected: ValueAndLabel[] | Va
 
 async function selectCreateOptions(): Promise<CreateOptions | undefined> {
     const commands: string[] = await vscode.commands.getCommands();
-    const graalVMs: {name: string, path: string, active: boolean}[] = commands.includes('extension.graalvm.findGraalVMs') ? await vscode.commands.executeCommand('extension.graalvm.findGraalVMs') || [] : [];
+    const graalVMs: {name: string; path: string; active: boolean}[] = commands.includes('extension.graalvm.findGraalVMs') ? await vscode.commands.executeCommand('extension.graalvm.findGraalVMs') || [] : [];
 
 	async function collectInputs(): Promise<State | undefined> {
 		const state = {} as Partial<State>;
@@ -417,7 +417,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 	}
 
 	async function pickJavaVersion(input: dialogs.MultiStepInput, state: Partial<State>) {
-        const items: {label: string, value: string, description?: string}[] = graalVMs.map(item => ({label: item.name, value: item.path, description: item.active ? '(active)' : undefined}));
+        const items: {label: string; value: string; description?: string}[] = graalVMs.map(item => ({label: item.name, value: item.path, description: item.active ? '(active)' : undefined}));
         
         items.push({label: 'Other Java', value: '', description: '(manual configuration)'});
 		const selected: any = await input.showQuickPick({
@@ -437,7 +437,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
             label: selected.label,
             value: selected.value,
             target: javaVersion
-        }
+        };
         if (!resolvedVersion) {
             let defVersion = getDefaultJavaVersion();
             vscode.window.showInformationMessage(`Java version not selected. The project will target Java ${defVersion}. Adjust the setting in the generated project file(s).`);

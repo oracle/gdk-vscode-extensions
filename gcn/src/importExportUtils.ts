@@ -187,15 +187,15 @@ export async function undeployFolders(workspaceState: vscode.Memento, folders?: 
 
 function anotherOperationInProgress(): boolean {
     if (importInProgress) {
-        vscode.window.showWarningMessage('Another import is already in progress, try again later.')
+        vscode.window.showWarningMessage('Another import is already in progress, try again later.');
         return true;
     }
     if (deployInProgress) {
-        vscode.window.showWarningMessage('Another folder is already being deployed, try again later.')
+        vscode.window.showWarningMessage('Another folder is already being deployed, try again later.');
         return true;
     }
     if (undeployInProgress) {
-        vscode.window.showWarningMessage('Another folder is already being undeployed, try again later.')
+        vscode.window.showWarningMessage('Another folder is already being undeployed, try again later.');
         return true;
     }
     return false;

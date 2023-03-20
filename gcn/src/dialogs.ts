@@ -37,7 +37,7 @@ export function getErrorMessage(message: string | undefined, err?: any): string 
         }
     }
 	if (!message) {
-		message = 'Unknown error.'
+		message = 'Unknown error.';
 	} else if (!message.endsWith('.')) {
         message = `${message}.`;
     }
@@ -60,10 +60,10 @@ export async function selectName(title: string, currentName: string | undefined,
     }
     function validateName(name: string): string | undefined {
         if (!name || name.length === 0) {
-            return 'Name cannot be empty.'
+            return 'Name cannot be empty.';
         }
         if (forbiddenNames?.indexOf(name) !== -1) {
-            return 'Name already used.'
+            return 'Name already used.';
         }
         return undefined;
     }
@@ -155,7 +155,7 @@ export async function selectFolder(actionName: string | undefined = undefined, h
     const selection = await vscode.window.showQuickPick(choices, {
 		title: actionName ? `${actionName}: Select Folder` : 'Select Folder',
         placeHolder: hint ? hint : 'Select folder'
-    })
+    });
     return selection?.object;
 }
 
@@ -207,7 +207,7 @@ export async function selectServices(folder: gcnServices.FolderData, actionName?
     const selection = await vscode.window.showQuickPick(choices, {
 		title: actionName ? `${actionName}: Select Cloud Context` : 'Select Cloud Context',
         placeHolder: 'Select cloud context'
-    })
+    });
     return selection?.object;
 }
 
@@ -223,7 +223,7 @@ export async function selectCloudSupport(actionName?: string): Promise<model.Clo
     const selection = await vscode.window.showQuickPick(choices, {
         title: actionName ? `${actionName}: Select Cloud Service` : 'Select Cloud Service',
         placeHolder: 'Select cloud service'
-    })
+    });
     return selection?.object;
 }
 
@@ -281,7 +281,7 @@ export class QuickPickObject implements vscode.QuickPickItem {
     ) {}
 	static separator(label: string): QuickPickObject {
 		const separator = new QuickPickObject(label, undefined, undefined);
-		(separator as vscode.QuickPickItem).kind = vscode.QuickPickItemKind.Separator
+		(separator as vscode.QuickPickItem).kind = vscode.QuickPickItemKind.Separator;
 		return separator;
 	}
 }

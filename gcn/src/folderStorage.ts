@@ -31,7 +31,7 @@ export class FolderStorage {
             if (type && name) {
                 const storeData = () => {
                     setTimeout(() => this.store(), 0);
-                }
+                };
                 const serviceConfiguration = new model.ServicesConfiguration(type, name, cloudService.data, storeData);
                 this.serviceConfigurations.push(serviceConfiguration);
             }
@@ -105,7 +105,7 @@ export function storeCloudSupportData(cloudSupport: model.CloudSupport, folders:
                     name: cloudSupport.getName(),
                     data: servicesData[idx]
                 }
-            ]
+            ];
             storeCloudServices(folders[idx], cloudServices, true);
         }
     }
@@ -115,7 +115,7 @@ function storeCloudServices(folder: string, cloudServices: any[], overwriteExist
     const configuration = {
         version: '1.0',
         cloudServices: cloudServices
-    }
+    };
     store(folder, configuration, overwriteExisting);
 }
 

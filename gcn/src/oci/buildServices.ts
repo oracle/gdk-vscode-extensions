@@ -31,10 +31,10 @@ const ICON = 'play-circle';
 const ICON_IN_PROGRESS = 'gear~spin';
 
 type BuildPipeline = {
-    ocid: string,
-    displayName: string,
-    lastBuildRun?: string
-}
+    ocid: string;
+    displayName: string;
+    lastBuildRun?: string;
+};
 
 export function initialize(context: vscode.ExtensionContext) {
     nodes.registerRenameableNode(BuildPipelineNode.CONTEXTS);
@@ -98,7 +98,7 @@ export async function importServices(oci: ociContext.Context, _projectResources:
             getData: () => {
                 return {
                     items: items
-                }
+                };
             }
         };
         if (!items.length) {
@@ -134,7 +134,7 @@ export async function importServices(oci: ociContext.Context, _projectResources:
                 getData: () => {
                     return {
                         items: items
-                    }
+                    };
                 }
             };
             return result;
@@ -185,7 +185,7 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
                     return;
                 }
             });
-        })
+        });
     }
     const pipelines: BuildPipeline[] = [];
     const descriptions: string[] = [];
@@ -247,12 +247,12 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
         }
     }
     if (choices.length === 0) {
-        vscode.window.showWarningMessage('All build pipelines already added or no build pipelines available.')
+        vscode.window.showWarningMessage('All build pipelines already added or no build pipelines available.');
     } else {
         const selection = await vscode.window.showQuickPick(choices, {
             title: `${ociServices.ADD_ACTION_NAME}: Select Build Pipeline`,
             placeHolder: 'Select existing build pipeline to add'
-        })
+        });
         if (selection) {
             if (typeof selection.object === 'function') {
                 return await selection.object();
@@ -301,7 +301,7 @@ class Service extends ociService.Service {
                     ocid: ocid,
                     displayName: displayName,
                     lastBuildRun: lastBuildRun
-                }
+                };
                 nodes.push(new BuildPipelineNode(object, oci, treeChanged));
             }
         }
@@ -324,7 +324,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
 
     private object: BuildPipeline;
     private oci: ociContext.Context;
-    private lastRun?: { ocid: string, state?: string, output?: vscode.OutputChannel, deliveredArtifacts?: { id: string, type: string }[] };
+    private lastRun?: { ocid: string; state?: string; output?: vscode.OutputChannel; deliveredArtifacts?: { id: string; type: string }[] };
     private showSucceededFlag: boolean = false;
 
     constructor(object: BuildPipeline, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
@@ -407,7 +407,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                 const buildName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
                 const gcnConfiguration = vscode.workspace.getConfiguration('gcn');
                 const useLocalGvmVersion: boolean = gcnConfiguration.get('useLocalGraalvmVersion', false);
-                const params: { name: string, value: string }[] | undefined = useLocalGvmVersion ? [] : undefined;
+                const params: { name: string; value: string }[] | undefined = useLocalGvmVersion ? [] : undefined;
                 let msg: string;
                 if (useLocalGvmVersion) {
                     logUtils.logInfo('[build] Using local active GraalVM version for the build');
@@ -422,14 +422,14 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                         if (localGvmVersion[1].endsWith('-dev')) {
                             logUtils.logInfo(`[build] Local active GraalVM devbuild detected: ${localGvmVersion[1]}, using stable release for the build`);
                         }
-                        msg = `Starting build "${buildName}" using GraalVM ${targetGvmVersion[1]}, Java ${targetGvmVersion[0]}`
+                        msg = `Starting build "${buildName}" using GraalVM ${targetGvmVersion[1]}, Java ${targetGvmVersion[0]}`;
                     } else {
                         logUtils.logInfo('[build] No local active GraalVM detected, fallback to GraalVM defined in the build spec for the build');
-                        msg = `Starting build "${buildName}"`
+                        msg = `Starting build "${buildName}"`;
                     }
                 } else {
                     logUtils.logInfo('[build] Using GraalVM defined in the build spec for the build');
-                    msg = `Starting build "${buildName}"`
+                    msg = `Starting build "${buildName}"`;
                 }
                 logUtils.logInfo(`[build] ${msg}`);
                 vscode.window.withProgress({
@@ -471,7 +471,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                             resolve(false);
                         }
                     });
-                })
+                });
             }
         }
     }
@@ -499,13 +499,13 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
     }
 
     async getArtifacts() {
-        const choices: { label: string, type: string, id: string, path?: string, size?: number  }[] = await vscode.window.withProgress({
+        const choices: { label: string; type: string; id: string; path?: string; size?: number  }[] = await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: 'Reading available artifacts...',
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async resolve => {
-                const choices: { label: string, type: string, id: string, path?: string, size?: number }[] = [];
+                const choices: { label: string; type: string; id: string; path?: string; size?: number }[] = [];
                 if (this.lastRun?.deliveredArtifacts) {
                     for (const artifact of this.lastRun.deliveredArtifacts) {
                         switch (artifact.type) {
@@ -549,13 +549,13 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
     }
 
     async downloadSingleArtifact() {
-        const artifact: { label: string, type: string, id: string, path?: string, size?: number } | undefined = await vscode.window.withProgress({
+        const artifact: { label: string; type: string; id: string; path?: string; size?: number } | undefined = await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: 'Reading artifact...',
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async resolve => {
-                let artifact: { label: string, type: string, id: string, path?: string, size?: number } | undefined;
+                let artifact: { label: string; type: string; id: string; path?: string; size?: number } | undefined;
                 if (this.lastRun?.deliveredArtifacts?.length === 1) {
                     const deliveredArtifact = this.lastRun.deliveredArtifacts[0];
                     if (deliveredArtifact.type === 'GENERIC_ARTIFACT') {
@@ -608,7 +608,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         this.lastRun?.output?.show();
     }
 
-    private updateLastRun(ocid: string, state?: string, output?: vscode.OutputChannel, deliveredArtifacts?: { id: string, type: string }[] ) {
+    private updateLastRun(ocid: string, state?: string, output?: vscode.OutputChannel, deliveredArtifacts?: { id: string; type: string }[] ) {
         if (this.lastRun?.output !== output) {
             this.lastRun?.output?.hide();
             this.lastRun?.output?.dispose();
@@ -687,7 +687,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
     private async updateWhenCompleted(buildRunId: string, compartmentId?: string, buildName?: string) {
         const groupId = compartmentId ? (await ociUtils.getDefaultLogGroup(this.oci.getProvider(), compartmentId))?.logGroup.id : undefined;
         const logId = groupId ? (await ociUtils.listLogs(this.oci.getProvider(), groupId)).find(item => item.configuration?.source.resource === this.oci.getDevOpsProject())?.id : undefined;
-        let deliveredArtifacts: { id: string, type: string }[] | undefined;
+        let deliveredArtifacts: { id: string; type: string }[] | undefined;
         let lastResults: any[] = [];
         const update = async () => {
             if (this.lastRun?.ocid !== buildRunId) {

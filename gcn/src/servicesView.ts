@@ -142,7 +142,7 @@ export async function build(folders: gcnServices.FolderData[], deployedFoldersCo
     if (servicesInitialized && !deployFailed && folders.length > 0 && deployedFoldersCount > 0) {
         const treeChanged: nodes.TreeChanged = (treeItem?: vscode.TreeItem) => {
             nodeProvider.refresh(treeItem);
-        }
+        };
         for (const folder of folders) {
             const serviceNodes: FolderServicesNode[] = [];
             for (let i = 0; i < folder.configurations.length; i++) {
@@ -250,7 +250,7 @@ class FolderServicesNode extends nodes.BaseNode implements nodes.DecorableNode, 
                 servicesRoot.setChildren(this.services.getNodes());
                 treeChanged(servicesRoot);
             }
-        }
+        };
         services.buildNodes(subtreeChanged);
     }
 
@@ -297,7 +297,7 @@ class NotDeployedNode extends nodes.TextNode {
             title: 'Deploy to OCI',
             command: 'gcn.deployToCloud',
             arguments: [ folderNode ]
-        }
+        };
     }
 
 }

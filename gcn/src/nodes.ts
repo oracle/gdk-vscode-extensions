@@ -11,7 +11,7 @@ import * as dialogs from './dialogs';
 
 export type TreeChanged = (treeItem?: vscode.TreeItem) => void;
 
-export type NodeDecoration = { description?: string, tooltip?: string };
+export type NodeDecoration = { description?: string; tooltip?: string };
 
 export interface DecorableNode {
     decorate(decoration: NodeDecoration, refreshNode?: boolean): void;

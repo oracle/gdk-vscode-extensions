@@ -26,14 +26,14 @@ export const ICON = 'file-binary';
 const PERSISTENT_TARGET_KEY = 'saveArtifactTargetDir';
 
 type ArtifactRepository = {
-    ocid: string,
-    displayName: string
-}
+    ocid: string;
+    displayName: string;
+};
 
 type GenericArtifact = {
-    ocid: string,
-    displayName: string
-}
+    ocid: string;
+    displayName: string;
+};
 
 export function initialize(context: vscode.ExtensionContext): void {
     context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.downloadGenericArtifact', (...params: any[]) => {
@@ -97,7 +97,7 @@ async function selectArtifactRepositories(oci: ociContext.Context, ignore: Artif
                     return;
                 }
             });
-        })
+        });
     }
     const artifactRepositories: ArtifactRepository[] = [];
     const descriptions: string[] = [];
@@ -151,12 +151,12 @@ async function selectArtifactRepositories(oci: ociContext.Context, ignore: Artif
         }
     }
     if (choices.length === 0) {
-        vscode.window.showWarningMessage('All artifact repositories already added or no artifact repositories available.')
+        vscode.window.showWarningMessage('All artifact repositories already added or no artifact repositories available.');
     } else {
         const selection = await vscode.window.showQuickPick(choices, {
             title: `${ociServices.ADD_ACTION_NAME}: Select Artifact Repository`,
             placeHolder: 'Select existing artifact repository to add'
-        })
+        });
         if (selection) {
             if (typeof selection.object === 'function') {
                 return await selection.object();
@@ -203,7 +203,7 @@ export class Service extends ociService.Service {
                 const object: ArtifactRepository = {
                     ocid: ocid,
                     displayName: displayName
-                }
+                };
                 nodes.push(new ArtifactRepositoryNode(object, oci, treeChanged));
             }
         }
@@ -229,7 +229,7 @@ class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableN
     }
 
     async computeChildren(): Promise<nodes.BaseNode[] | undefined> {
-        const children: nodes.BaseNode[] = []
+        const children: nodes.BaseNode[] = [];
         const provider = this.oci.getProvider();
         const compartment = this.oci.getCompartment();
         const repository = this.object.ocid;
@@ -246,7 +246,7 @@ class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableN
                 const artifactObject = {
                     ocid: ocid,
                     displayName: displayName
-                }
+                };
                 children.push(new GenericArtifactNode(artifactObject, this.oci, artifact));
             }
         } catch (err) {
@@ -399,9 +399,9 @@ export function downloadGenericArtifactContent(oci: ociContext.Context, artifact
                                 resolve(true);
                             });
                         });
-                    })
+                    });
                 }
             });
         }
-    })
+    });
 }
