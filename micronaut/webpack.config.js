@@ -76,8 +76,7 @@ const devConf = {
         minimize: false
     },
     plugins: [
-        new webpack.AutomaticPrefetchPlugin(),
-        new ESLintPlugin({extensions: ['ts']})
+        new webpack.AutomaticPrefetchPlugin()
     ],
     cache: {
         type: 'filesystem',
