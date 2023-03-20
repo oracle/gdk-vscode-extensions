@@ -14,7 +14,7 @@ import * as ociDialogs from './ociDialogs';
 
 const ACTION_NAME = 'Select Network Configuration';
 
-export async function selectNetwork(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, vcnID?: string, autoSelect: boolean = true, compartmentName: string | undefined = undefined): Promise<{vcnID: string, subnetID: string} | undefined> {
+export async function selectNetwork(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, vcnID?: string, autoSelect: boolean = true, compartmentName: string | undefined = undefined): Promise<{vcnID: string; subnetID: string} | undefined> {
     const existingChoices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: 'Reading available network configurations...',
@@ -68,7 +68,7 @@ export async function selectNetwork(authenticationDetailsProvider: common.Config
     };
     const newContentChoice: dialogs.QuickPickObject = new dialogs.QuickPickObject(`$(add) New VCN`, undefined, 'Create new Virtual Cloud Network', newContent);
 
-    const switchCompartment = async (): Promise<{vcnID: string, subnetID: string} | undefined> => {
+    const switchCompartment = async (): Promise<{vcnID: string; subnetID: string} | undefined> => {
         const compartment = await ociDialogs.selectCompartment(authenticationDetailsProvider, ACTION_NAME, [ compartmentID ]);
         if (compartment) {
             return selectNetwork(authenticationDetailsProvider, compartment.ocid, undefined, false);

@@ -11,7 +11,7 @@ import * as dialogs from './dialogs';
 
 export type TreeChanged = (treeItem?: vscode.TreeItem) => void;
 
-export type NodeDecoration = { description?: string, tooltip?: string };
+export type NodeDecoration = { description?: string; tooltip?: string };
 
 export interface DecorableNode {
     decorate(decoration: NodeDecoration, refreshNode?: boolean): void;
@@ -26,7 +26,7 @@ const DEPLOY_NODES: string[] = [];
 
 export async function registerDeployNode(context: string | string[]) {
     if (typeof context === 'string' || context instanceof String) {
-        DEPLOY_NODES.push(context as string)
+        DEPLOY_NODES.push(context as string);
     } else {
         DEPLOY_NODES.push(...context);
     }

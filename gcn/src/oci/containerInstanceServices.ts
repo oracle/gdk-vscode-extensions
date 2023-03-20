@@ -266,7 +266,7 @@ class Service extends ociService.Service {
                     this.settingsData = {
                         containerInstance: containerInstanceID,
                         imageUrl: dockerImageUrl
-                    }
+                    };
                     if (this.dataChanged) {
                         this.dataChanged(this);
                     }

@@ -50,6 +50,6 @@ export function openInConsole(item: CloudConsoleItem | string) {
             } else {
                 dialogs.openInBrowser(result);
             }
-        })
+        });
     }
 }

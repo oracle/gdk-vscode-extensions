@@ -10,7 +10,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as mustache from 'mustache';
-import * as gitUtils from '../gitUtils'
+import * as gitUtils from '../gitUtils';
 import * as model from '../model';
 import * as projectUtils from '../projectUtils';
 import * as dialogs from '../dialogs';
@@ -718,7 +718,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
             for (const folder of projectFolders) {
                 const repositoryDir = folder.uri.fsPath;
                 const repositoryName = removeSpaces(folder.name); // TODO: repositoryName should be unique within the devops project
-                const repositoryNamePrefix = `${repositoryName}: `
+                const repositoryNamePrefix = `${repositoryName}: `;
                 const buildPipelines = [];
                 const deployPipelines = [];
                 if (!deployData.repositories) {
@@ -2778,7 +2778,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             }
                             dump(deployData);
                         }
-                        buildPipelines.push({ 'ocid': folderData.docker_jvmbuildPipeline, 'displayName': docker_jvmbuildPipelineName })
+                        buildPipelines.push({ 'ocid': folderData.docker_jvmbuildPipeline, 'displayName': docker_jvmbuildPipelineName });
 
                         if (deployData.okeClusterEnvironment) {
 
@@ -3052,7 +3052,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         settings: {
                             folderAuditsKnowledgeBase: knowledgeBaseOCID
                         }
-                    }
+                    };
                 }
                 logUtils.logInfo(`[deploy] Saving project services configuration for ${deployData.compartment.name}/${projectName}/${repositoryName} into ${repositoryDir}`);
                 const saved = saveConfig(repositoryDir, data);
@@ -3132,22 +3132,22 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 async function selectProjectName(suggestedName?: string): Promise<string | undefined> {
     function validateProjectName(name: string): string | undefined {
         if (!name || name.length === 0) {
-            return 'DevOps project name cannot be empty.'
+            return 'DevOps project name cannot be empty.';
         }
         if (name.indexOf(' ') !== -1) {
-            return 'DevOps project name may not contain spaces.'
+            return 'DevOps project name may not contain spaces.';
         }
         if (name.startsWith('-') || name.endsWith('-')) {
-            return 'DevOps project name cannot start or end with \'-\'.'
+            return 'DevOps project name cannot start or end with \'-\'.';
         }
         if (name.indexOf('--') != -1) {
-            return 'DevOps project name cannot contain \'--\'.'
+            return 'DevOps project name cannot contain \'--\'.';
         }
         if (!isNaN(name.charAt(0) as any)) {
-            return 'DevOps project name cannot start with a number'
+            return 'DevOps project name cannot start with a number';
         }
         if (!/.*(?:^[a-zA-Z_](-?[a-zA-Z_0-9])*$).*/g.test(name)) {
-            return 'DevOps project name must match ".*(?:^[a-zA-Z_](-?[a-zA-Z_0-9])*$).*"'
+            return 'DevOps project name must match ".*(?:^[a-zA-Z_](-?[a-zA-Z_0-9])*$).*"';
         }
         return undefined;
     }
@@ -3176,7 +3176,7 @@ export function expandTemplate(templatesStorage: string, template: string, args:
     const templatespec = path.join(templatesStorage, template);
     let templateString = fs.readFileSync(templatespec).toString();
 
-    templateString = mustache.render(templateString, args)
+    templateString = mustache.render(templateString, args);
 
     if (folder) {
         const dest = path.join(folder.uri.fsPath, '.gcn');

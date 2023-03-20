@@ -84,7 +84,7 @@ export async function createDeployment(context: vscode.ExtensionContext) {
     async function inputImageName(input: MultiStepInput, state: Partial<State>) {
         let defaultValue = "";
         if (projectInfo && state.dockerRegistry) {
-            defaultValue = `${state.dockerRegistry}${projectInfo.name}:${projectInfo.version}`
+            defaultValue = `${state.dockerRegistry}${projectInfo.name}:${projectInfo.version}`;
         }
 		state.imageName = await input.showInputBox({
 			title,
@@ -165,7 +165,7 @@ async function getNamespaces(kubectl: kubernetes.KubectlV1): Promise<vscode.Quic
                     namespaces.push({label: ns});
                 });
             }
-        })
+        });
     return namespaces;
 }
 
@@ -178,7 +178,7 @@ function normalizeRegistryUrl(repo: string): string {
     return repo;
 }
 
-function getDockerRegistries(): {label: string, value: string}[]  {
+function getDockerRegistries(): {label: string; value: string}[]  {
     return [
         { label: 'local', value: LOCAL},
         { label: 'Docker', value: 'docker.io'},

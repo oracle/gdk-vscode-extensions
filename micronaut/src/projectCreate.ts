@@ -28,7 +28,7 @@ const OPEN_IN_CURRENT_WINDOW: string = 'Open in current window';
 const ADD_TO_CURRENT_WORKSPACE = 'Add to current workspace';
 const LAST_PROJECT_PARENTDIR: string = 'lastCreateProjectParentDirs';
 
-let cliMNVersion: {label: string, serviceUrl: string, description: string} | undefined;
+let cliMNVersion: {label: string; serviceUrl: string; description: string} | undefined;
 
 export async function creatorInit() {
     cliMNVersion = undefined;
@@ -100,21 +100,21 @@ export async function createProject(context: vscode.ExtensionContext) {
     }
 }
 
-async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{url: string, args?: string[], name: string, target: string, buildTool: string, java?: string} | undefined> {
+async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{url: string; args?: string[]; name: string; target: string; buildTool: string; java?: string} | undefined> {
 
     const commands: string[] = await vscode.commands.getCommands();
-    const graalVMs: {name: string, path: string, active: boolean}[] = commands.includes('extension.graalvm.findGraalVMs') ? await vscode.commands.executeCommand('extension.graalvm.findGraalVMs') || [] : [];
+    const graalVMs: {name: string; path: string; active: boolean}[] = commands.includes('extension.graalvm.findGraalVMs') ? await vscode.commands.executeCommand('extension.graalvm.findGraalVMs') || [] : [];
 
     interface State {
-		micronautVersion: {label: string, serviceUrl: string};
-		applicationType: {label: string, name: string};
-        javaVersion: {label: string, value: string, target: string};
+		micronautVersion: {label: string; serviceUrl: string};
+		applicationType: {label: string; name: string};
+        javaVersion: {label: string; value: string; target: string};
         projectName: string;
         basePackage: string;
-        language: {label: string, value: string};
-        features: {label: string, detail: string, name: string}[];
-        buildTool: {label: string, value: string};
-        testFramework: {label: string, value: string};
+        language: {label: string; value: string};
+        features: {label: string; detail: string; name: string}[];
+        buildTool: {label: string; value: string};
+        testFramework: {label: string; value: string};
 	}
 
 	async function collectInputs(): Promise<State> {
@@ -163,7 +163,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 	}
 
 	async function pickJavaVersion(input: MultiStepInput, state: Partial<State>) {
-        const items: {label: string, value: string, description?: string}[] = graalVMs.map(item => ({label: item.name, value: item.path, description: item.active ? '(active)' : undefined}));
+        const items: {label: string; value: string; description?: string}[] = graalVMs.map(item => ({label: item.name, value: item.path, description: item.active ? '(active)' : undefined}));
         items.push({label: 'Other Java', value: '', description: '(manual configuration)'});
 		const selected: any = await input.showQuickPick({
 			title,
@@ -182,7 +182,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
             label: selected.label,
             value: selected.value,
             target: javaVersion
-        }
+        };
         if (!resolvedVersion) {
             vscode.window.showInformationMessage('Java version not selected. The project will target Java 8. Adjust the setting in the generated project file(s).');
         }
@@ -287,7 +287,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
         state.language && state.features && state.buildTool && state.testFramework) {
 
         const lastDirs: any = context.globalState.get(LAST_PROJECT_PARENTDIR) || new Map<string, string>();
-        const dirId = `${vscode.env.remoteName || ''}:${vscode.env.machineId}`
+        const dirId = `${vscode.env.remoteName || ''}:${vscode.env.machineId}`;
         const dirName : string | undefined = lastDirs[dirId];
         let defaultDir: vscode.Uri | undefined;
         if (dirName) {
@@ -321,7 +321,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
                 query += `&lang=${state.language.value}`;
                 query += `&build=${state.buildTool.value}`;
                 query += `&test=${state.testFramework.value}`;
-                state.features.forEach((feature: {label: string, detail: string, name: string}) => {
+                state.features.forEach((feature: {label: string; detail: string; name: string}) => {
                     query += `&features=${feature.name}`;
                 });
                 return {
@@ -339,7 +339,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
             args.push(`--test=${state.testFramework.value}`);
             if (state.features.length > 0) {
                 let value: string = '';
-                state.features.forEach((feature: {label: string, detail: string, name: string}) => {
+                state.features.forEach((feature: {label: string; detail: string; name: string}) => {
                     value += value ? `,${feature.name}` : feature.name;
                 });
                 args.push(`--features=${value}`);
@@ -358,7 +358,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
     return undefined;
 }
 
-async function getMicronautVersions(): Promise<{label: string, serviceUrl: string}[]> {
+async function getMicronautVersions(): Promise<{label: string; serviceUrl: string}[]> {
     const micronautLauchURL: string = getMicronautLaunchURL();
     return Promise.all([
         get(MICRONAUT_LAUNCH_URL + VERSIONS).catch(() => undefined).then(data => {
@@ -376,7 +376,7 @@ async function getMicronautVersions(): Promise<{label: string, serviceUrl: strin
     });
 }
 
-async function getApplicationTypes(micronautVersion: {label: string, serviceUrl: string}): Promise<{label: string, name: string}[]> {
+async function getApplicationTypes(micronautVersion: {label: string; serviceUrl: string}): Promise<{label: string; name: string}[]> {
     if (micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL)) {
         return get(micronautVersion.serviceUrl + APPLICATION_TYPES).then(data => {
             return JSON.parse(data).types.map((type: any) => ({ label: type.title, name: type.name }));
@@ -385,7 +385,7 @@ async function getApplicationTypes(micronautVersion: {label: string, serviceUrl:
     return getMNApplicationTypes(micronautVersion.serviceUrl);
 }
 
-async function getJavaVersions(micronautVersion: {label: string, serviceUrl: string}): Promise<string[]> {
+async function getJavaVersions(micronautVersion: {label: string; serviceUrl: string}): Promise<string[]> {
     if (micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL)) {
         return get(micronautVersion.serviceUrl + SELECT_OPTIONS).then(data => {
             return JSON.parse(data).jdkVersion.options.map((version: any) => (version.label));
@@ -411,7 +411,7 @@ function normalizeJavaVersion(version: string | undefined, supportedVersions: st
     return '8';
 }
 
-function getLanguages(): {label: string, value: string}[] {
+function getLanguages(): {label: string; value: string}[] {
     return [
         { label: 'Java', value: 'JAVA'},
         { label: 'Kotlin', value: 'KOTLIN'},
@@ -434,7 +434,7 @@ function getTestFrameworks() {
     ];
 }
 
-async function getFeatures(micronautVersion: {label: string, serviceUrl: string}, applicationType: {label: string, name: string}, javaVersion: {target: string}): Promise<{label: string, detail?: string, category: string, name: string}[]> {
+async function getFeatures(micronautVersion: {label: string; serviceUrl: string}, applicationType: {label: string; name: string}, javaVersion: {target: string}): Promise<{label: string; detail?: string; category: string; name: string}[]> {
     const comparator = (f1: any, f2: any) => f1.category < f2.category ? -1 : f1.category > f2.category ? 1 : f1.label < f2.label ? -1 : 1;
     if (micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL)) {
         return get(micronautVersion.serviceUrl + APPLICATION_TYPES + '/' + applicationType.name + FEATURES).then(data => {
@@ -454,7 +454,7 @@ async function getFeatures(micronautVersion: {label: string, serviceUrl: string}
             const supportedVersions = msg.substring(idx + err.length + 1, msg.length - 3).split(', ');
             const supportedVersion = normalizeJavaVersion(javaVersion.target, supportedVersions);
             try {
-                const features: {label: string, detail?: string, category: string, name: string}[] = getMNFeatures(micronautVersion.serviceUrl, applicationType.name, supportedVersion);
+                const features: {label: string; detail?: string; category: string; name: string}[] = getMNFeatures(micronautVersion.serviceUrl, applicationType.name, supportedVersion);
                 javaVersion.target = supportedVersion; // update the target platform
                 return features.sort(comparator);
             } catch (e: any) {
@@ -494,12 +494,12 @@ async function get(url: string): Promise<string> {
     });
 }
 
-function getMNVersion(): {label: string, serviceUrl: string, description: string} | undefined {
+function getMNVersion(): {label: string; serviceUrl: string; description: string} | undefined {
     return cliMNVersion;
 }
 
-function getMNApplicationTypes(mnPath: string): {label: string, name: string}[] {
-    const types: {label: string, name: string}[] = [];
+function getMNApplicationTypes(mnPath: string): {label: string; name: string}[] {
+    const types: {label: string; name: string}[] = [];
     try {
         let header: boolean = true;
         cp.execFileSync(mnPath, ['--help'], { env: { JAVA_HOME: getJavaHome() } }).toString().split('\n').map(line => line.trim()).forEach(line => {
@@ -520,8 +520,8 @@ function getMNApplicationTypes(mnPath: string): {label: string, name: string}[] 
     return types;
 }
 
-function getMNFeatures(mnPath: string, applicationType: string, javaVersion: string): {label: string, detail?: string, category: string, name: string}[] {
-    const features: {label: string, detail?: string, category: string, name: string}[] = [];
+function getMNFeatures(mnPath: string, applicationType: string, javaVersion: string): {label: string; detail?: string; category: string; name: string}[] {
+    const features: {label: string; detail?: string; category: string; name: string}[] = [];
     let header: boolean = true;
     let category: string | undefined;
     cp.execFileSync(mnPath, [applicationType, '--list-features', `--java-version=${javaVersion}`]).toString().split('\n').map(line => line.trim()).forEach(line => {
@@ -545,7 +545,7 @@ function getMNFeatures(mnPath: string, applicationType: string, javaVersion: str
     return features;
 }
 
-async function downloadProject(options: {url: string, name: string, target: string}): Promise<string> {
+async function downloadProject(options: {url: string; name: string; target: string}): Promise<string> {
     return new Promise<string>((resolve, reject) => {
         fs.mkdirSync(options.target, {recursive: true});
         const filePath: string = path.join(options.target, options.name + '.zip');

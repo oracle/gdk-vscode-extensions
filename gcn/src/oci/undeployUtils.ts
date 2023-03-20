@@ -802,7 +802,7 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                         }
                         const gitFolderPath = path.join(folderPath, '.git');
                         if (fs.existsSync(gitFolderPath)) {
-                            progress.report({ message: `Deleting local GIT repository at ${gitFolderPath}`})
+                            progress.report({ message: `Deleting local GIT repository at ${gitFolderPath}`});
                             logUtils.logInfo(`[undeploy] Deleting local GIT repository at ${gitFolderPath}`);
                             fs.rmdirSync(gitFolderPath, { recursive : true});
                         }
@@ -1047,13 +1047,13 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         title: `Undeploying ${folder.folder.name} from OCI `,
         cancellable: false
     }, async (_progress, _token) => {
-        _progress.report({ message: `Deleting code repository: ${repositoryName}`})
+        _progress.report({ message: `Deleting code repository: ${repositoryName}`});
         logUtils.logInfo(`[undeploy] Deleting code repository ${repositoryName} in ${projectLogname}`);
         await ociUtils.deleteCodeRepository(authProvider, repositoryId);
         
         const gitPath = path.join(folderPath, '.git');
         if (fs.existsSync(gitPath)) {
-            _progress.report({ message: `Deleting local GIT repository at ${gitPath}`})
+            _progress.report({ message: `Deleting local GIT repository at ${gitPath}`});
             logUtils.logInfo(`[undeploy] Deleting local GIT repository at ${gitPath}`);
             fs.rmdirSync(gitPath, { recursive : true});
         }
@@ -1125,7 +1125,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             // in theory, pipelines are independent, but it seems the delete operation overlaps on the project OCID, so they must be deleted
             // sequentially.
             logUtils.logInfo(`[undeploy] Deleting build pipeline ${pipe.displayName} in ${projectLogname}`);
-            await ociUtils.deleteBuildPipeline(authProvider, pipe.id, true)
+            await ociUtils.deleteBuildPipeline(authProvider, pipe.id, true);
         };
 
         _progress.report({message : "Listing Deploy Pipelines"});
@@ -1195,7 +1195,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
                 // in theory, pipelines are independent, but it seems the delete operation overlaps on the project OCID, so they must be deleted
                 // sequentially.
                 logUtils.logInfo(`[undeploy] Deleting deployment pipeline ${pipe.displayName} in ${projectLogname}`);
-                await ociUtils.deleteDeployPipeline(authProvider, pipe.id, true)
+                await ociUtils.deleteDeployPipeline(authProvider, pipe.id, true);
             }
         };
 

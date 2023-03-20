@@ -44,8 +44,8 @@ export function getBuildRunGVMVersion(activeGVMVersions?: string[]): string[] {
     return [javaVersion, graalVMVersion];
 }
 
-export function getGVMBuildRunParameters(versions: string[]): { name: string, value: string }[] | undefined {
-    const parameters: { name: string, value: string }[] = [];
+export function getGVMBuildRunParameters(versions: string[]): { name: string; value: string }[] | undefined {
+    const parameters: { name: string; value: string }[] = [];
     if (versions.length === 2) {
         const javaVersion = versions[0];
         if (javaVersion) {
@@ -117,7 +117,7 @@ async function getGraalVMVersions(homeFolder: string): Promise<string[] | undefi
                             if (i > -1) {
                                 javaVersion = javaVersion.slice(0, i);
                             }
-                            const versionStrings = graalVMVersion.split(' ')
+                            const versionStrings = graalVMVersion.split(' ');
                             if (versionStrings.length !== 3) {
                                 resolve(undefined);
                             }

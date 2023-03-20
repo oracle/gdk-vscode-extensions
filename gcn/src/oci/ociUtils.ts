@@ -1041,7 +1041,7 @@ export async function createKnowledgeBase(authenticationDetailsProvider: common.
             displayName: displayName,
             freeformTags: flags
         }
-    }
+    };
     return client.createKnowledgeBase(request).then(response => response.opcWorkRequestId);
 }
 
@@ -1089,12 +1089,12 @@ export async function createCompartmentNotificationTopic(authenticationDetailsPr
     return client.createTopic(request).then(response => response.notificationTopic);
 }
 
-export async function getOrCreateNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<{ notificationTopic: ons.models.NotificationTopic, created: boolean }> {
+export async function getOrCreateNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<{ notificationTopic: ons.models.NotificationTopic; created: boolean }> {
     const notificationTopics = await listNotificationTopics(authenticationDetailsProvider, compartmentID);
     if (notificationTopics.length > 0) {
         return { notificationTopic: notificationTopics[0], created: false };
     }
-    return createCompartmentNotificationTopic(authenticationDetailsProvider, compartmentID, description).then(response => { return { notificationTopic: response, created: true }});
+    return createCompartmentNotificationTopic(authenticationDetailsProvider, compartmentID, description).then(response => { return { notificationTopic: response, created: true };});
 }
 
 export async function getCluster(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, clusterID: string): Promise<containerengine.models.Cluster> {
@@ -1224,7 +1224,7 @@ export async function createDefaultLogGroup(authenticationDetailsProvider: commo
     }
 }
 
-export async function getDefaultLogGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean, description?: string): Promise<{ logGroup: logging.models.LogGroupSummary, created: boolean } | undefined> {
+export async function getDefaultLogGroup(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, create?: boolean, description?: string): Promise<{ logGroup: logging.models.LogGroupSummary; created: boolean } | undefined> {
     const logGroup = await listLogGroups(authenticationDetailsProvider, compartmentID, DEFAULT_LOG_GROUP);
     if (logGroup.length > 0) {
         return { logGroup: logGroup[0], created: false };
@@ -1351,7 +1351,7 @@ export async function listLogsByProject(authenticationDetailsProvider: common.Co
                         break;
                 }
             }
-        })
+        });
     }
     return value;
 }
@@ -1471,7 +1471,7 @@ export async function createOkeDeployEnvironment(authenticationDetailsProvider: 
     return client.createDeployEnvironment(request).then(response => response.deployEnvironment);
 }
 
-export async function createCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, repositoryName: string, defaultBranchName: string, description?: string, tags?: { [key:string]: string }): Promise<{ repository: devops.models.Repository, workRequestId: string }> {
+export async function createCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, repositoryName: string, defaultBranchName: string, description?: string, tags?: { [key:string]: string }): Promise<{ repository: devops.models.Repository; workRequestId: string }> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: devops.models.CreateRepositoryDetails = {
         name: repositoryName,
@@ -1489,7 +1489,7 @@ export async function createCodeRepository(authenticationDetailsProvider: common
     });
 }
 
-export async function updateCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string, repositoryName?: string, defaultBranchName?: string, description?: string, tags?: { [key:string]: string }): Promise<{ repository: devops.models.Repository, workRequestId: string }> {
+export async function updateCodeRepository(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, repositoryID: string, repositoryName?: string, defaultBranchName?: string, description?: string, tags?: { [key:string]: string }): Promise<{ repository: devops.models.Repository; workRequestId: string }> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: devops.models.UpdateRepositoryDetails = {
         name: repositoryName,
@@ -1696,7 +1696,7 @@ export async function getBuildRun(authenticationDetailsProvider: common.ConfigFi
     return client.getBuildRun(request).then(response => response.buildRun);
 }
 
-export async function createBuildRun(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, name: string, params: { name: string, value: string }[] = [], commitInfo?: devops.models.CommitInfo): Promise<devops.models.BuildRun> {
+export async function createBuildRun(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, pipelineID: string, name: string, params: { name: string; value: string }[] = [], commitInfo?: devops.models.CommitInfo): Promise<devops.models.BuildRun> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: devops.models.CreateBuildRunDetails = {
         displayName: name,
@@ -1869,10 +1869,10 @@ export async function createVCN(authenticationDetailsProvider: common.ConfigFile
         compartmentId: compartmentID,
         cidrBlocks: ['10.0.0.0/24'],
         freeformTags: tags
-    }
+    };
     const request: core.requests.CreateVcnRequest = {
         createVcnDetails: requestDetails
-    }
+    };
     return client.createVcn(request).then(response => response.vcn);
 }
 
@@ -1880,7 +1880,7 @@ export async function getVCN(authenticationDetailsProvider: common.ConfigFileAut
     const client = new core.VirtualNetworkClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: core.requests.GetVcnRequest = {
         vcnId: vcnID
-    }
+    };
     return client.getVcn(request).then(response => response.vcn);
 }
 
@@ -1900,10 +1900,10 @@ export async function createInternetGateway(authenticationDetailsProvider: commo
         vcnId: vcnID,
         isEnabled: true,
         freeformTags: tags
-    }
+    };
     const request: core.requests.CreateInternetGatewayRequest = {
         createInternetGatewayDetails: requestDetails
-    }
+    };
     return client.createInternetGateway(request).then(response => response.internetGateway);
 }
 
@@ -1959,10 +1959,10 @@ export async function createSubnet(authenticationDetailsProvider: common.ConfigF
         compartmentId: compartmentID,
         vcnId: vcnID,
         freeformTags: tags
-    }
+    };
     const request: core.requests.CreateSubnetRequest = {
         createSubnetDetails: requestDetails
-    }
+    };
     return client.createSubnet(request).then(response => response.subnet);
 }
 
@@ -1998,7 +1998,7 @@ export async function updateSecurityList(authenticationDetailsProvider: common.C
     const requestDetails: core.models.UpdateSecurityListDetails = {
         ingressSecurityRules: ingressSecurityRules,
         egressSecurityRules: egressSecurityRules
-    }
+    };
     
     const request: core.requests.UpdateSecurityListRequest = {
         securityListId: securityListID,
@@ -2023,7 +2023,7 @@ export async function updateRouteTable(authenticationDetailsProvider: common.Con
     
     const requestDetails: core.models.UpdateRouteTableDetails = {
         routeRules: routeRules
-    }
+    };
     
     const request: core.requests.UpdateRouteTableRequest = {
         rtId: routeTableID,
@@ -2086,28 +2086,28 @@ export async function getContainerInstance(authenticationDetailsProvider: common
     return client.getContainerInstance(request).then(response => response.containerInstance);
 }
 
-export async function createContainerInstance(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, imageURL: string, subnetID: string, name: string, username: string, password: string): Promise<{ containerInstance: containerinstances.models.ContainerInstance, workRequestId: string }> {
+export async function createContainerInstance(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, imageURL: string, subnetID: string, name: string, username: string, password: string): Promise<{ containerInstance: containerinstances.models.ContainerInstance; workRequestId: string }> {
     const client = new containerinstances.ContainerInstanceClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     
     const shapeConfig: containerinstances.models.CreateContainerInstanceShapeConfigDetails = {
         ocpus: 1
         // memoryInGBs: 1
-    }
+    };
 
     const containerDetails: containerinstances.models.CreateContainerDetails = {
         imageUrl: imageURL
-    }
+    };
 
     const vnicDetails: containerinstances.models.CreateContainerVnicDetails = {
         subnetId: subnetID
-    }
+    };
 
     const imagePullSecretDetails: containerinstances.models.CreateBasicImagePullSecretDetails = {
         secretType: 'BASIC',
         registryEndpoint: `${authenticationDetailsProvider.getRegion().regionCode}.ocir.io`,
         username: Buffer.from(username).toString('base64'),
         password: Buffer.from(password).toString('base64')
-    }
+    };
 
     const requestDetails: containerinstances.models.CreateContainerInstanceDetails = {
         displayName: name,
@@ -2118,13 +2118,13 @@ export async function createContainerInstance(authenticationDetailsProvider: com
         containers: [ containerDetails ],
         vnics: [ vnicDetails ],
         imagePullSecrets: [ imagePullSecretDetails ]
-    }
+    };
 
     const request: containerinstances.requests.CreateContainerInstanceRequest = {
         createContainerInstanceDetails: requestDetails
     };
     
-    return client.createContainerInstance(request).then(response => { return { containerInstance: response.containerInstance, workRequestId: response.opcWorkRequestId } });
+    return client.createContainerInstance(request).then(response => { return { containerInstance: response.containerInstance, workRequestId: response.opcWorkRequestId }; });
 }
 
 export async function startContainerInstance(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, containerInstanceID: string): Promise<string> {

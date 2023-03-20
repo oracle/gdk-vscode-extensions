@@ -70,8 +70,8 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
     }
     const provider = authentication.getProvider();
 
-    let compartment: { ocid: string, name: string } | undefined;
-    let devopsProject: { ocid: string, name: string } | undefined;
+    let compartment: { ocid: string; name: string } | undefined;
+    let devopsProject: { ocid: string; name: string } | undefined;
 
     if (openContexts.length) {
         const projects: string[] = [];
@@ -189,7 +189,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                     progress.report({
                         message: `Resolving services for code repository ${repository.name}...`
                     });
-                    const oci = new ociContext.Context(authentication, (compartment as { ocid: string, name: string }).ocid, (devopsProject as { ocid: string, name: string }).ocid, repository.ocid);
+                    const oci = new ociContext.Context(authentication, (compartment as { ocid: string; name: string }).ocid, (devopsProject as { ocid: string; name: string }).ocid, repository.ocid);
                     let codeRepositoryResources: any | undefined;
                     try {
                         let artifacts = await ociUtils.listDeployArtifacts(oci.getProvider(), oci.getDevOpsProject());

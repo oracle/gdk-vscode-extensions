@@ -67,7 +67,7 @@ export async function cloneRepository(address: string, target: string): Promise<
     return true;
 }
 
-export function getHEAD(target: vscode.Uri, silent?: boolean): { name?: string, commit?: string, upstream?: object } | undefined {
+export function getHEAD(target: vscode.Uri, silent?: boolean): { name?: string; commit?: string; upstream?: object } | undefined {
     logUtils.logInfo(`[git] Get head of ${target.fsPath}`);
     const gitApi = getGitAPI();
     if (!gitApi) {
@@ -258,7 +258,7 @@ async function execute(command: string, cwd: string): Promise<string> {
             } else {
                 resolve(stdout);
             }
-        })
+        });
     });
 }
 

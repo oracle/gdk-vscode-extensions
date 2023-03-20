@@ -21,7 +21,7 @@ const NATIVE_BUILD = 'native-build';
 export async function checkNBLS(): Promise<string | undefined> {
     const version = vscode.extensions.getExtension('asf.apache-netbeans-java')?.packageJSON.version;
     if (!version || semver.lt(version, '15.0.301')) {
-        return 'Obsolete project support detected. Try to update the Language Server for Java by Apache NetBeans extension to the latest version.'
+        return 'Obsolete project support detected. Try to update the Language Server for Java by Apache NetBeans extension to the latest version.';
     }
     for (let i = 0; i < 5; i++) {
         const commands = await vscode.commands.getCommands();
@@ -30,7 +30,7 @@ export async function checkNBLS(): Promise<string | undefined> {
         }
         await delay(1000);
     }
-    return 'Project support not available. Check whether the Language Server for Java by Apache NetBeans extension is active and initialized.'
+    return 'Project support not available. Check whether the Language Server for Java by Apache NetBeans extension is active and initialized.';
 }
 
 export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<ProjectFolder> {
@@ -265,7 +265,7 @@ export type BuildSystemType = 'Maven' | 'Gradle';
 
 export interface ProjectFolder extends vscode.WorkspaceFolder {
     readonly projectType: ProjectType;
-    readonly subprojects: {name: string, uri: string}[];
+    readonly subprojects: {name: string; uri: string}[];
     readonly buildSystem?: BuildSystemType;
 }
 

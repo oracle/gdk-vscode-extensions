@@ -31,10 +31,10 @@ const ICON = 'rocket';
 const ICON_IN_PROGRESS = 'gear~spin';
 
 type DeploymentPipeline = {
-    ocid: string,
-    displayName: string,
-    lastDeployment?: string
-}
+    ocid: string;
+    displayName: string;
+    lastDeployment?: string;
+};
 
 let RESOURCES_FOLDER: string;
 
@@ -92,7 +92,7 @@ export async function importServices(oci: ociContext.Context, _projectResources:
             getData: () => {
                 return {
                     items: items
-                }
+                };
             }
         };
         if (!items.length) {
@@ -139,7 +139,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     return;
                 }
             });
-        })
+        });
     }
     const info = await getProjectAndRepositoryName(oci);
     if (info?.length !== 3) {
@@ -166,7 +166,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     return;
                 }
             });
-        })
+        });
     }
     const existingBuildPipelines = (await listBuildPipelines(oci))?.filter(item => 'oci' === item.freeformTags?.gcn_tooling_docker_image);
     const choices: dialogs.QuickPickObject[] = [];
@@ -179,7 +179,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
     }
     let buildPipelineId: string | undefined = undefined;
     if (choices.length === 0) {
-        dialogs.showErrorMessage('No available build pipelines to bind.')
+        dialogs.showErrorMessage('No available build pipelines to bind.');
     } else {
         buildPipelineId = choices.length === 1 ? choices[0].object : (await vscode.window.showQuickPick(choices, {
             title: 'New Deployment to OKE: Select Build Pipeline',
@@ -215,7 +215,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     dialogs.showErrorMessage('Failed to read image uri', err);
                 }
             });
-        })
+        });
     }
 
     const imageName = await getImage(oci, buildPipeline?.id);
@@ -245,7 +245,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     return;
                 }
             });
-        })
+        });
     }
     const existingDeployEnvironments = (await listDeployEnvironments(oci))?.filter(env => {
         if (env.deployEnvironmentType === devops.models.OkeClusterDeployEnvironmentSummary.deployEnvironmentType) {
@@ -271,7 +271,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     return;
                 }
             });
-        })
+        });
     }
     const okeClusterEnvironment = existingDeployEnvironments?.length ? existingDeployEnvironments[0] : await createDeployEnvironment(oci, projectName, okeCluster.id);
     if (!okeClusterEnvironment) {
@@ -293,7 +293,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     dialogs.showErrorMessage('Failed to read deploy artifacts', err);
                 }
             });
-        })
+        });
     }
 
     async function createDeploySetupCommandSpecArtifact(oci: ociContext.Context, repositoryName: string, repoEndpoint: string, cluster: string, secretName: string): Promise<string | null | undefined> {
@@ -326,7 +326,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     dialogs.showErrorMessage('Failed to create setup command specifacation artifact', err);
                 }
             });
-        })
+        });
     }
 
     async function createDeployConfigArtifact(oci: ociContext.Context, repositoryName: string, imageName: string, secretName: string): Promise<string | null | undefined> {
@@ -360,7 +360,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     dialogs.showErrorMessage('Failed to create deploy config artifact', err);
                 }
             });
-        })
+        });
     }
 
     const secretName = `${repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')}-vscode-generated-ocirsecret`;
@@ -387,7 +387,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         deployConfigArtifact = artifact;
     }
 
-    async function createDeployPipeline(oci: ociContext.Context, projectName: string, repositoryName: string, okeClusterEnvironment: string, setupCommandSpecArtifact: string, deployConfigArtifact: string, subnet: string, buildPipeline: devops.models.BuildPipelineSummary): Promise<{ocid: string, displayName: string}[] | undefined> {
+    async function createDeployPipeline(oci: ociContext.Context, projectName: string, repositoryName: string, okeClusterEnvironment: string, setupCommandSpecArtifact: string, deployConfigArtifact: string, subnet: string, buildPipeline: devops.models.BuildPipelineSummary): Promise<{ocid: string; displayName: string}[] | undefined> {
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: `Creating deployment to OKE pipeline...`,
@@ -437,7 +437,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                 }
                 resolve([{ ocid: deployPipeline.id, displayName: deployPipelineName }]);
             });
-        })
+        });
     }
     return await createDeployPipeline(oci, projectName, repositoryName, okeClusterEnvironment.id, setupCommandSpecArtifact, deployConfigArtifact, subnet, buildPipeline);
 }
@@ -479,7 +479,7 @@ async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode
                     return;
                 }
             });
-        })
+        });
     }
     const pipelines: DeploymentPipeline[] = [];
     const descriptions: string[] = [];
@@ -556,7 +556,7 @@ async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode
         }
     }
     if (choices.length === 0) {
-        vscode.window.showWarningMessage('All deployment pipelines already added or no deployment pipelines available.')
+        vscode.window.showWarningMessage('All deployment pipelines already added or no deployment pipelines available.');
         return undefined;
     }
     const selection = await vscode.window.showQuickPick(choices, {
@@ -610,7 +610,7 @@ class Service extends ociService.Service {
                     ocid: ocid,
                     displayName: displayName,
                     lastDeployment: lastDeployment
-                }
+                };
                 nodes.push(new DeploymentPipelineNode(object, oci, treeChanged));
             }
         }
@@ -631,7 +631,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
     
     private object: DeploymentPipeline;
     private oci: ociContext.Context;
-    private lastDeployment?: { ocid: string, state?: string, output?: vscode.OutputChannel, deploymentName?: string };
+    private lastDeployment?: { ocid: string; state?: string; output?: vscode.OutputChannel; deploymentName?: string };
     private showSucceededFlag: boolean = false;
 
     constructor(object: DeploymentPipeline, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
@@ -735,7 +735,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                         }
                     } catch (err) {
                         dialogs.showErrorMessage(`Failed to start deployment pipeline '${this.object.displayName}'`, err);
-                        resolve(false)
+                        resolve(false);
                     }
                 });
             });
@@ -819,7 +819,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                     resolve(true);
                 } catch (err) {
                     dialogs.showErrorMessage('Failed to open deployment in browser', err);
-                    resolve(false)
+                    resolve(false);
                 }
             });
         });

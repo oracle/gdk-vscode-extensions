@@ -33,7 +33,7 @@ export async function selectOciProfileFromList(profiles: string[], autoselect: b
     return undefined;
 }
 
-export async function selectCompartment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, actionName?: string, ignore?: string[]): Promise<{ ocid: string, name: string } | undefined> {
+export async function selectCompartment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, actionName?: string, ignore?: string[]): Promise<{ ocid: string; name: string } | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
     // TODO: add root compartment
     const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
@@ -98,7 +98,7 @@ export async function selectCompartment(authenticationDetailsProvider: common.Co
     return choice ? choice.object : undefined;
 }
 
-export async function selectDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartment: { ocid: string, name?: string }, actionName?: string): Promise<{ ocid: string, name: string } | undefined> {
+export async function selectDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartment: { ocid: string; name?: string }, actionName?: string): Promise<{ ocid: string; name: string } | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
     const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
@@ -142,7 +142,7 @@ export async function selectDevOpsProject(authenticationDetailsProvider: common.
     return choice ? choice.object : undefined;
 }
 
-export async function selectDevOpsProjectFromList(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projects: string[], autoselect: boolean, actionName?: string): Promise<{ ocid: string, name: string, compartment: string } | null | undefined> {
+export async function selectDevOpsProjectFromList(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projects: string[], autoselect: boolean, actionName?: string): Promise<{ ocid: string; name: string; compartment: string } | null | undefined> {
     if (!projects.length) {
         return null;
     }
@@ -183,7 +183,7 @@ export async function selectDevOpsProjectFromList(authenticationDetailsProvider:
     return choice ? choice.object : undefined;
 }
 
-export async function selectCodeRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, project: { ocid: string, name?: string }, autoselect: boolean, actionName?: string, ignore?: string[]): Promise<{ ocid: string, name: string, httpUrl: string | undefined, sshUrl: string | undefined }[] | undefined> {
+export async function selectCodeRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, project: { ocid: string; name?: string }, autoselect: boolean, actionName?: string, ignore?: string[]): Promise<{ ocid: string; name: string; httpUrl: string | undefined; sshUrl: string | undefined }[] | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
     const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
@@ -236,7 +236,7 @@ export async function selectCodeRepositories(authenticationDetailsProvider: comm
     });
 
     if (choice && choice.length > 0) {
-        const repositories: { ocid: string, name: string, httpUrl: string | undefined, sshUrl: string | undefined }[] = [];
+        const repositories: { ocid: string; name: string; httpUrl: string | undefined; sshUrl: string | undefined }[] = [];
         for (const repository of choice) {
             repositories.push(repository.object);
         }
@@ -246,7 +246,7 @@ export async function selectCodeRepositories(authenticationDetailsProvider: comm
     return undefined;
 }
 
-export async function getUserCredentials(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, actionName?: string, namespace?: string): Promise<{ username: string, password: string } | undefined> {
+export async function getUserCredentials(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, actionName?: string, namespace?: string): Promise<{ username: string; password: string } | undefined> {
     try {
         const token = await ociUtils.createBearerToken(authenticationDetailsProvider);
         if (token) {

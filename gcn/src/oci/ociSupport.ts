@@ -65,11 +65,11 @@ function updateDevOpsDecorations(enabled?: boolean) {
 class OciSupport implements model.CloudSupport {
 
     getName(): string {
-        return 'OCI'
+        return 'OCI';
     }
 
     getDescription(): string {
-        return 'Oracle Cloud Infrastructure'
+        return 'Oracle Cloud Infrastructure';
     }
 
     getType(): string {
@@ -84,7 +84,7 @@ class OciSupport implements model.CloudSupport {
         const saveConfig: deployUtils.SaveConfig = (folder: string, config: any) => {
             folderStorage.storeCloudSupportData(this, [ folder ], [ config ]);
             return true;
-        }
+        };
         return deployUtils.deployFolders(folders, RESOURCES_FOLDER, saveConfig, dump);
     }
 
@@ -114,7 +114,7 @@ class OciSupport implements model.CloudSupport {
                 data[dataName] = dataProducer.getData();
             }
             configuration.dataChanged();
-        }
+        };
         const authenticationData = data[ociAuthentication.DATA_NAME];
         const authentication = ociAuthentication.create(authenticationData, dataChanged);
         const contextData = data[ociContext.DATA_NAME];

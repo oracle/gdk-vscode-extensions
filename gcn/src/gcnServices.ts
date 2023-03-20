@@ -17,7 +17,7 @@ export type FolderData = {
     folder: vscode.WorkspaceFolder;
     configurations: model.ServicesConfiguration[];
     services: model.CloudServices[];
-}
+};
 
 let firstFolderDataPromise: boolean = true;
 let folderDataPromiseResolve: (value: FolderData[] | PromiseLike<FolderData[]>) => void;
@@ -182,7 +182,7 @@ export function dumpDeployData(workspaceState: vscode.Memento, folders: string |
             workspaceState.update(DEPLOY_DATA_KEY, { [foldersKey]: deployData });
         }
         return value;
-    }
+    };
 }
 
 export function dumpedFolders(workspaceState: vscode.Memento): string[] | undefined {
