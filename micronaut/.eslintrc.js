@@ -11,6 +11,10 @@ https://github.com/typescript-eslint/tslint-to-eslint-config/blob/master/docs/FA
 
 Happy linting! 💖
 */
+
+/* eslint-disable @typescript-eslint/naming-convention */
+
+/**@type {import('eslint').ESLint.ConfigData}*/
 module.exports = {
     "env": {
         "es6": true,
@@ -18,7 +22,8 @@ module.exports = {
     },
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-        "project": "tsconfig.json",
+        "project": "tsconfig.eslint.json",
+        "tsconfigRootDir": __dirname,
         "sourceType": "module"
     },
     "plugins": [
@@ -39,13 +44,13 @@ module.exports = {
                 }
             }
         ],
-        "@typescript-eslint/naming-convention": "warn",
+        "@typescript-eslint/naming-convention": "off",
         "@typescript-eslint/no-unused-expressions": "warn",
         "@typescript-eslint/semi": [
             "warn",
             "always"
         ],
-        "curly": "warn",
+        "curly": "off",
         "eqeqeq": [
             "warn",
             "always"

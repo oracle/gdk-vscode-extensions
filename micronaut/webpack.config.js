@@ -38,7 +38,7 @@ const config = {
     plugins: [
         new ESLintPlugin({extensions: ['ts']})
     ],
-}
+};
 const devConf = {
     target: 'node', // vscode extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
 
@@ -87,7 +87,7 @@ const devConf = {
             // By default webpack and loaders are build dependencies
         },
     },
-}
+};
 
 // https://webpack.js.org/configuration/mode/#mode-none
 module.exports = (env, argv) => {
