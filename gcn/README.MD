@@ -100,7 +100,7 @@ Once you have access to OCI, you can continue and click **Create DevOps Project*
 * **Build OCI Docker Native Executable**: to package the application and build a native executable in a Docker container
 * **Deploy OCI Docker Native Executable to OKE**: to package the application, build a native executable in a Docker container and deploy to OKE
 
-Build specs for each pipeline are stored in *project_folder*/.gcn/
+Build specs for each pipeline are stored in *project_folder*/.devops/
 
 ## <a name='oci-kubernetes-deployment-with-oke'></a>OCI Kubernetes deployment with OKE
 When **Build OCI Docker Native Executable** pipeline succeeds and build is available it can be deployed to OKE using **Deploy OCI Docker Native Executable to OKE** deployment pipeline. It will deploy the application into OKE and run it. When complete the application can be tested in a browser by selecting action **Open in Browser** for Deploy pipeline

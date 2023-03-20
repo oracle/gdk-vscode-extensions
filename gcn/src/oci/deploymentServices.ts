@@ -71,7 +71,7 @@ export async function importServices(oci: ociContext.Context, _projectResources:
                     const pipeline = await ociUtils.getDeployPipeline(oci.getProvider(), deploymentPipeline.ocid);
                     let pipelineDisplayName = pipeline.displayName;
                     if (pipelineDisplayName) {
-                        const codeRepoPrefix = pipeline.freeformTags?.gcn_tooling_codeRepoPrefix;
+                        const codeRepoPrefix = pipeline.freeformTags?.devops_tooling_codeRepoPrefix;
                         if (codeRepoPrefix && pipelineDisplayName.startsWith(codeRepoPrefix)) {
                             pipelineDisplayName = pipelineDisplayName.substring(codeRepoPrefix.length);
                         }
@@ -168,7 +168,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
             });
         });
     }
-    const existingBuildPipelines = (await listBuildPipelines(oci))?.filter(item => 'oci' === item.freeformTags?.gcn_tooling_docker_image);
+    const existingBuildPipelines = (await listBuildPipelines(oci))?.filter(item => 'oci' === item.freeformTags?.devops_tooling_docker_image);
     const choices: dialogs.QuickPickObject[] = [];
     if (existingBuildPipelines) {
         for (const pipeline of existingBuildPipelines) {
@@ -318,7 +318,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     const artifactName = `${repositoryName}_oke_deploy_docker_secret_setup_command`;
                     const artifactDescription = `OKE deployment docker secret setup command specification artifact for devops project ${projectName} & repository ${repositoryName}`;
                     const artifact = (await ociUtils.createOkeDeploySetupCommandArtifact(oci.getProvider(), oci.getDevOpsProject(), inlineContent, artifactName, artifactDescription, {
-                        'gcn_tooling_oke_cluster': cluster
+                        'devops_tooling_oke_cluster': cluster
                     })).id;
                     resolve(artifact);
                 } catch (err) {
@@ -351,8 +351,8 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     const artifactName = `${repositoryName}_oke_deploy_${jvm ? 'jvm' : 'ni'}_configuration`;
                     const artifactDescription = `OKE ${jvm ? 'jvm' : 'native'} deployment configuration artifact for devops project ${projectName} & repository ${repositoryName}`;
                     const artifact = (await ociUtils.createOkeDeployConfigurationArtifact(oci.getProvider(), oci.getDevOpsProject(), inlineContent, artifactName, artifactDescription, {
-                        'gcn_tooling_codeRepoID': oci.getCodeRepository(),
-                        'gcn_tooling_image_name': imageName
+                        'devops_tooling_codeRepoID': oci.getCodeRepository(),
+                        'devops_tooling_image_name': imageName
                     })).id;
                     resolve(artifact);
                 } catch (err) {
@@ -366,7 +366,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
     const secretName = `${repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')}-vscode-generated-ocirsecret`;
     const deployArtifacts = await listDeployArtifacts(oci);
     let setupCommandSpecArtifact = deployArtifacts?.find(env => {
-        return env.deployArtifactType === devops.models.DeployArtifact.DeployArtifactType.CommandSpec && env.freeformTags?.gcn_tooling_oke_cluster === okeCluster.id;
+        return env.deployArtifactType === devops.models.DeployArtifact.DeployArtifactType.CommandSpec && env.freeformTags?.devops_tooling_oke_cluster === okeCluster.id;
     })?.id;
     if (!setupCommandSpecArtifact) {
         const artifact = await createDeploySetupCommandSpecArtifact(oci, repositoryName, `${oci.getProvider().getRegion().regionCode}.ocir.io`, okeCluster.id, secretName);
@@ -377,7 +377,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
     }
 
     let deployConfigArtifact = deployArtifacts?.find(env => {
-        return env.deployArtifactType === devops.models.DeployArtifact.DeployArtifactType.KubernetesManifest && env.freeformTags?.gcn_tooling_image_name === imageName;
+        return env.deployArtifactType === devops.models.DeployArtifact.DeployArtifactType.KubernetesManifest && env.freeformTags?.devops_tooling_image_name === imageName;
     })?.id;
     if (!deployConfigArtifact) {
         const artifact = await createDeployConfigArtifact(oci, repositoryName, imageName, secretName);
@@ -394,7 +394,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
-                const codeRepoPrefix = (buildPipeline.freeformTags?.gcn_tooling_codeRepoPrefix || '');
+                const codeRepoPrefix = (buildPipeline.freeformTags?.devops_tooling_codeRepoPrefix || '');
                 const displayNamePrefix = codeRepoPrefix + 'Build ';
                 const displayName = buildPipeline.displayName?.startsWith(displayNamePrefix) ? buildPipeline.displayName.slice(displayNamePrefix.length) : `${projectType === 'GCN' ? ' OCI ' : ' '}Container`;
                 const deployPipelineName = `Deploy ${displayName} to OKE`;
@@ -402,12 +402,12 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                 const descriptionPart = buildPipeline.description?.startsWith(descriptionPrefix) ? buildPipeline.description.slice(descriptionPrefix.length) : `container for ${projectType === 'GCN' ? 'OCI & ' : ''}devops project ${projectName} & repository ${repositoryName}`;
                 const deployPipelineDescription = `Deployment pipeline to deploy ${descriptionPart} to OKE`;
                 const tags: { [key:string]: string } = {
-                    'gcn_tooling_codeRepoID': oci.getCodeRepository(),
-                    'gcn_tooling_buildPipelineOCID': buildPipeline.id,
-                    'gcn_tooling_okeDeploymentName': repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
+                    'devops_tooling_codeRepoID': oci.getCodeRepository(),
+                    'devops_tooling_buildPipelineOCID': buildPipeline.id,
+                    'devops_tooling_okeDeploymentName': repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                 };
                 if (codeRepoPrefix.length) {
-                    tags.gcn_tooling_codeRepoPrefix = codeRepoPrefix;
+                    tags.devops_tooling_codeRepoPrefix = codeRepoPrefix;
                 }
                 let deployPipeline;
                 try {
@@ -467,7 +467,7 @@ async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode
                     const codeRepoID = oci.getCodeRepository();
                     const projectItems: devops.models.DeployPipelineSummary[] = [];
                     for (const item of items) {
-                        if (item.freeformTags?.gcn_tooling_codeRepoID === codeRepoID) {
+                        if (item.freeformTags?.devops_tooling_codeRepoID === codeRepoID) {
                             projectItems.push(item);
                         }
                     }
@@ -490,7 +490,7 @@ async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode
             if (!shouldIgnore(item.id, item.displayName)) {
                 let itemDisplayName = item.displayName;
                 if (itemDisplayName) {
-                    const codeRepoPrefix = item.freeformTags?.gcn_tooling_codeRepoPrefix;
+                    const codeRepoPrefix = item.freeformTags?.devops_tooling_codeRepoPrefix;
                     if (codeRepoPrefix && itemDisplayName.startsWith(codeRepoPrefix)) {
                         itemDisplayName = itemDisplayName.substring(codeRepoPrefix.length);
                     }
@@ -700,7 +700,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                         const dockerTagVarName = 'DOCKER_TAG';
                         let artifactsCount: number | undefined;
                         let dockerTag: string | undefined;
-                        const buildPipelineID = (await this.getResource()).freeformTags?.gcn_tooling_buildPipelineOCID;
+                        const buildPipelineID = (await this.getResource()).freeformTags?.devops_tooling_buildPipelineOCID;
                         if (buildPipelineID) {
                             const lastBuilds = await ociUtils.listBuildRuns(this.oci.getProvider(), buildPipelineID);
                             const buildRunId = lastBuilds?.find(build => ociUtils.isSuccess(build.lifecycleState))?.id;
@@ -909,7 +909,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                         logUtils.logInfo(`[deploy] Deployment '${deploymentName}' finished: ${state}`);
                         deploymentName = undefined; // report the success just once
                     }
-                    this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output, (await this.getResource()).freeformTags?.gcn_tooling_okeDeploymentName);
+                    this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output, (await this.getResource()).freeformTags?.devops_tooling_okeDeploymentName);
                 } else {
                     this.showSucceededFlag = true;
                     this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output);

@@ -15,6 +15,7 @@ import * as dialogs from '../dialogs';
 import * as model from '../model';
 import * as projectUtils from '../projectUtils';
 import * as logUtils from '../logUtils';
+import * as folderStorage from '../folderStorage';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociUtils from './ociUtils';
 import * as ociServices from './ociServices';
@@ -788,13 +789,13 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                     const folder = folders.find(f => removeSpaces(f.folder.name) === repositoryName);
                     if (folder) {
                         const folderPath = folder.folder.uri.fsPath;
-                        const gcnPath = path.join(folderPath, '.vscode', 'gcn.json');
+                        const gcnPath = path.join(folderPath, folderStorage.getDefaultLocation());
                         if (fs.existsSync(gcnPath)) {
                             progress.report({ message : `Deleting GCN registration ${gcnPath}` });
                             logUtils.logInfo(`[undeploy] Deleting GCN registration ${gcnPath}`);
                             fs.unlinkSync(gcnPath);
                         }
-                        const gcnFolderPath = path.join(folderPath, '.gcn');
+                        const gcnFolderPath = path.join(folderPath, projectUtils.getDevOpsResourcesDir());
                         if (fs.existsSync(gcnFolderPath)) {
                             progress.report({ message : `Deleting local OCI devops resources at ${gcnFolderPath}` });
                             logUtils.logInfo(`[undeploy] Deleting local OCI devops resources at ${gcnFolderPath}`);
@@ -1019,7 +1020,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         const p = await ociUtils.getDevopsProject(authProvider, devopsId);
         const c = await ociUtils.getCompartment(authProvider, compartmentId);
         const reps = await ociUtils.listCodeRepositories(authProvider, devopsId);
-        return [p, c, reps.find(repo => repositoryName === repo.name && repo.freeformTags?.gcn_tooling_deployID), reps.length === 1];
+        return [p, c, reps.find(repo => repositoryName === repo.name && repo.freeformTags?.devops_tooling_deployID), reps.length === 1];
     });
     if (!data[0]) {
         dialogs.showErrorMessage(`Cannot undeploy folder ${folder.folder.name}: Failed to resolve DevOps Project ${devopsId}`);
@@ -1134,7 +1135,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         const buildPipelineIds = buildPipelines.map(pipe => pipe.id);
         const deployPipelines: devops.models.DeployPipelineSummary[] = await ociUtils.listDeployPipelines(authProvider, devopsId);
         for (let pipe of deployPipelines) {
-            if (pipe.freeformTags?.gcn_tooling_buildPipelineOCID && buildPipelineIds.includes(pipe.freeformTags?.gcn_tooling_buildPipelineOCID)) {
+            if (pipe.freeformTags?.devops_tooling_buildPipelineOCID && buildPipelineIds.includes(pipe.freeformTags?.devops_tooling_buildPipelineOCID)) {
                 _progress.report({message : `Processing pipeline ${pipe.displayName}`});
                 logUtils.logInfo(`[undeploy] Listing stages of deployment pipeline ${pipe.displayName} in ${projectLogname}`);
                 const stages: devops.models.DeployStageSummary[] = await ociUtils.listDeployStages(authProvider, pipe.id);
@@ -1226,12 +1227,12 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
                 logUtils.logInfo(`[undeploy] Deleting artifact ${a.displayName} in ${projectLogname}`);
                 // seems that deleteArtifact also transaction-conflicts on the project.
                 await ociUtils.deleteDeployArtifact(authProvider, a.id, true);
-            } else if (a.freeformTags?.gcn_tooling_codeRepoResourcesList && a.freeformTags?.gcn_tooling_codeRepoID === repositoryId) {
+            } else if (a.freeformTags?.devops_tooling_codeRepoResourcesList && a.freeformTags?.devops_tooling_codeRepoID === repositoryId) {
                 _progress.report({ message: `Deleting list of automatically generated code repository resources ${a.displayName}`});
                 logUtils.logInfo(`[undeploy] Deleting list of automatically generated code repository resources ${a.displayName} in ${repositoryName}`);
                 // seems that deleteArtifact also transaction-conflicts on the project.
                 await ociUtils.deleteDeployArtifact(authProvider, a.id, true);
-            } else if (isLast && a.freeformTags?.gcn_tooling_projectResourcesList) {
+            } else if (isLast && a.freeformTags?.devops_tooling_projectResourcesList) {
                 _progress.report({ message: `Deleting list of automatically generated project resources ${a.displayName}`});
                 logUtils.logInfo(`[undeploy] Deleting list of automatically generated project resources ${a.displayName} in ${projectLogname}`);
                 // seems that deleteArtifact also transaction-conflicts on the project.
@@ -1289,7 +1290,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             const artifactsRepositories = await ociUtils.listArtifactRepositories(authProvider, compartmentId);
             if (artifactsRepositories) {
                 for (const repo of artifactsRepositories) {
-                    if ((repo.freeformTags?.['gcn_tooling_projectOCID'] == devopsId)) {
+                    if ((repo.freeformTags?.['devops_tooling_projectOCID'] == devopsId)) {
                         _progress.report({message : `Deleting artifact repository ${repo.displayName}`});
                         logUtils.logInfo(`[undeploy] Deleting artifact repository ${repo.displayName} in ${compartmentLogname}`);
                         await ociUtils.deleteArtifactsRepository(authProvider, compartmentId, repo.id, true);
@@ -1309,8 +1310,8 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             logUtils.logInfo(`[undeploy] Listing all knowledge bases in ${compartmentLogname}`);
             let knowledgeBases = await ociUtils.listKnowledgeBases(authProvider, compartmentId);
             for (let kb of knowledgeBases) {
-                if ((kb.freeformTags?.['gcn_tooling_usage'] === "gcn-adm-audit") &&
-                    (kb.freeformTags?.['gcn_tooling_projectOCID'] == devopsId)) {
+                if ((kb.freeformTags?.['devops_tooling_usage'] === "gcn-adm-audit") &&
+                    (kb.freeformTags?.['devops_tooling_projectOCID'] == devopsId)) {
                         _progress.report({message : `Deleting knowledge base ${kb.displayName}`});
                         logUtils.logInfo(`[undeploy] Deleting knowledge base ${kb.displayName} in ${compartmentLogname}`);
                         await ociUtils.deleteKnowledgeBase(authProvider, kb.id, true);
@@ -1322,11 +1323,11 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             logUtils.logInfo(`[undeploy] Devops project ${projectLogname} deleted`);
         }
 
-        const gcnPath = path.join(folderPath, '.vscode', 'gcn.json');
+        const gcnPath = path.join(folderPath, folderStorage.getDefaultLocation());
         _progress.report({message : `Deleting GCN registration ${gcnPath}`});
         logUtils.logInfo(`[undeploy] Deleting GCN registration ${gcnPath}`);
         fs.unlinkSync(gcnPath); 
-        const gcnFolderPath = path.join(folderPath, '.gcn');
+        const gcnFolderPath = path.join(folderPath, projectUtils.getDevOpsResourcesDir());
         if (fs.existsSync(gcnFolderPath)) {
             _progress.report({message : 'Deleting local OCI devops resources'});
             logUtils.logInfo(`[undeploy] Deleting local OCI devops resources in ${gcnFolderPath}`);

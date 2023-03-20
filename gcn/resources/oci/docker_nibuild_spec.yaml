@@ -77,7 +77,7 @@ steps:
       echo "Running docker build to include built application into it."
       echo "Docker Image Tag: ${DOCKER_TAG}"
       echo "APP_FILE: ${APP_FILE}"
-      docker build -f ./.gcn/Dockerfile.native \
+      docker build -f ./.devops/Dockerfile.native \
                   --build-arg APP_FILE={{{project_artifact_location}}} \
                   -t {{{image_name}}}:${DOCKER_TAG} -t {{{image_name}}}:latest .
       echo "Done"

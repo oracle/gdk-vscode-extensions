@@ -16,7 +16,13 @@ const GET_PROJECT_INFO = 'nbls.project.info';
 const GET_PROJECT_ARTIFACTS = 'nbls.gcn.project.artifacts';
 const NATIVE_BUILD = 'native-build';
 
+const DEVOPS_RESOURCES_DIR = '.devops';
+
 // TODO: implement correctly for Maven/Gradle projects
+
+export function getDevOpsResourcesDir(): string {
+    return DEVOPS_RESOURCES_DIR;
+}
 
 export async function checkNBLS(): Promise<string | undefined> {
     const version = vscode.extensions.getExtension('asf.apache-netbeans-java')?.packageJSON.version;

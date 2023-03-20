@@ -201,7 +201,7 @@ async function getSharedKnowledgeBase(authenticationDetailsProvider: common.Conf
             try {
                 const knowledgeBases = await ociUtils.listKnowledgeBases(authenticationDetailsProvider, compartmentID);
                 for (const knowledgeBase of knowledgeBases) {
-                    if (knowledgeBase.freeformTags?.gcn_tooling_usage === 'gcn-shared-adm-audits') {
+                    if (knowledgeBase.freeformTags?.devops_tooling_usage === 'gcn-shared-adm-audits') {
                         logUtils.logInfo(`[audit] Found existing shared audits knowledge base '${knowledgeBase.displayName}' in compartment ${compartmentName}`);
                         resolve(knowledgeBase.id);
                         return;
@@ -224,8 +224,8 @@ async function getSharedKnowledgeBase(authenticationDetailsProvider: common.Conf
 async function createSharedKnowledgeBase(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, compartmentName: string): Promise<string> {
     logUtils.logInfo(`[audit] Creating shared audits knowledge base in compartment ${compartmentName}`);
     const workRequestId = await ociUtils.createKnowledgeBase(authenticationDetailsProvider, compartmentID, 'Generic', {
-        'gcn_tooling_description': `Shared knowledge base for generic audits within compartment ${compartmentName}`,
-        'gcn_tooling_usage': 'gcn-shared-adm-audits'
+        'devops_tooling_description': `Shared knowledge base for generic audits within compartment ${compartmentName}`,
+        'devops_tooling_usage': 'gcn-shared-adm-audits'
     });
     logUtils.logInfo(`[audit] Waiting to complete creation of shared audits knowledge base in compartment ${compartmentName}`);
     return ociUtils.admWaitForResourceCompletionStatus(authenticationDetailsProvider, `Shared audits knowledge base for compartment ${compartmentName}`, workRequestId);
@@ -393,7 +393,7 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
                     const projectID = oci.getDevOpsProject();
                     const projectItems: adm.models.KnowledgeBaseSummary[] = [];
                     for (const item of items) {
-                        if (item.freeformTags?.gcn_tooling_projectOCID === projectID) {
+                        if (item.freeformTags?.devops_tooling_projectOCID === projectID) {
                             projectItems.push(item);
                         }
                     }
@@ -416,7 +416,7 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
         for (const item of existing) {
             if (!shouldIgnore(item.id)) {
                 const displayName = item.displayName ? item.displayName : `Knowledge Base ${idx++}`;
-                const descriptionTag = item.freeformTags?.['gcn_tooling_description'];
+                const descriptionTag = item.freeformTags?.['devops_tooling_description'];
                 if (descriptionTag) descriptionExists = true;
                 const description = descriptionTag ? descriptionTag : 'Knowledge base';
                 knowledgeBases.push({

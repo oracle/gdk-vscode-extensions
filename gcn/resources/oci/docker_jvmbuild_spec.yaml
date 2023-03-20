@@ -77,7 +77,7 @@ steps:
       echo "Running docker build to include built application into it."
       echo "Docker Image Tag: ${DOCKER_TAG}"
       echo "JAR_FILE: ${JAR_FILE}"
-      docker build -f ./.gcn/Dockerfile.jvm \
+      docker build -f ./.devops/Dockerfile.jvm \
                   --build-arg JAR_FILE={{{project_artifact_location}}} \
                   -t {{{image_name}}}:${DOCKER_TAG} -t {{{image_name}}}:latest .
       echo "Done"

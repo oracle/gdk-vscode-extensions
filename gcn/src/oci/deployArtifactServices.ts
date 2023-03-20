@@ -91,7 +91,7 @@ async function selectDeployArtifacts(oci: ociContext.Context, ignore: DeployArti
                     const codeRepoID = oci.getCodeRepository();
                     const projectItems: devops.models.DeployArtifactSummary[] = [];
                     for (const item of items) {
-                        if (item.freeformTags?.gcn_tooling_codeRepoID === codeRepoID) {
+                        if (item.freeformTags?.devops_tooling_codeRepoID === codeRepoID) {
                             projectItems.push(item);
                         }
                     }

@@ -85,7 +85,7 @@ async function selectArtifactRepositories(oci: ociContext.Context, ignore: Artif
                     const projectID = oci.getDevOpsProject();
                     const projectItems: artifacts.models.RepositorySummary[] = [];
                     for (const item of items) {
-                        if (item.freeformTags?.gcn_tooling_projectOCID === projectID) {
+                        if (item.freeformTags?.devops_tooling_projectOCID === projectID) {
                             projectItems.push(item);
                         }
                     }

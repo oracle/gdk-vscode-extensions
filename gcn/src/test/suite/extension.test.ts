@@ -52,27 +52,27 @@ suite('Extension Test Suite', function() {
 
         // This test must be run first, in order to activate the extension (and wait for the activation to complete)
         test("Extension loaded", async () => {
-                let extension = vscode.extensions.getExtension('oracle-labs-graalvm.gcn');
-                assert(extension, "No GCN extension found!");
+                let extension = vscode.extensions.getExtension('oracle-labs-graalvm.oci-devops');
+                assert(extension, "No OCI DevOps Tools extension found!");
 
                 await extension.activate();
         });
-        // Check if gcn commands have been loaded
-        test("GCN commands loaded", async () =>{
+        // Check if OCI DevOps Tools commands have been loaded
+        test("OCI DevOps Tools commands loaded", async () =>{
                 let commands = await vscode.commands.getCommands(true);
 
-                let containsGciCommands = false;
+                let containsOciDevOpsCommands = false;
                 for (const command of commands) {
                         if (command.indexOf("gcn.") == 0)
-                                containsGciCommands = true;
+                                containsOciDevOpsCommands = true;
                 }
 
-                assert.ok(containsGciCommands, "No GCN command has been loaded");
+                assert.ok(containsOciDevOpsCommands, "No OCI DevOps Tools command has been loaded");
 
         });
 
-        // Check if GCN welcome page opens
-        test("GCN Welcome page", async () => {
+        // Check if OCI DevOps Tools welcome page opens
+        test("OCI DevOps Tools Welcome page", async () => {
                 await vscode.commands.executeCommand("gcn.showWelcomePage");
 
                 // The marvellous vscode completes the command, but still has the active tab set to the previous content,
@@ -106,7 +106,7 @@ suite('Extension Test Suite', function() {
 		let wf = vscode.workspace.workspaceFolders;
 		
 		if (!wf?.length) {
-			assert.throws(()=>logError("Extension host did not load any workspace fodlers!") );
+			assert.throws(()=>logError("Extension host did not load any workspace folders!") );
 		} else {
 			const projectFolder = await projectUtils.getProjectFolder(wf[0]);
 			assert.strictEqual(projectFolder.projectType, "GCN", "Specified project should be deployable to OCI");

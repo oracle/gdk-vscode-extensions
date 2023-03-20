@@ -147,7 +147,7 @@ export function folderDataToWorkspaceFolders(folderData: FolderData | FolderData
     }
 }
 
-const DEPLOY_DATA_KEY = 'gcn_tooling_deployData';
+const DEPLOY_DATA_KEY = 'devops_tooling_deployData';
 
 export function dumpDeployData(workspaceState: vscode.Memento, folders: string | string[]): model.DumpDeployData {
     const foldersKey = Array.isArray(folders) ? folders.join(':') : folders;
