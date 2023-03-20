@@ -415,7 +415,7 @@ class OcirDeployArtifactNode extends DeployArtifactNode {
             }
         }).then(result => {
             if (typeof result === 'string') {
-                ociDialogs.pullImage(this.oci.getProvider(), result, 'Pull Latest Docker Image');
+                ociDialogs.pullImage(this.oci.getProvider(), result, 'Pull Latest Container Image');
             } else if (result instanceof Error) {
                 dialogs.showError(result);
             }

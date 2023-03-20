@@ -41,7 +41,7 @@ type VulnerabilityAudit = {
 
 export function initialize(context: vscode.ExtensionContext) {
     function auditFolder(uri: vscode.Uri) {
-        logUtils.logInfo(`[audit] Resolving OCI resource for audit of folder ${uri.fsPath}`);
+        logUtils.logInfo(`[audit] Resolving OCI devops resource for audit of folder ${uri.fsPath}`);
         getFolderAuditsService(uri).then(service => {
             if (service) {
                 // Executing for a deployed folder
@@ -504,7 +504,7 @@ class Service extends ociService.Service {
 
     getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
         return ociFeatures.NON_PIPELINE_RESOURCES_ENABLED ? [
-            new dialogs.QuickPickObject(`$(${ICON}) Add Knowledge Base`, undefined, 'Add existing knowledge base', () => this.addContent())
+            new dialogs.QuickPickObject(`$(${ICON}) Add Knowledge Base`, undefined, 'Add an existing knowledge base', () => this.addContent())
         ] : undefined;
     }
 

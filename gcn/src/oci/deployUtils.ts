@@ -29,6 +29,11 @@ import * as vcnUtils from './vcnUtils';
 
 const ACTION_NAME = 'Deploy to OCI';
 
+const JVM_CONTAINER_NAME = 'JVM Container';
+const JVM_CONTAINER_NAME_LC = 'JVM container';
+const NI_CONTAINER_NAME = 'Native Executable Container';
+const NI_CONTAINER_NAME_LC = NI_CONTAINER_NAME.toLocaleLowerCase();
+
 export type SaveConfig = (folder: string, config: any) => boolean;
 
 export async function deployFolders(folders: vscode.WorkspaceFolder[], resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData): Promise<boolean> {
@@ -1337,11 +1342,11 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 // --- Generate docker native image build spec
                                 progress.report({
                                     increment,
-                                    message: `Creating ${subName} container image with native executable build spec for source code repository ${repositoryName}...`
+                                    message: `Creating ${subName} ${NI_CONTAINER_NAME_LC} build spec for source code repository ${repositoryName}...`
                                 });
                                 const docker_nibuildspec_template = 'docker_nibuild_spec.yaml';
                                 const docker_nibuildArtifactName = `${repositoryName}_${subName}_native_docker_image`;
-                                logUtils.logInfo(`[deploy] Creating ${subName} container image with native executable build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Creating ${subName} ${NI_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 const docker_nibuildTemplate = expandTemplate(resourcesPath, docker_nibuildspec_template, {
                                     project_build_command: project_build_native_executable_command,
                                     project_artifact_location: project_native_executable_artifact_location,
@@ -1349,14 +1354,14 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     image_name: nativeContainerRepository.displayName.toLowerCase()
                                 }, folder, `${subName}_${docker_nibuildspec_template}`);
                                 if (!docker_nibuildTemplate) {
-                                    resolve(`Failed to configure ${subName} container image with native executable build spec for ${repositoryName}`);
+                                    resolve(`Failed to configure ${subName} ${NI_CONTAINER_NAME_LC} build spec for ${repositoryName}`);
                                     return;
                                 }
                                 if (subName === 'oci') {
                                     const docker_ni_file = 'Dockerfile.native';
                                     const docker_niFile = expandTemplate(resourcesPath, docker_ni_file, {}, folder);
                                     if (!docker_niFile) {
-                                        resolve(`Failed to configure container image with native executable file for ${repositoryName}`);
+                                        resolve(`Failed to configure ${NI_CONTAINER_NAME_LC} file for ${repositoryName}`);
                                         return;
                                     }
                                 }
@@ -1364,7 +1369,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${deployData.namespace}/${nativeContainerRepository.displayName}:\${DOCKER_TAG}`;
                                 if (subData.docker_nibuildArtifact) {
                                     progress.report({
-                                        message: `Using already created ${subName} container image with native executable artifact for ${repositoryName}...`
+                                        message: `Using already created ${subName} ${NI_CONTAINER_NAME_LC} artifact for ${repositoryName}...`
                                     });
                                     try {
                                         const artifact = await ociUtils.getDeployArtifact(provider, subData.docker_nibuildArtifact);
@@ -1379,16 +1384,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     progress.report({
                                         increment,
                                     });
-                                    logUtils.logInfo(`[deploy] Using already created ${subName} container image with native executable artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    logUtils.logInfo(`[deploy] Using already created ${subName} ${NI_CONTAINER_NAME_LC} artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 } else {
                                     // --- Create docker native image artifact
                                     progress.report({
                                         increment,
-                                        message: `Creating ${subName} container image with native executable artifact for ${repositoryName}...`
+                                        message: `Creating ${subName} ${NI_CONTAINER_NAME_LC} artifact for ${repositoryName}...`
                                     });
-                                    const docker_nibuildArtifactDescription = `Container image with native executable artifact for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}`;
+                                    const docker_nibuildArtifactDescription = `Build artifact for ${NI_CONTAINER_NAME_LC} for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}`;
                                     try {
-                                        logUtils.logInfo(`[deploy] Creating ${subName} container image with native executable artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        logUtils.logInfo(`[deploy] Creating ${subName} ${NI_CONTAINER_NAME_LC} artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         subData.docker_nibuildArtifact = false;
                                         subData.docker_nibuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, projectOCID, docker_nibuildImage, docker_nibuildArtifactName, docker_nibuildArtifactDescription, {
                                             'gcn_tooling_deployID': deployData.tag,
@@ -1402,7 +1407,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             originalName: docker_nibuildArtifactName
                                         });
                                     } catch (err) {
-                                        resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with native executable artifact for ${repositoryName}`, err));
+                                        resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${NI_CONTAINER_NAME_LC} artifact for ${repositoryName}`, err));
                                         subData.docker_nibuildArtifact = false;
                                         dump(deployData);
                                         return;
@@ -1410,10 +1415,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     dump(deployData);
                                 }
 
-                                const docker_nibuildPipelineName = `Build ${subName.toUpperCase()} Container Image with Native Executable`;
+                                const docker_nibuildPipelineName = `Build ${subName.toUpperCase()} ${NI_CONTAINER_NAME}`;
                                 if (subData.docker_nibuildPipeline) {
                                     progress.report({
-                                        message: `Using already created build pipeline for ${subName} container image with native executable of ${repositoryName}...`
+                                        message: `Using already created build pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${repositoryName}...`
                                     });
                                     try {
                                         const pipeline = await ociUtils.getBuildPipeline(provider, subData.docker_nibuildPipeline);
@@ -1428,16 +1433,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     progress.report({
                                         increment,
                                     });
-                                    logUtils.logInfo(`[deploy] Using already created build pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    logUtils.logInfo(`[deploy] Using already created build pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 } else {
                                     // --- Create docker native image pipeline
                                     progress.report({
                                         increment,
-                                        message: `Creating build pipeline for ${subName} container image with native executable of ${repositoryName}...`
+                                        message: `Creating build pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${repositoryName}...`
                                     });
-                                    const docker_nibuildPipelineDescription = `Build pipeline to build container image with native executable for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}. Initially configured to use custom build runner shape - running it may impose additional costs!`;
+                                    const docker_nibuildPipelineDescription = `Build pipeline to build ${NI_CONTAINER_NAME_LC} for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}. Initially configured to use custom build runner shape - running it may impose additional costs!`;
                                     try {
-                                        logUtils.logInfo(`[deploy] Creating build pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        logUtils.logInfo(`[deploy] Creating build pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         const pipelineName = `${repositoryNamePrefix}${docker_nibuildPipelineName}`;
                                         subData.docker_nibuildPipeline = false;
                                         subData.docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_nibuildPipelineDescription, {
@@ -1455,7 +1460,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             autoImport: ociFeatures.NI_PIPELINES_ENABLED && subName === 'oci' ? 'true' : undefined
                                         });
                                     } catch (err) {
-                                        resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with native executable build pipeline for ${repositoryName}`, err));
+                                        resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${NI_CONTAINER_NAME_LC} build pipeline for ${repositoryName}`, err));
                                         subData.docker_nibuildPipeline = false;
                                         dump(deployData);
                                         return;
@@ -1473,16 +1478,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     }
                                 }
                                 if (subData.docker_nibuildPipelineBuildStage) {
-                                    logUtils.logInfo(`[deploy] Using already created build stage of build pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    logUtils.logInfo(`[deploy] Using already created build stage of build pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 } else {
                                     try {
-                                        logUtils.logInfo(`[deploy] Creating build stage of build pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        logUtils.logInfo(`[deploy] Creating build stage of build pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         subData.docker_nibuildPipelineBuildStage = false;
                                         subData.docker_nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, subData.docker_nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${subName}_${docker_nibuildspec_template}`, true, {
                                             'gcn_tooling_deployID': deployData.tag
                                         })).id;
                                     } catch (err) {
-                                        resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with native executable pipeline build stage for ${repositoryName}`, err));
+                                        resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${NI_CONTAINER_NAME_LC} pipeline build stage for ${repositoryName}`, err));
                                         subData.docker_nibuildPipelineBuildStage = false;
                                         dump(deployData);
                                         return;
@@ -1500,16 +1505,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     }
                                 }
                                 if (subData.docker_nibuildPipelineArtifactsStage) {
-                                    logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 } else {
                                     try {
-                                        logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         subData.docker_nibuildPipelineArtifactsStage = false;
                                         subData.docker_nibuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, subData.docker_nibuildPipeline, subData.docker_nibuildPipelineBuildStage, subData.docker_nibuildArtifact, docker_nibuildArtifactName, {
                                             'gcn_tooling_deployID': deployData.tag
                                         })).id;
                                     } catch (err) {
-                                        resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with native executable pipeline artifacts stage for ${repositoryName}`, err));
+                                        resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${NI_CONTAINER_NAME_LC} pipeline artifacts stage for ${repositoryName}`, err));
                                         subData.docker_nibuildPipelineArtifactsStage = false;
                                         dump(deployData);
                                         return;
@@ -1592,7 +1597,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         const oke_deployNativePipelineName = `Deploy ${subName.toUpperCase()} Container with Native Executable to OKE`;
                                         if (subData.oke_deployNativePipeline) {
                                             progress.report({
-                                                message: `Using already created deployment to OKE pipeline for ${subName} container image with native executable of ${repositoryName}...`
+                                                message: `Using already created deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${repositoryName}...`
                                             });
                                             try {
                                                 const pipeline = await ociUtils.getDeployPipeline(provider, subData.oke_deployNativePipeline);
@@ -1607,16 +1612,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             progress.report({
                                                 increment,
                                             });
-                                            logUtils.logInfo(`[deploy] Using already created deployment to OKE pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            logUtils.logInfo(`[deploy] Using already created deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         } else {
                                             // --- Create OKE native deployment pipeline
                                             progress.report({
                                                 increment,
-                                                message: `Creating deployment to OKE pipeline for ${subName} container image with native executable of ${repositoryName}...`
+                                                message: `Creating deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${repositoryName}...`
                                             });
-                                            const oke_deployNativePipelineDescription = `Deployment pipeline to deploy container image with native executable for OCI & devops project ${projectName} & repository ${repositoryName} to OKE`;
+                                            const oke_deployNativePipelineDescription = `Deployment pipeline to deploy ${NI_CONTAINER_NAME_LC} for OCI & devops project ${projectName} & repository ${repositoryName} to OKE`;
                                             try {
-                                                logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 const pipelineName = `${repositoryNamePrefix}${oke_deployNativePipelineName}`;
                                                 subData.oke_deployNativePipeline = false;
                                                 subData.oke_deployNativePipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, pipelineName, oke_deployNativePipelineDescription, [{
@@ -1638,7 +1643,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                                     autoImport: ociFeatures.NI_PIPELINES_ENABLED ? 'true' : undefined
                                                 });
                                             } catch (err) {
-                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with native executable deployment to OKE pipeline for ${repositoryName}`, err));
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${NI_CONTAINER_NAME_LC} deployment to OKE pipeline for ${repositoryName}`, err));
                                                 subData.oke_deployNativePipeline = false;
                                                 dump(deployData);
                                                 return;
@@ -1656,16 +1661,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             }
                                         }
                                         if (subData.setupSecretForDeployNativeStage) {
-                                            logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         } else {
                                             try {
-                                                logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 subData.setupSecretForDeployNativeStage = false;
                                                 subData.setupSecretForDeployNativeStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, subData.oke_deployNativePipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnetId, {
                                                     'gcn_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
-                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with native executable setup secret stage for ${repositoryName}`, err));
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${NI_CONTAINER_NAME_LC} setup secret stage for ${repositoryName}`, err));
                                                 subData.setupSecretForDeployNativeStage = false;
                                                 dump(deployData);
                                                 return;
@@ -1683,16 +1688,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             }
                                         }
                                         if (subData.deployNativeToOkeStage) {
-                                            logUtils.logInfo(`[deploy] Using already created deploy to OKE stage of deployment to OKE pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            logUtils.logInfo(`[deploy] Using already created deploy to OKE stage of deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         } else {
                                             try {
-                                                logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${subName} container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 subData.deployNativeToOkeStage = false;
                                                 subData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage(provider, subData.oke_deployNativePipeline, subData.setupSecretForDeployNativeStage, deployData.okeClusterEnvironment, subData.oke_deployNativeConfigArtifact, {
                                                     'gcn_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
-                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with native executable deployment to OKE stage for ${repositoryName}`, err));
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${NI_CONTAINER_NAME_LC} deployment to OKE stage for ${repositoryName}`, err));
                                                 subData.deployNativeToOkeStage = false;
                                                 dump(deployData);
                                                 return;
@@ -1766,11 +1771,11 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     // --- Generate docker jvm image build spec
                                     progress.report({
                                         increment,
-                                        message: `Creating ${subName} container image with JVM build spec for source code repository ${repositoryName}...`
+                                        message: `Creating ${subName} ${JVM_CONTAINER_NAME_LC} build spec for source code repository ${repositoryName}...`
                                     });
                                     const docker_jvmbuildspec_template = 'docker_jvmbuild_spec.yaml';
                                     const docker_jvmbuildArtifactName = `${repositoryName}_${subName}_jvm_docker_image`;
-                                    logUtils.logInfo(`[deploy] Creating ${subName} container image with JVM build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    logUtils.logInfo(`[deploy] Creating ${subName} ${JVM_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     const docker_jvmbuildTemplate = expandTemplate(resourcesPath, docker_jvmbuildspec_template, {
                                         project_build_command: project_devbuild_command,
                                         project_artifact_location: project_devbuild_artifact_location,
@@ -1778,20 +1783,20 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         image_name: jvmContainerRepository.displayName.toLowerCase()
                                     }, folder, `${subName}_${docker_jvmbuildspec_template}`);
                                     if (!docker_jvmbuildTemplate) {
-                                        resolve(`Failed to configure ${subName} container image with JVM build spec for ${repositoryName}`);
+                                        resolve(`Failed to configure ${subName} ${JVM_CONTAINER_NAME_LC} build spec for ${repositoryName}`);
                                         return;
                                     }
                                     const docker_jvm_file = 'Dockerfile.jvm';
                                     const docker_jvmFile = expandTemplate(resourcesPath, docker_jvm_file, {}, folder);
                                     if (!docker_jvmFile) {
-                                        resolve(`Failed to configure container image with JVM file for ${repositoryName}`);
+                                        resolve(`Failed to configure ${JVM_CONTAINER_NAME_LC} file for ${repositoryName}`);
                                         return;
                                     }
 
                                     const docker_jvmbuildImage = `${provider.getRegion().regionCode}.ocir.io/${deployData.namespace}/${jvmContainerRepository.displayName}:\${DOCKER_TAG}`;
                                     if (subData.docker_jvmbuildArtifact) {
                                         progress.report({
-                                            message: `Using already created ${subName} container image with JVM artifact for ${repositoryName}...`
+                                            message: `Using already created ${subName} ${JVM_CONTAINER_NAME_LC} artifact for ${repositoryName}...`
                                         });
                                         try {
                                             const artifact = await ociUtils.getDeployArtifact(provider, subData.docker_jvmbuildArtifact);
@@ -1806,16 +1811,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         progress.report({
                                             increment,
                                         });
-                                        logUtils.logInfo(`[deploy] Using already created ${subName} container image with JVM artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        logUtils.logInfo(`[deploy] Using already created ${subName} ${JVM_CONTAINER_NAME_LC} artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     } else {
                                         // --- Create docker jvm image artifact
                                         progress.report({
                                             increment,
-                                            message: `Creating ${subName} container image with JVM artifact for ${repositoryName}...`
+                                            message: `Creating ${subName} ${JVM_CONTAINER_NAME_LC} artifact for ${repositoryName}...`
                                         });
-                                        const docker_jvmbuildArtifactDescription = `container image with JVM artifact for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}`;
+                                        const docker_jvmbuildArtifactDescription = `${JVM_CONTAINER_NAME_LC} artifact for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}`;
                                         try {
-                                            logUtils.logInfo(`[deploy] Creating ${subName} container image with JVM artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            logUtils.logInfo(`[deploy] Creating ${subName} ${JVM_CONTAINER_NAME_LC} artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                             subData.docker_jvmbuildArtifact = false;
                                             subData.docker_jvmbuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, projectOCID, docker_jvmbuildImage, docker_jvmbuildArtifactName, docker_jvmbuildArtifactDescription, {
                                                 'gcn_tooling_deployID': deployData.tag,
@@ -1829,7 +1834,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                                 originalName: docker_jvmbuildArtifactName
                                             });
                                         } catch (err) {
-                                            resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with JVM artifact for ${repositoryName}`, err));
+                                            resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${JVM_CONTAINER_NAME_LC} artifact for ${repositoryName}`, err));
                                             subData.docker_jvmbuildArtifact = false;
                                             dump(deployData);
                                             return;
@@ -1837,10 +1842,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         dump(deployData);
                                     }
 
-                                    const docker_jvmbuildPipelineName = `Build ${subName.toUpperCase()} Container Image with JVM`;
+                                    const docker_jvmbuildPipelineName = `Build ${subName.toUpperCase()} ${JVM_CONTAINER_NAME}`;
                                     if (subData.docker_jvmbuildPipeline) {
                                         progress.report({
-                                            message: `Using already created build pipeline for ${subName} container image with JVM of ${repositoryName}...`
+                                            message: `Using already created build pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${repositoryName}...`
                                         });
                                         try {
                                             const pipeline = await ociUtils.getBuildPipeline(provider, subData.docker_jvmbuildPipeline);
@@ -1855,16 +1860,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         progress.report({
                                             increment,
                                         });
-                                        logUtils.logInfo(`[deploy] Using already created build pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        logUtils.logInfo(`[deploy] Using already created build pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     } else {
                                         // --- Create docker jvm image pipeline
                                         progress.report({
                                             increment,
-                                            message: `Creating build pipeline for ${subName} container image with JVM of ${repositoryName}...`
+                                            message: `Creating build pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${repositoryName}...`
                                         });
-                                        const docker_jvmbuildPipelineDescription = `Build pipeline to build container image with JVM for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}`;
+                                        const docker_jvmbuildPipelineDescription = `Build pipeline to build ${JVM_CONTAINER_NAME_LC} for ${subName.toUpperCase()} & devops project ${projectName} & repository ${repositoryName}`;
                                         try {
-                                            logUtils.logInfo(`[deploy] Creating build pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            logUtils.logInfo(`[deploy] Creating build pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                             const pipelineName = `${repositoryNamePrefix}${docker_jvmbuildPipelineName}`;
                                             subData.docker_jvmbuildPipeline = false;
                                             subData.docker_jvmbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_jvmbuildPipelineDescription, {
@@ -1882,7 +1887,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                                 autoImport: 'true'
                                             });
                                         } catch (err) {
-                                            resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with JVM build pipeline for ${repositoryName}`, err));
+                                            resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${JVM_CONTAINER_NAME_LC} build pipeline for ${repositoryName}`, err));
                                             subData.docker_jvmbuildPipeline = false;
                                             dump(deployData);
                                             return;
@@ -1900,16 +1905,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         }
                                     }
                                     if (subData.docker_jvmbuildPipelineBuildStage) {
-                                        logUtils.logInfo(`[deploy] Using already created build stage of build pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        logUtils.logInfo(`[deploy] Using already created build stage of build pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     } else {
                                         try {
-                                            logUtils.logInfo(`[deploy] Creating build stage of build pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            logUtils.logInfo(`[deploy] Creating build stage of build pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                             subData.docker_jvmbuildPipelineBuildStage = false;
                                             subData.docker_jvmbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, subData.docker_jvmbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${subName}_${docker_jvmbuildspec_template}`, false, {
                                                 'gcn_tooling_deployID': deployData.tag
                                             })).id;
                                         } catch (err) {
-                                            resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with JVM pipeline build stage for ${repositoryName}`, err));
+                                            resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${JVM_CONTAINER_NAME_LC} pipeline build stage for ${repositoryName}`, err));
                                             subData.docker_jvmbuildPipelineBuildStage = false;
                                             dump(deployData);
                                             return;
@@ -1927,16 +1932,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         }
                                     }
                                     if (subData.docker_jvmbuildPipelineArtifactsStage) {
-                                        logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     } else {
                                         try {
-                                            logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                             subData.docker_jvmbuildPipelineArtifactsStage = false;
                                             subData.docker_jvmbuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, subData.docker_jvmbuildPipeline, subData.docker_jvmbuildPipelineBuildStage, subData.docker_jvmbuildArtifact, docker_jvmbuildArtifactName, {
                                                 'gcn_tooling_deployID': deployData.tag
                                             })).id;
                                         } catch (err) {
-                                            resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with JVM pipeline artifacts stage for ${repositoryName}`, err));
+                                            resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${JVM_CONTAINER_NAME_LC} pipeline artifacts stage for ${repositoryName}`, err));
                                             subData.docker_jvmbuildPipelineArtifactsStage = false;
                                             dump(deployData);
                                             return;
@@ -2015,7 +2020,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         const oke_deployJvmPipelineName = `Deploy ${subName.toUpperCase()} Container with JVM to OKE`;
                                         if (subData.oke_deployJvmPipeline) {
                                             progress.report({
-                                                message: `Using already created deployment to OKE pipeline for ${subName} container image with JVM of ${repositoryName}...`
+                                                message: `Using already created deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${repositoryName}...`
                                             });
                                             try {
                                                 const pipeline = await ociUtils.getDeployPipeline(provider, subData.oke_deployJvmPipeline);
@@ -2030,16 +2035,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             progress.report({
                                                 increment,
                                             });
-                                            logUtils.logInfo(`[deploy] Using already created deployment to OKE pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            logUtils.logInfo(`[deploy] Using already created deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         } else {
                                             // --- Create OKE native deployment pipeline
                                             progress.report({
                                                 increment,
-                                                message: `Creating deployment to OKE pipeline for ${subName} container image with JVM of ${repositoryName}...`
+                                                message: `Creating deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${repositoryName}...`
                                             });
-                                            const oke_deployJvmPipelineDescription = `Deployment pipeline to deploy container image with JVM for OCI & devops project ${projectName} & repository ${repositoryName} to OKE`;
+                                            const oke_deployJvmPipelineDescription = `Deployment pipeline to deploy ${JVM_CONTAINER_NAME_LC} for OCI & devops project ${projectName} & repository ${repositoryName} to OKE`;
                                             try {
-                                                logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 const pipelineName = `${repositoryNamePrefix}${oke_deployJvmPipelineName}`;
                                                 subData.oke_deployJvmPipeline = false;
                                                 subData.oke_deployJvmPipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, pipelineName, oke_deployJvmPipelineDescription, [{
@@ -2061,7 +2066,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                                     autoImport: 'true'
                                                 });
                                             } catch (err) {
-                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with JVM deployment to OKE pipeline for ${repositoryName}`, err));
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${JVM_CONTAINER_NAME_LC} deployment to OKE pipeline for ${repositoryName}`, err));
                                                 subData.oke_deployJvmPipeline = false;
                                                 dump(deployData);
                                                 return;
@@ -2079,16 +2084,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             }
                                         }
                                         if (subData.setupSecretForDeployJvmStage) {
-                                            logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         } else {
                                             try {
-                                                logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 subData.setupSecretForDeployJvmStage = false;
                                                 subData.setupSecretForDeployJvmStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, subData.oke_deployJvmPipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnetId, {
                                                     'gcn_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
-                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with JVM setup secret stage for ${repositoryName}`, err));
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${JVM_CONTAINER_NAME_LC} setup secret stage for ${repositoryName}`, err));
                                                 subData.setupSecretForDeployJvmStage = false;
                                                 dump(deployData);
                                                 return;
@@ -2106,16 +2111,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             }
                                         }
                                         if (subData.deployJvmToOkeStage) {
-                                            logUtils.logInfo(`[deploy] Using already created deploy to OKE stage of deployment to OKE pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            logUtils.logInfo(`[deploy] Using already created deploy to OKE stage of deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         } else {
                                             try {
-                                                logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${subName} container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 subData.deployJvmToOkeStage = false;
                                                 subData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage(provider, subData.oke_deployJvmPipeline, subData.setupSecretForDeployJvmStage, deployData.okeClusterEnvironment, subData.oke_deployJvmConfigArtifact, {
                                                     'gcn_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
-                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} container image with JVM deployment to OKE stage for ${repositoryName}`, err));
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${JVM_CONTAINER_NAME_LC} deployment to OKE stage for ${repositoryName}`, err));
                                                 subData.deployJvmToOkeStage = false;
                                                 dump(deployData);
                                                 return;
@@ -2186,11 +2191,11 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         // --- Generate docker native image build spec
                         progress.report({
                             increment,
-                            message: `Creating container image with native executable build spec for source code repository ${repositoryName}...`
+                            message: `Creating ${NI_CONTAINER_NAME_LC} build spec for source code repository ${repositoryName}...`
                         });
                         const docker_nibuildspec_template = 'docker_nibuild_spec.yaml';
                         const docker_nibuildArtifactName = `${repositoryName}_native_docker_image`;
-                        logUtils.logInfo(`[deploy] Creating container image with native executable build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        logUtils.logInfo(`[deploy] Creating ${NI_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const docker_nibuildTemplate = expandTemplate(resourcesPath, docker_nibuildspec_template, {
                             project_build_command: project_build_native_executable_command,
                             project_artifact_location: project_native_executable_artifact_location,
@@ -2198,20 +2203,20 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             image_name: nativeContainerRepository.displayName.toLowerCase()
                         }, folder);
                         if (!docker_nibuildTemplate) {
-                            resolve(`Failed to configure container image with native executable build spec for ${repositoryName}`);
+                            resolve(`Failed to configure ${NI_CONTAINER_NAME_LC} build spec for ${repositoryName}`);
                             return;
                         }
                         const docker_ni_file = 'Dockerfile.native';
                         const docker_niFile = expandTemplate(resourcesPath, docker_ni_file, {}, folder);
                         if (!docker_niFile) {
-                            resolve(`Failed to configure container image with native executable file for ${repositoryName}`);
+                            resolve(`Failed to configure ${NI_CONTAINER_NAME_LC} file for ${repositoryName}`);
                             return;
                         }
 
                         const docker_nibuildImage = `${provider.getRegion().regionCode}.ocir.io/${deployData.namespace}/${nativeContainerRepository.displayName}:\${DOCKER_TAG}`;
                         if (folderData.docker_nibuildArtifact) {
                             progress.report({
-                                message: `Using already created container image with native executable artifact for ${repositoryName}...`
+                                message: `Using already created ${NI_CONTAINER_NAME_LC} artifact for ${repositoryName}...`
                             });
                             try {
                                 const artifact = await ociUtils.getDeployArtifact(provider, folderData.docker_nibuildArtifact);
@@ -2226,16 +2231,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             progress.report({
                                 increment,
                             });
-                            logUtils.logInfo(`[deploy] Using already created container image with native executable artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Using already created ${NI_CONTAINER_NAME_LC} artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         } else {
                             // --- Create docker native image artifact
                             progress.report({
                                 increment,
-                                message: `Creating container image with native executable artifact for ${repositoryName}...`
+                                message: `Creating ${NI_CONTAINER_NAME_LC} artifact for ${repositoryName}...`
                             });
-                            const docker_nibuildArtifactDescription = `Container image with native executable artifact for devops project ${projectName} & repository ${repositoryName}`;
+                            const docker_nibuildArtifactDescription = `Build artifact for ${NI_CONTAINER_NAME_LC} for devops project ${projectName} & repository ${repositoryName}`;
                             try {
-                                logUtils.logInfo(`[deploy] Creating container image with native executable artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Creating ${NI_CONTAINER_NAME_LC} artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.docker_nibuildArtifact = false;
                                 folderData.docker_nibuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, projectOCID, docker_nibuildImage, docker_nibuildArtifactName, docker_nibuildArtifactDescription, {
                                     'gcn_tooling_deployID': deployData.tag,
@@ -2249,7 +2254,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     originalName: docker_nibuildArtifactName
                                 });
                             } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to create container image with native executable artifact for ${repositoryName}`, err));
+                                resolve(dialogs.getErrorMessage(`Failed to create ${NI_CONTAINER_NAME_LC} artifact for ${repositoryName}`, err));
                                 folderData.docker_nibuildArtifact = false;
                                 dump(deployData);
                                 return;
@@ -2257,10 +2262,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             dump(deployData);
                         }
 
-                        const docker_nibuildPipelineName = 'Build Container Image with Native Executable';
+                        const docker_nibuildPipelineName = `Build ${NI_CONTAINER_NAME}`;
                         if (folderData.docker_nibuildPipeline) {
                             progress.report({
-                                message: `Using already created build pipeline for container image with native executable of ${repositoryName}...`
+                                message: `Using already created build pipeline for ${NI_CONTAINER_NAME_LC} of ${repositoryName}...`
                             });
                             try {
                                 const pipeline = await ociUtils.getBuildPipeline(provider, folderData.docker_nibuildPipeline);
@@ -2275,16 +2280,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             progress.report({
                                 increment,
                             });
-                            logUtils.logInfo(`[deploy] Using already created build pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Using already created build pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         } else {
                             // --- Create docker native image pipeline
                             progress.report({
                                 increment,
-                                message: `Creating build pipeline for container image with native executable of ${repositoryName}...`
+                                message: `Creating build pipeline for ${NI_CONTAINER_NAME_LC} of ${repositoryName}...`
                             });
-                            const docker_nibuildPipelineDescription = `Build pipeline to build container image with native executable for devops project ${projectName} & repository ${repositoryName}. Initially configured to use custom build runner shape - running it may impose additional costs!`;
+                            const docker_nibuildPipelineDescription = `Build pipeline to build ${NI_CONTAINER_NAME_LC} for devops project ${projectName} & repository ${repositoryName}. Initially configured to use custom build runner shape - running it may impose additional costs!`;
                             try {
-                                logUtils.logInfo(`[deploy] Creating build pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Creating build pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 const pipelineName = `${repositoryNamePrefix}${docker_nibuildPipelineName}`;
                                 folderData.docker_nibuildPipeline = false;
                                 folderData.docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_nibuildPipelineDescription, {
@@ -2302,7 +2307,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     autoImport: ociFeatures.NI_PIPELINES_ENABLED ? 'true' : undefined
                                 });
                             } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to create container image with native executable build pipeline for ${repositoryName}`, err));
+                                resolve(dialogs.getErrorMessage(`Failed to create ${NI_CONTAINER_NAME_LC} build pipeline for ${repositoryName}`, err));
                                 folderData.docker_nibuildPipeline = false;
                                 dump(deployData);
                                 return;
@@ -2320,16 +2325,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             }
                         }
                         if (folderData.docker_nibuildPipelineBuildStage) {
-                            logUtils.logInfo(`[deploy] Using already created build stage of build pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Using already created build stage of build pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         } else {
                             try {
-                                logUtils.logInfo(`[deploy] Creating build stage of build pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Creating build stage of build pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.docker_nibuildPipelineBuildStage = false;
                                 folderData.docker_nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.docker_nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${docker_nibuildspec_template}`, true, {
                                     'gcn_tooling_deployID': deployData.tag
                                 })).id;
                             } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to create container image with native executable pipeline build stage for ${repositoryName}`, err));
+                                resolve(dialogs.getErrorMessage(`Failed to create ${NI_CONTAINER_NAME_LC} pipeline build stage for ${repositoryName}`, err));
                                 folderData.docker_nibuildPipelineBuildStage = false;
                                 dump(deployData);
                                 return;
@@ -2347,16 +2352,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             }
                         }
                         if (folderData.docker_nibuildPipelineArtifactsStage) {
-                            logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         } else {
                             try {
-                                logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.docker_nibuildPipelineArtifactsStage = false;
                                 folderData.docker_nibuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, folderData.docker_nibuildPipeline, folderData.docker_nibuildPipelineBuildStage, folderData.docker_nibuildArtifact, docker_nibuildArtifactName, {
                                     'gcn_tooling_deployID': deployData.tag
                                 })).id;
                             } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to create container image with native executable pipeline artifacts stage for ${repositoryName}`, err));
+                                resolve(dialogs.getErrorMessage(`Failed to create ${NI_CONTAINER_NAME_LC} pipeline artifacts stage for ${repositoryName}`, err));
                                 folderData.docker_nibuildPipelineArtifactsStage = false;
                                 dump(deployData);
                                 return;
@@ -2437,7 +2442,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             const oke_deployNativePipelineName = 'Deploy Container with Native Executable to OKE';
                             if (folderData.oke_deployNativePipeline) {
                                 progress.report({
-                                    message: `Using already created deployment to OKE pipeline for container image with native executable of ${repositoryName}...`
+                                    message: `Using already created deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${repositoryName}...`
                                 });
                                 try {
                                     const pipeline = await ociUtils.getDeployPipeline(provider, folderData.oke_deployNativePipeline);
@@ -2452,16 +2457,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 progress.report({
                                     increment,
                                 });
-                                logUtils.logInfo(`[deploy] Using already created deployment to OKE pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Using already created deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             } else {
                                 // --- Create OKE native deployment pipeline
                                 progress.report({
                                     increment,
-                                    message: `Creating deployment to OKE pipeline for container image with native executable of ${repositoryName}...`
+                                    message: `Creating deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${repositoryName}...`
                                 });
-                                const oke_deployNativePipelineDescription = `Deployment pipeline to deploy container image with native executable for devops project ${projectName} & repository ${repositoryName} to OKE`;
+                                const oke_deployNativePipelineDescription = `Deployment pipeline to deploy ${NI_CONTAINER_NAME_LC} for devops project ${projectName} & repository ${repositoryName} to OKE`;
                                 try {
-                                    logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     const pipelineName = `${repositoryNamePrefix}${oke_deployNativePipelineName}`;
                                     folderData.oke_deployNativePipeline = false;
                                     folderData.oke_deployNativePipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, pipelineName, oke_deployNativePipelineDescription, [{
@@ -2483,7 +2488,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         autoImport: ociFeatures.NI_PIPELINES_ENABLED ? 'true' : undefined
                                     });
                                 } catch (err) {
-                                    resolve(dialogs.getErrorMessage(`Failed to create container image with native executable deployment to OKE pipeline for ${repositoryName}`, err));
+                                    resolve(dialogs.getErrorMessage(`Failed to create ${NI_CONTAINER_NAME_LC} deployment to OKE pipeline for ${repositoryName}`, err));
                                     folderData.oke_deployNativePipeline = false;
                                     dump(deployData);
                                     return;
@@ -2501,16 +2506,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 }
                             }
                             if (folderData.setupSecretForDeployNativeStage) {
-                                logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             } else {
                                 try {
-                                    logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.setupSecretForDeployNativeStage = false;
                                     folderData.setupSecretForDeployNativeStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, folderData.oke_deployNativePipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnetId, {
                                         'gcn_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {
-                                    resolve(dialogs.getErrorMessage(`Failed to create container image with native executable setup secret stage for ${repositoryName}`, err));
+                                    resolve(dialogs.getErrorMessage(`Failed to create ${NI_CONTAINER_NAME_LC} setup secret stage for ${repositoryName}`, err));
                                     folderData.setupSecretForDeployNativeStage = false;
                                     dump(deployData);
                                     return;
@@ -2528,16 +2533,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 }
                             }
                             if (folderData.deployNativeToOkeStage) {
-                                logUtils.logInfo(`[deploy] Using already created deploy to OKE stage of deployment to OKE pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Using already created deploy to OKE stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             } else {
                                 try {
-                                    logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for container image with native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.deployNativeToOkeStage = false;
                                     folderData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage(provider, folderData.oke_deployNativePipeline, folderData.setupSecretForDeployNativeStage, deployData.okeClusterEnvironment, folderData.oke_deployNativeConfigArtifact, {
                                         'gcn_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {
-                                    resolve(dialogs.getErrorMessage(`Failed to create container image with native executable deployment to OKE stage for ${repositoryName}`, err));
+                                    resolve(dialogs.getErrorMessage(`Failed to create ${NI_CONTAINER_NAME_LC} deployment to OKE stage for ${repositoryName}`, err));
                                     folderData.deployNativeToOkeStage = false;
                                     dump(deployData);
                                     return;
@@ -2601,11 +2606,11 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         // --- Generate docker jvm image build spec
                         progress.report({
                             increment,
-                            message: `Creating container image with JVM build build spec for source code repository ${repositoryName}...`
+                            message: `Creating ${JVM_CONTAINER_NAME_LC} build build spec for source code repository ${repositoryName}...`
                         });
                         const docker_jvmbuildspec_template = 'docker_jvmbuild_spec.yaml';
                         const docker_jvmbuildArtifactName = `${repositoryName}_jvm_docker_image`;
-                        logUtils.logInfo(`[deploy] Creating container image with JVM build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        logUtils.logInfo(`[deploy] Creating ${JVM_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const docker_jvmbuildTemplate = expandTemplate(resourcesPath, docker_jvmbuildspec_template, {
                             project_build_command: project_devbuild_command,
                             project_artifact_location: project_devbuild_artifact_location,
@@ -2613,20 +2618,20 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             image_name: jvmContainerRepository.displayName.toLowerCase()
                         }, folder);
                         if (!docker_jvmbuildTemplate) {
-                            resolve(`Failed to configure container image with JVM build spec for ${repositoryName}`);
+                            resolve(`Failed to configure ${JVM_CONTAINER_NAME_LC} build spec for ${repositoryName}`);
                             return;
                         }
                         const docker_jvm_file = 'Dockerfile.jvm';
                         const docker_jvmFile = expandTemplate(resourcesPath, docker_jvm_file, {}, folder);
                         if (!docker_jvmFile) {
-                            resolve(`Failed to configure container image with JVM file for ${repositoryName}`);
+                            resolve(`Failed to configure ${JVM_CONTAINER_NAME_LC} file for ${repositoryName}`);
                             return;
                         }
 
                         const docker_jvmbuildImage = `${provider.getRegion().regionCode}.ocir.io/${deployData.namespace}/${jvmContainerRepository.displayName}:\${DOCKER_TAG}`;
                         if (folderData.docker_jvmbuildArtifact) {
                             progress.report({
-                                message: `Using already created container image with JVM artifact for ${repositoryName}...`
+                                message: `Using already created ${JVM_CONTAINER_NAME_LC} artifact for ${repositoryName}...`
                             });
                             try {
                                 const artifact = await ociUtils.getDeployArtifact(provider, folderData.docker_jvmbuildArtifact);
@@ -2641,16 +2646,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             progress.report({
                                 increment,
                             });
-                            logUtils.logInfo(`[deploy] Using already created container image with JVM artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Using already created ${JVM_CONTAINER_NAME_LC} artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         } else {
                             // --- Create docker jvm image artifact
                             progress.report({
                                 increment,
-                                message: `Creating container image with JVM artifact for ${repositoryName}...`
+                                message: `Creating ${JVM_CONTAINER_NAME_LC} artifact for ${repositoryName}...`
                             });
-                            const docker_jvmbuildArtifactDescription = `Container image with JVM artifact for devops project ${projectName} & repository ${repositoryName}`;
+                            const docker_jvmbuildArtifactDescription = `Build artifact for ${JVM_CONTAINER_NAME} for devops project ${projectName} & repository ${repositoryName}`;
                             try {
-                                logUtils.logInfo(`[deploy] Creating container image with JVM artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Creating ${JVM_CONTAINER_NAME_LC} artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.docker_jvmbuildArtifact = false;
                                 folderData.docker_jvmbuildArtifact = (await ociUtils.createProjectDockerArtifact(provider, projectOCID, docker_jvmbuildImage, docker_jvmbuildArtifactName, docker_jvmbuildArtifactDescription, {
                                     'gcn_tooling_deployID': deployData.tag,
@@ -2664,7 +2669,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     originalName: docker_jvmbuildArtifactName
                                 });
                             } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to create container image with JVM artifact for ${repositoryName}`, err));
+                                resolve(dialogs.getErrorMessage(`Failed to create ${JVM_CONTAINER_NAME_LC} artifact for ${repositoryName}`, err));
                                 folderData.docker_jvmbuildArtifact = false;
                                 dump(deployData);
                                 return;
@@ -2672,10 +2677,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             dump(deployData);
                         }
 
-                        const docker_jvmbuildPipelineName = 'Build Container Image with JVM';
+                        const docker_jvmbuildPipelineName = `Build ${JVM_CONTAINER_NAME}`;
                         if (folderData.docker_jvmbuildPipeline) {
                             progress.report({
-                                message: `Using already created build pipeline for container image with JVM of ${repositoryName}...`
+                                message: `Using already created build pipeline for ${JVM_CONTAINER_NAME_LC} of ${repositoryName}...`
                             });
                             try {
                                 const pipeline = await ociUtils.getBuildPipeline(provider, folderData.docker_jvmbuildPipeline);
@@ -2690,16 +2695,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             progress.report({
                                 increment,
                             });
-                            logUtils.logInfo(`[deploy] Using already created build pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Using already created build pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         } else {
                             // --- Create docker jvm image pipeline
                             progress.report({
                                 increment,
-                                message: `Creating build pipeline for container image with JVM of ${repositoryName}...`
+                                message: `Creating build pipeline for ${JVM_CONTAINER_NAME_LC} of ${repositoryName}...`
                             });
-                            const docker_jvmbuildPipelineDescription = `Build pipeline to build container image with JVM for devops project ${projectName} & repository ${repositoryName}`;
+                            const docker_jvmbuildPipelineDescription = `Build pipeline to build ${JVM_CONTAINER_NAME_LC} for devops project ${projectName} & repository ${repositoryName}`;
                             try {
-                                logUtils.logInfo(`[deploy] Creating build pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Creating build pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 const pipelineName = `${repositoryNamePrefix}${docker_jvmbuildPipelineName}`;
                                 folderData.docker_jvmbuildPipeline = false;
                                 folderData.docker_jvmbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_jvmbuildPipelineDescription, {
@@ -2717,7 +2722,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     autoImport: 'true'
                                 });
                             } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to create container image with JVM build pipeline for ${repositoryName}`, err));
+                                resolve(dialogs.getErrorMessage(`Failed to create ${JVM_CONTAINER_NAME_LC} build pipeline for ${repositoryName}`, err));
                                 folderData.docker_jvmbuildPipeline = false;
                                 dump(deployData);
                                 return;
@@ -2735,16 +2740,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             }
                         }
                         if (folderData.docker_jvmbuildPipelineBuildStage) {
-                            logUtils.logInfo(`[deploy] Using already created build stage of build pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Using already created build stage of build pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         } else {
                             try {
-                                logUtils.logInfo(`[deploy] Creating build stage of build pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Creating build stage of build pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.docker_jvmbuildPipelineBuildStage = false;
                                 folderData.docker_jvmbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.docker_jvmbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `.gcn/${docker_jvmbuildspec_template}`, false, {
                                     'gcn_tooling_deployID': deployData.tag
                                 })).id;
                             } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to create container image with JVM pipeline build stage for ${repositoryName}`, err));
+                                resolve(dialogs.getErrorMessage(`Failed to create ${JVM_CONTAINER_NAME_LC} pipeline build stage for ${repositoryName}`, err));
                                 folderData.docker_jvmbuildPipelineBuildStage = false;
                                 dump(deployData);
                                 return;
@@ -2762,16 +2767,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             }
                         }
                         if (folderData.docker_jvmbuildPipelineArtifactsStage) {
-                            logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         } else {
                             try {
-                                logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.docker_jvmbuildPipelineArtifactsStage = false;
                                 folderData.docker_jvmbuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, folderData.docker_jvmbuildPipeline, folderData.docker_jvmbuildPipelineBuildStage, folderData.docker_jvmbuildArtifact, docker_jvmbuildArtifactName, {
                                     'gcn_tooling_deployID': deployData.tag
                                 })).id;
                             } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to create container image with JVM pipeline artifacts stage for ${repositoryName}`, err));
+                                resolve(dialogs.getErrorMessage(`Failed to create ${JVM_CONTAINER_NAME_LC} pipeline artifacts stage for ${repositoryName}`, err));
                                 folderData.docker_jvmbuildPipelineArtifactsStage = false;
                                 dump(deployData);
                                 return;
@@ -2850,7 +2855,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             const oke_deployJvmPipelineName = 'Deploy Container with JVM to OKE';
                             if (folderData.oke_deployJvmPipeline) {
                                 progress.report({
-                                    message: `Using already created deployment to OKE pipeline for container image with JVM of ${repositoryName}...`
+                                    message: `Using already created deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${repositoryName}...`
                                 });
                                 try {
                                     const pipeline = await ociUtils.getDeployPipeline(provider, folderData.oke_deployJvmPipeline);
@@ -2865,16 +2870,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 progress.report({
                                     increment,
                                 });
-                                logUtils.logInfo(`[deploy] Using already created deployment to OKE pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Using already created deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             } else {
                                 // --- Create OKE jvm deployment pipeline
                                 progress.report({
                                     increment,
-                                    message: `Creating deployment to OKE pipeline for container image with JVM of ${repositoryName}...`
+                                    message: `Creating deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${repositoryName}...`
                                 });
-                                const oke_deployJvmPipelineDescription = `Deployment pipeline to deploy container image with JVM for devops project ${projectName} & repository ${repositoryName} to OKE`;
+                                const oke_deployJvmPipelineDescription = `Deployment pipeline to deploy ${JVM_CONTAINER_NAME_LC} for devops project ${projectName} & repository ${repositoryName} to OKE`;
                                 try {
-                                    logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     const pipelineName = `${repositoryNamePrefix}${oke_deployJvmPipelineName}`;
                                     folderData.oke_deployJvmPipeline = false;
                                     folderData.oke_deployJvmPipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, pipelineName, oke_deployJvmPipelineDescription, [{
@@ -2896,7 +2901,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                         autoImport: 'true'
                                     });
                                 } catch (err) {
-                                    resolve(dialogs.getErrorMessage(`Failed to create container image with JVM deployment to OKE pipeline for ${repositoryName}`, err));
+                                    resolve(dialogs.getErrorMessage(`Failed to create ${JVM_CONTAINER_NAME_LC} deployment to OKE pipeline for ${repositoryName}`, err));
                                     folderData.oke_deployJvmPipeline = false;
                                     dump(deployData);
                                     return;
@@ -2914,16 +2919,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 }
                             }
                             if (folderData.setupSecretForDeployJvmStage) {
-                                logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             } else {
                                 try {
-                                    logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.setupSecretForDeployJvmStage = false;
                                     folderData.setupSecretForDeployJvmStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, folderData.oke_deployJvmPipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnetId, {
                                         'gcn_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {
-                                    resolve(dialogs.getErrorMessage(`Failed to create container image with JVM setup secret stage for ${repositoryName}`, err));
+                                    resolve(dialogs.getErrorMessage(`Failed to create ${JVM_CONTAINER_NAME_LC} setup secret stage for ${repositoryName}`, err));
                                     folderData.setupSecretForDeployJvmStage = false;
                                     dump(deployData);
                                     return;
@@ -2941,16 +2946,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 }
                             }
                             if (folderData.deployJvmToOkeStage) {
-                                logUtils.logInfo(`[deploy] Using already created deploy to OKE stage of deployment to OKE pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Using already created deploy to OKE stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             } else {
                                 try {
-                                    logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for container image with JVM of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.deployJvmToOkeStage = false;
                                     folderData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage(provider, folderData.oke_deployJvmPipeline, folderData.setupSecretForDeployJvmStage, deployData.okeClusterEnvironment, folderData.oke_deployJvmConfigArtifact, {
                                         'gcn_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {
-                                    resolve(dialogs.getErrorMessage(`Failed to create container image with JVM deployment to OKE stage for ${repositoryName}`, err));
+                                    resolve(dialogs.getErrorMessage(`Failed to create ${JVM_CONTAINER_NAME_LC} deployment to OKE stage for ${repositoryName}`, err));
                                     folderData.deployJvmToOkeStage = false;
                                     dump(deployData);
                                     return;

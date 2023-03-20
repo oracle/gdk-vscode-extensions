@@ -179,7 +179,7 @@ class Service extends ociService.Service {
 
     getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
         return ociFeatures.NON_PIPELINE_RESOURCES_ENABLED ? [
-            new dialogs.QuickPickObject(`$(${ICON}) Add Container Repository`, undefined, 'Add existing container repository', () => this.addContent())
+            new dialogs.QuickPickObject(`$(${ICON}) Add Container Repository`, undefined, 'Add an existing container repository', () => this.addContent())
         ] : undefined;
     }
 
@@ -342,7 +342,7 @@ class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource 
     pull() {
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: 'Reading docker image...',
+            title: 'Reading container image...',
             cancellable: false
         }, async () => {
             try {
@@ -365,7 +365,7 @@ class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource 
             }
         }).then(result => {
             if (typeof result === 'string') {
-                ociDialogs.pullImage(this.oci.getProvider(), result as string, 'Pull Docker Image');
+                ociDialogs.pullImage(this.oci.getProvider(), result as string, 'Pull Container Image');
             } else if (result instanceof Error) {
                 dialogs.showError(result);
             }

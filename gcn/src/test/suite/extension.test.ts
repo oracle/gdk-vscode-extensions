@@ -82,13 +82,13 @@ suite('Extension Test Suite', function() {
                         function w() {
                                 // let label = vscode.window.tabGroups.activeTabGroup.activeTab?.label;
                                 // console.log(`Waiting for the active editor to change: counter=${counter}, label =${label}`)
-                                if (counter > 0 && vscode.window.tabGroups.activeTabGroup.activeTab?.label !== 'OCI Services for GCN') {
+                                if (counter > 0 && vscode.window.tabGroups.activeTabGroup.activeTab?.label !== 'OCI DevOps Tools') {
                                         counter--;
                                         setTimeout(w, 1000);
                                         return;
                                 }
                                 try {
-                                        assert.strictEqual(vscode.window.tabGroups.activeTabGroup.activeTab?.label, "OCI Services for GCN", "Welcome page is not being shown");
+                                        assert.strictEqual(vscode.window.tabGroups.activeTabGroup.activeTab?.label, "OCI DevOps Tools", "Welcome page is not being shown");
                                         resolve(true);
                                 } catch (err : any) {
                                         reject(err);
