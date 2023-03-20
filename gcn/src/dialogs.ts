@@ -14,16 +14,6 @@ import * as persistenceUtils from './persistenceUtils';
 import { CLOUD_SUPPORTS } from './extension';
 
 
-const GCN_TERMINAL = 'Graal Cloud Native';
-
-export function getGCNTerminal(): vscode.Terminal {
-    let terminal = vscode.window.terminals.find(t => t.name === GCN_TERMINAL);
-    if (!terminal) {
-        terminal = vscode.window.createTerminal({ name: GCN_TERMINAL });
-    }
-    return terminal;
-}
-
 export async function openInBrowser(address: string): Promise<boolean> {
 	return vscode.env.openExternal(vscode.Uri.parse(address));
 }

@@ -595,7 +595,7 @@ class Service extends ociService.Service {
 
     getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
         return [
-            new dialogs.QuickPickObject(`$(${ICON}) Add Deployment Pipeline`, undefined, 'Add existing deployment pipeline or create a new one', () => this.addContent())
+            new dialogs.QuickPickObject(`$(${ICON}) Add Deployment Pipeline`, undefined, 'Add an existing deployment pipeline, or create a new one', () => this.addContent())
         ];
     }
 

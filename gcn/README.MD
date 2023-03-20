@@ -1,4 +1,4 @@
-# OCI Services for GCN
+# OCI DevOps Tools
 *** **Technology Preview** ***
 <!-- vscode-markdown-toc -->
 
@@ -22,7 +22,7 @@
 
 
 
-OCI Services for GCN extension provides support for Oracle Cloud Infrastructure’s DevOps service in VS Code with generation of build and deployment pipelines along with source code management to make it easy to transition from local development to cloud-based development and deployment. 
+OCI DevOps Tools extension provides support for Oracle Cloud Infrastructure’s DevOps service in VS Code with generation of build and deployment pipelines along with source code management to make it easy to transition from local development to cloud-based development and deployment. 
 The initial release of the extension supports Micronaut and Spring Boot applications with modules for several core cloud services including Object Storage, Authentication, Secret Management, Streaming, etc. 
 The GCN extension comes with a project generation wizard to build and configure Micronaut and GCN applications.
 

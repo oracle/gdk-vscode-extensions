@@ -796,8 +796,8 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                         }
                         const gcnFolderPath = path.join(folderPath, '.gcn');
                         if (fs.existsSync(gcnFolderPath)) {
-                            progress.report({ message : `Deleting local OCI resources at ${gcnFolderPath}` });
-                            logUtils.logInfo(`[undeploy] Deleting local OCI resources at ${gcnFolderPath}`);
+                            progress.report({ message : `Deleting local OCI devops resources at ${gcnFolderPath}` });
+                            logUtils.logInfo(`[undeploy] Deleting local OCI devops resources at ${gcnFolderPath}`);
                             fs.rmdirSync(gcnFolderPath, { recursive : true });
                         }
                         const gitFolderPath = path.join(folderPath, '.git');
@@ -1044,7 +1044,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
 
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: `Undeploying ${folder.folder.name} from OCI `,
+        title: `Undeploying ${folder.folder.name} from OCI`,
         cancellable: false
     }, async (_progress, _token) => {
         _progress.report({ message: `Deleting code repository: ${repositoryName}`});
@@ -1328,8 +1328,8 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         fs.unlinkSync(gcnPath); 
         const gcnFolderPath = path.join(folderPath, '.gcn');
         if (fs.existsSync(gcnFolderPath)) {
-            _progress.report({message : 'Deleting local OCI resources'});
-            logUtils.logInfo(`[undeploy] Deleting local OCI resources in ${gcnFolderPath}`);
+            _progress.report({message : 'Deleting local OCI devops resources'});
+            logUtils.logInfo(`[undeploy] Deleting local OCI devops resources in ${gcnFolderPath}`);
             fs.rmdirSync(gcnFolderPath, { recursive : true});
         }
     });

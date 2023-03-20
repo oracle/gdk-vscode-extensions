@@ -222,7 +222,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                     progress.report({
                         message: `Importing services for code repository ${repository.name}...`
                     });
-                    logUtils.logInfo(`[import] Importing OCI resources and creating gcn.json in the locally cloned code repository '${repository.name}'`);
+                    logUtils.logInfo(`[import] Importing OCI devops resources and creating gcn.json in the locally cloned code repository '${repository.name}'`);
                     const services = await importServices(authentication, oci, projectResources, codeRepositoryResources);
                     servicesData.push(services);
                     // Do not track local changes to .vscode/gcn.json

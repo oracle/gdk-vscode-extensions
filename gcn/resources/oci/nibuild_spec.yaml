@@ -1,6 +1,6 @@
 #####################################################################
 #
-# Graal Cloud Native Build Pipeline Spec for Maven & Gradle
+# OCI DevOps Tools Build Pipeline Spec for Maven & Gradle
 # Builds application native image executable and deploys it to
 # Artifact Registry
 #

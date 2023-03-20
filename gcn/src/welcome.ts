@@ -31,7 +31,7 @@ export class WelcomePanel {
 	}
 
 	private constructor(context: vscode.ExtensionContext) {
-		this._panel = vscode.window.createWebviewPanel(WelcomePanel.viewType, 'OCI Services for GCN',
+		this._panel = vscode.window.createWebviewPanel(WelcomePanel.viewType, 'OCI DevOps Tools',
 			{ viewColumn: vscode.ViewColumn.One, preserveFocus: true },
 			{
 				enableCommandUris: true,

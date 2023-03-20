@@ -8,8 +8,8 @@
 import * as vscode from 'vscode';
 
 
-const GCN_OUTPUT = 'OCI Services for GCN';
-const LOG_OUTPUT = vscode.window.createOutputChannel(GCN_OUTPUT);
+const EXT_OUTPUT = 'OCI DevOps Tools';
+const LOG_OUTPUT = vscode.window.createOutputChannel(EXT_OUTPUT);
 
 export function logInfo(record: string) {
     logRecord('info', record);

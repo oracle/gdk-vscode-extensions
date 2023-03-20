@@ -190,7 +190,7 @@ export class Service extends ociService.Service {
 
     getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
         return ociFeatures.NON_PIPELINE_RESOURCES_ENABLED ? [
-            new dialogs.QuickPickObject(`$(${ICON}) Add Artifact Repository`, undefined, 'Add existing artifact repository', () => this.addContent())
+            new dialogs.QuickPickObject(`$(${ICON}) Add Artifact Repository`, undefined, 'Add an existing artifact repository', () => this.addContent())
         ] : undefined;
     }
 

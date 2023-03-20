@@ -286,7 +286,7 @@ class Service extends ociService.Service {
 
     getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
         return [
-            new dialogs.QuickPickObject(`$(${ICON}) Add Build Pipeline`, undefined, 'Add existing build pipeline', () => this.addContent())
+            new dialogs.QuickPickObject(`$(${ICON}) Add Build Pipeline`, undefined, 'Add an existing build pipeline', () => this.addContent())
         ];
     }
 
@@ -583,7 +583,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
         if (this.lastRun?.deliveredArtifacts?.length === 1) {
             const deliveredArtifact = this.lastRun.deliveredArtifacts[0];
             if (deliveredArtifact.type === 'OCIR' && deliveredArtifact.id) {
-                await ociDialogs.pullImage(this.oci.getProvider(), deliveredArtifact.id, 'Pull Docker Image');
+                await ociDialogs.pullImage(this.oci.getProvider(), deliveredArtifact.id, 'Pull Container Image');
                 return;
             }
         }
