@@ -131,14 +131,14 @@ async function executeFolderAudit(uri: vscode.Uri) {
     }
 
     logUtils.logInfo(`[audit] Resolving NBLS project audit command`);    
-    const nblsReady = (await vscode.commands.getCommands(true)).includes('nbls.gcn.projectAudit.execute');
+    const nblsReady = (await vscode.commands.getCommands(true)).includes('nbls.projectAudit.execute');
     if (!nblsReady) {
         dialogs.showErrorMessage('Required Language Server is not ready.');
         return undefined;
     }
 
     logUtils.logInfo(`[audit] Executing generic audit of folder ${uri.fsPath}`);
-    return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri.toString(), auditsKnowledgeBase, 
+    return vscode.commands.executeCommand('nbls.projectAudit.execute', uri.toString(), auditsKnowledgeBase, 
         { 
             profile: profile,
             auditName: folderName2AuditName(uri),
@@ -534,12 +534,12 @@ class Service extends ociService.Service {
             return;
         }
 
-        if (!(await vscode.commands.getCommands(true)).includes('nbls.gcn.projectAudit.execute')) {
+        if (!(await vscode.commands.getCommands(true)).includes('nbls.projectAudit.execute')) {
             dialogs.showErrorMessage('Required Language Server is not ready.');
             return;
         }
         
-        return vscode.commands.executeCommand('nbls.gcn.projectAudit.execute', uri.toString(), 
+        return vscode.commands.executeCommand('nbls.projectAudit.execute', uri.toString(), 
             auditsKnowledgeBase, 
             {
                 profile: this.oci.getProfile(),
@@ -555,7 +555,7 @@ class Service extends ociService.Service {
         if (!auditsKnowledgeBase) {
             return;
         }
-        vscode.commands.executeCommand('nbls.gcn.projectAudit.display', this.folder.uri.toString(), auditsKnowledgeBase, 
+        vscode.commands.executeCommand('nbls.projectAudit.display', this.folder.uri.toString(), auditsKnowledgeBase, 
             { 
                 force : true,
                 profile: this.oci.getProfile(),
@@ -570,7 +570,7 @@ class Service extends ociService.Service {
             return;
         }
         for (let i of prjs.slice(1)) {
-            vscode.commands.executeCommand('nbls.gcn.projectAudit.display', i.projectDirectory, auditsKnowledgeBase,  
+            vscode.commands.executeCommand('nbls.projectAudit.display', i.projectDirectory, auditsKnowledgeBase,  
                 { 
                     force : true,
                     profile: this.oci.getProfile(),
@@ -584,7 +584,7 @@ class Service extends ociService.Service {
 
     tryDisplayProjectAudit(attempt : number) {
         vscode.commands.getCommands().then(cmds => {
-            if (cmds.includes('nbls.gcn.projectAudit.display')) {
+            if (cmds.includes('nbls.projectAudit.display')) {
                 this.displayProjectAudit();
                 return;
             }

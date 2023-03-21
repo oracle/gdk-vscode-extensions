@@ -13,7 +13,7 @@ import * as xml2js from 'xml2js';
 import * as semver from 'semver';
 
 const GET_PROJECT_INFO = 'nbls.project.info';
-const GET_PROJECT_ARTIFACTS = 'nbls.gcn.project.artifacts';
+const GET_PROJECT_ARTIFACTS = 'nbls.project.artifacts';
 const NATIVE_BUILD = 'native-build';
 
 const DEVOPS_RESOURCES_DIR = '.devops';
