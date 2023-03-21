@@ -33,10 +33,6 @@ export async function registerDeployNode(context: string | string[]) {
     await vscode.commands.executeCommand('setContext', 'gcn.deployToCloudNodes', DEPLOY_NODES);
 }
 
-export interface RenameableNode {
-    rename(): void;
-}
-
 export interface AddContentNode {
     addContent(): void;
 }

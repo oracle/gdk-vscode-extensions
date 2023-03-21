@@ -67,12 +67,11 @@ const BUILD_IMAGE = 'OL7_X86_64_STANDARD_10';
         await delay(2000);
     }
     if (!requestState) {
-        throw `Timeout while creating ${resourceDescription}`;
+        throw new Error(`Timeout while creating ${resourceDescription}`);
     }
     if (requestState.status !== logging.models.OperationStatus.Succeeded) {
         // PENDING: make some abortion exception that can carry WorkRequest errors, should be caught top-level & reported to the user instead of plain message.
-        let msg : string = `Creation of ${resourceDescription} failed`;
-        throw msg;
+        throw new Error(`Creation of ${resourceDescription} failed`);
     }
     // PENDING: what exactly do the 'affected resources' mean ???
     return requestState.resources[0].identifier;
@@ -116,12 +115,11 @@ const BUILD_IMAGE = 'OL7_X86_64_STANDARD_10';
         await delay(2000);
     }
     if (!requestState) {
-        throw `Timeout while creating ${resourceDescription}`;
+        throw new Error(`Timeout while creating ${resourceDescription}`);
     }
     if (requestState.status !== adm.models.OperationStatus.Succeeded) {
         // PENDING: make some abortion exception that can carry WorkRequest errors, should be caught top-level & reported to the user instead of plain message.
-        let msg : string = `Creation of ${resourceDescription} failed`;
-        throw msg;
+        throw new Error(`Creation of ${resourceDescription} failed`);
     }
     // PENDING: what exactly do the 'affected resources' mean ???
     return requestState.resources[0].identifier;
@@ -165,12 +163,11 @@ export async function devopsWaitForResourceCompletionStatus(
         await delay(2000);
     }
     if (!requestState) {
-        throw `Timeout while creating ${resourceDescription}`;
+        throw new Error(`Timeout while creating ${resourceDescription}`);
     }
     if (requestState.status !== devops.models.OperationStatus.Succeeded) {
         // PENDING: make some abortion exception that can carry WorkRequest errors, should be caught top-level & reported to the user instead of plain message.
-        let msg : string = `Creation of ${resourceDescription} failed`;
-        throw msg;
+        throw new Error(`Creation of ${resourceDescription} failed`);
     }
     // PENDING: what exactly do the 'affected resources' mean ???
     return requestState.resources[0].identifier;
@@ -1320,7 +1317,7 @@ export async function getCompartmentAccessPolicy(authenticationDetailsProvider: 
                 statements.push(rule);
             }
         }
-        if (statements.length != policy.statements.length) {
+        if (statements.length !== policy.statements.length) {
             await processWithinHomeRegion(authenticationDetailsProvider, () => updatePolicy(authenticationDetailsProvider, policy.id, { statements }));
         }
         return policy.id;

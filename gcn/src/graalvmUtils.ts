@@ -163,7 +163,7 @@ export function normalizeJavaVersion(version: string | undefined, supportedVersi
     if (!version) {
         return '8';
     }
-    if (!supportedVersions || supportedVersions.length == 0) {
+    if (!supportedVersions || supportedVersions.length === 0) {
         return version;
     }
     let versionN = parseInt(version);

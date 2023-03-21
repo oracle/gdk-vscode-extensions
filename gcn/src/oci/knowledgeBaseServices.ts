@@ -173,7 +173,7 @@ function reportAuditResults(result : any) {
 function folderName2AuditName(uri : vscode.Uri) : string {
     const parts = uri.fsPath.split(path.sep);
     let folderName = parts.pop();
-    if (folderName?.length == 0) {
+    if (folderName?.length === 0) {
         folderName = parts.pop();
     }
     const d = new Date();

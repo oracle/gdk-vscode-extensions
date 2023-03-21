@@ -31,19 +31,6 @@
 		"devops",
 		"native image"
 	],
-	"activationEvents": [
-		"onCommand:gcn.showWelcomePage",
-		"onCommand:gcn.oci.projectAudit.execute",
-		"onCommand:gcn.oci.projectAudit.execute_Global",
-		"onCommand:gcn.createGcnProject",
-		"onCommand:gcn.importFromCloud",
-		"onCommand:gcn.deployToCloud_Global",
-		"onCommand:gcn.undeployFromCloud",
-		"onCommand:gcn.addContent_Global",
-		"onCommand:gcn.oci.openCodeRepositoryInConsole_Global",
-		"onCommand:gcn.oci.openDevOpsProjectInConsole_Global",
-		"onView:oci-devops"
-	],
 	"main": "./dist/extension",
 	"contributes": {
 		"configuration": {

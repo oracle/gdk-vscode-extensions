@@ -248,7 +248,7 @@ export async function findResourceFileByKind(kind: string) {
     }   
     if (resourceFiles.length > 1) {
         return pickOneFile(resourceFiles);
-    } else if (resourceFiles.length == 1) {
+    } else if (resourceFiles.length === 1) {
         return resourceFiles[0];
     }
     return undefined;
@@ -287,7 +287,7 @@ async function getPort(deploymentFile: string): Promise<number | undefined> {
     let port: number | undefined;
     if (ports.length > 1) {
         port = Number(await vscode.window.showQuickPick(ports));
-    } else if (ports.length == 1) {
+    } else if (ports.length === 1) {
         port = Number(ports[0]);
     }
     return port;
@@ -297,7 +297,7 @@ export async function getPod(kubectl: kubernetes.KubectlV1, appName: string) {
     let command = `get pods --selector=app=${appName} -o jsonpath='{..items[*].metadata.name}'`;
     let result = await  kubectl.invokeCommand(command);
     let pods: string[] = [];
-    if (result && result.code == 0) {
+    if (result && result.code === 0) {
         let parts = result.stdout.split(' ');
         parts.forEach(pod => {
             pods.push(pod);

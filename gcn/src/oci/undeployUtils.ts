@@ -1093,7 +1093,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             while (revDeps.size > 0) {
                 let found : boolean = false;
                 for (let k of revDeps.keys()) {
-                    if (revDeps.get(k) == 0) {
+                    if (revDeps.get(k) === 0) {
                         found = true;
                         const s = id2Stage.get(k);
                         revDeps.delete(k);
@@ -1111,7 +1111,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
                     }
                 }
                 if (!found) {
-                    throw "Inconsistent pipeline structure!";
+                    throw new Error("Inconsistent pipeline structure!");
                 }
             }
 
@@ -1163,7 +1163,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
                 while (revDeps.size > 0) {
                     let found : boolean = false;
                     for (let k of revDeps.keys()) {
-                        if (revDeps.get(k) == 0) {
+                        if (revDeps.get(k) === 0) {
                             found = true;
                             const s = id2Stage.get(k);
                             revDeps.delete(k);
@@ -1181,7 +1181,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
                         }
                     }
                     if (!found) {
-                        throw "Inconsistent pipeline structure!";
+                        throw new Error("Inconsistent pipeline structure!");
                     }
                 }
 
@@ -1290,7 +1290,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             const artifactsRepositories = await ociUtils.listArtifactRepositories(authProvider, compartmentId);
             if (artifactsRepositories) {
                 for (const repo of artifactsRepositories) {
-                    if ((repo.freeformTags?.['devops_tooling_projectOCID'] == devopsId)) {
+                    if ((repo.freeformTags?.['devops_tooling_projectOCID'] === devopsId)) {
                         _progress.report({message : `Deleting artifact repository ${repo.displayName}`});
                         logUtils.logInfo(`[undeploy] Deleting artifact repository ${repo.displayName} in ${compartmentLogname}`);
                         await ociUtils.deleteArtifactsRepository(authProvider, compartmentId, repo.id, true);
@@ -1311,7 +1311,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             let knowledgeBases = await ociUtils.listKnowledgeBases(authProvider, compartmentId);
             for (let kb of knowledgeBases) {
                 if ((kb.freeformTags?.['devops_tooling_usage'] === "gcn-adm-audit") &&
-                    (kb.freeformTags?.['devops_tooling_projectOCID'] == devopsId)) {
+                    (kb.freeformTags?.['devops_tooling_projectOCID'] === devopsId)) {
                         _progress.report({message : `Deleting knowledge base ${kb.displayName}`});
                         logUtils.logInfo(`[undeploy] Deleting knowledge base ${kb.displayName} in ${compartmentLogname}`);
                         await ociUtils.deleteKnowledgeBase(authProvider, kb.id, true);

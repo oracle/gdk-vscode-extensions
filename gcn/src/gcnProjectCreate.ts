@@ -141,7 +141,7 @@ export async function createProjectBase(options : CreateOptions, targetLocation 
             dialogs.showErrorMessage(`The selected location ${targetLocation} is not a directory.`);
             return;
         }
-        if (fs.readdirSync(targetLocation).filter(n => n == '.' || n == '..' ? undefined : n).length > 0) {
+        if (fs.readdirSync(targetLocation).filter(n => n === '.' || n === '..' ? undefined : n).length > 0) {
             dialogs.showErrorMessage(`The selected location ${targetLocation} is not empty.`);
             return;
         }
@@ -180,7 +180,7 @@ async function writeProjectContents(options: CreateOptions, location: string) {
 
         const view = new Uint8Array(data);
 
-        if (dir && dir != '.') {
+        if (dir && dir !== '.') {
             fs.mkdirSync(path.join(location, dir), { recursive : true });
         }
         fs.writeFileSync(path.join(location, p), view, { mode : exe ? 0o777 : 0o666 });
@@ -541,7 +541,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
     }
     
     function values(vals: ValueAndLabel[] | undefined) {
-        if (!vals || vals.length == 0) {
+        if (!vals || vals.length === 0) {
             return undefined;
         }
         return vals.map((v) => v.value);

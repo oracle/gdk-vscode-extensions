@@ -20,12 +20,12 @@ const defaultConfigLocation = path.join(os.homedir(), '.ssh', 'config');
 
 export async function checkSshConfigured(provider: common.ConfigFileAuthenticationDetailsProvider, sshUrl: string): Promise<void> {
     const r = /ssh:\/\/([^/]+)\//.exec(sshUrl);
-    if (r && r.length == 2) {
+    if (r && r.length === 2) {
         const hostname = r[1];
         if (await initializeSshKeys(provider)) {
             const autoAccept = isAutoAcceptHostFingerprint();
             let success = autoAccept ? 1 : await addCloudKnownHosts(hostname, true);
-            if (success == -1) {
+            if (success === -1) {
                 const disableHosts = await vscode.window.showWarningMessage(
                     "Do you want to disable SSH known_hosts checking for OCI infrastructure ?\n" +
                     "This is less secure than adding host keys to known_hosts. The change will affect only connections to SCM OCI services.",
@@ -36,7 +36,7 @@ export async function checkSshConfigured(provider: common.ConfigFileAuthenticati
                     }
                 }
             }
-            if (success == -1) {
+            if (success === -1) {
                 vscode.window.showWarningMessage("SSH utilities required for host key management are not available. Some Git operations may fail. See https://code.visualstudio.com/docs/remote/troubleshooting#_installing-a-supported-ssh-client for the recommended software.");
             }
         }
@@ -142,7 +142,7 @@ async function addCloudKnownHosts(hostname : string, ask : boolean) : Promise<nu
         dialogs.showErrorMessage(`Fetching SSH host key for ${hostname} failed: ${msg}`);
         return 0;
     }
-    if (keys.length == 0) {
+    if (keys.length === 0) {
         vscode.window.showWarningMessage(`Could not automatically obtain SSH host key for ${hostname}.`);
         return 0;
     }
