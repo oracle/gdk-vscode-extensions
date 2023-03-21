@@ -830,6 +830,11 @@
 			]
 		}
 	},
+	"config": {
+		"winBuildPath": "..\\node_modules\\.bin\\vsce",
+		"unixBuildPath": "../node_modules/.bin/vsce",
+		"buildCmd": "package --allow-star-activation --baseImagesUrl https://github.com/graalvm/vscode-extensions/raw/master/gcn"
+	},
 	"scripts": {
 		"vscode:prepublish": "NODE_OPTIONS='--max-old-space-size=8192' webpack --mode production",
 		"compile": "webpack --mode development",
@@ -840,8 +845,15 @@
 		"test-compile": "tsc -p . --outDir out",
 		"test": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/test/runTest.js",
 		"prebuild": "npm install",
-		"build": "../node_modules/.bin/vsce package --allow-star-activation --baseImagesUrl https://github.com/graalvm/vscode-extensions/raw/master/gcn",
+		"build": "cross-os build",
 		"lint": "eslint src --ext ts"
+	},
+	"cross-os": {
+		"build": {
+			"linux": "$npm_package_config_unixBuildPath $npm_package_config_buildCmd `[ -z ${BUILD_NUMBER} ] && echo \"${npm_package_version}\" || echo \"${npm_package_version}-${BUILD_NUMBER}\"`",
+			"darwin": "$npm_package_config_unixBuildPath $npm_package_config_buildCmd `[ -z ${BUILD_NUMBER} ] && echo \"${npm_package_version}\" || echo \"${npm_package_version}-${BUILD_NUMBER}\"`",
+			"win32": "%npm_package_config_winBuildPath% %npm_package_config_buildCmd%"
+		}
 	},
 	"dependencies": {
 		"encoding": "^0.1.13",
@@ -867,6 +879,7 @@
 		"@typescript-eslint/parser": "^5.54.1",
 		"@vscode/codicons": "0.0.20",
 		"@vscode/test-electron": "^2.2.3",
+		"cross-os": "^1.5.0",
 		"ajv": "^8.12.0",
 		"cross-env": "^7.0.3",
 		"encoding": "^0.1.13",

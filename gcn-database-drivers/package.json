@@ -28,6 +28,11 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {},
+  "config": {
+		"winBuildPath": "..\\node_modules\\.bin\\vsce",
+		"unixBuildPath": "../node_modules/.bin/vsce",
+		"buildCmd": "package --allow-star-activation"
+  },
   "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "webpack",
@@ -39,7 +44,14 @@
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
     "prebuild": "npm install",
-    "build": "../node_modules/.bin/vsce package --allow-star-activation"
+    "build": "cross-os build"
+  },
+  "cross-os": {
+		"build": {
+			"linux": "$npm_package_config_unixBuildPath $npm_package_config_buildCmd `[ -z ${BUILD_NUMBER} ] && echo \"${npm_package_version}\" || echo \"${npm_package_version}-${BUILD_NUMBER}\"`",
+			"darwin": "$npm_package_config_unixBuildPath $npm_package_config_buildCmd `[ -z ${BUILD_NUMBER} ] && echo \"${npm_package_version}\" || echo \"${npm_package_version}-${BUILD_NUMBER}\"`",
+			"win32": "%npm_package_config_winBuildPath% %npm_package_config_buildCmd%"
+		}
   },
   "dependencies": {
     "copy-webpack-plugin": "^10.2.4",
@@ -52,6 +64,7 @@
     "@types/node": "^14.16.0",
     "@typescript-eslint/eslint-plugin": "^5.54.1",
     "@typescript-eslint/parser": "^5.54.1",
+    "cross-os": "^1.5.0",
     "eslint": "^8.35.0",
     "eslint-webpack-plugin": "^4.0.0",
     "glob": "^8.0.3",
