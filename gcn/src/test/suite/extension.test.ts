@@ -63,7 +63,7 @@ suite('Extension Test Suite', function() {
 
                 let containsOciDevOpsCommands = false;
                 for (const command of commands) {
-                        if (command.indexOf("gcn.") == 0)
+                        if (command.indexOf("oci.devops.") === 0)
                                 containsOciDevOpsCommands = true;
                 }
 
@@ -71,9 +71,9 @@ suite('Extension Test Suite', function() {
 
         });
 
-        // Check if OCI DevOps Tools welcome page opens
-        test("OCI DevOps Tools Welcome page", async () => {
-                await vscode.commands.executeCommand("gcn.showWelcomePage");
+        // Check if OCI DevOps Tools page opens
+        test("OCI DevOps Tools page", async () => {
+                await vscode.commands.executeCommand("oci.devops.showToolsPage");
 
                 // The marvellous vscode completes the command, but still has the active tab set to the previous content,
                 // so let's wait a while in a timeouted loop....
@@ -88,7 +88,7 @@ suite('Extension Test Suite', function() {
                                         return;
                                 }
                                 try {
-                                        assert.strictEqual(vscode.window.tabGroups.activeTabGroup.activeTab?.label, "OCI DevOps Tools", "Welcome page is not being shown");
+                                        assert.strictEqual(vscode.window.tabGroups.activeTabGroup.activeTab?.label, "OCI DevOps Tools", "Tools page is not being shown");
                                         resolve(true);
                                 } catch (err : any) {
                                         reject(err);

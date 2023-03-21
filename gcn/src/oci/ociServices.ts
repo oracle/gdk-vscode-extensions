@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode';
 import * as common from 'oci-common';
-import * as gcnServices from '../gcnServices';
+import * as devopsServices from '../devopsServices';
 import * as model from '../model';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
@@ -33,13 +33,13 @@ export const DATA_NAME = 'services';
 export const ADD_ACTION_NAME = 'Add OCI DevOps Resource';
 
 export function initialize(context: vscode.ExtensionContext) {
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openInConsole', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.openInConsole', (...params: any[]) => {
         if (params[0]?.getAddress) {
             ociNodes.openInConsole(params[0] as ociNodes.CloudConsoleItem);
         }
 	}));
 
-    function openCodeRepoInConsole(folder: gcnServices.FolderData) {
+    function openCodeRepoInConsole(folder: devopsServices.FolderData) {
         const ociServices = findByFolderData(folder);
         if (ociServices?.length) {
             const ociService = ociServices[0];
@@ -49,12 +49,12 @@ export function initialize(context: vscode.ExtensionContext) {
             ociNodes.openInConsole(address);
         }
     }
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openCodeRepositoryInConsole', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.openCodeRepositoryInConsole', (...params: any[]) => {
         if (params[0]?.folder) {
             openCodeRepoInConsole(params[0].folder);
         }
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openCodeRepositoryInConsole_Global', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.openCodeRepositoryInConsole_Global', () => {
         dialogs.selectFolder('Open Folder Code Repository', 'Select deployed folder', true).then(folder => {
             if (folder === null) {
                 vscode.window.showWarningMessage('No deployed folder available.');
@@ -63,7 +63,7 @@ export function initialize(context: vscode.ExtensionContext) {
             }
         });
 	}));
-    function openDevOpsProjectInConsole(folder: gcnServices.FolderData) {
+    function openDevOpsProjectInConsole(folder: devopsServices.FolderData) {
         const ociServices = findByFolderData(folder);
         if (ociServices?.length) {
             const ociService = ociServices[0];
@@ -73,14 +73,14 @@ export function initialize(context: vscode.ExtensionContext) {
             ociNodes.openInConsole(address);
         }
     }
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openDevOpsProjectInConsole', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.openDevOpsProjectInConsole', (...params: any[]) => {
         if (params[0]?.folder) {
             openDevOpsProjectInConsole(params[0].folder);
         }
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openDevOpsProjectInConsole_Global', async () => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.openDevOpsProjectInConsole_Global', async () => {
         const projects: string[] = [];
-        const folderData = await gcnServices.getFolderData();
+        const folderData = await devopsServices.getFolderData();
         for (const folder of folderData) {
             const ociServices = findByFolderData(folder);
             for (const ociService of ociServices) {
@@ -119,14 +119,14 @@ export function findByNode(node: nodes.BaseNode): OciServices | undefined {
 }
 
 export async function findByFolder(folder: vscode.Uri): Promise<OciServices[] | undefined> {
-    const folderData = await gcnServices.findFolderData(folder);
+    const folderData = await devopsServices.findFolderData(folder);
     if (!folderData) {
         return undefined;
     }
     return findByFolderData(folderData);
 }
 
-export function findByFolderData(folder: gcnServices.FolderData): OciServices[] {
+export function findByFolderData(folder: devopsServices.FolderData): OciServices[] {
     const ociServices: OciServices[] = [];
     const cloudServices = folder.services;
     for (const cloudService of cloudServices) {

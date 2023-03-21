@@ -6,7 +6,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as gcnServices from './gcnServices';
+import * as devopsServices from './devopsServices';
 import * as servicesView from './servicesView';
 import * as dialogs from './dialogs';
 import * as folderStorage from './folderStorage';
@@ -20,7 +20,7 @@ let undeployInProgress: boolean;
 export async function importDevopsProject() {
     if (!anotherOperationInProgress()) {
         importInProgress = true;
-        await servicesView.showWelcomeView('gcn.importInProgress');
+        await servicesView.showWelcomeView('oci.devops.importInProgress');
         let folders;
         try {
             const cloudSupport = await dialogs.selectCloudSupport('Import from OCI');
@@ -37,7 +37,7 @@ export async function importDevopsProject() {
             const servicesData = importResult.servicesData;
             folderStorage.storeCloudSupportData(cloudSupport, folders, servicesData);
         } finally {
-            await servicesView.hideWelcomeView('gcn.importInProgress');
+            await servicesView.hideWelcomeView('oci.devops.importInProgress');
             importInProgress = false;
         }
 
@@ -53,21 +53,21 @@ export async function importDevopsProject() {
     }
 }
 
-export async function deployFolders(workspaceState: vscode.Memento, folders?: gcnServices.FolderData | gcnServices.FolderData[]) {
+export async function deployFolders(workspaceState: vscode.Memento, folders?: devopsServices.FolderData | devopsServices.FolderData[]) {
     if (!anotherOperationInProgress()) {
         if (!(await vscode.commands.getCommands()).includes('nbls.gcn.project.artifacts')) {
             vscode.window.showErrorMessage('Project inspection is not ready yet, please try again later.');
             return;
         }
         deployInProgress = true;
-        await servicesView.showWelcomeView('gcn.deployInProgress');
+        await servicesView.showWelcomeView('oci.devops.deployInProgress');
         try {
-            const supportedFolders: gcnServices.FolderData[] = [];
+            const supportedFolders: devopsServices.FolderData[] = [];
             if (folders === undefined) {
-                const dumpedFolders = gcnServices.dumpedFolders(workspaceState);
+                const dumpedFolders = devopsServices.dumpedFolders(workspaceState);
                 if (dumpedFolders) {
                     folders = [];
-                    const folderData = await gcnServices.getFolderData();
+                    const folderData = await devopsServices.getFolderData();
                     for (let folder of folderData) {
                         if (dumpedFolders.includes(folder.folder.name)) {
                             folders.push(folder);
@@ -113,38 +113,38 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: gc
             if (!await dialogs.confirmDeployToOCI()) {
                 return;
             }
-            const workspaceFolders = gcnServices.folderDataToWorkspaceFolders(supportedFolders) as vscode.WorkspaceFolder[];
-            const dump = gcnServices.dumpDeployData(workspaceState, workspaceFolders.map(f => f.name));
+            const workspaceFolders = devopsServices.folderDataToWorkspaceFolders(supportedFolders) as vscode.WorkspaceFolder[];
+            const dump = devopsServices.dumpDeployData(workspaceState, workspaceFolders.map(f => f.name));
             try {
                 const deployed = await cloudSupport.deployFolders(workspaceFolders, dump);
                 if (deployed) {
-                    await gcnServices.build(workspaceState);
+                    await devopsServices.build(workspaceState);
                 }
             } finally {
                 if (dump(null)) {
-                    await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', true);
-                    await gcnServices.build(workspaceState);
+                    await vscode.commands.executeCommand('setContext', 'oci.devops.deployFailed', true);
+                    await devopsServices.build(workspaceState);
                 } else {
-                    await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', false);
+                    await vscode.commands.executeCommand('setContext', 'oci.devops.deployFailed', false);
                 }
             }
         } finally {
-            await servicesView.hideWelcomeView('gcn.deployInProgress');
+            await servicesView.hideWelcomeView('oci.devops.deployInProgress');
             deployInProgress = false;
         }
     }
 }
 
-export async function undeployFolders(workspaceState: vscode.Memento, folders?: gcnServices.FolderData | gcnServices.FolderData[]) {
+export async function undeployFolders(workspaceState: vscode.Memento, folders?: devopsServices.FolderData | devopsServices.FolderData[]) {
     if (!anotherOperationInProgress()) {
         undeployInProgress = true;
-        await servicesView.showWelcomeView('gcn.undeployInProgress');
+        await servicesView.showWelcomeView('oci.devops.undeployInProgress');
         try {
             if (folders === undefined) {
-                const dumpedFolders = gcnServices.dumpedFolders(workspaceState);
+                const dumpedFolders = devopsServices.dumpedFolders(workspaceState);
                 if (dumpedFolders) {
                     folders = [];
-                    const folderData = await gcnServices.getFolderData();
+                    const folderData = await devopsServices.getFolderData();
                     for (let folder of folderData) {
                         if (dumpedFolders.includes(folder.folder.name)) {
                             folders.push(folder);
@@ -153,17 +153,17 @@ export async function undeployFolders(workspaceState: vscode.Memento, folders?: 
                 }
             }
             if (folders) {
-                const dump = gcnServices.dumpDeployData(workspaceState, Array.isArray(folders) ? folders.map(f => f.folder.name) : folders.folder.name);
+                const dump = devopsServices.dumpDeployData(workspaceState, Array.isArray(folders) ? folders.map(f => f.folder.name) : folders.folder.name);
                 const deployData = dump(null);
                 if (deployData) {
                     try {
                         await undeployUtils.undeploy(Array.isArray(folders) ? folders : [ folders ], deployData, dump);
                     } finally {
                         if (dump(null)) {
-                            await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', true);
+                            await vscode.commands.executeCommand('setContext', 'oci.devops.deployFailed', true);
                         } else {
-                            await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', false);
-                            await gcnServices.build(workspaceState);
+                            await vscode.commands.executeCommand('setContext', 'oci.devops.deployFailed', false);
+                            await devopsServices.build(workspaceState);
                         }
                     }
                     return;
@@ -178,10 +178,10 @@ export async function undeployFolders(workspaceState: vscode.Memento, folders?: 
             }
             await undeployUtils.undeployFolders(selected);
         } finally {
-            await servicesView.hideWelcomeView('gcn.undeployInProgress');
+            await servicesView.hideWelcomeView('oci.devops.undeployInProgress');
             undeployInProgress = false;
         }
-        await gcnServices.build(workspaceState);
+        await devopsServices.build(workspaceState);
     }
 }
 

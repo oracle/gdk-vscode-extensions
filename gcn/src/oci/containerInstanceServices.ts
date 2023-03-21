@@ -23,7 +23,7 @@ import * as dataSupport from './dataSupport';
 export const DATA_NAME = 'containerInstances';
 
 export function initialize(context: vscode.ExtensionContext) {
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runDockerImage', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.runDockerImage', (...params: any[]) => {
         if (params[0]?.getImageUrl) {
             const node: nodes.BaseNode = params[0] as nodes.BaseNode;
             const service = findByNode(node);
@@ -33,7 +33,7 @@ export function initialize(context: vscode.ExtensionContext) {
             }
         }
     }));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.showContainerInstanceLog', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.showContainerInstanceLog', () => {
         logUtils.logInfo(`[containerinstance] Invoked Show Container Instance Log, selecting folder`);
         dialogs.selectFolder('Show Container Instance Log', 'Select deployed folder', true).then(folder => {
             if (folder) {
@@ -52,7 +52,7 @@ export function initialize(context: vscode.ExtensionContext) {
             }
         });
     }));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.deleteContainerInstance', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.deleteContainerInstance', () => {
         logUtils.logInfo(`[containerinstance] Invoked Delete Container Instance, selecting folder`);
         dialogs.selectFolder('Delete Container Instance', 'Select deployed folder', true).then(folder => {
             if (folder) {

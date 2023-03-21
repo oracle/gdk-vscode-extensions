@@ -30,7 +30,7 @@ export async function registerDeployNode(context: string | string[]) {
     } else {
         DEPLOY_NODES.push(...context);
     }
-    await vscode.commands.executeCommand('setContext', 'gcn.deployToCloudNodes', DEPLOY_NODES);
+    await vscode.commands.executeCommand('setContext', 'oci.devops.deployToCloudNodes', DEPLOY_NODES);
 }
 
 export interface AddContentNode {
@@ -45,7 +45,7 @@ export async function registerAddContentNode(context: string | string[]) {
     } else {
         ADD_CONTENT_NODES.push(...context);
     }
-    await vscode.commands.executeCommand('setContext', 'gcn.addContentNodes', ADD_CONTENT_NODES);
+    await vscode.commands.executeCommand('setContext', 'oci.devops.addResourceNodes', ADD_CONTENT_NODES);
 }
 
 export interface RenameableNode {
@@ -60,7 +60,7 @@ export async function registerRenameableNode(context: string | string[]) {
     } else {
         RENAMEABLE_NODES.push(...context);
     }
-    await vscode.commands.executeCommand('setContext', 'gcn.renameableNodes', RENAMEABLE_NODES);
+    await vscode.commands.executeCommand('setContext', 'oci.devops.renameableNodes', RENAMEABLE_NODES);
 }
 
 export interface RemovableNode {
@@ -75,7 +75,7 @@ export async function registerRemovableNode(context: string | string[]) {
     } else {
         REMOVABLE_NODES.push(...context);
     }
-    await vscode.commands.executeCommand('setContext', 'gcn.removableNodes', REMOVABLE_NODES);
+    await vscode.commands.executeCommand('setContext', 'oci.devops.removableNodes', REMOVABLE_NODES);
 }
 
 export interface ReloadableNode {
@@ -90,7 +90,7 @@ export async function registerReloadableNode(context: string | string[]) {
     } else {
         RELOADABLE_NODES.push(...context);
     }
-    await vscode.commands.executeCommand('setContext', 'gcn.reloadableNodes', RELOADABLE_NODES);
+    await vscode.commands.executeCommand('setContext', 'oci.devops.reloadableNodes', RELOADABLE_NODES);
 }
 
 export interface ShowReportNode {
@@ -105,7 +105,7 @@ export async function registerShowReportNode(context: string | string[]) {
     } else {
         SHOW_REPORT_NODES.push(...context);
     }
-    await vscode.commands.executeCommand('setContext', 'gcn.showReportNodes', SHOW_REPORT_NODES);
+    await vscode.commands.executeCommand('setContext', 'oci.devops.showReportNodes', SHOW_REPORT_NODES);
 }
 
 export interface ViewBuildLogNode {
@@ -120,7 +120,7 @@ export async function registerViewBuildLogNode(context: string | string[]) {
     } else {
         VIEW_BUILD_LOG_NODES.push(...context);
     }
-    await vscode.commands.executeCommand('setContext', 'gcn.viewBuildLogNodes', VIEW_BUILD_LOG_NODES);
+    await vscode.commands.executeCommand('setContext', 'oci.devops.viewBuildLogNodes', VIEW_BUILD_LOG_NODES);
 }
 
 export interface ViewDeploymentLogNode {
@@ -135,7 +135,7 @@ export async function registerViewDeploymentLogNode(context: string | string[]) 
     } else {
         VIEW_DEPLOYMENT_LOG_NODES.push(...context);
     }
-    await vscode.commands.executeCommand('setContext', 'gcn.viewDeploymentLogNodes', VIEW_DEPLOYMENT_LOG_NODES);
+    await vscode.commands.executeCommand('setContext', 'oci.devops.viewDeploymentLogNodes', VIEW_DEPLOYMENT_LOG_NODES);
 }
 
 export function getLabel(node: BaseNode): string | undefined {
@@ -278,7 +278,7 @@ export class AsyncNode extends ChangeableNode {
 export class TextNode extends BaseNode {
 
     constructor(text: string, contextValue?: string) {
-        super('', text, contextValue ? contextValue : 'gcn.textNode', undefined, undefined);
+        super('', text, contextValue ? contextValue : 'oci.devops.textNode', undefined, undefined);
         this.tooltip = `${this.description}`;
     }
 
@@ -303,7 +303,7 @@ export class LoadingNode extends TextNode {
 export class ServicesDeployNode extends BaseNode {
 
     constructor(children: BaseNode[]) {
-        super('Deploy', undefined, 'gcn.servicesDeployNode', children.length === 0 ? [ new TextNode('<not implemented yet>') ] : children, false);
+        super('Deploy', undefined, 'oci.devops.servicesDeployNode', children.length === 0 ? [ new TextNode('<not implemented yet>') ] : children, false);
         this.iconPath = new vscode.ThemeIcon('rocket');
         this.updateAppearance();
     }

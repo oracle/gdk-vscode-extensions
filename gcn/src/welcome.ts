@@ -9,11 +9,12 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as mustache from 'mustache';
+import * as persistenceUtils from './persistenceUtils';
 
 export class WelcomePanel {
 
 	public static currentPanel: WelcomePanel | undefined;
-	public static readonly viewType: string = 'gcnWelcome';
+	public static readonly viewType: string = 'ociDevOpsWelcome';
 
 	private static readonly webviewsFolder: string = 'webviews';
 
@@ -40,8 +41,8 @@ export class WelcomePanel {
 			}
 		);
 		this._panel.iconPath = {
-			light: vscode.Uri.file(path.join(context.extensionPath, 'resources', 'GCN_logo.png')),
-			dark: vscode.Uri.file(path.join(context.extensionPath, 'resources', 'GCN_logo.png'))
+			light: vscode.Uri.file(path.join(context.extensionPath, 'resources', 'extension_icon.png')),
+			dark: vscode.Uri.file(path.join(context.extensionPath, 'resources', 'extension_icon.png'))
 		};
 
 		// Set the webview's html content
@@ -65,8 +66,8 @@ export class WelcomePanel {
 		// Handle messages from the webview
 		this._panel.webview.onDidReceiveMessage(
 			message => {
-				if (message.command === 'showWelcomePage') {
-					vscode.workspace.getConfiguration().update('gcn.showWelcomePage', message.value, true);
+				if (message.command === 'showToolsPage') {
+					persistenceUtils.getWorkspaceConfiguration().update('showToolsPage', message.value, true);
 				}
 			},
 			undefined,
@@ -78,7 +79,7 @@ export class WelcomePanel {
 		const templatePath = path.join(context.extensionPath, WelcomePanel.webviewsFolder, 'welcome.html');
 		this._panel.webview.html = mustache.render(fs.readFileSync(templatePath).toString(), {
 		cspSource: this._panel.webview.cspSource,
-			showWelcomePage: vscode.workspace.getConfiguration().get<boolean>('gcn.showWelcomePage') ? 'checked' : '',
+			showToolsPage: persistenceUtils.getWorkspaceConfiguration().get<boolean>('showToolsPage') ? 'checked' : '',
 			cssUri: this._panel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, WelcomePanel.webviewsFolder, 'styles', 'welcome.css'))),
 			imgsUri: this._panel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, WelcomePanel.webviewsFolder, 'imgs'))),
 			jsUri: this._panel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, WelcomePanel.webviewsFolder, 'scripts', 'welcome.js')))

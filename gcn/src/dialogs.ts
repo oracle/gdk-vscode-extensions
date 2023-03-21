@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import * as gcnServices from './gcnServices';
+import * as devopsServices from './devopsServices';
 import * as model from './model';
 import * as logUtils from './logUtils';
 import * as persistenceUtils from './persistenceUtils';
@@ -127,9 +127,9 @@ export async function selectDirectory(options?: string[], actionName?: string, t
     return undefined;
 }
 
-export async function selectFolder(actionName: string | undefined = undefined, hint: string | undefined = undefined, serviceFolder: boolean | null = true): Promise<gcnServices.FolderData | null | undefined> {
+export async function selectFolder(actionName: string | undefined = undefined, hint: string | undefined = undefined, serviceFolder: boolean | null = true): Promise<devopsServices.FolderData | null | undefined> {
     const choices: QuickPickObject[] = [];
-    const folderData = await gcnServices.getFolderData();
+    const folderData = await devopsServices.getFolderData();
     for (const folder of folderData) {
         if (serviceFolder === null || serviceFolder && folder.services.length > 0 || !serviceFolder && folder.services.length === 0) {
             const choice = new QuickPickObject(folder.folder.name, undefined, undefined, folder);
@@ -149,9 +149,9 @@ export async function selectFolder(actionName: string | undefined = undefined, h
     return selection?.object;
 }
 
-export async function selectFolders(actionName: string | undefined = undefined, hint: string | undefined = undefined, serviceFolders: boolean = true, autoSelectSingle: boolean = true): Promise<gcnServices.FolderData[] | null | undefined> {
+export async function selectFolders(actionName: string | undefined = undefined, hint: string | undefined = undefined, serviceFolders: boolean = true, autoSelectSingle: boolean = true): Promise<devopsServices.FolderData[] | null | undefined> {
     const choices: QuickPickObject[] = [];
-    const folderData = await gcnServices.getFolderData();
+    const folderData = await devopsServices.getFolderData();
     for (const folder of folderData) {
         if (serviceFolders && folder.services.length > 0 || !serviceFolders && folder.services.length === 0) {
             const choice = new QuickPickObject(folder.folder.name, undefined, undefined, folder);
@@ -170,7 +170,7 @@ export async function selectFolders(actionName: string | undefined = undefined, 
         canPickMany: true
     });
     if (selection && selection.length > 0) {
-        const folders: gcnServices.FolderData[] = [];
+        const folders: devopsServices.FolderData[] = [];
         for (const folder of selection) {
             folders.push(folder.object);
         }
@@ -179,7 +179,7 @@ export async function selectFolders(actionName: string | undefined = undefined, 
     return undefined;
 }
 
-export async function selectServices(folder: gcnServices.FolderData, actionName?: string): Promise<model.CloudServices | undefined> {
+export async function selectServices(folder: devopsServices.FolderData, actionName?: string): Promise<model.CloudServices | undefined> {
     const services = folder.services;
     if (services.length === 0) {
         return undefined;

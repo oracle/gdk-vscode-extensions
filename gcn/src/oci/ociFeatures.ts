@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as persistenceUtils from '../persistenceUtils';
 
 
 export const CONTAINER_INSTANCES_ENABLED: boolean = containerInstancesEnabled();
@@ -19,24 +20,24 @@ const NI_RUNNER_SHAPE_DEFAULT_MEMORY_GB = 16;
 
 export function initialize() {
     if (CONTAINER_INSTANCES_ENABLED) {
-        vscode.commands.executeCommand('setContext', 'gcn.oci.containerInstancesEnabled', true);
+        vscode.commands.executeCommand('setContext', 'oci.devops.containerInstancesEnabled', true);
     }
     if (MANAGE_VIEW_ITEMS_ENABLED) {
-        vscode.commands.executeCommand('setContext', 'gcn.manageViewItemsEnabled', true);
+        vscode.commands.executeCommand('setContext', 'oci.devops.manageViewItemsEnabled', true);
     }
 }
 
 
 function containerInstancesEnabled(): boolean {
-    return vscode.workspace.getConfiguration('gcn').get<boolean>('containerInstancesEnabled') === true;
+    return persistenceUtils.getWorkspaceConfiguration().get<boolean>('containerInstancesEnabled') === true;
 }
 
 function niPipelinesEnabled(): boolean {
-    return vscode.workspace.getConfiguration('gcn').get<boolean>('niPipelinesEnabled') !== false;
+    return persistenceUtils.getWorkspaceConfiguration().get<boolean>('niPipelinesEnabled') !== false;
 }
 
 export function niRunnerShapeConfig(): any {
-    const shape = vscode.workspace.getConfiguration('gcn').get<any>('niRunnerShapeConfig') || {};
+    const shape = persistenceUtils.getWorkspaceConfiguration().get<any>('niRunnerShapeConfig') || {};
     if (!shape.ocpus) {
         shape.ocpus = NI_RUNNER_SHAPE_DEFAULT_OCPUS;
     }
@@ -48,9 +49,9 @@ export function niRunnerShapeConfig(): any {
 }
 
 function nonPipelineResourcesEnabled(): boolean {
-    return vscode.workspace.getConfiguration('gcn').get<boolean>('nonPipelineResourcesEnabled') !== false;
+    return persistenceUtils.getWorkspaceConfiguration().get<boolean>('nonPipelineResourcesEnabled') !== false;
 }
 
 function manageViewItemsEnabled(): boolean {
-    return vscode.workspace.getConfiguration('gcn').get<boolean>('manageViewItemsEnabled') !== false;
+    return persistenceUtils.getWorkspaceConfiguration().get<boolean>('manageViewItemsEnabled') !== false;
 }

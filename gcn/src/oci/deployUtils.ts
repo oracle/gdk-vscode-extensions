@@ -15,8 +15,9 @@ import * as model from '../model';
 import * as projectUtils from '../projectUtils';
 import * as dialogs from '../dialogs';
 import * as logUtils from '../logUtils';
-import * as gcnServices from '../gcnServices';
+import * as devopsServices from '../devopsServices';
 import * as folderStorage from '../folderStorage';
+import * as persistenceUtils from '../persistenceUtils';
 import * as ociServices from './ociServices';
 import * as ociUtils from './ociUtils';
 import * as ociAuthentication from './ociAuthentication';
@@ -40,7 +41,7 @@ export type SaveConfig = (folder: string, config: any) => boolean;
 export async function deployFolders(folders: vscode.WorkspaceFolder[], resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData): Promise<boolean> {
     logUtils.logInfo('[deploy] Invoked deploy folders to OCI');
 
-    const bypassArtifacts = vscode.workspace.getConfiguration('gcn').get('bypassDeliverArtifactsStage');
+    const bypassArtifacts = persistenceUtils.getWorkspaceConfiguration().get('bypassDeliverArtifactsStage');
 
     const nblsErr = await projectUtils.checkNBLS();
     if (nblsErr) {
@@ -64,7 +65,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
     const openContexts: ociContext.Context[] | undefined = dumpData ? undefined : [];
 
-    const folderData = openContexts ? await gcnServices.getFolderData() : undefined;
+    const folderData = openContexts ? await devopsServices.getFolderData() : undefined;
     if (openContexts && folderData) {
         for (const data of folderData) {
             const services = ociServices.findByFolderData(data);
@@ -696,7 +697,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         'devops_tooling_deployID': deployData.tag,
                         'devops_tooling_projectOCID': projectOCID,
                         'devops_tooling_description': knowledgeBaseDescription,
-                        'devops_tooling_usage': 'gcn-adm-audit'
+                        'devops_tooling_usage': 'oci-devops-adm-audit'
                     });
                     knowledgePromise = ociUtils.admWaitForResourceCompletionStatus(provider, `Knowledge base for project ${projectName}`, deployData.knowledgeBaseWorkRequest).
                         then(ocid => {

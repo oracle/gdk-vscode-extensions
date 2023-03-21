@@ -45,16 +45,16 @@ export function initialize(context: vscode.ExtensionContext) {
     nodes.registerViewDeploymentLogNode([DeploymentPipelineNode.CONTEXTS[1], DeploymentPipelineNode.CONTEXTS[2]]);
     ociNodes.registerOpenInConsoleNode(DeploymentPipelineNode.CONTEXTS);
 
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runDeployPipeline', (node: DeploymentPipelineNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.runDeployPipeline', (node: DeploymentPipelineNode) => {
 		node.runPipeline();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.stopDeployPipeline', (node: DeploymentPipelineNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.stopDeployPipeline', (node: DeploymentPipelineNode) => {
 		node.cancelPipeline();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.openInBrowser', (node: DeploymentPipelineNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.openInBrowser', (node: DeploymentPipelineNode) => {
 		node.openDeploymentInBrowser();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.viewDeploymentLog', (node: DeploymentPipelineNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.viewDeploymentLog', (node: DeploymentPipelineNode) => {
 		node.viewLog();
 	}));
 }
@@ -623,10 +623,10 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
 
     static readonly DATA_NAME = 'deploymentPipelineNode';
     static readonly CONTEXTS = [
-        `gcn.oci.${DeploymentPipelineNode.DATA_NAME}`, // default
-        `gcn.oci.${DeploymentPipelineNode.DATA_NAME}-has-lastdeployment`, // handle to the previous deployment available
-        `gcn.oci.${DeploymentPipelineNode.DATA_NAME}-in-progress`, // in progress
-        `gcn.oci.${DeploymentPipelineNode.DATA_NAME}-deployments-available` // artifacts available
+        `oci.devops.${DeploymentPipelineNode.DATA_NAME}`, // default
+        `oci.devops.${DeploymentPipelineNode.DATA_NAME}-has-lastdeployment`, // handle to the previous deployment available
+        `oci.devops.${DeploymentPipelineNode.DATA_NAME}-in-progress`, // in progress
+        `oci.devops.${DeploymentPipelineNode.DATA_NAME}-deployments-available` // artifacts available
     ];
     
     private object: DeploymentPipeline;

@@ -35,11 +35,11 @@ export async function build(workspaceState: vscode.Memento) {
     }
     const folderData: FolderData[] = [];
     try {
-        await vscode.commands.executeCommand('setContext', 'gcn.servicesInitialized', false);
-        await vscode.commands.executeCommand('setContext', 'gcn.serviceFoldersCount', -1);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.servicesInitialized', false);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.serviceFoldersCount', -1);
 
-        await vscode.commands.executeCommand('setContext', 'gcn.globalImportAction', false);
-        await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', false);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.globalImportAction', false);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.globalDeployAction', false);
 
         let deployFailed = dumpedFolders(workspaceState) !== undefined;
 
@@ -90,13 +90,13 @@ export async function build(workspaceState: vscode.Memento) {
             cloudSupport.servicesReady();
         }
 
-        await vscode.commands.executeCommand('setContext', 'gcn.globalImportAction', serviceFoldersCount);
-        await vscode.commands.executeCommand('setContext', 'gcn.globalDeployAction', serviceFoldersCount && folders && folders.length > serviceFoldersCount);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.globalImportAction', serviceFoldersCount);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.globalDeployAction', serviceFoldersCount && folders && folders.length > serviceFoldersCount);
 
-        await vscode.commands.executeCommand('setContext', 'gcn.serviceFoldersCount', serviceFoldersCount);
-        await vscode.commands.executeCommand('setContext', 'gcn.servicesInitialized', true);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.serviceFoldersCount', serviceFoldersCount);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.servicesInitialized', true);
         
-        await vscode.commands.executeCommand('setContext', 'gcn.deployFailed', deployFailed);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.deployFailed', deployFailed);
     } finally {
         folderDataPromiseResolve(folderData);
     }

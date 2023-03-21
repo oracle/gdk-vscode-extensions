@@ -10,7 +10,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as identity from 'oci-identity';
 import * as devops from 'oci-devops';
-import * as gcnServices from '../gcnServices';
+import * as devopsServices from '../devopsServices';
 import * as dialogs from '../dialogs';
 import * as model from '../model';
 import * as projectUtils from '../projectUtils';
@@ -23,7 +23,7 @@ import * as ociServices from './ociServices';
 
 const ACTION_NAME = 'Undeploy from OCI';
 
-export async function undeploy(folders: gcnServices.FolderData[], deployData: any, dump: model.DumpDeployData): Promise<void> {
+export async function undeploy(folders: devopsServices.FolderData[], deployData: any, dump: model.DumpDeployData): Promise<void> {
     logUtils.logInfo('[undeploy] Invoked undeploy folders from OCI');
 
     const authentication = await ociAuthentication.resolve(ACTION_NAME, deployData.profile);
@@ -789,23 +789,23 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
                     const folder = folders.find(f => removeSpaces(f.folder.name) === repositoryName);
                     if (folder) {
                         const folderPath = folder.folder.uri.fsPath;
-                        const gcnPath = path.join(folderPath, folderStorage.getDefaultLocation());
-                        if (fs.existsSync(gcnPath)) {
-                            progress.report({ message : `Deleting GCN registration ${gcnPath}` });
-                            logUtils.logInfo(`[undeploy] Deleting GCN registration ${gcnPath}`);
-                            fs.unlinkSync(gcnPath);
+                        const configPath = path.join(folderPath, folderStorage.getDefaultLocation());
+                        if (fs.existsSync(configPath)) {
+                            progress.report({ message : `Deleting OCI DevOps registration ${configPath}` });
+                            logUtils.logInfo(`[undeploy] Deleting OCI DevOps registration ${configPath}`);
+                            fs.unlinkSync(configPath);
                         }
-                        const gcnFolderPath = path.join(folderPath, projectUtils.getDevOpsResourcesDir());
-                        if (fs.existsSync(gcnFolderPath)) {
-                            progress.report({ message : `Deleting local OCI devops resources at ${gcnFolderPath}` });
-                            logUtils.logInfo(`[undeploy] Deleting local OCI devops resources at ${gcnFolderPath}`);
-                            fs.rmdirSync(gcnFolderPath, { recursive : true });
+                        const resourcesDirPath = path.join(folderPath, projectUtils.getDevOpsResourcesDir());
+                        if (fs.existsSync(resourcesDirPath)) {
+                            progress.report({ message : `Deleting local OCI devops resources at ${resourcesDirPath}` });
+                            logUtils.logInfo(`[undeploy] Deleting local OCI devops resources at ${resourcesDirPath}`);
+                            fs.rmdirSync(resourcesDirPath, { recursive : true });
                         }
-                        const gitFolderPath = path.join(folderPath, '.git');
-                        if (fs.existsSync(gitFolderPath)) {
-                            progress.report({ message: `Deleting local GIT repository at ${gitFolderPath}`});
-                            logUtils.logInfo(`[undeploy] Deleting local GIT repository at ${gitFolderPath}`);
-                            fs.rmdirSync(gitFolderPath, { recursive : true});
+                        const gitDirPath = path.join(folderPath, '.git');
+                        if (fs.existsSync(gitDirPath)) {
+                            progress.report({ message: `Deleting local GIT repository at ${gitDirPath}`});
+                            logUtils.logInfo(`[undeploy] Deleting local GIT repository at ${gitDirPath}`);
+                            fs.rmdirSync(gitDirPath, { recursive : true});
                         }
                     }
                 }
@@ -971,7 +971,7 @@ export async function undeploy(folders: gcnServices.FolderData[], deployData: an
     }
 }
 
-export async function undeployFolders(folders: gcnServices.FolderData[]) {
+export async function undeployFolders(folders: devopsServices.FolderData[]) {
     logUtils.logInfo('[undeploy] Invoked undeploy folders');
 
     const nblsErr = await projectUtils.checkNBLS();
@@ -993,7 +993,7 @@ export async function undeployFolders(folders: gcnServices.FolderData[]) {
     }
 }
 
-export async function undeployFolder(folder: gcnServices.FolderData) {
+export async function undeployFolder(folder: devopsServices.FolderData) {
     const services = ociServices.findByFolderData(folder);
     if (services.length === 0) {
         logUtils.logInfo(`[undeploy] No services to undeploy for ${folder.folder.name}`);
@@ -1059,7 +1059,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             fs.rmdirSync(gitPath, { recursive : true});
         }
 
-        _progress.report({message : "Listing Build Pipelines"});
+        _progress.report({message : 'Listing Build Pipelines'});
         logUtils.logInfo(`[undeploy] Listing all build pipelines in ${projectLogname}`);
 
         const buildPipelines: devops.models.BuildPipelineSummary[] = await ociUtils.listBuildPipelinesByCodeRepository(authProvider, devopsId, repositoryId);
@@ -1111,7 +1111,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
                     }
                 }
                 if (!found) {
-                    throw new Error("Inconsistent pipeline structure!");
+                    throw new Error('Inconsistent pipeline structure!');
                 }
             }
 
@@ -1129,7 +1129,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             await ociUtils.deleteBuildPipeline(authProvider, pipe.id, true);
         };
 
-        _progress.report({message : "Listing Deploy Pipelines"});
+        _progress.report({message : 'Listing Deploy Pipelines'});
         logUtils.logInfo(`[undeploy] Listing all deployment pipelines in ${projectLogname}`);
 
         const buildPipelineIds = buildPipelines.map(pipe => pipe.id);
@@ -1181,7 +1181,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
                         }
                     }
                     if (!found) {
-                        throw new Error("Inconsistent pipeline structure!");
+                        throw new Error('Inconsistent pipeline structure!');
                     }
                 }
 
@@ -1272,7 +1272,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
         }
 
         if (isLast) {
-            _progress.report({message : "Listing project logs"});
+            _progress.report({message : 'Listing project logs'});
             logUtils.logInfo(`[undeploy] Listing all logs in ${projectLogname}`);
             const logPromises : Promise<any>[] | undefined = (await ociUtils.listLogsByProject(authProvider, compartmentId, devopsId))?.map(l => {
                 _progress.report({message : `Deleting log ${l.displayName}`});
@@ -1310,7 +1310,7 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             logUtils.logInfo(`[undeploy] Listing all knowledge bases in ${compartmentLogname}`);
             let knowledgeBases = await ociUtils.listKnowledgeBases(authProvider, compartmentId);
             for (let kb of knowledgeBases) {
-                if ((kb.freeformTags?.['devops_tooling_usage'] === "gcn-adm-audit") &&
+                if ((kb.freeformTags?.['devops_tooling_usage'] === 'oci-devops-adm-audit') &&
                     (kb.freeformTags?.['devops_tooling_projectOCID'] === devopsId)) {
                         _progress.report({message : `Deleting knowledge base ${kb.displayName}`});
                         logUtils.logInfo(`[undeploy] Deleting knowledge base ${kb.displayName} in ${compartmentLogname}`);
@@ -1323,15 +1323,15 @@ export async function undeployFolder(folder: gcnServices.FolderData) {
             logUtils.logInfo(`[undeploy] Devops project ${projectLogname} deleted`);
         }
 
-        const gcnPath = path.join(folderPath, folderStorage.getDefaultLocation());
-        _progress.report({message : `Deleting GCN registration ${gcnPath}`});
-        logUtils.logInfo(`[undeploy] Deleting GCN registration ${gcnPath}`);
-        fs.unlinkSync(gcnPath); 
-        const gcnFolderPath = path.join(folderPath, projectUtils.getDevOpsResourcesDir());
-        if (fs.existsSync(gcnFolderPath)) {
+        const configPath = path.join(folderPath, folderStorage.getDefaultLocation());
+        _progress.report({message : `Deleting OCI DevOps registration ${configPath}`});
+        logUtils.logInfo(`[undeploy] Deleting OCI DevOps registration ${configPath}`);
+        fs.unlinkSync(configPath); 
+        const resourcesDirPath = path.join(folderPath, projectUtils.getDevOpsResourcesDir());
+        if (fs.existsSync(resourcesDirPath)) {
             _progress.report({message : 'Deleting local OCI devops resources'});
-            logUtils.logInfo(`[undeploy] Deleting local OCI devops resources in ${gcnFolderPath}`);
-            fs.rmdirSync(gcnFolderPath, { recursive : true});
+            logUtils.logInfo(`[undeploy] Deleting local OCI devops resources in ${resourcesDirPath}`);
+            fs.rmdirSync(resourcesDirPath, { recursive : true});
         }
     });
 }

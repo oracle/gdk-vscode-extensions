@@ -6,7 +6,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as gcnServices from './gcnServices';
+import * as devopsServices from './devopsServices';
 import * as model from './model';
 import * as nodes from './nodes';
 import * as dialogs from './dialogs';
@@ -18,60 +18,60 @@ export function initialize(context: vscode.ExtensionContext) {
     nodes.registerAddContentNode(FolderNode.CONTEXTS[0]);
     nodes.registerAddContentNode(FolderServicesNode.CONTEXT);
 
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.importFromCloud', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.importFromCloud', () => {
 		importExportUtils.importDevopsProject();
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('gcn.deployToCloud', (...params: any[]) => {
+	context.subscriptions.push(vscode.commands.registerCommand('oci.devops.deployToCloud', (...params: any[]) => {
         if (params[0]?.deploy) {
             (params[0] as nodes.DeployNode).deploy(context.workspaceState);
         }
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.deployToCloud_Global', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.deployToCloud_Global', () => {
         importExportUtils.deployFolders(context.workspaceState);
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('gcn.resumeDeployToCloud', (...params: any[]) => {
+	context.subscriptions.push(vscode.commands.registerCommand('oci.devops.resumeDeployToCloud', (...params: any[]) => {
         if (params[0]?.deploy) {
             (params[0] as nodes.DeployNode).deploy(context.workspaceState);
         }
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.resumeDeployToCloud_Global', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.resumeDeployToCloud_Global', () => {
         importExportUtils.deployFolders(context.workspaceState);
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.undeployPartialFromCloud', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.undeployPartialFromCloud', (...params: any[]) => {
         if (params[0]?.undeploy) {
             (params[0] as nodes.DeployNode).undeploy(context.workspaceState);
         }
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.undeployPartialFromCloud_Global', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.undeployPartialFromCloud_Global', () => {
         importExportUtils.undeployFolders(context.workspaceState);
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.undeployFromCloud', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.undeployFromCloud', () => {
         importExportUtils.undeployFolders(context.workspaceState);
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.addContent', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.addResource', (...params: any[]) => {
         if (params[0]?.addContent) {
             (params[0] as nodes.AddContentNode).addContent();
         }
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.addContent_Global', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.addResource_Global', () => {
         addContent(undefined, undefined);
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.renameNode', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.renameNode', (...params: any[]) => {
         if (params[0]?.rename) {
             (params[0] as nodes.RenameableNode).rename();
         }
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.removeNode', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.removeNode', (...params: any[]) => {
         if (params[0]?.remove) {
             (params[0] as nodes.RemovableNode).remove();
         }
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.reloadNode', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.reloadNode', (...params: any[]) => {
         if (params[0]?.reload) {
             (params[0] as nodes.ReloadableNode).reload();
         }
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.showReport', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.showReport', (...params: any[]) => {
         if (params[0]?.showReport) {
             (params[0] as nodes.ShowReportNode).showReport();
         }
@@ -114,7 +114,7 @@ export async function hideWelcomeView(viewContext: string) {
     nodeProvider.unhideContent();
 }
 
-async function addContent(folder: gcnServices.FolderData | null | undefined, services: model.CloudServices | undefined) {
+async function addContent(folder: devopsServices.FolderData | null | undefined, services: model.CloudServices | undefined) {
     if (!services) {
         if (!folder) {
             folder = await dialogs.selectFolder('Add OCI DevOps Resource');
@@ -137,7 +137,7 @@ export function refresh() {
     nodeProvider.refresh();
 }
 
-export async function build(folders: gcnServices.FolderData[], deployedFoldersCount: number, servicesInitialized: boolean, deployFailed: boolean, dumpDeployData?: (folder: string) => model.DumpDeployData) {
+export async function build(folders: devopsServices.FolderData[], deployedFoldersCount: number, servicesInitialized: boolean, deployFailed: boolean, dumpDeployData?: (folder: string) => model.DumpDeployData) {
     const folderNodes: FolderNode[] = [];
     if (servicesInitialized && !deployFailed && folders.length > 0 && deployedFoldersCount > 0) {
         const treeChanged: nodes.TreeChanged = (treeItem?: vscode.TreeItem) => {
@@ -181,14 +181,14 @@ class FolderNode extends nodes.BaseNode implements nodes.DeployNode, nodes.AddCo
 
     private static readonly DATA_NAME = 'folderNode';
     static readonly CONTEXTS = [
-        `gcn.${FolderNode.DATA_NAME}`, // default
-        `gcn.${FolderNode.DATA_NAME}-empty`,
-        `gcn.${FolderNode.DATA_NAME}-failed`
+        `oci.devops.${FolderNode.DATA_NAME}`, // default
+        `oci.devops.${FolderNode.DATA_NAME}-empty`,
+        `oci.devops.${FolderNode.DATA_NAME}-failed`
     ];
 
-    private folder: gcnServices.FolderData;
+    private folder: devopsServices.FolderData;
 
-    constructor(folder: gcnServices.FolderData, children: FolderServicesNode[]) {
+    constructor(folder: devopsServices.FolderData, children: FolderServicesNode[]) {
         super(folder.folder.name, undefined, folder.services.length > 0 ? FolderNode.CONTEXTS[0] : FolderNode.CONTEXTS[1], children, true);
         this.folder = folder;
         if (!this.children || this.children.length === 0) {
@@ -210,7 +210,7 @@ class FolderNode extends nodes.BaseNode implements nodes.DeployNode, nodes.AddCo
         }
     }
 
-    getFolderData(): gcnServices.FolderData {
+    getFolderData(): devopsServices.FolderData {
         return this.folder;
     }
 
@@ -230,7 +230,7 @@ class FolderNode extends nodes.BaseNode implements nodes.DeployNode, nodes.AddCo
 
 class FolderServicesNode extends nodes.BaseNode implements nodes.DecorableNode, nodes.AddContentNode {
 
-    static readonly CONTEXT = 'gcn.folderServicesNode';
+    static readonly CONTEXT = 'oci.devops.folderServicesNode';
 
     private services: model.CloudServices;
     parentWhenCollapsed: FolderNode | undefined;
@@ -295,7 +295,7 @@ class NotDeployedNode extends nodes.TextNode {
         this.tooltip = 'Click to deploy the folder to OCI';
         this.command = {
             title: 'Deploy to OCI',
-            command: 'gcn.deployToCloud',
+            command: 'oci.devops.deployToCloud',
             arguments: [ folderNode ]
         };
     }

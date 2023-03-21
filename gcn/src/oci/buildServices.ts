@@ -13,6 +13,7 @@ import * as gitUtils from '../gitUtils';
 import * as graalvmUtils from '../graalvmUtils';
 import * as servicesView from '../servicesView';
 import * as logUtils from '../logUtils';
+import * as persistenceUtils from '../persistenceUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociDialogs from './ociDialogs';
@@ -42,25 +43,25 @@ export function initialize(context: vscode.ExtensionContext) {
     nodes.registerViewBuildLogNode([BuildPipelineNode.CONTEXTS[1], BuildPipelineNode.CONTEXTS[2]]);
     ociNodes.registerOpenInConsoleNode(BuildPipelineNode.CONTEXTS);
 
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runBuildPipeline', (node: BuildPipelineNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.runBuildPipeline', (node: BuildPipelineNode) => {
 		node.runPipeline();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.stopBuildPipeline', (node: BuildPipelineNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.stopBuildPipeline', (node: BuildPipelineNode) => {
 		node.cancelPipeline();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.getBuildArtifact', (node: BuildPipelineNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.getBuildArtifact', (node: BuildPipelineNode) => {
 		node.getArtifacts();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.downloadSingleBuildArtifact', (node: BuildPipelineNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.downloadSingleBuildArtifact', (node: BuildPipelineNode) => {
 		node.downloadSingleArtifact();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.pullSingleBuildArtifact', (node: BuildPipelineNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.pullSingleBuildArtifact', (node: BuildPipelineNode) => {
 		node.pullSingleArtifact();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.runSingleBuildArtifact', (node: BuildPipelineNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.runSingleBuildArtifact', (node: BuildPipelineNode) => {
 		node.runSingleArtifact();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.viewBuildLog', (node: BuildPipelineNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.viewBuildLog', (node: BuildPipelineNode) => {
 		node.viewLog();
 	}));
 }
@@ -314,12 +315,12 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
 
     static readonly DATA_NAME = 'buildPipelineNode';
     static readonly CONTEXTS = [
-        `gcn.oci.${BuildPipelineNode.DATA_NAME}`, // default
-        `gcn.oci.${BuildPipelineNode.DATA_NAME}-has-lastrun`, // handle to the previous run available
-        `gcn.oci.${BuildPipelineNode.DATA_NAME}-in-progress`, // in progress
-        `gcn.oci.${BuildPipelineNode.DATA_NAME}-artifacts-available`, // artifacts available
-        `gcn.oci.${BuildPipelineNode.DATA_NAME}-single-download-available`, // single generic artifact available
-        `gcn.oci.${BuildPipelineNode.DATA_NAME}-single-image-available` // single docker image available
+        `oci.devops.${BuildPipelineNode.DATA_NAME}`, // default
+        `oci.devops.${BuildPipelineNode.DATA_NAME}-has-lastrun`, // handle to the previous run available
+        `oci.devops.${BuildPipelineNode.DATA_NAME}-in-progress`, // in progress
+        `oci.devops.${BuildPipelineNode.DATA_NAME}-artifacts-available`, // artifacts available
+        `oci.devops.${BuildPipelineNode.DATA_NAME}-single-download-available`, // single generic artifact available
+        `oci.devops.${BuildPipelineNode.DATA_NAME}-single-image-available` // single docker image available
     ];
 
     private object: BuildPipeline;
@@ -405,8 +406,7 @@ class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableN
                     }
                 }
                 const buildName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
-                const gcnConfiguration = vscode.workspace.getConfiguration('gcn');
-                const useLocalGvmVersion: boolean = gcnConfiguration.get('useLocalGraalvmVersion', false);
+                const useLocalGvmVersion: boolean = persistenceUtils.getWorkspaceConfiguration().get('useLocalGraalvmVersion', false);
                 const params: { name: string; value: string }[] | undefined = useLocalGvmVersion ? [] : undefined;
                 let msg: string;
                 if (useLocalGvmVersion) {
