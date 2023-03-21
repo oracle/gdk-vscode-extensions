@@ -48,11 +48,11 @@ export async function deploy(info: RunInfo) {
     kubernetesChannel.appendLine(`> kubectl ${command}`);
     result = await info.kubectl.invokeCommand(command);
     if (result) {
-        if (result.code == 0) {
+        if (result.code === 0) {
             kubernetesChannel.appendLine(result.stdout);
             if (deploymentName && oldRs) {
                 let repeat = MAX_WAIT_CYCLES;
-                while (oldRs == await getLatestRs(info.kubectl, deploymentName) && repeat-- > 0) {
+                while (oldRs === await getLatestRs(info.kubectl, deploymentName) && repeat-- > 0) {
                     await new Promise(resolve => setTimeout(resolve, WAIT_TIMEOUT));
                 }
                 if (repeat > -1) {

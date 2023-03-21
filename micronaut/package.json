@@ -35,8 +35,6 @@
 		"java"
 	],
 	"activationEvents": [
-		"onCommand:extension.micronaut.showWelcomePage",
-		"onCommand:extension.micronaut.createProject",
 		"workspaceContains:**/micronaut-cli.yml"
 	],
 	"main": "./dist/extension.js",

@@ -123,7 +123,7 @@ async function terminalGradleCommandFor(wrapper: vscode.Uri, goal: string): Prom
 
 async function getMicronautVersion(): Promise<string[] | undefined> {
     const properties: vscode.Uri[] = await vscode.workspace.findFiles('**/gradle.properties', '**/node_modules/**', 1);
-    if (properties?.length == 1) {
+    if (properties?.length === 1) {
         const fileStream = createReadStream(properties[0].fsPath);
         const rl = createInterface({
             input: fileStream,

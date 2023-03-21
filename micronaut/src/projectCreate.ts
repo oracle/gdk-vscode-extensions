@@ -398,7 +398,7 @@ function normalizeJavaVersion(version: string | undefined, supportedVersions: st
     if (!version) {
         return '8';
     }
-    if (!supportedVersions || supportedVersions.length == 0) {
+    if (!supportedVersions || supportedVersions.length === 0) {
         return version;
     }
     let versionN = parseInt(version);
@@ -448,7 +448,7 @@ async function getFeatures(micronautVersion: {label: string; serviceUrl: string}
         let msg = e.message.toString();
         const err = `Unsupported JDK version: ${javaVersion.target}. Supported values are `;
         const idx = msg.indexOf(err);
-        if (idx != 0) {
+        if (idx !== 0) {
             // javaVersion.target not supported by the CLI
             // list of the supported versions is part of the error message
             const supportedVersions = msg.substring(idx + err.length + 1, msg.length - 3).split(', ');

@@ -3146,7 +3146,7 @@ async function selectProjectName(suggestedName?: string): Promise<string | undef
         if (name.startsWith('-') || name.endsWith('-')) {
             return 'DevOps project name cannot start or end with \'-\'.';
         }
-        if (name.indexOf('--') != -1) {
+        if (name.indexOf('--') !== -1) {
             return 'DevOps project name cannot contain \'--\'.';
         }
         if (!isNaN(name.charAt(0) as any)) {

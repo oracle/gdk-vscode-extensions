@@ -109,7 +109,7 @@ export async function createDeployment(context: vscode.ExtensionContext) {
 			shouldResume: () => Promise.resolve(false)
         });
         state.namespace = selected.label;
-        if (totalSteps(state) == 4) {
+        if (totalSteps(state) === 4) {
 		    return (input: MultiStepInput) => pickDockerSecret(input, state);
         } else {
             return undefined;
@@ -170,7 +170,7 @@ async function getNamespaces(kubectl: kubernetes.KubectlV1): Promise<vscode.Quic
 }
 
 function normalizeRegistryUrl(repo: string): string {
-    if (repo == LOCAL) {
+    if (repo === LOCAL) {
         return "";
     } else if (repo && !repo.trim().endsWith('/')) {
         return `${repo.trim()}/`;
