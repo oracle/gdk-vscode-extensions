@@ -174,9 +174,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
         }
     }
 
-    if (deployData.okeCluster) {
+    if (deployData.okeCluster?.id) {
         try {
-            const cluster = await ociUtils.getCluster(provider, deployData.okeCluster);
+            const cluster = await ociUtils.getCluster(provider, deployData.okeCluster.id);
             if (!ociUtils.isUp(cluster.lifecycleState)) {
                 deployData.okeCluster = undefined;
             }
@@ -186,16 +186,19 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
     }
     if (!deployData.okeCluster) {
         const cluster = await okeUtils.selectOkeCluster(provider, deployData.compartment.ocid, provider.getRegion().regionId, true, deployData.compartment.name, true);
-        deployData.okeCluster = cluster?.id;
-        if (deployData.okeCluster === undefined) {
+        if (cluster === undefined) {
             dump();
             return false;
         }
-        if (deployData.okeCluster) {
-            deployData.subnetId = (await vcnUtils.selectNetwork(provider, deployData.compartment.ocid, cluster?.vcnID, true, deployData.compartment.name))?.subnetID;
-            if (deployData.subnetId === undefined) {
+        if (cluster) {
+            deployData.okeCluster = { id: cluster.id, compartmentId: cluster?.compartmentId };
+            const subnet  = await vcnUtils.selectNetwork(provider, deployData.compartment.ocid, cluster?.vcnID, true, deployData.compartment.name);
+            if (subnet === undefined) {
                 dump();
                 return false;
+            }
+            if (subnet) {
+                deployData.subnet = { id: subnet.subnetID, compartmentId: subnet.compartmentID };
             }
         }
     }
@@ -511,20 +514,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     increment: increment
                 });
             } else {
-                // --- Setting up policy for accessing resources in compartment
+                // --- Setting up policies for accessing resources
                 progress.report({
                     increment,
-                    message: 'Setting up policy for accessing resources in compartment...'
+                    message: 'Setting up policies for accessing resources...'
                 });
                 try {
-                    logUtils.logInfo(`[deploy] Setting up policy for accessing resources in compartment for ${deployData.compartment.name}/${projectName}`);
-                    const compartmentAccessPolicy = await ociUtils.getCompartmentAccessPolicy(provider, deployData.compartment.ocid, true);
-                    if (!compartmentAccessPolicy) {
-                        resolve('Failed to resolve policy for accessing resources in compartment.');
-                        return;
-                    }
+                    logUtils.logInfo(`[deploy] Setting up policies for accessing resources for ${deployData.compartment.name}/${projectName}`);
+                    await ociUtils.updateCompartmentAccessPolicies(provider, deployData.compartment.ocid, deployData.okeCluster.compartmentId, deployData.subnet.compartmentId);
                 } catch (err) {
-                    resolve(dialogs.getErrorMessage('Failed to resolve policy for accessing resources in compartment', err));
+                    resolve(dialogs.getErrorMessage('Failed to set up policies for accessing resources', err));
                     return;
                 }
             }
@@ -626,7 +625,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     try {
                         logUtils.logInfo(`[deploy] Creating OKE cluster environment for ${deployData.compartment.name}/${projectName}`);
                         deployData.okeClusterEnvironment = false;
-                        const okeClusterEnvironment = await ociUtils.createOkeDeployEnvironment(provider, projectOCID, projectName, deployData.okeCluster, {
+                        const okeClusterEnvironment = await ociUtils.createOkeDeployEnvironment(provider, projectOCID, projectName, deployData.okeCluster.id, {
                             'devops_tooling_deployID': deployData.tag
                         });
                         deployData.okeClusterEnvironment = okeClusterEnvironment.id;
@@ -1217,7 +1216,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     const oke_deploySetupCommandInlineContent = expandTemplate(resourcesPath, oke_deploy_setup_command_template, {
                         repo_endpoint: `${provider.getRegion().regionCode}.ocir.io`,
                         region: provider.getRegion().regionId,
-                        cluster_id: deployData.okeCluster,
+                        cluster_id: deployData.okeCluster.id,
                         secret_name: folderData.secretName
                     });
                     if (!oke_deploySetupCommandInlineContent) {
@@ -1256,7 +1255,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             folderData.oke_deploySetupCommandArtifact = (await ociUtils.createOkeDeploySetupCommandArtifact(provider, projectOCID, oke_deploySetupCommandInlineContent, oke_deploySetupCommandArtifactName, oke_deploySetupCommandArtifactDescription, {
                                 'devops_tooling_deployID': deployData.tag,
                                 'devops_tooling_codeRepoID': codeRepository.id,
-                                'devops_tooling_oke_cluster': deployData.okeCluster
+                                'devops_tooling_oke_cluster': deployData.okeCluster.id
                             })).id;
                             if (!codeRepoResources.artifacts) {
                                 codeRepoResources.artifacts = [];
@@ -1672,7 +1671,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 subData.setupSecretForDeployNativeStage = false;
-                                                subData.setupSecretForDeployNativeStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, subData.oke_deployNativePipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnetId, {
+                                                subData.setupSecretForDeployNativeStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, subData.oke_deployNativePipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnet.id, {
                                                     'devops_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
@@ -2095,7 +2094,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 subData.setupSecretForDeployJvmStage = false;
-                                                subData.setupSecretForDeployJvmStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, subData.oke_deployJvmPipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnetId, {
+                                                subData.setupSecretForDeployJvmStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, subData.oke_deployJvmPipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnet.id, {
                                                     'devops_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
@@ -2517,7 +2516,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 try {
                                     logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.setupSecretForDeployNativeStage = false;
-                                    folderData.setupSecretForDeployNativeStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, folderData.oke_deployNativePipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnetId, {
+                                    folderData.setupSecretForDeployNativeStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, folderData.oke_deployNativePipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnet.id, {
                                         'devops_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {
@@ -2930,7 +2929,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 try {
                                     logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.setupSecretForDeployJvmStage = false;
-                                    folderData.setupSecretForDeployJvmStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, folderData.oke_deployJvmPipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnetId, {
+                                    folderData.setupSecretForDeployJvmStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, folderData.oke_deployJvmPipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnet.id, {
                                         'devops_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {
