@@ -55,7 +55,7 @@ export async function importDevopsProject() {
 
 export async function deployFolders(workspaceState: vscode.Memento, folders?: devopsServices.FolderData | devopsServices.FolderData[]) {
     if (!anotherOperationInProgress()) {
-        if (!(await vscode.commands.getCommands()).includes('nbls.gcn.project.artifacts')) {
+        if (!(await vscode.commands.getCommands()).includes('nbls.project.artifacts')) {
             vscode.window.showErrorMessage('Project inspection is not ready yet, please try again later.');
             return;
         }
@@ -96,7 +96,7 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: de
                         title: `Inspecting folder ${folder.folder.name}...`,
                         cancellable: false
                     }, (_progress, _token) => {
-                        return vscode.commands.executeCommand('nbls.gcn.project.artifacts', folder.folder.uri);
+                        return vscode.commands.executeCommand('nbls.project.artifacts', folder.folder.uri);
                     });
                     supportedFolders.push(folder);
                 } catch (err) {
