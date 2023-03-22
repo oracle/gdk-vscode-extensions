@@ -35,7 +35,7 @@ export function initialize(context: vscode.ExtensionContext) {
     }));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.showContainerInstanceLog', () => {
         logUtils.logInfo(`[containerinstance] Invoked Show Container Instance Log, selecting folder`);
-        dialogs.selectFolder('Show Container Instance Log', 'Select deployed folder', true).then(folder => {
+        dialogs.selectFolder('Show Container Instance Log', 'Select folder', true).then(folder => {
             if (folder) {
                 const uri = folder.folder.uri;
                 logUtils.logInfo(`[containerinstance] Selected folder ${uri.fsPath}`);
@@ -48,13 +48,13 @@ export function initialize(context: vscode.ExtensionContext) {
                 });
             } else if (folder === null) {
                 logUtils.logInfo(`[containerinstance] No deployed folders`);
-                vscode.window.showWarningMessage('No deployed folder available.');
+                vscode.window.showWarningMessage('No folder added to an OCI DevOps project.');
             }
         });
     }));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.deleteContainerInstance', () => {
         logUtils.logInfo(`[containerinstance] Invoked Delete Container Instance, selecting folder`);
-        dialogs.selectFolder('Delete Container Instance', 'Select deployed folder', true).then(folder => {
+        dialogs.selectFolder('Delete Container Instance', 'Select folder', true).then(folder => {
             if (folder) {
                 const uri = folder.folder.uri;
                 logUtils.logInfo(`[containerinstance] Selected folder ${uri.fsPath}`);
@@ -67,7 +67,7 @@ export function initialize(context: vscode.ExtensionContext) {
                 });
             } else if (folder === null) {
                 logUtils.logInfo(`[containerinstance] No deployed folders`);
-                vscode.window.showWarningMessage('No deployed folder available.');
+                vscode.window.showWarningMessage('No folder added to an OCI DevOps project.');
             }
         });
     }));

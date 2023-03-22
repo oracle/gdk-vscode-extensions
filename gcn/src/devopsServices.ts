@@ -39,7 +39,10 @@ export async function build(workspaceState: vscode.Memento) {
         await vscode.commands.executeCommand('setContext', 'oci.devops.serviceFoldersCount', -1);
 
         await vscode.commands.executeCommand('setContext', 'oci.devops.globalImportAction', false);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.globalImportFoldersAction', false);
         await vscode.commands.executeCommand('setContext', 'oci.devops.globalDeployAction', false);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.globalAddAction', false);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.globalAuditAction', false);
 
         let deployFailed = dumpedFolders(workspaceState) !== undefined;
 
@@ -90,8 +93,11 @@ export async function build(workspaceState: vscode.Memento) {
             cloudSupport.servicesReady();
         }
 
-        await vscode.commands.executeCommand('setContext', 'oci.devops.globalImportAction', serviceFoldersCount);
-        await vscode.commands.executeCommand('setContext', 'oci.devops.globalDeployAction', serviceFoldersCount && folders && folders.length > serviceFoldersCount);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.globalImportAction', !serviceFoldersCount);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.globalImportFoldersAction', serviceFoldersCount);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.globalDeployAction', folders && serviceFoldersCount === 0);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.globalAddAction', folders && serviceFoldersCount > 0 && folders.length > serviceFoldersCount);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.globalAuditAction', folders && folders.length);
 
         await vscode.commands.executeCommand('setContext', 'oci.devops.serviceFoldersCount', serviceFoldersCount);
         await vscode.commands.executeCommand('setContext', 'oci.devops.servicesInitialized', true);

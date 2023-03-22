@@ -14,21 +14,28 @@ import * as undeployUtils from './oci/undeployUtils'; // TODO: include into Clou
 
 
 let importInProgress: boolean;
+let importFoldersInProgress: boolean;
 let deployInProgress: boolean;
+let addInProgress: boolean;
 let undeployInProgress: boolean;
 
-export async function importDevopsProject() {
+export async function importDevopsProject(getFromExisting: boolean) {
     if (!anotherOperationInProgress()) {
-        importInProgress = true;
-        await servicesView.showWelcomeView('oci.devops.importInProgress');
+        if (getFromExisting) {
+            importFoldersInProgress = true;
+            await servicesView.showWelcomeView('oci.devops.importFoldersInProgress');
+        } else {
+            importInProgress = true;
+            await servicesView.showWelcomeView('oci.devops.importInProgress');
+        }
         let folders;
         try {
-            const cloudSupport = await dialogs.selectCloudSupport('Import from OCI');
+            const cloudSupport = await dialogs.selectCloudSupport('Import OCI DevOps Project');
             if (!cloudSupport) {
                 return;
             }
 
-            const importResult = await cloudSupport.importFolders();
+            const importResult = await cloudSupport.importFolders(getFromExisting);
             if (!importResult) {
                 return;
             }
@@ -37,8 +44,13 @@ export async function importDevopsProject() {
             const servicesData = importResult.servicesData;
             folderStorage.storeCloudSupportData(cloudSupport, folders, servicesData);
         } finally {
-            await servicesView.hideWelcomeView('oci.devops.importInProgress');
-            importInProgress = false;
+            if (getFromExisting) {
+                await servicesView.hideWelcomeView('oci.devops.importFoldersInProgress');
+                importFoldersInProgress = false;
+            } else {
+                await servicesView.hideWelcomeView('oci.devops.importInProgress');
+                importInProgress = false;
+            }
         }
 
         if (folders.length === 1 && !vscode.workspace.workspaceFolders) {
@@ -53,14 +65,20 @@ export async function importDevopsProject() {
     }
 }
 
-export async function deployFolders(workspaceState: vscode.Memento, folders?: devopsServices.FolderData | devopsServices.FolderData[]) {
+export async function deployFolders(workspaceState: vscode.Memento, addToExisting: boolean, folders?: devopsServices.FolderData | devopsServices.FolderData[]) {
     if (!anotherOperationInProgress()) {
         if (!(await vscode.commands.getCommands()).includes('nbls.project.artifacts')) {
             vscode.window.showErrorMessage('Project inspection is not ready yet, please try again later.');
             return;
         }
-        deployInProgress = true;
-        await servicesView.showWelcomeView('oci.devops.deployInProgress');
+        if (addToExisting) {
+            addInProgress = true;
+            await servicesView.showWelcomeView('oci.devops.addInProgress');
+        } else {
+            deployInProgress = true;
+            await servicesView.showWelcomeView('oci.devops.deployInProgress');
+        }
+        const actionName = addToExisting ? 'Add Folder(s) to OCI DevOps Project' : 'Create OCI DevOps Project';
         try {
             const supportedFolders: devopsServices.FolderData[] = [];
             if (folders === undefined) {
@@ -74,10 +92,10 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: de
                         }
                     }
                 } else {
-                    const selected = await dialogs.selectFolders('Deploy to OCI', 'Select folders to deploy', false);
+                    const selected = await dialogs.selectFolders(actionName, 'Select folders to add', false);
                     if (!selected) {
                         if (selected === null) {
-                            vscode.window.showWarningMessage('All folders already deployed or no folders to deploy.');
+                            vscode.window.showWarningMessage('All folders already added to an OCI DevOps project or no folders available.');
                         }
                         return;
                     }
@@ -86,7 +104,7 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: de
             } else if (!Array.isArray(folders)) {
                 folders = [ folders ];
             } else if (folders.length === 0) {
-                dialogs.showErrorMessage('No folders to deploy.');
+                dialogs.showErrorMessage('No folders available.');
                 return;
             }
             for (const folder of folders) {
@@ -100,13 +118,13 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: de
                     });
                     supportedFolders.push(folder);
                 } catch (err) {
-                    dialogs.showErrorMessage(`Folder ${folder.folder.name} does not immediately contain a Java project, deploy to OCI not supported.`);
+                    dialogs.showErrorMessage(`Folder ${folder.folder.name} does not immediately contain a Java project, cannot create OCI DevOps project.`);
                 }
             }
             if (!supportedFolders.length) {
                 return;
             }
-            const cloudSupport = await dialogs.selectCloudSupport('Deploy to OCI');
+            const cloudSupport = await dialogs.selectCloudSupport('Create OCI DevOps Project');
             if (!cloudSupport) {
                 return;
             }
@@ -116,7 +134,7 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: de
             const workspaceFolders = devopsServices.folderDataToWorkspaceFolders(supportedFolders) as vscode.WorkspaceFolder[];
             const dump = devopsServices.dumpDeployData(workspaceState, workspaceFolders.map(f => f.name));
             try {
-                const deployed = await cloudSupport.deployFolders(workspaceFolders, dump);
+                const deployed = await cloudSupport.deployFolders(workspaceFolders, addToExisting, dump);
                 if (deployed) {
                     await devopsServices.build(workspaceState);
                 }
@@ -129,8 +147,13 @@ export async function deployFolders(workspaceState: vscode.Memento, folders?: de
                 }
             }
         } finally {
-            await servicesView.hideWelcomeView('oci.devops.deployInProgress');
-            deployInProgress = false;
+            if (addToExisting) {
+                await servicesView.hideWelcomeView('oci.devops.addInProgress');
+                addInProgress = false;
+            } else {
+                await servicesView.hideWelcomeView('oci.devops.deployInProgress');
+                deployInProgress = false;
+            }
         }
     }
 }
@@ -169,10 +192,10 @@ export async function undeployFolders(workspaceState: vscode.Memento, folders?: 
                     return;
                 }
             }
-            const selected = await dialogs.selectFolders('Undeploy from OCI', 'Select folders to undeploy', true, false);
+            const selected = await dialogs.selectFolders('Delete Folder(s) from OCI DevOps Project', 'Select folders to delete', true, false);
             if (!selected) {
                 if (selected === null) {
-                    vscode.window.showWarningMessage('No folders to undeploy.');
+                    vscode.window.showWarningMessage('No folders to delete.');
                 }
                 return;
             }
@@ -187,15 +210,23 @@ export async function undeployFolders(workspaceState: vscode.Memento, folders?: 
 
 function anotherOperationInProgress(): boolean {
     if (importInProgress) {
-        vscode.window.showWarningMessage('Another import is already in progress, try again later.');
+        vscode.window.showWarningMessage('Another OCI DevOps project is already being imported, try again later.');
+        return true;
+    }
+    if (importFoldersInProgress) {
+        vscode.window.showWarningMessage('Another folder is already being imported from OCI DevOps project, try again later.');
         return true;
     }
     if (deployInProgress) {
-        vscode.window.showWarningMessage('Another folder is already being deployed, try again later.');
+        vscode.window.showWarningMessage('Another OCI DevOps project is already being created, try again later.');
+        return true;
+    }
+    if (addInProgress) {
+        vscode.window.showWarningMessage('Another folder is already being added to OCI DevOps project, try again later.');
         return true;
     }
     if (undeployInProgress) {
-        vscode.window.showWarningMessage('Another folder is already being undeployed, try again later.');
+        vscode.window.showWarningMessage('Another folder is already being deleted from OCI DevOps project, try again later.');
         return true;
     }
     return false;

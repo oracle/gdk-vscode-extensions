@@ -29,7 +29,8 @@ import * as ociFeatures from './ociFeatures';
 import * as vcnUtils from './vcnUtils';
 
 
-const ACTION_NAME = 'Deploy to OCI';
+const CREATE_ACTION_NAME = 'Create OCI DevOps Project';
+const ADD_ACTION_NAME = 'Add Folder(s) to OCI DevOps Project';
 
 const FAT_JAR_NAME = 'Fat JAR';
 const FAT_JAR_NAME_LC = 'fat JAR';
@@ -42,8 +43,10 @@ const NI_CONTAINER_NAME_LC = NI_CONTAINER_NAME.toLocaleLowerCase();
 
 export type SaveConfig = (folder: string, config: any) => boolean;
 
-export async function deployFolders(folders: vscode.WorkspaceFolder[], resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData): Promise<boolean> {
+export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExisting: boolean, resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData): Promise<boolean> {
     logUtils.logInfo('[deploy] Invoked deploy folders to OCI');
+
+    const actionName = addToExisting ? ADD_ACTION_NAME : CREATE_ACTION_NAME;
 
     const bypassArtifacts = persistenceUtils.getWorkspaceConfiguration().get('bypassDeliverArtifactsStage');
 
@@ -60,8 +63,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
     for (const folder of folders) {
         if (!deployData.repositories || !deployData.repositories[removeSpaces(folder.name)]?.git) {
             if (gitUtils.getHEAD(folder.uri, true)) {
-                dialogs.showErrorMessage(`Folder ${folder.name} being deployed is already versioned and cannot be deployed to OCI.`);
-                logUtils.logInfo(`[deploy] Folder ${folder.name} being deployed is already versioned and cannot be deployed to OCI.`);
+                dialogs.showErrorMessage(`Folder ${folder.name} is already versioned and cannot be added to an OCI DevOps project.`);
+                logUtils.logInfo(`[deploy] Folder ${folder.name} is already versioned and cannot be added to an OCI DevOps project.`);
                 return false;
             }
         }
@@ -92,7 +95,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 profiles.push(contextProfile);
             }
         }
-        const selectedProfile = await ociDialogs.selectOciProfileFromList(profiles, true, ACTION_NAME);
+        const selectedProfile = await ociDialogs.selectOciProfileFromList(profiles, true, actionName);
         if (!selectedProfile) {
             dump();
             return false;
@@ -100,7 +103,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
         auth = ociAuthentication.createCustom(undefined, selectedProfile);
         deployData.profile = selectedProfile;
     } else {
-        auth = await ociAuthentication.resolve(ACTION_NAME, deployData.profile);
+        auth = await ociAuthentication.resolve(actionName, deployData.profile);
     }
 
     const authentication = auth;
@@ -149,14 +152,14 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     projects.push(contextProject);
                 }
             }
-            const selectedProject = await ociDialogs.selectDevOpsProjectFromList(provider, projects, true, ACTION_NAME);
+            const selectedProject = await ociDialogs.selectDevOpsProjectFromList(provider, projects, true, actionName);
             if (selectedProject) {
                 if (projects.length === 1) {
                     // folder(s) would be deployed immediately without any confirmation (compartment & devops project are preselected)
-                    const confirmOption = folders.length === 1 ? 'Deploy Folder' : 'Deploy Folders';
+                    const confirmOption = folders.length === 1 ? 'Add Folder' : 'Add Folders';
                     const cancelOption = 'Cancel';
                     const foldersMsg = folders.length === 1 ? `folder ${folders[0].name}` : `${folders.length} folders`;
-                    const choice = await vscode.window.showInformationMessage(`Confirm deploy ${foldersMsg} to an existing OCI devops project:`, confirmOption, cancelOption);
+                    const choice = await vscode.window.showInformationMessage(`Confirm adding ${foldersMsg} to an existing OCI DevOps project:`, confirmOption, cancelOption);
                     if (choice !== confirmOption) {
                         return false;
                     }
@@ -166,7 +169,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 deployData.compartment = { ocid: selectedProject.compartment, name: selectedProject.compartment };
             }
         } else {
-            deployData.compartment = await ociDialogs.selectCompartment(provider, ACTION_NAME);
+            deployData.compartment = await ociDialogs.selectCompartment(provider, actionName);
         }
         if (!deployData.compartment) {
             dump();
@@ -212,7 +215,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
             }
         }
         if (!deployData.project) {
-            devopsProjectName = await selectProjectName(folders.length === 1 ? removeSpaces(folders[0].name) : undefined);
+            devopsProjectName = await selectProjectName(actionName, folders.length === 1 ? removeSpaces(folders[0].name) : undefined);
         }
     }
     if (!devopsProjectName) {
@@ -230,7 +233,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
     const error: string | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: 'Deploying to OCI',
+        title: addToExisting ? 'Adding folder(s) to OCI DevOps project' : 'Creating OCI DevOps project',
         cancellable: false
     }, (progress, _token) => {
         return new Promise(async resolve => {
@@ -362,7 +365,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                     increment,
                     message: 'Creating devops project...'
                 });
-                const projectDescription = projectFolders.length === 1 ? `${projectFolders[0].projectType} project deployed from the VS Code`: 'Workspace deployed from the VS Code';
+                const projectDescription = projectFolders.length === 1 ? `${projectFolders[0].projectType} project created from the VS Code`: 'Workspace created from the VS Code';
                 while (deployData.project === undefined) {
                     try {
                         logUtils.logInfo(`[deploy] Creating devops project ${deployData.compartment.name}/${projectName}`);
@@ -3140,7 +3143,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
     }
 }
 
-async function selectProjectName(suggestedName?: string): Promise<string | undefined> {
+async function selectProjectName(actionName: string, suggestedName?: string): Promise<string | undefined> {
     function validateProjectName(name: string): string | undefined {
         if (!name || name.length === 0) {
             return 'DevOps project name cannot be empty.';
@@ -3163,7 +3166,7 @@ async function selectProjectName(suggestedName?: string): Promise<string | undef
         return undefined;
     }
     let projectName = await vscode.window.showInputBox({
-        title: `${ACTION_NAME}: Provide DevOps Project Name`,
+        title: `${actionName}: Provide DevOps Project Name`,
         placeHolder: 'Provide unique devops project name',
         value: suggestedName,
         validateInput: input => validateProjectName(input),
