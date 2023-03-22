@@ -33,12 +33,12 @@ type DeployArtifact = {
 };
 
 export function initialize(context: vscode.ExtensionContext): void {
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.downloadLatestGenericArtifact', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.downloadLatestGenericArtifact', (...params: any[]) => {
         if (params[0]?.download) {
             (params[0] as GenericDeployArtifactNode).download();
         }
     }));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.pullLatestDockerImage', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.pullLatestDockerImage', (...params: any[]) => {
         if (params[0]?.pull) {
             (params[0] as OcirDeployArtifactNode).pull();
         }
@@ -114,7 +114,7 @@ async function selectDeployArtifacts(oci: ociContext.Context, ignore: DeployArti
     let idx = 1;
     for (const item of existing) {
         const type = item.deployArtifactSource.deployArtifactSourceType;
-        if (type == devops.models.GenericDeployArtifactSource.deployArtifactSourceType || type === devops.models.OcirDeployArtifactSource.deployArtifactSourceType) {
+        if (type === devops.models.GenericDeployArtifactSource.deployArtifactSourceType || type === devops.models.OcirDeployArtifactSource.deployArtifactSourceType) {
             if (!shouldIgnore(item.id)) {
                 const displayName = item.displayName ? item.displayName : `Build Artifact ${idx++}`;
                 const description = item.description ? item.description : 'Build artifact';
@@ -267,7 +267,7 @@ class Service extends ociService.Service {
 
 class DeployArtifactsNode extends nodes.BaseNode implements nodes.AddContentNode, nodes.RemovableNode {
 
-    static readonly CONTEXT = 'gcn.oci.DeployArtifactsNode';
+    static readonly CONTEXT = 'oci.devops.DeployArtifactsNode';
 
     constructor() {
         super('Build Artifacts', undefined, DeployArtifactsNode.CONTEXT, [], false);
@@ -336,7 +336,7 @@ abstract class DeployArtifactNode extends nodes.ChangeableNode implements nodes.
 class GenericDeployArtifactNode extends DeployArtifactNode {
 
     static readonly DATA_NAME = 'genericDeployArtifactNode';
-    static readonly CONTEXT = `gcn.oci.${GenericDeployArtifactNode.DATA_NAME}`;
+    static readonly CONTEXT = `oci.devops.${GenericDeployArtifactNode.DATA_NAME}`;
 
     constructor(object: DeployArtifact, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
         super(object, oci, GenericDeployArtifactNode.CONTEXT, artifactServices.ICON, treeChanged);
@@ -382,7 +382,7 @@ class GenericDeployArtifactNode extends DeployArtifactNode {
 class OcirDeployArtifactNode extends DeployArtifactNode {
 
     static readonly DATA_NAME = 'ocirDeployArtifactNode';
-    static readonly CONTEXT = `gcn.oci.${OcirDeployArtifactNode.DATA_NAME}`;
+    static readonly CONTEXT = `oci.devops.${OcirDeployArtifactNode.DATA_NAME}`;
 
     constructor(object: DeployArtifact, oci: ociContext.Context, treeChanged: nodes.TreeChanged) {
         super(object, oci, OcirDeployArtifactNode.CONTEXT, containerServices.ITEM_ICON, treeChanged);

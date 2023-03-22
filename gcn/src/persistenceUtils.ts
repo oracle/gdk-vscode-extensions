@@ -23,5 +23,5 @@ export async function setWorkspaceObject(key: string, value: any): Promise<void>
 }
 
 export function getWorkspaceConfiguration(): vscode.WorkspaceConfiguration {
-	return vscode.workspace.getConfiguration('gcn');
+	return vscode.workspace.getConfiguration('oci.devops');
 }

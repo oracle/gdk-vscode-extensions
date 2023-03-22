@@ -36,7 +36,7 @@ type GenericArtifact = {
 };
 
 export function initialize(context: vscode.ExtensionContext): void {
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.downloadGenericArtifact', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.downloadGenericArtifact', (...params: any[]) => {
         if (params[0]?.download) {
             (params[0] as GenericArtifactNode).download();
         }
@@ -215,7 +215,7 @@ export class Service extends ociService.Service {
 class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ReloadableNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'artifactRepositoryNode';
-    static readonly CONTEXT = `gcn.oci.${ArtifactRepositoryNode.DATA_NAME}`;
+    static readonly CONTEXT = `oci.devops.${ArtifactRepositoryNode.DATA_NAME}`;
 
     private object: ArtifactRepository;
     private oci: ociContext.Context;
@@ -292,7 +292,7 @@ class ArtifactRepositoryNode extends nodes.AsyncNode implements nodes.RemovableN
 
 class GenericArtifactNode extends nodes.BaseNode implements ociNodes.OciResource {
 
-    static readonly CONTEXT = 'gcn.oci.genericArtifactNode';
+    static readonly CONTEXT = 'oci.devops.genericArtifactNode';
 
     private object: GenericArtifact;
     private oci: ociContext.Context;

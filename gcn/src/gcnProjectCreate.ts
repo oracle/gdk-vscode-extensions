@@ -212,7 +212,7 @@ async function writeProjectContents(options: CreateOptions, location: string) {
         options.testFramework,
         'JAVA', // options.language,
         options.javaVersion,
-        'gcn-vscode-extension',
+        'oci-devops-vscode-extension',
         true,
         fileHandler
     );
@@ -574,12 +574,3 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
         features: featureList.length > 0 ? featureList : undefined
     };
 }
-
-export function getGCNHome(): string {
-    let gcnHome: string = vscode.workspace.getConfiguration('gcn').get('oci.home') as string;
-    if (gcnHome) {
-        return gcnHome;
-    }
-    return process.env['OCI_HOME'] as string;
-}
-

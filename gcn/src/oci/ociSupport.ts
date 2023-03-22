@@ -24,7 +24,7 @@ const TYPE = 'oci';
 
 let RESOURCES_FOLDER: string;
 
-const DEVOPS_DECORATIONS_KEY = 'gcn.oci.devOpsDecorations';
+const DEVOPS_DECORATIONS_KEY = 'oci.devops.devOpsDecorations';
 let CURRENT_SERVICES: ociServices.OciServices[] = [];
 let CURRENT_DEVOPS_PROJECTS: string[] = [];
 let devopsDecorations: boolean = false;
@@ -39,10 +39,10 @@ export function create(context: vscode.ExtensionContext): model.CloudSupport {
 function initialize(context: vscode.ExtensionContext) {
     RESOURCES_FOLDER = path.join(context.extensionPath, 'resources', 'oci');
 
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.enableDevOpsDecorations', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.enableDevOpsDecorations', () => {
         updateDevOpsDecorations(true);
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.disableDevOpsDecorations', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.disableDevOpsDecorations', () => {
         updateDevOpsDecorations(false);
 	}));
 }
@@ -55,7 +55,7 @@ function updateDevOpsDecorations(enabled?: boolean) {
         const workspaceSetting: boolean | undefined = persistenceUtils.getWorkspaceObject(DEVOPS_DECORATIONS_KEY);
         devopsDecorations = workspaceSetting === undefined ? CURRENT_DEVOPS_PROJECTS.length > 1 : workspaceSetting;
     }
-    vscode.commands.executeCommand('setContext', 'gcn.oci.devOpsDecorations', devopsDecorations);
+    vscode.commands.executeCommand('setContext', DEVOPS_DECORATIONS_KEY, devopsDecorations);
     for (const services of CURRENT_SERVICES) {
         services.decorateContainer(devopsDecorations);
     }

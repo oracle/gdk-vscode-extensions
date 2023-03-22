@@ -13,7 +13,7 @@ import * as gitUtils from '../gitUtils';
 import * as folderStorage from '../folderStorage';
 import * as dialogs from '../dialogs';
 import * as logUtils from '../logUtils';
-import * as gcnServices from '../gcnServices';
+import * as devopsServices from '../devopsServices';
 import * as ociServices from './ociServices';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociContext from './ociContext';
@@ -31,7 +31,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
 
     const openContexts: ociContext.Context[] = [];
 
-    const folderData = await gcnServices.getFolderData();
+    const folderData = await devopsServices.getFolderData();
     for (const data of folderData) {
         const services = ociServices.findByFolderData(data);
         for (const service of services) {
@@ -168,7 +168,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                 folders.push(folder);
                 const devopsConfig = folderStorage.getDefaultLocation();
                 if (folderStorage.storageExists(folder)) {
-                    // GCN configuration already exists in the cloud repository
+                    // OCI DevOps configuration already exists in the cloud repository
                     // NOTE: overwriting the OCI authentication for the local profile
                     logUtils.logInfo(`[import] Updating OCI profile in ${devopsConfig} in the locally cloned code repository '${repository.name}'`);
                     const configuration = folderStorage.read(folder);
@@ -181,9 +181,9 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                     folderStorage.store(folder, configuration, true);
                     servicesData.push(undefined);
                     // Do not track local changes to .vscode/devops.json
-                    gitUtils.skipWorkTree(folder, devopsConfig); // [GCN-1141] Only works if file present in the remote repo
+                    gitUtils.skipWorkTree(folder, devopsConfig); // Only works if file present in the remote repo
                 } else {
-                    // GCN configuration does not exist in the cloud repository
+                    // OCI DevOps configuration does not exist in the cloud repository
                     // Using GeneratedResources* artifacts if available
                     progress.report({
                         message: `Resolving services for code repository ${repository.name}...`

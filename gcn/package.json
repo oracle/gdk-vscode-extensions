@@ -37,47 +37,41 @@
 			"type": "object",
 			"title": "OCI DevOps Tools",
 			"properties": {
-				"gcn.showWelcomePage": {
+				"oci.devops.showToolsPage": {
 					"type": "boolean",
 					"default": true,
 					"description": "Show OCI DevOps Tools page on extension activation"
 				},
-				"gcn.sharedKnowledgeBaseOcid": {
+				"oci.devops.sharedKnowledgeBaseOcid": {
 					"type": "string",
 					"default": "",
 					"description": "OCID of the shared knowledge base for audits",
 					"scope": "machine"
 				},
-				"gcn.sharedKnowledgeBaseProfile": {
+				"oci.devops.sharedKnowledgeBaseProfile": {
 					"type": "string",
 					"default": "",
 					"description": "Profile to access the shared knowledge base for audits",
 					"scope": "machine"
 				},
-				"gcn.useLocalGraalvmVersion": {
+				"oci.devops.useLocalGraalvmVersion": {
 					"type": "boolean",
 					"default": false,
 					"description": "Use local active GraalVM (major) version for the remote build",
 					"scope": "machine"
 				},
-				"gcn.home": {
-					"type": "string",
-					"default": "",
-					"description": "Optional path to Graal Cloud CLI installation",
-					"scope": "machine"
-				},
-				"gcn.bypassDeliverArtifactsStage": {
+				"oci.devops.bypassDeliverArtifactsStage": {
 					"type": "boolean",
 					"default": true,
 					"description": "Bypass Deliver artifacts stage in Build pipelines producing Generic artifacts"
 				},
-				"gcn.pushLocalSourcesToOciConfirmedPermanently": {
+				"oci.devops.pushLocalSourcesToOciConfirmedPermanently": {
 					"type": "boolean",
 					"default": false,
 					"description": "Unselect to restore confirmations before pushing local sources to a remote OCI code repository",
 					"scope": "machine"
 				},
-				"gcn.startBuildPipelineUsingCustomShapeConfirmedPermanently": {
+				"oci.devops.startBuildPipelineUsingCustomShapeConfirmedPermanently": {
 					"type": "boolean",
 					"default": false,
 					"description": "Unselect to restore confirmations before starting build pipelines using a custom build runner shape",
@@ -87,246 +81,246 @@
 		},
 		"commands": [
 			{
-				"command": "gcn.undeployFromCloud",
+				"command": "oci.devops.undeployFromCloud",
 				"title": "Undeploy from OCI",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.undeployPartialFromCloud",
+				"command": "oci.devops.undeployPartialFromCloud",
 				"title": "Revert Partial Deploy to OCI",
 				"icon": "$(trash)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.undeployPartialFromCloud_Global",
+				"command": "oci.devops.undeployPartialFromCloud_Global",
 				"title": "Revert Partial Deploy to OCI",
 				"icon": "$(trash)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.showWelcomePage",
+				"command": "oci.devops.showToolsPage",
 				"title": "Show OCI DevOps Tools Page",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.deployToCloud",
+				"command": "oci.devops.deployToCloud",
 				"title": "Deploy Folder to OCI",
 				"icon": "$(cloud-upload)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.deployToCloud_Global",
+				"command": "oci.devops.deployToCloud_Global",
 				"title": "Deploy Folder(s) to OCI",
 				"icon": "$(cloud-upload)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.resumeDeployToCloud",
+				"command": "oci.devops.resumeDeployToCloud",
 				"title": "Resume Deploy to OCI",
 				"icon": "$(cloud-upload)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.resumeDeployToCloud_Global",
+				"command": "oci.devops.resumeDeployToCloud_Global",
 				"title": "Resume Deploy to OCI",
 				"icon": "$(cloud-upload)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.importFromCloud",
+				"command": "oci.devops.importFromCloud",
 				"title": "Import Folder(s) from OCI",
 				"icon": "$(cloud-download)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.addContent",
+				"command": "oci.devops.addResource",
 				"title": "Add OCI DevOps Resource...",
 				"icon": "$(add)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.addContent_Global",
+				"command": "oci.devops.addResource_Global",
 				"title": "Add OCI DevOps Resource...",
 				"icon": "$(add)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.openInBrowser",
+				"command": "oci.devops.openInBrowser",
 				"title": "Open in Browser",
 				"icon": "$(link-external)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.openInConsole",
+				"command": "oci.devops.openInConsole",
 				"title": "Open in Oracle Cloud Console",
 				"icon": "$(globe)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.openCodeRepositoryInConsole",
+				"command": "oci.devops.openCodeRepositoryInConsole",
 				"title": "Open Folder Code Repository in Oracle Cloud Console",
 				"icon": "$(globe)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.openCodeRepositoryInConsole_Global",
+				"command": "oci.devops.openCodeRepositoryInConsole_Global",
 				"title": "Open Folder Code Repository in Oracle Cloud Console",
 				"icon": "$(globe)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.openDevOpsProjectInConsole",
+				"command": "oci.devops.openDevOpsProjectInConsole",
 				"title": "Open DevOps Project in Oracle Cloud Console",
 				"icon": "$(globe)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.openDevOpsProjectInConsole_Global",
+				"command": "oci.devops.openDevOpsProjectInConsole_Global",
 				"title": "Open DevOps Project in Oracle Cloud Console",
 				"icon": "$(globe)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.renameNode",
+				"command": "oci.devops.renameNode",
 				"title": "Rename",
 				"icon": "$(edit)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.removeNode",
+				"command": "oci.devops.removeNode",
 				"title": "Remove",
 				"icon": "$(remove-close)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.showReport",
+				"command": "oci.devops.showReport",
 				"title": "Show Report",
 				"icon": "$(output)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.viewBuildLog",
+				"command": "oci.devops.viewBuildLog",
 				"title": "View Build Log",
 				"icon": "$(list-flat)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.viewDeploymentLog",
+				"command": "oci.devops.viewDeploymentLog",
 				"title": "View Deployment Log",
 				"icon": "$(list-flat)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.reloadNode",
+				"command": "oci.devops.reloadNode",
 				"title": "Reload",
 				"icon": "$(refresh)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.runBuildPipeline",
+				"command": "oci.devops.runBuildPipeline",
 				"title": "Run Build Pipeline",
 				"icon": "$(run)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.stopBuildPipeline",
+				"command": "oci.devops.stopBuildPipeline",
 				"title": "Stop Current Build",
 				"icon": "$(error)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.runDeployPipeline",
+				"command": "oci.devops.runDeployPipeline",
 				"title": "Run Deployment Pipeline",
 				"icon": "$(run)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.stopDeployPipeline",
+				"command": "oci.devops.stopDeployPipeline",
 				"title": "Stop Current Deployment",
 				"icon": "$(error)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.getBuildArtifact",
+				"command": "oci.devops.getBuildArtifact",
 				"title": "Get Build Artifact(s)",
 				"icon": "$(cloud-download)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.downloadSingleBuildArtifact",
+				"command": "oci.devops.downloadSingleBuildArtifact",
 				"title": "Download Build Artifact",
 				"icon": "$(cloud-download)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.runSingleBuildArtifact",
+				"command": "oci.devops.runSingleBuildArtifact",
 				"title": "Run and Open in Browser",
 				"icon": "$(link-external)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.pullSingleBuildArtifact",
+				"command": "oci.devops.pullSingleBuildArtifact",
 				"title": "Pull Container Image",
 				"icon": "$(cloud-download)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.downloadGenericArtifact",
+				"command": "oci.devops.downloadGenericArtifact",
 				"title": "Download Artifact",
 				"icon": "$(cloud-download)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.downloadLatestGenericArtifact",
+				"command": "oci.devops.downloadLatestGenericArtifact",
 				"title": "Download Latest Artifact",
 				"icon": "$(cloud-download)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.pullDockerImage",
+				"command": "oci.devops.pullDockerImage",
 				"title": "Pull Container Image",
 				"icon": "$(cloud-download)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.pullLatestDockerImage",
+				"command": "oci.devops.pullLatestDockerImage",
 				"title": "Pull Latest Container Image",
 				"icon": "$(cloud-download)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.projectAudit.execute",
+				"command": "oci.devops.projectAudit.execute",
 				"title": "Audit Project Vulnerability",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.projectAudit.execute_Global",
+				"command": "oci.devops.projectAudit.execute_Global",
 				"title": "Audit Project Vulnerability",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.enableDevOpsDecorations",
+				"command": "oci.devops.enableDevOpsDecorations",
 				"title": "Show OCI DevOps Details",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.disableDevOpsDecorations",
+				"command": "oci.devops.disableDevOpsDecorations",
 				"title": "Hide OCI DevOps Details",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.runDockerImage",
+				"command": "oci.devops.runDockerImage",
 				"title": "Run and Open in Browser",
 				"icon": "$(link-external)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.showContainerInstanceLog",
+				"command": "oci.devops.showContainerInstanceLog",
 				"title": "Show Current Container Instance Logs",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "gcn.oci.deleteContainerInstance",
+				"command": "oci.devops.deleteContainerInstance",
 				"title": "Delete Current Container Instance",
 				"category": "OCI DevOps"
 			},
@@ -340,37 +334,37 @@
 			{
 				"view": "oci-devops",
 				"contents": "Initializing view...",
-				"when": "!gcn.servicesInitialized"
+				"when": "!oci.devops.servicesInitialized"
 			},
 			{
 				"view": "oci-devops",
 				"contents": "Deploy to OCI in progress...",
-				"when": "gcn.servicesInitialized && gcn.deployInProgress"
+				"when": "oci.devops.servicesInitialized && oci.devops.deployInProgress"
 			},
 			{
 				"view": "oci-devops",
 				"contents": "Import from OCI in progress...",
-				"when": "gcn.servicesInitialized && gcn.importInProgress"
+				"when": "oci.devops.servicesInitialized && oci.devops.importInProgress"
 			},
 			{
 				"view": "oci-devops",
 				"contents": "Undeploy from OCI in progress...",
-				"when": "gcn.servicesInitialized && gcn.undeployInProgress"
+				"when": "oci.devops.servicesInitialized && oci.devops.undeployInProgress"
 			},
 			{
 				"view": "oci-devops",
-				"contents": "Import existing folder(s) from OCI, including remote build & deploy image functionality.\n[Import from OCI](command:gcn.importFromCloud)\n\nLearn more about [Oracle Cloud Infrastructure](https://www.oracle.com/cloud) and [Graal Cloud Native](https://developer.oracle.com/languages/graalvm/graal-cloud-native.html).",
-				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed && workspaceFolderCount == 0"
+				"contents": "Import existing folder(s) from OCI, including remote build & deploy image functionality.\n[Import from OCI](command:oci.devops.importFromCloud)\n\nLearn more about [Oracle Cloud Infrastructure](https://www.oracle.com/cloud) and [Graal Cloud Native](https://developer.oracle.com/languages/graalvm/graal-cloud-native.html).",
+				"when": "oci.devops.servicesInitialized && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress && !oci.devops.deployFailed && workspaceFolderCount == 0"
 			},
 			{
 				"view": "oci-devops",
-				"contents": "Deploy the folder(s) to OCI to enable remote build & deploy image functionality.\n[Deploy to OCI](command:gcn.deployToCloud_Global)\n\nLearn more about [Oracle Cloud Infrastructure](https://www.oracle.com/cloud) and [Graal Cloud Native](https://developer.oracle.com/languages/graalvm/graal-cloud-native.html).",
-				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed && workspaceFolderCount > 0 && gcn.serviceFoldersCount == 0"
+				"contents": "Deploy the folder(s) to OCI to enable remote build & deploy image functionality.\n[Deploy to OCI](command:oci.devops.deployToCloud_Global)\n\nLearn more about [Oracle Cloud Infrastructure](https://www.oracle.com/cloud) and [Graal Cloud Native](https://developer.oracle.com/languages/graalvm/graal-cloud-native.html).",
+				"when": "oci.devops.servicesInitialized && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress && !oci.devops.deployFailed && workspaceFolderCount > 0 && oci.devops.serviceFoldersCount == 0"
 			},
 			{
 				"view": "oci-devops",
-				"contents": "Previous deployment to OCI failed. Check the failure, resolve the problem and continue with:\n[Resume Deploy to OCI](command:gcn.resumeDeployToCloud_Global)\n[Delete Partial Deployment](command:gcn.undeployPartialFromCloud_Global)\n\n",
-				"when": "gcn.servicesInitialized && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && gcn.deployFailed && workspaceFolderCount > 0"
+				"contents": "Previous deployment to OCI failed. Check the failure, resolve the problem and continue with:\n[Resume Deploy to OCI](command:oci.devops.resumeDeployToCloud_Global)\n[Delete Partial Deployment](command:oci.devops.undeployPartialFromCloud_Global)\n\n",
+				"when": "oci.devops.servicesInitialized && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress && oci.devops.deployFailed && workspaceFolderCount > 0"
 			}
 		],
 		"views": {
@@ -378,459 +372,459 @@
 				{
 					"id": "oci-devops",
 					"name": "OCI DevOps",
-					"icon": "resources/GCN_logo.png"
+					"icon": "resources/extension_icon.png"
 				}
 			]
 		},
 		"menus": {
 			"commandPalette": [
 				{
-					"command": "gcn.resumeDeployToCloud",
+					"command": "oci.devops.resumeDeployToCloud",
 					"when": "false"
 				},
 				{
-					"command": "gcn.resumeDeployToCloud_Global",
+					"command": "oci.devops.resumeDeployToCloud_Global",
 					"when": "false"
 				},
 				{
-					"command": "gcn.undeployPartialFromCloud",
+					"command": "oci.devops.undeployPartialFromCloud",
 					"when": "false"
 				},
 				{
-					"command": "gcn.undeployPartialFromCloud_Global",
+					"command": "oci.devops.undeployPartialFromCloud_Global",
 					"when": "false"
 				},
 				{
-					"command": "gcn.addContent",
+					"command": "oci.devops.addResource",
 					"when": "false"
 				},
 				{
-					"command": "gcn.addContent_Global",
-					"when": "gcn.manageViewItemsEnabled"
+					"command": "oci.devops.addResource_Global",
+					"when": "oci.devops.manageViewItemsEnabled"
 				},
 				{
-					"command": "gcn.oci.openInBrowser",
+					"command": "oci.devops.openInBrowser",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.openInConsole",
+					"command": "oci.devops.openInConsole",
 					"when": "false"
 				},
 				{
-					"command": "gcn.deployToCloud",
+					"command": "oci.devops.deployToCloud",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.openCodeRepositoryInConsole",
+					"command": "oci.devops.openCodeRepositoryInConsole",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.openDevOpsProjectInConsole",
+					"command": "oci.devops.openDevOpsProjectInConsole",
 					"when": "false"
 				},
 				{
-					"command": "gcn.renameNode",
+					"command": "oci.devops.renameNode",
 					"when": "false"
 				},
 				{
-					"command": "gcn.removeNode",
+					"command": "oci.devops.removeNode",
 					"when": "false"
 				},
 				{
-					"command": "gcn.showReport",
+					"command": "oci.devops.showReport",
 					"when": "false"
 				},
 				{
-					"command": "gcn.reloadNode",
+					"command": "oci.devops.reloadNode",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.pullDockerImage",
+					"command": "oci.devops.pullDockerImage",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.pullLatestDockerImage",
+					"command": "oci.devops.pullLatestDockerImage",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.runBuildPipeline",
+					"command": "oci.devops.runBuildPipeline",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.stopBuildPipeline",
+					"command": "oci.devops.stopBuildPipeline",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.runDeployPipeline",
+					"command": "oci.devops.runDeployPipeline",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.stopDeployPipeline",
+					"command": "oci.devops.stopDeployPipeline",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.getBuildArtifact",
+					"command": "oci.devops.getBuildArtifact",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.downloadSingleBuildArtifact",
+					"command": "oci.devops.downloadSingleBuildArtifact",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.runSingleBuildArtifact",
+					"command": "oci.devops.runSingleBuildArtifact",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.pullSingleBuildArtifact",
+					"command": "oci.devops.pullSingleBuildArtifact",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.downloadGenericArtifact",
+					"command": "oci.devops.downloadGenericArtifact",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.downloadLatestGenericArtifact",
+					"command": "oci.devops.downloadLatestGenericArtifact",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.projectAudit.execute",
+					"command": "oci.devops.projectAudit.execute",
 					"when": "false"
 				},
 				{
-					"command": "gcn.viewBuildLog",
+					"command": "oci.devops.viewBuildLog",
 					"when": "false"
 				},
 				{
-					"command": "gcn.viewDeploymentLog",
+					"command": "oci.devops.viewDeploymentLog",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.enableDevOpsDecorations",
+					"command": "oci.devops.enableDevOpsDecorations",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.disableDevOpsDecorations",
+					"command": "oci.devops.disableDevOpsDecorations",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.runDockerImage",
+					"command": "oci.devops.runDockerImage",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.showContainerInstanceLog",
+					"command": "oci.devops.showContainerInstanceLog",
 					"when": "false"
 				},
 				{
-					"command": "gcn.oci.deleteContainerInstance",
+					"command": "oci.devops.deleteContainerInstance",
 					"when": "false"
 				}
 			],
 			"editor/context": [],
 			"view/title": [
 				{
-					"command": "gcn.deployToCloud_Global",
-					"when": "view == oci-devops && gcn.servicesInitialized && gcn.globalDeployAction && nbJavaLSReady && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed",
-					"group": "gcn_group_oci3@1"
+					"command": "oci.devops.deployToCloud_Global",
+					"when": "view == oci-devops && oci.devops.servicesInitialized && oci.devops.globalDeployAction && nbJavaLSReady && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress && !oci.devops.deployFailed",
+					"group": "oci_devops_group3@1"
 				},
 				{
-					"command": "gcn.importFromCloud",
-					"when": "view == oci-devops && gcn.servicesInitialized && gcn.globalImportAction && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress && !gcn.deployFailed",
-					"group": "gcn_group_oci3@2"
+					"command": "oci.devops.importFromCloud",
+					"when": "view == oci-devops && oci.devops.servicesInitialized && oci.devops.globalImportAction && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress && !oci.devops.deployFailed",
+					"group": "oci_devops_group3@2"
 				},
 				{
-					"command": "gcn.addContent_Global",
-					"when": "view == oci-devops && gcn.manageViewItemsEnabled && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
+					"command": "oci.devops.addResource_Global",
+					"when": "view == oci-devops && oci.devops.manageViewItemsEnabled && oci.devops.servicesInitialized && workspaceFolderCount == 1 && oci.devops.serviceFoldersCount == 1 && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress",
 					"group": "navigation@3"
 				},
 				{
-					"command": "gcn.oci.openCodeRepositoryInConsole_Global",
-					"when": "view == oci-devops && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
-					"group": "gcn_group_oci1@1"
+					"command": "oci.devops.openCodeRepositoryInConsole_Global",
+					"when": "view == oci-devops && oci.devops.servicesInitialized && workspaceFolderCount == 1 && oci.devops.serviceFoldersCount == 1 && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress",
+					"group": "oci_devops_group1@1"
 				},
 				{
-					"command": "gcn.oci.openDevOpsProjectInConsole_Global",
-					"when": "view == oci-devops && gcn.servicesInitialized && workspaceFolderCount == 1 && gcn.serviceFoldersCount == 1 && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
-					"group": "gcn_group_oci1@2"
+					"command": "oci.devops.openDevOpsProjectInConsole_Global",
+					"when": "view == oci-devops && oci.devops.servicesInitialized && workspaceFolderCount == 1 && oci.devops.serviceFoldersCount == 1 && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress",
+					"group": "oci_devops_group1@2"
 				},
 				{
-					"command": "gcn.oci.enableDevOpsDecorations",
-					"when": "view == oci-devops && gcn.servicesInitialized && workspaceFolderCount > 1 && gcn.serviceFoldersCount > 0 && !gcn.oci.devOpsDecorations && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
-					"group": "gcn_group_oci4@1"
+					"command": "oci.devops.enableDevOpsDecorations",
+					"when": "view == oci-devops && oci.devops.servicesInitialized && workspaceFolderCount > 1 && oci.devops.serviceFoldersCount > 0 && !oci.devops.devOpsDecorations && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress",
+					"group": "oci_devops_group4@1"
 				},
 				{
-					"command": "gcn.oci.disableDevOpsDecorations",
-					"when": "view == oci-devops && gcn.servicesInitialized && workspaceFolderCount > 1 && gcn.serviceFoldersCount > 0 && gcn.oci.devOpsDecorations && !gcn.deployInProgress && !gcn.importInProgress && !gcn.undeployInProgress",
-					"group": "gcn_group_oci4@1"
+					"command": "oci.devops.disableDevOpsDecorations",
+					"when": "view == oci-devops && oci.devops.servicesInitialized && workspaceFolderCount > 1 && oci.devops.serviceFoldersCount > 0 && oci.devops.devOpsDecorations && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress",
+					"group": "oci_devops_group4@1"
 				},
 				{
-					"command": "gcn.oci.showContainerInstanceLog",
-					"when": "view == oci-devops && gcn.oci.containerInstancesEnabled && gcn.serviceFoldersCount > 0",
-					"group": "gcn_group_oci2@1"
+					"command": "oci.devops.showContainerInstanceLog",
+					"when": "view == oci-devops && oci.devops.containerInstancesEnabled && oci.devops.serviceFoldersCount > 0",
+					"group": "oci_devops_group2@1"
 				},
 				{
-					"command": "gcn.oci.deleteContainerInstance",
-					"when": "view == oci-devops && gcn.oci.containerInstancesEnabled && gcn.serviceFoldersCount > 0",
-					"group": "gcn_group_oci2@2"
+					"command": "oci.devops.deleteContainerInstance",
+					"when": "view == oci-devops && oci.devops.containerInstancesEnabled && oci.devops.serviceFoldersCount > 0",
+					"group": "oci_devops_group2@2"
 				}
 			],
 			"view/item/context": [
 				{
-					"command": "gcn.deployToCloud",
-					"when": "viewItem in gcn.deployToCloudNodes && nbJavaLSReady",
+					"command": "oci.devops.deployToCloud",
+					"when": "viewItem in oci.devops.deployToCloudNodes && nbJavaLSReady",
 					"group": "inline@1"
 				},
 				{
-					"command": "gcn.deployToCloud",
-					"when": "viewItem in gcn.deployToCloudNodes && nbJavaLSReady",
+					"command": "oci.devops.deployToCloud",
+					"when": "viewItem in oci.devops.deployToCloudNodes && nbJavaLSReady",
 					"group": "context@1@1"
 				},
 				{
-					"command": "gcn.resumeDeployToCloud",
-					"when": "viewItem == gcn.folderNode-failed && nbJavaLSReady",
+					"command": "oci.devops.resumeDeployToCloud",
+					"when": "viewItem == oci.devops.folderNode-failed && nbJavaLSReady",
 					"group": "inline@1"
 				},
 				{
-					"command": "gcn.resumeDeployToCloud",
-					"when": "viewItem == gcn.folderNode-failed && nbJavaLSReady",
+					"command": "oci.devops.resumeDeployToCloud",
+					"when": "viewItem == oci.devops.folderNode-failed && nbJavaLSReady",
 					"group": "context@1@1"
 				},
 				{
-					"command": "gcn.undeployPartialFromCloud",
-					"when": "viewItem == gcn.folderNode-failed && nbJavaLSReady",
+					"command": "oci.devops.undeployPartialFromCloud",
+					"when": "viewItem == oci.devops.folderNode-failed && nbJavaLSReady",
 					"group": "inline@2"
 				},
 				{
-					"command": "gcn.undeployPartialFromCloud",
-					"when": "viewItem == gcn.folderNode-failed && nbJavaLSReady",
+					"command": "oci.devops.undeployPartialFromCloud",
+					"when": "viewItem == oci.devops.folderNode-failed && nbJavaLSReady",
 					"group": "context@1@2"
 				},
 				{
-					"command": "gcn.addContent",
-					"when": "gcn.manageViewItemsEnabled && viewItem in gcn.addContentNodes",
+					"command": "oci.devops.addResource",
+					"when": "oci.devops.manageViewItemsEnabled && viewItem in oci.devops.addResourceNodes",
 					"group": "inline@1"
 				},
 				{
-					"command": "gcn.addContent",
-					"when": "gcn.manageViewItemsEnabled && viewItem in gcn.addContentNodes",
+					"command": "oci.devops.addResource",
+					"when": "oci.devops.manageViewItemsEnabled && viewItem in oci.devops.addResourceNodes",
 					"group": "context@1@1"
 				},
 				{
-					"command": "gcn.oci.openInBrowser",
-					"when": "viewItem == gcn.oci.deploymentPipelineNode-deployments-available",
+					"command": "oci.devops.openInBrowser",
+					"when": "viewItem == oci.devops.deploymentPipelineNode-deployments-available",
 					"group": "inline@3"
 				},
 				{
-					"command": "gcn.oci.openInBrowser",
-					"when": "viewItem == gcn.oci.deploymentPipelineNode-deployments-available",
+					"command": "oci.devops.openInBrowser",
+					"when": "viewItem == oci.devops.deploymentPipelineNode-deployments-available",
 					"group": "context@1@3"
 				},
 				{
-					"command": "gcn.oci.openInConsole",
-					"when": "viewItem in gcn.oci.openInConsoleNodes",
+					"command": "oci.devops.openInConsole",
+					"when": "viewItem in oci.devops.openInConsoleNodes",
 					"group": "context@3@1"
 				},
 				{
-					"command": "gcn.oci.openCodeRepositoryInConsole",
-					"when": "viewItem == gcn.folderNode",
+					"command": "oci.devops.openCodeRepositoryInConsole",
+					"when": "viewItem == oci.devops.folderNode",
 					"group": "context@3@1"
 				},
 				{
-					"command": "gcn.oci.openDevOpsProjectInConsole",
-					"when": "viewItem == gcn.folderNode",
+					"command": "oci.devops.openDevOpsProjectInConsole",
+					"when": "viewItem == oci.devops.folderNode",
 					"group": "context@3@2"
 				},
 				{
-					"command": "gcn.renameNode",
-					"when": "viewItem in gcn.renameableNodes",
+					"command": "oci.devops.renameNode",
+					"when": "viewItem in oci.devops.renameableNodes",
 					"group": "context@2@1"
 				},
 				{
-					"command": "gcn.removeNode",
-					"when": "gcn.manageViewItemsEnabled && viewItem in gcn.removableNodes",
+					"command": "oci.devops.removeNode",
+					"when": "oci.devops.manageViewItemsEnabled && viewItem in oci.devops.removableNodes",
 					"group": "context@2@2"
 				},
 				{
-					"command": "gcn.showReport",
-					"when": "viewItem in gcn.showReportNodes",
+					"command": "oci.devops.showReport",
+					"when": "viewItem in oci.devops.showReportNodes",
 					"group": "inline@2"
 				},
 				{
-					"command": "gcn.reloadNode",
-					"when": "viewItem in gcn.reloadableNodes",
+					"command": "oci.devops.reloadNode",
+					"when": "viewItem in oci.devops.reloadableNodes",
 					"group": "inline@3"
 				},
 				{
-					"command": "gcn.reloadNode",
-					"when": "viewItem in gcn.reloadableNodes",
+					"command": "oci.devops.reloadNode",
+					"when": "viewItem in oci.devops.reloadableNodes",
 					"group": "context@1@3"
 				},
 				{
-					"command": "gcn.oci.runBuildPipeline",
-					"when": "viewItem == gcn.oci.buildPipelineNode || viewItem == gcn.oci.buildPipelineNode-has-lastrun || viewItem == gcn.oci.buildPipelineNode-artifacts-available || viewItem == gcn.oci.buildPipelineNode-single-download-available || viewItem == gcn.oci.buildPipelineNode-single-image-available",
+					"command": "oci.devops.runBuildPipeline",
+					"when": "viewItem == oci.devops.buildPipelineNode || viewItem == oci.devops.buildPipelineNode-has-lastrun || viewItem == oci.devops.buildPipelineNode-artifacts-available || viewItem == oci.devops.buildPipelineNode-single-download-available || viewItem == oci.devops.buildPipelineNode-single-image-available",
 					"group": "inline@1"
 				},
 				{
-					"command": "gcn.oci.runBuildPipeline",
-					"when": "viewItem == gcn.oci.buildPipelineNode || viewItem == gcn.oci.buildPipelineNode-has-lastrun || viewItem == gcn.oci.buildPipelineNode-artifacts-available || viewItem == gcn.oci.buildPipelineNode-single-download-available || viewItem == gcn.oci.buildPipelineNode-single-image-available",
+					"command": "oci.devops.runBuildPipeline",
+					"when": "viewItem == oci.devops.buildPipelineNode || viewItem == oci.devops.buildPipelineNode-has-lastrun || viewItem == oci.devops.buildPipelineNode-artifacts-available || viewItem == oci.devops.buildPipelineNode-single-download-available || viewItem == oci.devops.buildPipelineNode-single-image-available",
 					"group": "context@1@1"
 				},
 				{
-					"command": "gcn.oci.stopBuildPipeline",
-					"when": "viewItem == gcn.oci.buildPipelineNode-in-progress",
+					"command": "oci.devops.stopBuildPipeline",
+					"when": "viewItem == oci.devops.buildPipelineNode-in-progress",
 					"group": "inline@1"
 				},
 				{
-					"command": "gcn.oci.stopBuildPipeline",
-					"when": "viewItem == gcn.oci.buildPipelineNode-in-progress",
+					"command": "oci.devops.stopBuildPipeline",
+					"when": "viewItem == oci.devops.buildPipelineNode-in-progress",
 					"group": "context@1@1"
 				},
 				{
-					"command": "gcn.oci.runDeployPipeline",
-					"when": "viewItem == gcn.oci.deploymentPipelineNode || viewItem == gcn.oci.deploymentPipelineNode-has-lastdeployment || viewItem == gcn.oci.deploymentPipelineNode-deployments-available",
+					"command": "oci.devops.runDeployPipeline",
+					"when": "viewItem == oci.devops.deploymentPipelineNode || viewItem == oci.devops.deploymentPipelineNode-has-lastdeployment || viewItem == oci.devops.deploymentPipelineNode-deployments-available",
 					"group": "inline@1"
 				},
 				{
-					"command": "gcn.oci.runDeployPipeline",
-					"when": "viewItem == gcn.oci.deploymentPipelineNode || viewItem == gcn.oci.deploymentPipelineNode-has-lastdeployment || viewItem == gcn.oci.deploymentPipelineNode-deployments-available",
+					"command": "oci.devops.runDeployPipeline",
+					"when": "viewItem == oci.devops.deploymentPipelineNode || viewItem == oci.devops.deploymentPipelineNode-has-lastdeployment || viewItem == oci.devops.deploymentPipelineNode-deployments-available",
 					"group": "context@1@1"
 				},
 				{
-					"command": "gcn.oci.stopDeployPipeline",
-					"when": "viewItem == gcn.oci.deploymentPipelineNode-in-progress",
+					"command": "oci.devops.stopDeployPipeline",
+					"when": "viewItem == oci.devops.deploymentPipelineNode-in-progress",
 					"group": "inline@1"
 				},
 				{
-					"command": "gcn.oci.stopDeployPipeline",
-					"when": "viewItem == gcn.oci.deploymentPipelineNode-in-progress",
+					"command": "oci.devops.stopDeployPipeline",
+					"when": "viewItem == oci.devops.deploymentPipelineNode-in-progress",
 					"group": "context@1@1"
 				},
 				{
-					"command": "gcn.viewBuildLog",
-					"when": "viewItem in gcn.viewBuildLogNodes",
+					"command": "oci.devops.viewBuildLog",
+					"when": "viewItem in oci.devops.viewBuildLogNodes",
 					"group": "inline@2"
 				},
 				{
-					"command": "gcn.viewBuildLog",
-					"when": "viewItem in gcn.viewBuildLogNodes || viewItem == gcn.oci.buildPipelineNode-artifacts-available || viewItem == gcn.oci.buildPipelineNode-single-download-available || viewItem == gcn.oci.buildPipelineNode-single-image-available",
+					"command": "oci.devops.viewBuildLog",
+					"when": "viewItem in oci.devops.viewBuildLogNodes || viewItem == oci.devops.buildPipelineNode-artifacts-available || viewItem == oci.devops.buildPipelineNode-single-download-available || viewItem == oci.devops.buildPipelineNode-single-image-available",
 					"group": "context@1@2"
 				},
 				{
-					"command": "gcn.viewDeploymentLog",
-					"when": "viewItem in gcn.viewDeploymentLogNodes",
+					"command": "oci.devops.viewDeploymentLog",
+					"when": "viewItem in oci.devops.viewDeploymentLogNodes",
 					"group": "inline@2"
 				},
 				{
-					"command": "gcn.viewDeploymentLog",
-					"when": "viewItem in gcn.viewDeploymentLogNodes || viewItem == gcn.oci.deploymentPipelineNode-deployments-available",
+					"command": "oci.devops.viewDeploymentLog",
+					"when": "viewItem in oci.devops.viewDeploymentLogNodes || viewItem == oci.devops.deploymentPipelineNode-deployments-available",
 					"group": "context@1@2"
 				},
 				{
-					"command": "gcn.oci.downloadSingleBuildArtifact",
-					"when": "viewItem == gcn.oci.buildPipelineNode-single-download-available",
+					"command": "oci.devops.downloadSingleBuildArtifact",
+					"when": "viewItem == oci.devops.buildPipelineNode-single-download-available",
 					"group": "inline@3"
 				},
 				{
-					"command": "gcn.oci.downloadSingleBuildArtifact",
-					"when": "viewItem == gcn.oci.buildPipelineNode-single-download-available",
+					"command": "oci.devops.downloadSingleBuildArtifact",
+					"when": "viewItem == oci.devops.buildPipelineNode-single-download-available",
 					"group": "context@1@3"
 				},
 				{
-					"command": "gcn.oci.runSingleBuildArtifact",
-					"when": "gcn.oci.containerInstancesEnabled && viewItem == gcn.oci.buildPipelineNode-single-image-available",
+					"command": "oci.devops.runSingleBuildArtifact",
+					"when": "oci.devops.containerInstancesEnabled && viewItem == oci.devops.buildPipelineNode-single-image-available",
 					"group": "inline@3"
 				},
 				{
-					"command": "gcn.oci.pullSingleBuildArtifact",
-					"when": "!gcn.oci.containerInstancesEnabled && viewItem == gcn.oci.buildPipelineNode-single-image-available",
+					"command": "oci.devops.pullSingleBuildArtifact",
+					"when": "!oci.devops.containerInstancesEnabled && viewItem == oci.devops.buildPipelineNode-single-image-available",
 					"group": "inline@3"
 				},
 				{
-					"command": "gcn.oci.pullSingleBuildArtifact",
-					"when": "viewItem == gcn.oci.buildPipelineNode-single-image-available",
+					"command": "oci.devops.pullSingleBuildArtifact",
+					"when": "viewItem == oci.devops.buildPipelineNode-single-image-available",
 					"group": "context@1@3"
 				},
 				{
-					"command": "gcn.oci.runSingleBuildArtifact",
-					"when": "gcn.oci.containerInstancesEnabled && viewItem == gcn.oci.buildPipelineNode-single-image-available",
+					"command": "oci.devops.runSingleBuildArtifact",
+					"when": "oci.devops.containerInstancesEnabled && viewItem == oci.devops.buildPipelineNode-single-image-available",
 					"group": "context@1@4"
 				},
 				{
-					"command": "gcn.oci.getBuildArtifact",
-					"when": "viewItem == gcn.oci.buildPipelineNode-artifacts-available",
+					"command": "oci.devops.getBuildArtifact",
+					"when": "viewItem == oci.devops.buildPipelineNode-artifacts-available",
 					"group": "inline@3"
 				},
 				{
-					"command": "gcn.oci.getBuildArtifact",
-					"when": "viewItem == gcn.oci.buildPipelineNode-artifacts-available",
+					"command": "oci.devops.getBuildArtifact",
+					"when": "viewItem == oci.devops.buildPipelineNode-artifacts-available",
 					"group": "context@1@3"
 				},
 				{
-					"command": "gcn.oci.downloadGenericArtifact",
-					"when": "viewItem == gcn.oci.genericArtifactNode",
+					"command": "oci.devops.downloadGenericArtifact",
+					"when": "viewItem == oci.devops.genericArtifactNode",
 					"group": "inline@2"
 				},
 				{
-					"command": "gcn.oci.downloadGenericArtifact",
-					"when": "viewItem == gcn.oci.genericArtifactNode",
+					"command": "oci.devops.downloadGenericArtifact",
+					"when": "viewItem == oci.devops.genericArtifactNode",
 					"group": "context@1@2"
 				},
 				{
-					"command": "gcn.oci.downloadLatestGenericArtifact",
-					"when": "viewItem == gcn.oci.genericDeployArtifactNode",
+					"command": "oci.devops.downloadLatestGenericArtifact",
+					"when": "viewItem == oci.devops.genericDeployArtifactNode",
 					"group": "inline@2"
 				},
 				{
-					"command": "gcn.oci.downloadLatestGenericArtifact",
-					"when": "viewItem == gcn.oci.genericDeployArtifactNode",
+					"command": "oci.devops.downloadLatestGenericArtifact",
+					"when": "viewItem == oci.devops.genericDeployArtifactNode",
 					"group": "context@1@2"
 				},
 				{
-					"command": "gcn.oci.pullDockerImage",
-					"when": "viewItem == gcn.oci.containerImageNode",
+					"command": "oci.devops.pullDockerImage",
+					"when": "viewItem == oci.devops.containerImageNode",
 					"group": "inline@2"
 				},
 				{
-					"command": "gcn.oci.pullDockerImage",
-					"when": "viewItem == gcn.oci.containerImageNode",
+					"command": "oci.devops.pullDockerImage",
+					"when": "viewItem == oci.devops.containerImageNode",
 					"group": "context@1@2"
 				},
 				{
-					"command": "gcn.oci.pullLatestDockerImage",
-					"when": "viewItem == gcn.oci.ocirDeployArtifactNode",
+					"command": "oci.devops.pullLatestDockerImage",
+					"when": "viewItem == oci.devops.ocirDeployArtifactNode",
 					"group": "inline@2"
 				},
 				{
-					"command": "gcn.oci.pullLatestDockerImage",
-					"when": "viewItem == gcn.oci.ocirDeployArtifactNode",
+					"command": "oci.devops.pullLatestDockerImage",
+					"when": "viewItem == oci.devops.ocirDeployArtifactNode",
 					"group": "context@1@2"
 				},
 				{
-					"command": "gcn.oci.projectAudit.execute",
+					"command": "oci.devops.projectAudit.execute",
 					"when": "view == javaProjectExplorer && viewItem =~ /java:project(?=.*?\\b\\+java\\b)(?=.*?\\b\\+uri\\b)/"
 				},
 				{
-					"command": "gcn.oci.projectAudit.execute",
+					"command": "oci.devops.projectAudit.execute",
 					"when": "viewItem =~ /is:project/ && viewItem =~ /^(?!.*is:projectRoot)/",
 					"group": "K@50"
 				},
 				{
-					"command": "gcn.oci.runDockerImage",
-					"when": "gcn.oci.containerInstancesEnabled && viewItem == gcn.oci.containerImageNode",
+					"command": "oci.devops.runDockerImage",
+					"when": "oci.devops.containerInstancesEnabled && viewItem == oci.devops.containerImageNode",
 					"group": "inline@3"
 				},
 				{
-					"command": "gcn.oci.runDockerImage",
-					"when": "gcn.oci.containerInstancesEnabled && viewItem == gcn.oci.containerImageNode",
+					"command": "oci.devops.runDockerImage",
+					"when": "oci.devops.containerInstancesEnabled && viewItem == oci.devops.containerImageNode",
 					"group": "context@1@3"
 				},
 				{
-					"command": "gcn.oci.runDockerImage",
-					"when": "gcn.oci.containerInstancesEnabled && viewItem == gcn.oci.ocirDeployArtifactNode",
+					"command": "oci.devops.runDockerImage",
+					"when": "oci.devops.containerInstancesEnabled && viewItem == oci.devops.ocirDeployArtifactNode",
 					"group": "inline@3"
 				},
 				{
-					"command": "gcn.oci.runDockerImage",
-					"when": "gcn.oci.containerInstancesEnabled && viewItem == gcn.oci.ocirDeployArtifactNode",
+					"command": "oci.devops.runDockerImage",
+					"when": "oci.devops.containerInstancesEnabled && viewItem == oci.devops.ocirDeployArtifactNode",
 					"group": "context@1@3"
 				}
 			]

@@ -11,6 +11,7 @@ import * as adm from 'oci-adm';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
 import * as logUtils from '../logUtils';
+import * as persistenceUtils from '../persistenceUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociService from './ociService';
@@ -54,7 +55,7 @@ export function initialize(context: vscode.ExtensionContext) {
             }
         });
     }
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.projectAudit.execute', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.projectAudit.execute', (...params: any[]) => {
         let u = params[0]?.uri || params[0]?.data?.['resourceUri']; // support also NB standard nodes
         if (u) {
             const uri = vscode.Uri.parse(u);
@@ -62,7 +63,7 @@ export function initialize(context: vscode.ExtensionContext) {
             auditFolder(uri);
         }
     }));
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.projectAudit.execute_Global', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.projectAudit.execute_Global', () => {
         logUtils.logInfo(`[audit] Invoked Audit without folder context, selecting folder`);
         dialogs.selectFolder(ACTION_NAME, 'Select folder for which to perform the audit', null).then(folder => {
             if (folder) {
@@ -87,8 +88,7 @@ export function initialize(context: vscode.ExtensionContext) {
 async function executeFolderAudit(uri: vscode.Uri) {
     logUtils.logInfo(`[audit] Invoked generic audit of a not deployed folder ${uri.fsPath}`);
 
-    const gcnConfiguration = vscode.workspace.getConfiguration('gcn');
-    let profile: string | undefined = gcnConfiguration.get('sharedKnowledgeBaseProfile', undefined);
+    let profile: string | undefined = persistenceUtils.getWorkspaceConfiguration().get('sharedKnowledgeBaseProfile', undefined);
     let authentication;
     if (profile) {
         logUtils.logInfo(`[audit] Using saved profile ${profile}`);
@@ -101,7 +101,7 @@ async function executeFolderAudit(uri: vscode.Uri) {
         } else if (!authentication.getConfigurationProblem()) {
             profile = authentication.getProfile();
             logUtils.logInfo(`[audit] Saving selected profile ${profile}`);
-            await gcnConfiguration.update('sharedKnowledgeBaseProfile', profile, true);
+            await persistenceUtils.getWorkspaceConfiguration().update('sharedKnowledgeBaseProfile', profile, true);
         }
     }
     const configurationProblem = authentication.getConfigurationProblem();
@@ -111,7 +111,7 @@ async function executeFolderAudit(uri: vscode.Uri) {
     }
     const provider = authentication.getProvider();
 
-    let auditsKnowledgeBase: string | undefined = gcnConfiguration.get('sharedKnowledgeBaseOcid', undefined);
+    let auditsKnowledgeBase: string | undefined = persistenceUtils.getWorkspaceConfiguration().get('sharedKnowledgeBaseOcid', undefined);
     if (auditsKnowledgeBase) {
         logUtils.logInfo(`[audit] Using saved knowledge base ${auditsKnowledgeBase}`);
     } else {
@@ -126,7 +126,7 @@ async function executeFolderAudit(uri: vscode.Uri) {
             return undefined;
         } else {
             logUtils.logInfo(`[audit] Saving resolved knowledge base ${auditsKnowledgeBase}`);
-            await gcnConfiguration.update('sharedKnowledgeBaseOcid', auditsKnowledgeBase, true);
+            await persistenceUtils.getWorkspaceConfiguration().update('sharedKnowledgeBaseOcid', auditsKnowledgeBase, true);
         }
     }
 
@@ -201,7 +201,7 @@ async function getSharedKnowledgeBase(authenticationDetailsProvider: common.Conf
             try {
                 const knowledgeBases = await ociUtils.listKnowledgeBases(authenticationDetailsProvider, compartmentID);
                 for (const knowledgeBase of knowledgeBases) {
-                    if (knowledgeBase.freeformTags?.devops_tooling_usage === 'gcn-shared-adm-audits') {
+                    if (knowledgeBase.freeformTags?.devops_tooling_usage === 'oci-devops-shared-adm-audits') {
                         logUtils.logInfo(`[audit] Found existing shared audits knowledge base '${knowledgeBase.displayName}' in compartment ${compartmentName}`);
                         resolve(knowledgeBase.id);
                         return;
@@ -225,7 +225,7 @@ async function createSharedKnowledgeBase(authenticationDetailsProvider: common.C
     logUtils.logInfo(`[audit] Creating shared audits knowledge base in compartment ${compartmentName}`);
     const workRequestId = await ociUtils.createKnowledgeBase(authenticationDetailsProvider, compartmentID, 'Generic', {
         'devops_tooling_description': `Shared knowledge base for generic audits within compartment ${compartmentName}`,
-        'devops_tooling_usage': 'gcn-shared-adm-audits'
+        'devops_tooling_usage': 'oci-devops-shared-adm-audits'
     });
     logUtils.logInfo(`[audit] Waiting to complete creation of shared audits knowledge base in compartment ${compartmentName}`);
     return ociUtils.admWaitForResourceCompletionStatus(authenticationDetailsProvider, `Shared audits knowledge base for compartment ${compartmentName}`, workRequestId);
@@ -615,7 +615,7 @@ class Service extends ociService.Service {
 class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ReloadableNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'knowledgeBaseNode';
-    static readonly CONTEXT = `gcn.oci.${KnowledgeBaseNode.DATA_NAME}`;
+    static readonly CONTEXT = `oci.devops.${KnowledgeBaseNode.DATA_NAME}`;
     
     private object: KnowledgeBase;
     private oci: ociContext.Context;
@@ -684,7 +684,7 @@ class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, 
 
 class VulnerabilityAuditNode extends nodes.BaseNode implements nodes.ShowReportNode, ociNodes.CloudConsoleItem, ociNodes.OciResource {
 
-    static readonly CONTEXT = 'gcn.oci.vulnerabilityAuditNode';
+    static readonly CONTEXT = 'oci.devops.vulnerabilityAuditNode';
 
     private static readonly ICON = 'circle-filled';
     private static readonly ICON_UNKNOWN = 'circle-outline';

@@ -35,7 +35,7 @@ type ContainerImage = {
 };
 
 export function initialize(context: vscode.ExtensionContext) {
-    context.subscriptions.push(vscode.commands.registerCommand('gcn.oci.pullDockerImage', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.pullDockerImage', (...params: any[]) => {
         if (params[0]?.pull) {
             (params[0] as ContainerImageNode).pull();
         }
@@ -204,7 +204,7 @@ class Service extends ociService.Service {
 class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ReloadableNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'containerRepositoryNode';
-    static readonly CONTEXT = `gcn.oci.${ContainerRepositoryNode.DATA_NAME}`;
+    static readonly CONTEXT = `oci.devops.${ContainerRepositoryNode.DATA_NAME}`;
 
     private object: ContainerRepository;
     private oci: ociContext.Context;
@@ -281,7 +281,7 @@ class ContainerRepositoryNode extends nodes.AsyncNode implements nodes.Removable
 
 class ContainerImageNode extends nodes.BaseNode implements ociNodes.OciResource {
 
-    static readonly CONTEXT = 'gcn.oci.containerImageNode';
+    static readonly CONTEXT = 'oci.devops.containerImageNode';
 
     private object: ContainerImage;
     private oci: ociContext.Context;

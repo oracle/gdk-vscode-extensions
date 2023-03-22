@@ -26,7 +26,7 @@ export async function registerOpenInConsoleNode(context: string | string[]) {
     } else {
         OPEN_IN_CONSOLE_NODES.push(...context);
     }
-    await vscode.commands.executeCommand('setContext', 'gcn.oci.openInConsoleNodes', OPEN_IN_CONSOLE_NODES);
+    await vscode.commands.executeCommand('setContext', 'oci.devops.openInConsoleNodes', OPEN_IN_CONSOLE_NODES);
 }
 
 export function openInConsole(item: CloudConsoleItem | string) {

@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode';
 import * as model from './model';
-import * as gcnServices from './gcnServices';
+import * as devopsServices from './devopsServices';
 import * as servicesView from './servicesView';
 import * as welcome from './welcome';
 import * as gcnProjectCreate from './gcnProjectCreate';
@@ -26,22 +26,22 @@ export function activate(context: vscode.ExtensionContext) {
 		// NOTE: support for another cloud implementations might be registered here
 	);
 	
-	if (vscode.workspace.getConfiguration().get<boolean>('gcn.showWelcomePage')) {
+	if (persistenceUtils.getWorkspaceConfiguration().get<boolean>('showToolsPage')) {
 		welcome.WelcomePanel.createOrShow(context);
 	}
-	context.subscriptions.push(vscode.commands.registerCommand('gcn.showWelcomePage', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('oci.devops.showToolsPage', () => {
 		welcome.WelcomePanel.createOrShow(context);
 	}));
 
 	servicesView.initialize(context);
 
 	context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(async () => {
-		await gcnServices.build(context.workspaceState);
+		await devopsServices.build(context.workspaceState);
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand("gcn.createGcnProject", () => gcnProjectCreate.createProject(context)));
+	context.subscriptions.push(vscode.commands.registerCommand('gcn.createGcnProject', () => gcnProjectCreate.createProject(context)));
 
-	gcnServices.build(context.workspaceState);
+	devopsServices.build(context.workspaceState);
 
 	logUtils.logInfo('[extension] Extension successfully activated');
 }
