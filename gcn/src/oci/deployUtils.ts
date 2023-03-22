@@ -31,6 +31,10 @@ import * as vcnUtils from './vcnUtils';
 
 const ACTION_NAME = 'Deploy to OCI';
 
+const FAT_JAR_NAME = 'Fat JAR';
+const FAT_JAR_NAME_LC = 'fat JAR';
+const NI_NAME = 'Native Executable';
+const NI_NAME_LC = NI_NAME.toLocaleLowerCase();
 const JVM_CONTAINER_NAME = 'JVM Container';
 const JVM_CONTAINER_NAME_LC = 'JVM container';
 const NI_CONTAINER_NAME = 'Native Executable Container';
@@ -807,22 +811,22 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
                 const project_devbuild_artifact_location = pathForTargetPlatform(await projectUtils.getProjectBuildArtifactLocation(folder));
                 if (!project_devbuild_artifact_location && folder.projectType !== 'Unknown') {
-                    dialogs.showErrorMessage(`Failed to resolve fat JAR artifact for folder ${folder.uri.fsPath}`);
+                    dialogs.showErrorMessage(`Failed to resolve ${FAT_JAR_NAME_LC} artifact for folder ${folder.uri.fsPath}`);
                 }
                 const project_devbuild_command = folder.projectType === 'Unknown' ? buildCommands.get(folder) : await projectUtils.getProjectBuildCommand(folder);
                 if (!project_devbuild_command && folder.projectType !== 'Unknown') {
-                    dialogs.showErrorMessage(`Failed to resolve fat JAR build command for folder ${folder.uri.fsPath}`);
+                    dialogs.showErrorMessage(`Failed to resolve ${FAT_JAR_NAME_LC} build command for folder ${folder.uri.fsPath}`);
                 }
                 if (project_devbuild_artifact_location && project_devbuild_command) {
                     // --- Generate fat JAR build spec
                     progress.report({
                         increment,
-                        message: `Creating fat JAR build spec for source code repository ${repositoryName}...`
+                        message: `Creating ${FAT_JAR_NAME_LC} build spec for source code repository ${repositoryName}...`
                     });
                     const devbuildspec_template = 'devbuild_spec.yaml';
                     const devbuildArtifactName = `${repositoryName}_dev_fatjar`;
                     if (bypassArtifacts) {
-                        logUtils.logInfo(`[deploy] Creating fat JAR build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        logUtils.logInfo(`[deploy] Creating ${FAT_JAR_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const devbuildTemplate = expandTemplate(resourcesPath, 'devbuild_spec_no_output_artifacts.yaml', {
                             project_build_command: project_devbuild_command,
                             project_artifact_location: project_devbuild_artifact_location,
@@ -830,24 +834,24 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             artifact_path: `${repositoryName}-dev.jar`
                         }, folder, devbuildspec_template);
                         if (!devbuildTemplate) {
-                            resolve(`Failed to configure fat JAR build spec for ${repositoryName}`);
+                            resolve(`Failed to configure ${FAT_JAR_NAME_LC} build spec for ${repositoryName}`);
                             return;
                         }
                     } else {
-                        logUtils.logInfo(`[deploy] Creating fat JAR build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        logUtils.logInfo(`[deploy] Creating ${FAT_JAR_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const devbuildTemplate = expandTemplate(resourcesPath, devbuildspec_template, {
                             project_build_command: project_devbuild_command,
                             project_artifact_location: project_devbuild_artifact_location,
                             deploy_artifact_name: devbuildArtifactName
                         }, folder);
                         if (!devbuildTemplate) {
-                            resolve(`Failed to configure fat JAR build spec for ${repositoryName}`);
+                            resolve(`Failed to configure ${FAT_JAR_NAME_LC} build spec for ${repositoryName}`);
                             return;
                         }
 
                         if (folderData.devbuildArtifact) {
                             progress.report({
-                                message: `Using already created fat JAR artifact for ${repositoryName}...`
+                                message: `Using already created ${FAT_JAR_NAME_LC} artifact for ${repositoryName}...`
                             });
                             try {
                                 const artifact = await ociUtils.getDeployArtifact(provider, folderData.devbuildArtifact);
@@ -862,17 +866,17 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             progress.report({
                                 increment,
                             });
-                            logUtils.logInfo(`[deploy] Using already created fat JAR artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Using already created ${FAT_JAR_NAME_LC} artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         } else {
                             // --- Create fat JAR artifact
                             progress.report({
                                 increment,
-                                message: `Creating fat JAR artifact for ${repositoryName}...`
+                                message: `Creating ${FAT_JAR_NAME_LC} artifact for ${repositoryName}...`
                             });
                             const devbuildArtifactPath = `${repositoryName}-dev.jar`;
-                            const devbuildArtifactDescription = `Fat JAR artifact for devops project ${projectName} & repository ${repositoryName}`;
+                            const devbuildArtifactDescription = `Build artifact for ${FAT_JAR_NAME_LC} for devops project ${projectName} & repository ${repositoryName}`;
                             try {
-                                logUtils.logInfo(`[deploy] Creating fat JAR artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Creating ${FAT_JAR_NAME_LC} artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.devbuildArtifact = false;
                                 folderData.devbuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactRepository, projectOCID, devbuildArtifactPath, devbuildArtifactName, devbuildArtifactDescription, {
                                     'devops_tooling_deployID': deployData.tag,
@@ -886,7 +890,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     originalName: devbuildArtifactName
                                 });
                             } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to create fat JAR artifact for ${repositoryName}`, err));
+                                resolve(dialogs.getErrorMessage(`Failed to create ${FAT_JAR_NAME_LC} artifact for ${repositoryName}`, err));
                                 folderData.devbuildArtifact = false;
                                 dump(deployData);
                                 return;
@@ -895,10 +899,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         }
                     }
 
-                    const devbuildPipelineName = 'Build Fat JAR';
+                    const devbuildPipelineName = `Build ${FAT_JAR_NAME}`;
                     if (folderData.devbuildPipeline) {
                         progress.report({
-                            message: `Using already created build pipeline for fat JAR of ${repositoryName}...`
+                            message: `Using already created build pipeline for ${FAT_JAR_NAME_LC} of ${repositoryName}...`
                         });
                         try {
                             const pipeline = await ociUtils.getBuildPipeline(provider, folderData.devbuildPipeline);
@@ -913,16 +917,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         progress.report({
                             increment,
                         });
-                        logUtils.logInfo(`[deploy] Using already created build pipeline for fat JAR of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        logUtils.logInfo(`[deploy] Using already created build pipeline for ${FAT_JAR_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                     } else {
                         // --- Create fat JAR pipeline
                         progress.report({
                             increment,
-                            message: `Creating build pipeline for fat JAR of ${repositoryName}...`
+                            message: `Creating build pipeline for ${FAT_JAR_NAME_LC} of ${repositoryName}...`
                         });
-                        const devbuildPipelineDescription = `Build pipeline to build fat JAR for devops project ${projectName} & repository ${repositoryName}`;
+                        const devbuildPipelineDescription = `Build pipeline to build ${FAT_JAR_NAME_LC} for devops project ${projectName} & repository ${repositoryName}`;
                         try {
-                            logUtils.logInfo(`[deploy] Creating build pipeline for fat JAR of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Creating build pipeline for ${FAT_JAR_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             const pipelineName = `${repositoryNamePrefix}${devbuildPipelineName}`;
                             folderData.devbuildPipeline = false;
                             folderData.devbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, devbuildPipelineDescription, {
@@ -938,7 +942,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 originalName: pipelineName
                             });
                         } catch (err) {
-                            resolve(dialogs.getErrorMessage(`Failed to create fat JAR pipeline for ${repositoryName}`, err));
+                            resolve(dialogs.getErrorMessage(`Failed to create ${FAT_JAR_NAME_LC} pipeline for ${repositoryName}`, err));
                             folderData.devbuildPipeline = false;
                             dump(deployData);
                             return;
@@ -956,16 +960,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         }
                     }
                     if (folderData.devbuildPipelineBuildStage) {
-                        logUtils.logInfo(`[deploy] Using already created build stage of build pipeline for fat JAR of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        logUtils.logInfo(`[deploy] Using already created build stage of build pipeline for ${FAT_JAR_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                     } else {
                         try {
-                            logUtils.logInfo(`[deploy] Creating build stage of build pipeline for fat JAR of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Creating build stage of build pipeline for ${FAT_JAR_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             folderData.devbuildPipelineBuildStage = false;
                             folderData.devbuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.devbuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `${projectUtils.getDevOpsResourcesDir()}/${devbuildspec_template}`, false, {
                                 'devops_tooling_deployID': deployData.tag
                             })).id;
                         } catch (err) {
-                            resolve(dialogs.getErrorMessage(`Failed to create fat JAR pipeline build stage for ${repositoryName}`, err));
+                            resolve(dialogs.getErrorMessage(`Failed to create ${FAT_JAR_NAME_LC} pipeline build stage for ${repositoryName}`, err));
                             folderData.devbuildPipelineBuildStage = false;
                             dump(deployData);
                             return;
@@ -984,16 +988,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             }
                         }
                         if (folderData.devbuildPipelineArtifactsStage) {
-                            logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for fat JAR of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for ${FAT_JAR_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         } else {
                             try {
-                                logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for fat JAR of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for ${FAT_JAR_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.devbuildPipelineArtifactsStage = false;
                                 folderData.devbuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, folderData.devbuildPipeline, folderData.devbuildPipelineBuildStage, folderData.devbuildArtifact, devbuildArtifactName, {
                                     'devops_tooling_deployID': deployData.tag
                                 })).id;
                             } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to create fat JAR pipeline artifacts stage for ${repositoryName}`, err));
+                                resolve(dialogs.getErrorMessage(`Failed to create ${FAT_JAR_NAME_LC} pipeline artifacts stage for ${repositoryName}`, err));
                                 folderData.devbuildPipelineArtifactsStage = false;
                                 dump(deployData);
                                 return;
@@ -1005,22 +1009,22 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
                 const project_native_executable_artifact_location = pathForTargetPlatform(await projectUtils.getProjectNativeExecutableArtifactLocation(folder));
                 if (!project_native_executable_artifact_location && folder.projectType !== 'Unknown') {
-                    dialogs.showErrorMessage(`Failed to resolve native executable artifact for folder ${folder.uri.fsPath}`);
+                    dialogs.showErrorMessage(`Failed to resolve ${NI_NAME_LC} artifact for folder ${folder.uri.fsPath}`);
                 }
                 const project_build_native_executable_command = folder.projectType === 'Unknown' ? niBuildCommands.get(folder) : await projectUtils.getProjectBuildNativeExecutableCommand(folder);
                 if (!project_build_native_executable_command && folder.projectType !== 'Unknown') {
-                    dialogs.showErrorMessage(`Failed to resolve native executable build command for folder ${folder.uri.fsPath}`);
+                    dialogs.showErrorMessage(`Failed to resolve ${NI_NAME_LC} build command for folder ${folder.uri.fsPath}`);
                 }
                 if (project_native_executable_artifact_location && project_build_native_executable_command) {
                     // --- Generate native image build spec
                     progress.report({
                         increment,
-                        message: `Creating native executable build spec for source code repository ${repositoryName}...`
+                        message: `Creating ${NI_NAME_LC} build spec for source code repository ${repositoryName}...`
                     });
                     const nibuildspec_template = 'nibuild_spec.yaml';
                     const nibuildArtifactName = `${repositoryName}_dev_executable`;
                     if (bypassArtifacts) {
-                        logUtils.logInfo(`[deploy] Creating native executable build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        logUtils.logInfo(`[deploy] Creating ${NI_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const nibuildTemplate = expandTemplate(resourcesPath, 'nibuild_spec_no_output_artifacts.yaml', {
                             project_build_command: project_build_native_executable_command,
                             project_artifact_location: project_native_executable_artifact_location,
@@ -1028,24 +1032,24 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             artifact_path: `${repositoryName}-dev`
                         }, folder, nibuildspec_template);
                         if (!nibuildTemplate) {
-                            resolve(`Failed to configure native executable build spec for ${repositoryName}`);
+                            resolve(`Failed to configure ${NI_NAME_LC} build spec for ${repositoryName}`);
                             return;
                         }
                     } else {
-                        logUtils.logInfo(`[deploy] Creating native executable build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        logUtils.logInfo(`[deploy] Creating ${NI_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const nibuildTemplate = expandTemplate(resourcesPath, nibuildspec_template, {
                             project_build_command: project_build_native_executable_command,
                             project_artifact_location: project_native_executable_artifact_location,
                             deploy_artifact_name: nibuildArtifactName
                         }, folder);
                         if (!nibuildTemplate) {
-                            resolve(`Failed to configure native executable build spec for ${repositoryName}`);
+                            resolve(`Failed to configure ${NI_NAME_LC} build spec for ${repositoryName}`);
                             return;
                         }
 
                         if (folderData.nibuildArtifact) {
                             progress.report({
-                                message: `Using already created native executable artifact for ${repositoryName}...`
+                                message: `Using already created ${NI_NAME_LC} artifact for ${repositoryName}...`
                             });
                             try {
                                 const artifact = await ociUtils.getDeployArtifact(provider, folderData.nibuildArtifact);
@@ -1060,17 +1064,17 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             progress.report({
                                 increment,
                             });
-                            logUtils.logInfo(`[deploy] Using already created native executable artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Using already created ${NI_NAME_LC} artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         } else {
                             // --- Create native image artifact
                             progress.report({
                                 increment,
-                                message: `Creating native executable artifact for ${repositoryName}...`
+                                message: `Creating ${NI_NAME_LC} artifact for ${repositoryName}...`
                             });
                             const nibuildArtifactPath = `${repositoryName}-dev`;
-                            const nibuildArtifactDescription = `Native executable artifact for devops project ${projectName} & repository ${repositoryName}`;
+                            const nibuildArtifactDescription = `Build artifact for ${NI_NAME_LC} for devops project ${projectName} & repository ${repositoryName}`;
                             try {
-                                logUtils.logInfo(`[deploy] Creating native executable artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Creating ${NI_NAME_LC} artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.nibuildArtifact = false;
                                 folderData.nibuildArtifact = (await ociUtils.createProjectDevArtifact(provider, artifactRepository, projectOCID, nibuildArtifactPath, nibuildArtifactName, nibuildArtifactDescription, {
                                     'devops_tooling_deployID': deployData.tag,
@@ -1084,7 +1088,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                     originalName: nibuildArtifactName
                                 });
                             } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to create native executable artifact for ${repositoryName}`, err));
+                                resolve(dialogs.getErrorMessage(`Failed to create ${NI_NAME_LC} artifact for ${repositoryName}`, err));
                                 folderData.nibuildArtifact = false;
                                 dump(deployData);
                                 return;
@@ -1093,10 +1097,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         }
                     }
 
-                    const nibuildPipelineName = 'Build Native Executable';
+                    const nibuildPipelineName = `Build ${NI_NAME}`;
                     if (folderData.nibuildPipeline) {
                         progress.report({
-                            message: `Using already created build pipeline for native executable of ${repositoryName}...`
+                            message: `Using already created build pipeline for ${NI_NAME_LC} of ${repositoryName}...`
                         });
                         try {
                             const pipeline = await ociUtils.getBuildPipeline(provider, folderData.nibuildPipeline);
@@ -1111,16 +1115,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         progress.report({
                             increment,
                         });
-                        logUtils.logInfo(`[deploy] Using already created build pipeline for native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        logUtils.logInfo(`[deploy] Using already created build pipeline for ${NI_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                     } else {
                         // --- Create native image pipeline
                         progress.report({
                             increment,
-                            message: `Creating build pipeline for native executable of ${repositoryName}...`
+                            message: `Creating build pipeline for ${NI_NAME_LC} of ${repositoryName}...`
                         });
-                        const nibuildPipelineDescription = `Build pipeline to build native executable for devops project ${projectName} & repository ${repositoryName}. Initially configured to use custom build runner shape - running it may impose additional costs!`;
+                        const nibuildPipelineDescription = `Build pipeline to build ${NI_NAME_LC} for devops project ${projectName} & repository ${repositoryName}. Initially configured to use custom build runner shape - running it may impose additional costs!`;
                         try {
-                            logUtils.logInfo(`[deploy] Creating build pipeline for native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Creating build pipeline for ${NI_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             const pipelineName = `${repositoryNamePrefix}${nibuildPipelineName}`;
                             folderData.nibuildPipeline = false;
                             folderData.nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, nibuildPipelineDescription, {
@@ -1136,7 +1140,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 originalName: pipelineName
                             });
                         } catch (err) {
-                            resolve(dialogs.getErrorMessage(`Failed to create native executable pipeline for ${repositoryName}`, err));
+                            resolve(dialogs.getErrorMessage(`Failed to create ${NI_NAME_LC} pipeline for ${repositoryName}`, err));
                             folderData.nibuildPipeline = false;
                             dump(deployData);
                             return;
@@ -1154,16 +1158,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                         }
                     }
                     if (folderData.nibuildPipelineBuildStage) {
-                        logUtils.logInfo(`[deploy] Using already created build stage of build pipeline for native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        logUtils.logInfo(`[deploy] Using already created build stage of build pipeline for ${NI_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                     } else {
                         try {
-                            logUtils.logInfo(`[deploy] Creating build stage of build pipeline for native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Creating build stage of build pipeline for ${NI_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             folderData.nibuildPipelineBuildStage = false;
                             folderData.nibuildPipelineBuildStage = (await ociUtils.createBuildPipelineBuildStage(provider, folderData.nibuildPipeline, codeRepository.id, repositoryName, codeRepository.httpUrl, `${projectUtils.getDevOpsResourcesDir()}/${nibuildspec_template}`, true, {
                                 'devops_tooling_deployID': deployData.tag
                             })).id;
                         } catch (err) {
-                            resolve(dialogs.getErrorMessage(`Failed to create native executable pipeline build stage for ${repositoryName}`, err));
+                            resolve(dialogs.getErrorMessage(`Failed to create ${NI_NAME_LC} pipeline build stage for ${repositoryName}`, err));
                             folderData.nibuildPipelineBuildStage = false;
                             dump(deployData);
                             return;
@@ -1182,16 +1186,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                             }
                         }
                         if (folderData.nibuildPipelineArtifactsStage) {
-                            logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Using already created artifacts stage of build pipeline for ${NI_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         } else {
                             try {
-                                logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for native executable of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                logUtils.logInfo(`[deploy] Creating artifacts stage of build pipeline for ${NI_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 folderData.nibuildPipelineArtifactsStage = false;
                                 folderData.nibuildPipelineArtifactsStage = (await ociUtils.createBuildPipelineArtifactsStage(provider, folderData.nibuildPipeline, folderData.nibuildPipelineBuildStage, folderData.nibuildArtifact, nibuildArtifactName, {
                                     'devops_tooling_deployID': deployData.tag
                                 })).id;
                             } catch (err) {
-                                resolve(dialogs.getErrorMessage(`Failed to create native executable pipeline artifacts stage for ${repositoryName}`, err));
+                                resolve(dialogs.getErrorMessage(`Failed to create ${NI_NAME_LC} pipeline artifacts stage for ${repositoryName}`, err));
                                 folderData.nibuildPipelineArtifactsStage = false;
                                 dump(deployData);
                                 return;
@@ -1287,11 +1291,11 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
 
                             const project_native_executable_artifact_location = pathForTargetPlatform(await projectUtils.getProjectNativeExecutableArtifactLocation(folder, subName));
                             if (!project_native_executable_artifact_location) {
-                                dialogs.showErrorMessage(`Failed to resolve native executable artifact for folder ${folder.uri.fsPath} & subproject ${subName}`);
+                                dialogs.showErrorMessage(`Failed to resolve ${NI_NAME_LC} artifact for folder ${folder.uri.fsPath} & subproject ${subName}`);
                             }
                             const project_build_native_executable_command = await projectUtils.getProjectBuildNativeExecutableCommand(folder, subName);
                             if (!project_build_native_executable_command) {
-                                dialogs.showErrorMessage(`Failed to resolve native executable build command for folder ${folder.uri.fsPath} & subproject ${subName}`);
+                                dialogs.showErrorMessage(`Failed to resolve ${NI_NAME_LC} build command for folder ${folder.uri.fsPath} & subproject ${subName}`);
                             }
                             if (project_native_executable_artifact_location && project_build_native_executable_command) {
                                 let nativeContainerRepository;
@@ -1596,7 +1600,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             dump(deployData);
                                         }
 
-                                        const oke_deployNativePipelineName = `Deploy ${subName.toUpperCase()} Container with Native Executable to OKE`;
+                                        const oke_deployNativePipelineName = `Deploy ${subName.toUpperCase()} ${NI_CONTAINER_NAME} to OKE`;
                                         if (subData.oke_deployNativePipeline) {
                                             progress.report({
                                                 message: `Using already created deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${repositoryName}...`
@@ -2019,7 +2023,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                             dump(deployData);
                                         }
 
-                                        const oke_deployJvmPipelineName = `Deploy ${subName.toUpperCase()} Container with JVM to OKE`;
+                                        const oke_deployJvmPipelineName = `Deploy ${subName.toUpperCase()} ${JVM_CONTAINER_NAME} to OKE`;
                                         if (subData.oke_deployJvmPipeline) {
                                             progress.report({
                                                 message: `Using already created deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${repositoryName}...`
@@ -2441,7 +2445,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 dump(deployData);
                             }
 
-                            const oke_deployNativePipelineName = 'Deploy Container with Native Executable to OKE';
+                            const oke_deployNativePipelineName = `Deploy ${NI_CONTAINER_NAME} to OKE`;
                             if (folderData.oke_deployNativePipeline) {
                                 progress.report({
                                     message: `Using already created deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${repositoryName}...`
@@ -2854,7 +2858,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                                 dump(deployData);
                             }
 
-                            const oke_deployJvmPipelineName = 'Deploy Container with JVM to OKE';
+                            const oke_deployJvmPipelineName = `Deploy ${JVM_CONTAINER_NAME} to OKE`;
                             if (folderData.oke_deployJvmPipeline) {
                                 progress.report({
                                     message: `Using already created deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${repositoryName}...`
