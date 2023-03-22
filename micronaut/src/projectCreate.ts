@@ -364,13 +364,13 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 async function getMicronautVersions(): Promise<{label: string; serviceUrl: string}[]> {
     const micronautLauchURL: string = getMicronautLaunchURL();
     return simpleProgress("Obtaining Micronaut versions...", () => Promise.all([
-        get(MICRONAUT_LAUNCH_URL + VERSIONS).catch(() => undefined).then(data => {
+        get(MICRONAUT_LAUNCH_URL + VERSIONS, 5000).catch(() => undefined).then(data => {
             return data ? { label: JSON.parse(data).versions["micronaut.version"], serviceUrl: MICRONAUT_LAUNCH_URL } : undefined;
         }),
-        get(MICRONAUT_SNAPSHOT_URL + VERSIONS).catch(() => undefined).then(data => {
+        get(MICRONAUT_SNAPSHOT_URL + VERSIONS, 5000).catch(() => undefined).then(data => {
             return data ? { label: JSON.parse(data).versions["micronaut.version"], serviceUrl: MICRONAUT_SNAPSHOT_URL } : undefined;
         }),
-        micronautLauchURL ? get(micronautLauchURL + VERSIONS).catch(() => undefined).then(data => {
+        micronautLauchURL ? get(micronautLauchURL + VERSIONS, 5000).catch(() => undefined).then(data => {
             return data ? { label: JSON.parse(data).versions["micronaut.version"], serviceUrl: micronautLauchURL, description: '(using configured Micronaut Launch URL)'  } : undefined;
         }) : undefined,
         getMNVersion()
@@ -473,10 +473,10 @@ async function getFeatures(micronautVersion: {label: string; serviceUrl: string}
     }
 }
 
-async function get(url: string): Promise<string> {
+async function get(url: string, timeout?: number): Promise<string> {
     return new Promise<string>((resolve, reject) => {
         const protocol = url.startsWith(HTTP_PROTOCOL) ? http : https;
-        protocol.get(url, res => {
+        const callback = (res: http.IncomingMessage) => {
             const { statusCode } = res;
             const contentType = res.headers['content-type'] || '';
             let error;
@@ -495,9 +495,13 @@ async function get(url: string): Promise<string> {
                     resolve(rawData);
                 });
             }
-        }).on('error', e => {
-            reject(e.message);
-        }).end();
+        };
+        const req = protocol.get(url, callback);
+        if(timeout){
+            const to = setTimeout(() => req.destroy(new Error("Timeout after " + timeout + " ms.")), timeout);
+            req.on('response', () => clearTimeout(to));
+        }
+        req.on('error', e => reject(e.message)).end();
     });
 }
 
