@@ -26,7 +26,7 @@ import * as ociFeatures from './ociFeatures';
 
 export const DATA_NAME = 'knowledgeBases';
 
-export const ACTION_NAME = 'Run Project Audit';
+export const ACTION_NAME = 'Audit Project Vulnerability';
 
 const ICON = 'book';
 

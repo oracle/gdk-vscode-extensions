@@ -19,15 +19,21 @@ export function initialize(context: vscode.ExtensionContext) {
     nodes.registerAddContentNode(FolderServicesNode.CONTEXT);
 
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.importFromCloud', () => {
-		importExportUtils.importDevopsProject();
+		importExportUtils.importDevopsProject(false);
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('oci.devops.deployToCloud', (...params: any[]) => {
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.importFoldersFromCloud', () => {
+		importExportUtils.importDevopsProject(true);
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('oci.devops.addToCloud', (...params: any[]) => {
         if (params[0]?.deploy) {
             (params[0] as nodes.DeployNode).deploy(context.workspaceState);
         }
 	}));
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.addToCloud_Global', () => {
+        importExportUtils.deployFolders(context.workspaceState, true);
+	}));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.deployToCloud_Global', () => {
-        importExportUtils.deployFolders(context.workspaceState);
+        importExportUtils.deployFolders(context.workspaceState, false);
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('oci.devops.resumeDeployToCloud', (...params: any[]) => {
         if (params[0]?.deploy) {
@@ -35,7 +41,7 @@ export function initialize(context: vscode.ExtensionContext) {
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.resumeDeployToCloud_Global', () => {
-        importExportUtils.deployFolders(context.workspaceState);
+        importExportUtils.deployFolders(context.workspaceState, true);
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.undeployPartialFromCloud', (...params: any[]) => {
         if (params[0]?.undeploy) {
@@ -120,7 +126,7 @@ async function addContent(folder: devopsServices.FolderData | null | undefined, 
             folder = await dialogs.selectFolder('Add OCI DevOps Resource');
             if (!folder) {
                 if (folder === null) {
-                    vscode.window.showWarningMessage('No deployed folder available.');
+                    vscode.window.showWarningMessage('No folder added to an OCI DevOps project.');
                 }
                 return;
             }
@@ -192,7 +198,7 @@ class FolderNode extends nodes.BaseNode implements nodes.DeployNode, nodes.AddCo
         super(folder.folder.name, undefined, folder.services.length > 0 ? FolderNode.CONTEXTS[0] : FolderNode.CONTEXTS[1], children, true);
         this.folder = folder;
         if (!this.children || this.children.length === 0) {
-            this.tooltip = 'Local folder not deployed to OCI';
+            this.tooltip = 'Local folder not added to an OCI DevOps project';
         } else {
             this.collapseOneChildNode();
             this.updateAppearance();
@@ -215,7 +221,7 @@ class FolderNode extends nodes.BaseNode implements nodes.DeployNode, nodes.AddCo
     }
 
     deploy(workspaceState: vscode.Memento) {
-        importExportUtils.deployFolders(workspaceState, this.folder);
+        importExportUtils.deployFolders(workspaceState, true, this.folder);
     }
 
     undeploy(workspaceState: vscode.Memento) {
@@ -291,11 +297,11 @@ class NoServicesNode extends nodes.TextNode {
 class NotDeployedNode extends nodes.TextNode {
 
     constructor(folderNode: FolderNode) {
-        super('<not deployed, click to deploy to OCI>');
-        this.tooltip = 'Click to deploy the folder to OCI';
+        super('<not in OCI DevOps project, click to add>');
+        this.tooltip = 'Click to add the folder to the current OCI DevOps project';
         this.command = {
-            title: 'Deploy to OCI',
-            command: 'oci.devops.deployToCloud',
+            title: 'Add to OCI DevOps Project',
+            command: 'oci.devops.addToCloud',
             arguments: [ folderNode ]
         };
     }
@@ -305,7 +311,7 @@ class NotDeployedNode extends nodes.TextNode {
 class PartiallyDeployedNode extends nodes.TextNode {
 
     constructor() {
-        super('<deploy to OCI failed>');
+        super('<adding to OCI DevOps project failed>');
         this.iconPath = new vscode.ThemeIcon('error', new vscode.ThemeColor('charts.red'));
     }
 
