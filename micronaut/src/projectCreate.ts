@@ -12,7 +12,7 @@ import * as http from 'http';
 import * as https from 'https';
 import * as path from 'path';
 import * as decompress from 'decompress';
-import { getMicronautHome, getMicronautLaunchURL, getJavaHome, MultiStepInput } from "./utils";
+import { getMicronautHome, getMicronautLaunchURL, getJavaHome, MultiStepInput, simpleProgress } from "./utils";
 
 const HTTP_PROTOCOL: string = 'http://';
 const HTTPS_PROTOCOL: string = 'https://';
@@ -103,7 +103,7 @@ export async function createProject(context: vscode.ExtensionContext) {
 async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{url: string; args?: string[]; name: string; target: string; buildTool: string; java?: string} | undefined> {
 
     const commands: string[] = await vscode.commands.getCommands();
-    const graalVMs: {name: string; path: string; active: boolean}[] = commands.includes('extension.graalvm.findGraalVMs') ? await vscode.commands.executeCommand('extension.graalvm.findGraalVMs') || [] : [];
+    const graalVMs: { name: string; path: string; active: boolean }[] = commands.includes('extension.graalvm.findGraalVMs') ? await simpleProgress("Obtaining GraalVMs...", () => vscode.commands.executeCommand('extension.graalvm.findGraalVMs') || []) : [];
 
     interface State {
 		micronautVersion: {label: string; serviceUrl: string};
@@ -135,12 +135,15 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
     }
 
 	async function pickMicronautVersion(input: MultiStepInput, state: Partial<State>) {
+        const microVersions = await getMicronautVersions();
+        if(microVersions.length === 0)
+            return undefined;
         const selected: any = await input.showQuickPick({
 			title,
 			step: 1,
 			totalSteps: totalSteps(state),
 			placeholder: 'Pick Micronaut version',
-			items: await getMicronautVersions(),
+			items: microVersions,
 			activeItems: state.micronautVersion,
 			shouldResume: () => Promise.resolve(false)
         });
@@ -360,7 +363,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 
 async function getMicronautVersions(): Promise<{label: string; serviceUrl: string}[]> {
     const micronautLauchURL: string = getMicronautLaunchURL();
-    return Promise.all([
+    return simpleProgress("Obtaining Micronaut versions...", () => Promise.all([
         get(MICRONAUT_LAUNCH_URL + VERSIONS).catch(() => undefined).then(data => {
             return data ? { label: JSON.parse(data).versions["micronaut.version"], serviceUrl: MICRONAUT_LAUNCH_URL } : undefined;
         }),
@@ -371,9 +374,13 @@ async function getMicronautVersions(): Promise<{label: string; serviceUrl: strin
             return data ? { label: JSON.parse(data).versions["micronaut.version"], serviceUrl: micronautLauchURL, description: '(using configured Micronaut Launch URL)'  } : undefined;
         }) : undefined,
         getMNVersion()
-    ]).then((data: any) => {
-        return data.filter((item: any) => item !== undefined);
-    });
+    ]).then((data: ({ label: string; serviceUrl: string } | undefined)[]) => {
+        const out = data.filter((item: any) => item !== undefined) as { label: string; serviceUrl: string }[];
+        if (out.length === 0) {
+            vscode.window.showErrorMessage("Failed to obtain Micronaut versions.", { modal: true, detail: "Check your connection and proxy settings." });
+        }
+        return out;
+    }));
 }
 
 async function getApplicationTypes(micronautVersion: {label: string; serviceUrl: string}): Promise<{label: string; name: string}[]> {
