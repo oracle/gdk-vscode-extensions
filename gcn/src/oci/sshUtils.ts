@@ -14,18 +14,21 @@ import * as which from 'which';
 import * as common from 'oci-common';
 import * as dialogs from '../dialogs';
 import * as ociUtils from './ociUtils';
+import { logError, logInfo } from '../logUtils';
 
+// Windows 'chmod' equivalent
+const icacls_exe = 'icacls';
 
 const defaultConfigLocation = path.join(os.homedir(), '.ssh', 'config');
 
 export async function checkSshConfigured(provider: common.ConfigFileAuthenticationDetailsProvider, sshUrl: string): Promise<void> {
     const r = /ssh:\/\/([^/]+)\//.exec(sshUrl);
-    if (r && r.length == 2) {
+    if (r && r.length === 2) {
         const hostname = r[1];
         if (await initializeSshKeys(provider)) {
             const autoAccept = isAutoAcceptHostFingerprint();
             let success = autoAccept ? 1 : await addCloudKnownHosts(hostname, true);
-            if (success == -1) {
+            if (success === -1) {
                 const disableHosts = await vscode.window.showWarningMessage(
                     "Do you want to disable SSH known_hosts checking for OCI infrastructure ?\n" +
                     "This is less secure than adding host keys to known_hosts. The change will affect only connections to SCM OCI services.",
@@ -36,7 +39,7 @@ export async function checkSshConfigured(provider: common.ConfigFileAuthenticati
                     }
                 }
             }
-            if (success == -1) {
+            if (success === -1) {
                 vscode.window.showWarningMessage("SSH utilities required for host key management are not available. Some Git operations may fail. See https://code.visualstudio.com/docs/remote/troubleshooting#_installing-a-supported-ssh-client for the recommended software.");
             }
         }
@@ -69,6 +72,7 @@ async function initializeSshKeys(provider: common.ConfigFileAuthenticationDetail
         dialogs.showErrorMessage('Failed to obtain user, tenancy, and/or identity file from OCI profile configuration');
         return false;
     }
+    await checkPrivateKeyFileAndConfig(identityFile);
     parsed.addOrUpdateIdentityFileDirective(identityFile);
     parsed.addOrUpdateUserDirective(userName, tenancyName);
     if (parsed.modified) {
@@ -315,4 +319,166 @@ function addAutoAcceptHostFingerprintForCloud() : boolean {
     }
 
     return true;
+}
+
+/**
+ * Checks that the private key + other SSL/SSH configuration files have correct permissions. Warns the user if not and 
+ * waits for the reply, optionally corrects the permissions. Throws when the corrective action fails.
+ * @param privateKey private key filename
+ * @throws when permission modification fails
+ */
+async function checkPrivateKeyFileAndConfig(privateKey : string) : Promise<void> {
+    const bad = checkSshConfigOrPrivateKeyExposed(privateKey);
+    if (!bad) {
+        // all good!
+        return;
+    }
+    const filelist = Array.from(bad.values()).join(',');
+    let response = await vscode.window.showWarningMessage(`Some of SSL-related files are not secured and can be read by others: ${filelist}. SSL operations may fail because of insecure host configuration. 
+        Do you want to fix the permissions ?`, "Yes", "No");
+    if (response === 'Yes') {
+        for (let f of bad.keys()) {
+            makeFileOwnerReadable(f);
+        }
+    }
+}
+
+/**
+ * Checks SSH/SSL-related files for insecure file permisions. Returns map of filename > description of files that have
+ * incorrect permissions. Empty map means everything is OK. Checks ssh config (~/.ssh/config), known hosts (~/.ssh/known_hosts) and
+ * the private key file itself. 
+ * @param privateKey private key filename
+ * @returns Map of files with broken permissions.
+ */
+export function checkSshConfigOrPrivateKeyExposed(privateKey : string) : Map<string, string> {
+    let r : Map<string, string> = new Map<string, string>();
+
+    let cfg = path.join(defaultConfigLocation, 'config');
+    if (isFileReadableByOthers(cfg)) {
+        r.set(cfg, 'SSH Config (config)');
+    }
+    if (isFileReadableByOthers(privateKey)) {
+        r.set(privateKey, `Private key (${privateKey})`);
+    }
+    return r;
+}
+
+/**
+ * Checks that the file is readable by others than the user. On UNIX, checks that g/o has r(x) bit set.
+ * On Windows, checks that non-admin/system principal has (inherited?) ACL that allows to read.
+ * @param filename 
+ */
+function isFileReadableByOthers(filename : string) : boolean {
+    if (!fs.existsSync(filename)) {
+        return false;
+    }
+    if (process.platform === 'win32') {
+        const matchDomain = process.env['USERDOMAIN'];
+        const matchUser = process.env['USERNAME'] || process.env['LOGNAME'];
+
+        const out = cp.execSync(`${icacls_exe} ${filename}`).toString();
+        const lines : string[] = out.split('\n');
+        if (lines.length > 0 && lines[0].startsWith(filename)) {
+            lines[0] = lines[0].slice(filename.length + 1);
+        }
+        /**
+         * Example ACL listing:
+         * -----------------
+            e.txt NT AUTHORITY\Authenticated Users:(DENY)(RX)
+                MSEDGEWIN10\IEUser:(F)
+                BUILTIN\Administrators:(I)(F)
+                NT AUTHORITY\SYSTEM:(I)(F)
+                BUILTIN\Users:(I)(RX)
+                NT AUTHORITY\Authenticated Users:(I)(M)
+         * -----------------
+         */
+        // process lines:
+        const principalRe = / *([^\\:]+)\\([^\\:]+):(.*)/i;
+        const accessRe = /(\(deny\))?.*(\([^)]+\))?\(([^)]+)\)/i;
+        for (let l of lines) {
+            const res = principalRe.exec(l);
+            if (!res) {
+                continue;
+            }
+            const domain = res[1];
+            const user = res[2];
+            const principal = `${res[1]}\\${res[2]}`;
+            const perms = res[3];
+            // ignore system or administrator principals
+            if (principal === 'BUILTIN\\Administrators' || principal === 'NT AUTHORITY\\SYSTEM') {
+                continue;
+            }
+
+            const acc = accessRe.exec(perms);
+            if (!acc || !acc[3]) {
+                continue;
+            }
+            const flags : string[] = acc[3].split(',');
+            if (acc[1]) {
+                // deny entry takes precedence, if matches the user, so can't deny-to-all, since that would affect
+                // the owner regardless of other ACLs. Denying specific users does not prevent the access for some
+                // newly created principals, so we can safely ignore the ACL completely.
+                continue;
+            }
+            if (flags.includes('R') ||
+                flags.includes('RX') || // implies R
+                flags.includes('F') ||  // implies WRX
+                flags.includes('M')) {  // implies WR
+                
+                if ((matchDomain && domain !== matchDomain) || (user !== matchUser)) {
+                    // permission given to another user
+                    logInfo(`[ssh] bad permissions on ${filename}: ${l}`);
+                    return true;
+                }
+            }
+            logInfo(`[ssh] ${filename} OK`);
+            return false;
+        }
+    } else { /* Linux, MacOS */ 
+        // any permission bits for group or other are not allowed
+        const perms = fs.statSync(filename).mode;
+        if (perms & 0o077) {
+            logInfo(`[ssh] bad permissions on ${filename}: ${perms.toString(8)}`);
+            return true;
+        } else {
+            logInfo(`[ssh] ${filename} OK`);
+            return false;
+        }
+    }
+    return false;
+}
+
+/**
+ * Makes the thing readable just by the owner. On UNIXes, resets bits for group/other, on Windows, 
+ * disables inheritance, resets all permissions and adds just F for the current user. Throws on error.
+ * @param filename filename to change permissions for
+ */
+function makeFileOwnerReadable(filename : string) : void {
+    if (!fs.existsSync(filename)) {
+        return;
+    }
+    logInfo(`[ssh] Resetting permissions on ${filename}`);
+    try {
+        if (process.platform === 'win32') {
+            const username = process.env['USERNAME'] || process.env['LOGNAME'];
+            // reset all permisions
+            logInfo(`[ssh] executing: ${icacls_exe} ${filename} /reset`);
+            cp.execSync(`${icacls_exe} ${filename} /reset`);
+            // remove inheritance: stupid command cannot do more operations 
+            logInfo(`[ssh] executing: ${icacls_exe} ${filename} /inheritance:r`);
+            cp.execSync(`${icacls_exe} ${filename} /inheritance:r`);
+            // grang full control to the current user
+            logInfo(`[ssh] executing: ${icacls_exe} ${filename} /grant:r ${username}:(F)`);
+            cp.execSync(`${icacls_exe} ${filename} /grant:r ${username}:(F)`);
+        } else { /* Linux, MacOS */ 
+            // any permission bits for group or other are not allowed
+            const d = fs.statSync(filename).isDirectory();
+            logInfo(`[ssh] executing: ${icacls_exe} ${filename} /inheritance:r`);
+            fs.chmodSync(filename, d ? 0o700 : 0o600);
+        }
+    } catch (e : any) {
+        logError(`Error changing permissions on ${filename}: ${e}`);
+        // rethrow to fail the operation
+        throw e;
+    }
 }
