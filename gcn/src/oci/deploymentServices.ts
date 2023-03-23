@@ -223,8 +223,8 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         return undefined;
     }
 
-    const subnet = (await vcnUtils.selectNetwork(oci.getProvider(), oci.getCompartment(), okeCluster.vcnID))?.subnetID;
-    if (!subnet) {
+    const subnet = await vcnUtils.selectNetwork(oci.getProvider(), oci.getCompartment(), okeCluster.vcnID);
+    if (!subnet?.subnetID) {
         return undefined;
     }
 
@@ -387,7 +387,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         deployConfigArtifact = artifact;
     }
 
-    async function createDeployPipeline(oci: ociContext.Context, projectName: string, repositoryName: string, okeClusterEnvironment: string, setupCommandSpecArtifact: string, deployConfigArtifact: string, subnet: string, buildPipeline: devops.models.BuildPipelineSummary): Promise<{ocid: string; displayName: string}[] | undefined> {
+    async function createDeployPipeline(oci: ociContext.Context, projectName: string, repositoryName: string, okeCompartmentId: string, okeClusterEnvironment: string, setupCommandSpecArtifact: string, deployConfigArtifact: string, subnet: {vcnID: string; subnetID: string; compartmentID: string}, buildPipeline: devops.models.BuildPipelineSummary): Promise<{ocid: string; displayName: string}[] | undefined> {
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: `Creating deployment to OKE pipeline...`,
@@ -409,6 +409,13 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                 if (codeRepoPrefix.length) {
                     tags.devops_tooling_codeRepoPrefix = codeRepoPrefix;
                 }
+                try {
+                    await ociUtils.updateCompartmentAccessPolicies(oci.getProvider(), oci.getCompartment(), okeCompartmentId, subnet.compartmentID);
+                } catch (err) {
+                    resolve(undefined);
+                    dialogs.showErrorMessage(`Failed to update policies for accessing resources`, err);
+                    return;
+                }
                 let deployPipeline;
                 try {
                     deployPipeline = (await ociUtils.createDeployPipeline(oci.getProvider(), oci.getDevOpsProject(), `${codeRepoPrefix}${deployPipelineName}`, deployPipelineDescription, [{
@@ -422,7 +429,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                 }
                 let setupSecretStage;
                 try {
-                    setupSecretStage = await ociUtils.createSetupKubernetesDockerSecretStage(oci.getProvider(), deployPipeline.id, setupCommandSpecArtifact, subnet);
+                    setupSecretStage = await ociUtils.createSetupKubernetesDockerSecretStage(oci.getProvider(), deployPipeline.id, setupCommandSpecArtifact, subnet.subnetID);
                 } catch (err) {
                     resolve(undefined);
                     dialogs.showErrorMessage(`Failed to create deployment to OKE stage for ${repositoryName}`, err);
@@ -439,7 +446,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
             });
         });
     }
-    return await createDeployPipeline(oci, projectName, repositoryName, okeClusterEnvironment.id, setupCommandSpecArtifact, deployConfigArtifact, subnet, buildPipeline);
+    return await createDeployPipeline(oci, projectName, repositoryName, okeCluster.compartmentId, okeClusterEnvironment.id, setupCommandSpecArtifact, deployConfigArtifact, subnet, buildPipeline);
 }
 
 async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode.WorkspaceFolder, ignore: DeploymentPipeline[]): Promise<DeploymentPipeline[] | undefined> {
