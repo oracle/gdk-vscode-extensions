@@ -37,6 +37,20 @@
                 "!**/node_modules/**"
             ],
 			"preLaunchTask": "tasks: watch-tests"
+		},
+		{
+			"name": "Extension UI Tests",
+			"type": "node",
+			//"runtimeExecutable": "C:/Program Files/nodejs/node.exe", // WINDOWS: default node
+			"request": "launch",
+			"program": "${workspaceFolder}/node_modules/vscode-extension-tester/out/cli.js",
+			"args": [
+				"run-tests",
+				"./out/**/*.ui-test.js"
+			],
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen",
+			"preLaunchTask": "tasks: tests-ui-prerequisites"
 		}
 	]
 }

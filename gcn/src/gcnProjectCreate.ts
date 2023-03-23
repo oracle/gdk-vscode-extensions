@@ -26,7 +26,7 @@ require('../lib/gcn.ui.api');
 /**
  * Common type for list item display. Value is the code/id, label is the user-facing label, description goes to QuickPickItem.detail.
  */
-interface ValueAndLabel {
+export interface ValueAndLabel {
     label: string;
     value: string;
     detail?: string;
@@ -85,7 +85,7 @@ declare var AotjsVM: any;
  */
 var gcnApi: any = undefined;
 
-async function initialize(): Promise<any> {
+export async function initialize(): Promise<any> {
     const graalVMExt = vscode.extensions.getExtension('oracle-labs-graalvm.graalvm');
     if (graalVMExt && !graalVMExt.isActive) {
         await graalVMExt.activate();
@@ -166,7 +166,7 @@ export async function createProjectBase(options : CreateOptions, targetLocation 
     }
 }
 
-async function writeProjectContents(options: CreateOptions, location: string) {
+export async function writeProjectContents(options: CreateOptions, location: string) {
     if (!fs.existsSync(location)) {
         fs.mkdirSync(location, { recursive: true });
     }
@@ -280,7 +280,7 @@ function convertLabelledValues(items: any[]): ValueAndLabel[] {
     return ret;
 }
 
-async function getApplicationTypes(): Promise<ValueAndLabel[]> {
+export async function getApplicationTypes(): Promise<ValueAndLabel[]> {
     return convertLabelledValues(gcnApi.applicationTypes().getTypes().toArray());
 }
 
@@ -307,15 +307,15 @@ function getDefaultJavaVersion(): string {
 
 }
 
-function getBuildTools() {
+export function getBuildTools() {
     return convertLabelledValues(gcnApi.buildTools().getOptions().toArray());
 }
 
-function getTestFrameworks() {
+export function getTestFrameworks() {
     return convertLabelledValues(gcnApi.testFrameworks().getOptions().toArray());
 }
 
-function getClouds() {
+export function getClouds() {
     const ret: ValueAndLabel[]  = [];
     const items = gcnApi.clouds().toArray();
     for (let i = 0; i < items.length; i++) {
@@ -347,7 +347,7 @@ function getServices(): ValueAndLabel[] {
     return ret;
 }
 
-function getMicronautVersions() : { label : string }[] {
+export function getMicronautVersions() : { label : string }[] {
     return [ { label : gcnApi.micronautVersion().$as('string') as string }];
 }
 

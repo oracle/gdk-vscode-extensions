@@ -39,3 +39,6 @@ The list of required extensions (the source of truth is in `src/test/runTest.js`
 - vscjava.vscode-java-pack
 - vscjava.vscode-java-debug
 - ms-kubernetes-tools.vscode-kubernetes-tool
+
+# Run UI tests from the CLI/vscode UI
+UI tests allow for interactive extension testing from within vscode UI itself by controlling vscode with a chrome webdriver. Running `npm run test-ui` will start the tests. First run will download the latest vscode instance and chrome webdrive into `./test-resources` folder. Executing environment will share currently installed extensions.
