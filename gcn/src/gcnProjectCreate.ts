@@ -393,7 +393,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
             }
         }
     }
-	const configJavaRuntimes = vscode.workspace.getConfiguration('java').get('configuration.runtimes') as any[];
+	const configJavaRuntimes = vscode.workspace.getConfiguration('java').get('configuration.runtimes', []) as any[];
     if (configJavaRuntimes.length) {
         for (const runtime of configJavaRuntimes) {
             if (runtime && typeof runtime === 'object' && runtime.path && !javaVMs.find(vm => path.normalize(vm.path) === path.normalize(runtime.path))) {
