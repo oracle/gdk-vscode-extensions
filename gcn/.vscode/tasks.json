@@ -33,6 +33,11 @@
 				"npm: watch-tests"
 			],
 			"problemMatcher": []
+		},
+		{
+			"label": "tasks: tests-ui-prerequisites",
+			"type": "shell",
+			"command": "extest get-vscode; extest get-chromedriver; npm run test-compile"
 		}
 	]
 }
