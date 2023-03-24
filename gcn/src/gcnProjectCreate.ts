@@ -2,9 +2,10 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as jdkUtils from 'jdk-utils';
 
 import * as dialogs from "./dialogs";
-import { normalizeJavaVersion } from './graalvmUtils';
+import { getJavaVersion, normalizeJavaVersion } from './graalvmUtils';
 
 require('../lib/gcn.ui.api');
 
@@ -380,7 +381,40 @@ function findSelectedItems(from: ValueAndLabel[], selected: ValueAndLabel[] | Va
 
 async function selectCreateOptions(): Promise<CreateOptions | undefined> {
     const commands: string[] = await vscode.commands.getCommands();
-    const graalVMs: {name: string; path: string; active: boolean}[] = commands.includes('extension.graalvm.findGraalVMs') ? await vscode.commands.executeCommand('extension.graalvm.findGraalVMs') || [] : [];
+    const javaVMs: {name: string; path: string; active: boolean}[] = commands.includes('extension.graalvm.findGraalVMs') ? await vscode.commands.executeCommand('extension.graalvm.findGraalVMs') || [] : [];
+    const javaRuntimes = await jdkUtils.findRuntimes({checkJavac: true});
+    if (javaRuntimes.length) {
+        for (const runtime of javaRuntimes) {
+            if (runtime.hasJavac && !javaVMs.find(vm => path.normalize(vm.path) === path.normalize(runtime.homedir))) {
+                const version = await getJavaVersion(runtime.homedir);
+                if (version) {
+                    javaVMs.push({name: version, path: runtime.homedir, active: false});
+                }
+            }
+        }
+    }
+	const configJavaRuntimes = vscode.workspace.getConfiguration('java').get('configuration.runtimes', []) as any[];
+    if (configJavaRuntimes.length) {
+        for (const runtime of configJavaRuntimes) {
+            if (runtime && typeof runtime === 'object' && runtime.path && !javaVMs.find(vm => path.normalize(vm.path) === path.normalize(runtime.path))) {
+                const version = await getJavaVersion(runtime.path);
+                if (version) {
+                    javaVMs.push({name: version, path: runtime.path, active: runtime.default});
+                }
+            }
+        }
+    }
+    javaVMs.sort((a, b) => {
+        const nameA = a.name.toUpperCase();
+        const nameB = b.name.toUpperCase();
+        if (nameA < nameB) {
+          return -1;
+        }
+        if (nameA > nameB) {
+          return 1;
+        }
+        return 0;
+    });
 
 	async function collectInputs(): Promise<State | undefined> {
 		const state = {} as Partial<State>;
@@ -417,14 +451,14 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 	}
 
 	async function pickJavaVersion(input: dialogs.MultiStepInput, state: Partial<State>) {
-        const items: {label: string; value: string; description?: string}[] = graalVMs.map(item => ({label: item.name, value: item.path, description: item.active ? '(active)' : undefined}));
+        const items: {label: string; value: string; description?: string}[] = javaVMs.map(item => ({label: item.name, value: item.path, description: item.active ? '(active)' : undefined}));
         
         items.push({label: 'Other Java', value: '', description: '(manual configuration)'});
 		const selected: any = await input.showQuickPick({
 			title,
 			step: 3,
 			totalSteps: totalSteps(state),
-			placeholder: graalVMs.length > 0 ? 'Pick project Java' : 'Pick project Java (no GraalVM registered)',
+			placeholder: 'Pick project Java',
 			items,
 			activeItems: findSelection(items, state.javaVersion),
 			shouldResume: () => Promise.resolve(false)

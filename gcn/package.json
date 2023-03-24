@@ -918,6 +918,7 @@
 	"dependencies": {
 		"encoding": "^0.1.13",
 		"isomorphic-fetch": "^3.0.0",
+		"jdk-utils": "^0.4.4",
 		"mustache": "4.0.1",
 		"oci-sdk": "^2.50.4",
 		"semver": "^7.3.8",

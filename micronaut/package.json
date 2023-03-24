@@ -151,11 +151,11 @@
 				},
 				{
 					"command": "extension.micronaut.kubernetes.run",
-					"when": "kubectl.available"
+					"when": "kubectl.available && graalVMExt.available"
 				},
 				{
 					"command": "extension.micronaut.kubernetes.debug",
-					"when": "kubectl.available"
+					"when": "kubectl.available && graalVMExt.available"
 				},
 				{
 					"command": "extension.micronaut.odb.register",
@@ -207,6 +207,7 @@
 	},
 	"dependencies": {
 		"decompress": "4.2.1",
+		"jdk-utils": "^0.4.4",
 		"mustache": "4.0.1",
 		"vscode-kubernetes-tools-api": "^1.0.0"
 	},
@@ -227,8 +228,5 @@
 		"typescript": "^4.9.5",
 		"webpack": "^5.76.0",
 		"webpack-cli": "^5.0.1"
-	},
-	"extensionDependencies": [
-		"oracle-labs-graalvm.graalvm"
-	]
+	}
 }
