@@ -194,15 +194,13 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
             return false;
         }
         if (cluster) {
-            deployData.okeCluster = { id: cluster.id, compartmentId: cluster?.compartmentId };
+            deployData.okeCluster = { id: cluster.id, compartmentId: cluster.compartmentId };
             const subnet  = await vcnUtils.selectNetwork(provider, deployData.compartment.ocid, cluster?.vcnID, true, deployData.compartment.name);
-            if (subnet === undefined) {
+            if (!subnet) {
                 dump();
                 return false;
             }
-            if (subnet) {
-                deployData.subnet = { id: subnet.subnetID, compartmentId: subnet.compartmentID };
-            }
+            deployData.subnet = { id: subnet.subnetID, compartmentId: subnet.compartmentID };
         }
     }
 
@@ -524,7 +522,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                 });
                 try {
                     logUtils.logInfo(`[deploy] Setting up policies for accessing resources for ${deployData.compartment.name}/${projectName}`);
-                    await ociUtils.updateCompartmentAccessPolicies(provider, deployData.compartment.ocid, deployData.okeCluster.compartmentId, deployData.subnet.compartmentId);
+                    await ociUtils.updateCompartmentAccessPolicies(provider, deployData.compartment.ocid, deployData.okeCluster?.compartmentId, deployData.subnet?.compartmentId);
                 } catch (err) {
                     resolve(dialogs.getErrorMessage('Failed to set up policies for accessing resources', err));
                     return;

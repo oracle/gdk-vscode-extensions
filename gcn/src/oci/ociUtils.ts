@@ -1316,23 +1316,33 @@ export async function getCompartmentAccessPolicy(authenticationDetailsProvider: 
     return undefined;
 }
 
-export async function updateCompartmentAccessPolicies(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, okeCompartmentID: string, subnetCompartmentID: string): Promise<void> {
-    await getCompartmentAccessPolicy(authenticationDetailsProvider, compartmentID, [
-        `Allow any-user to read devops-family in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
-        `Allow any-user to manage generic-artifacts in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
-        `Allow any-user to manage repos in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
-        `Allow any-user to manage compute-container-instances in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
-        `Allow any-user to manage compute-containers in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
-        `Allow any-user to read all-artifacts in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
-    ], true);
-    await getCompartmentAccessPolicy(authenticationDetailsProvider, subnetCompartmentID, [
-        `Allow any-user to use vnics in compartment id ${subnetCompartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
-        `Allow any-user to use subnets in compartment id ${subnetCompartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
-        `Allow any-user to use dhcp-options in compartment id ${subnetCompartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`
-    ], true);
-    await getCompartmentAccessPolicy(authenticationDetailsProvider, okeCompartmentID, [
-        `Allow any-user to manage clusters in compartment id ${okeCompartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`
-    ], true);
+export async function updateCompartmentAccessPolicies(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, okeCompartmentID?: string, subnetCompartmentID?: string): Promise<void> {
+    if (okeCompartmentID) {
+        await getCompartmentAccessPolicy(authenticationDetailsProvider, compartmentID, [
+            `Allow any-user to read devops-family in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
+            `Allow any-user to manage generic-artifacts in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
+            `Allow any-user to manage repos in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
+            `Allow any-user to manage compute-container-instances in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
+            `Allow any-user to manage compute-containers in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
+            `Allow any-user to read all-artifacts in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
+        ], true);
+        if (subnetCompartmentID) {
+            await getCompartmentAccessPolicy(authenticationDetailsProvider, subnetCompartmentID, [
+                `Allow any-user to use vnics in compartment id ${subnetCompartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
+                `Allow any-user to use subnets in compartment id ${subnetCompartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
+                `Allow any-user to use dhcp-options in compartment id ${subnetCompartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`
+            ], true);
+        }
+        await getCompartmentAccessPolicy(authenticationDetailsProvider, okeCompartmentID, [
+            `Allow any-user to manage clusters in compartment id ${okeCompartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`
+        ], true);
+    } else {
+        await getCompartmentAccessPolicy(authenticationDetailsProvider, compartmentID, [
+            `Allow any-user to read devops-family in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
+            `Allow any-user to manage generic-artifacts in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
+            `Allow any-user to manage repos in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
+        ], true);
+    }
 }
 
 export async function listLogsByProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentId: string, projectId?: string) : Promise<logging.models.LogSummary[]> {
