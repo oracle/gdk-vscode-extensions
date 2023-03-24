@@ -180,10 +180,13 @@
 			]
 		}
 	},
+	"vsce": {
+	  "baseImagesUrl": "https://github.com/graalvm/vscode-extensions/raw/master/micronaut"
+	},
 	"config": {
 		"winBuildPath": "..\\node_modules\\.bin\\vsce",
 		"unixBuildPath": "../node_modules/.bin/vsce",
-		"buildCmd": "package --allow-star-activation --baseImagesUrl https://github.com/graalvm/vscode-extensions/raw/master/micronaut"
+		"buildCmd": "package --allow-star-activation --no-update-package-json"
 	},
 	"scripts": {
 		"vscode:prepublish": "webpack --mode production",
