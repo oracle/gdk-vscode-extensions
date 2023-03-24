@@ -19,7 +19,8 @@ import { logError, logInfo } from '../logUtils';
 // Windows 'chmod' equivalent
 const icacls_exe = 'icacls';
 
-const defaultConfigLocation = path.join(os.homedir(), '.ssh', 'config');
+const defaultConfigDiretory = path.join(os.homedir(), '.ssh');
+const defaultConfigLocation = path.join(defaultConfigDiretory, 'config');
 
 export async function checkSshConfigured(provider: common.ConfigFileAuthenticationDetailsProvider, sshUrl: string): Promise<void> {
     const r = /ssh:\/\/([^/]+)\//.exec(sshUrl);
@@ -125,7 +126,7 @@ async function addCloudKnownHosts(hostname : string, ask : boolean) : Promise<nu
     if (!await sshUtilitiesPresent()) {
         return -1;
     }
-    const hostsLocation = path.join(os.homedir(), '.ssh', 'known_hosts');
+    const hostsLocation = path.join(defaultConfigDiretory, 'known_hosts');
     if (fs.existsSync(hostsLocation)) {
         try {
             // attemp to find host's key in the known_hosts file
@@ -327,9 +328,9 @@ function addAutoAcceptHostFingerprintForCloud() : boolean {
  * @param privateKey private key filename
  * @throws when permission modification fails
  */
-async function checkPrivateKeyFileAndConfig(privateKey : string) : Promise<void> {
+export async function checkPrivateKeyFileAndConfig(privateKey : string) : Promise<void> {
     const bad = checkSshConfigOrPrivateKeyExposed(privateKey);
-    if (!bad) {
+    if (!bad.size) {
         // all good!
         return;
     }
@@ -353,11 +354,11 @@ async function checkPrivateKeyFileAndConfig(privateKey : string) : Promise<void>
 export function checkSshConfigOrPrivateKeyExposed(privateKey : string) : Map<string, string> {
     let r : Map<string, string> = new Map<string, string>();
 
-    let cfg = path.join(defaultConfigLocation, 'config');
+    let cfg = path.join(defaultConfigDiretory, 'config');
     if (isFileReadableByOthers(cfg)) {
         r.set(cfg, 'SSH Config (config)');
     }
-    if (isFileReadableByOthers(privateKey)) {
+    if (privateKey && isFileReadableByOthers(privateKey)) {
         r.set(privateKey, `Private key (${privateKey})`);
     }
     return r;
@@ -370,6 +371,7 @@ export function checkSshConfigOrPrivateKeyExposed(privateKey : string) : Map<str
  */
 function isFileReadableByOthers(filename : string) : boolean {
     if (!fs.existsSync(filename)) {
+        logInfo(`[ssh] checking permissions for ${filename}: does not exist`);
         return false;
     }
     if (process.platform === 'win32') {
@@ -473,7 +475,7 @@ function makeFileOwnerReadable(filename : string) : void {
         } else { /* Linux, MacOS */ 
             // any permission bits for group or other are not allowed
             const d = fs.statSync(filename).isDirectory();
-            logInfo(`[ssh] executing: ${icacls_exe} ${filename} /inheritance:r`);
+            logInfo(`[ssh] executing: chmod ${d ? 0o700 : 0o600} ${filename}`);
             fs.chmodSync(filename, d ? 0o700 : 0o600);
         }
     } catch (e : any) {
