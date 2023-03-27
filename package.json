@@ -4,9 +4,10 @@
 	},
 	"scripts": {
 		"prebuild": "npm install",
-		"build": "npm run build:micronaut & npm run build:gcn-database && npm run build:oci-devops",
+		"build": "npm run build:micronaut & npm run build:gcn-database && npm run build:oci-devops && npm run build:gcn",
 		"build:gcn-database": "cd gcn-database-drivers; npm run build",
 		"build:micronaut": "cd micronaut; npm run build",
+		"build:gcn": "cd gcn; npm run build",
 		"build:oci-devops": "cd oci-devops; npm run build"
 	}
 }

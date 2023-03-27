@@ -1,0 +1,100 @@
+{
+	"name": "gcn",
+	"displayName": "Graal Cloud Native Tools",
+	"description": "Oracle Graal Cloud Native Support",
+	"version": "0.0.1",
+	"preview": true,
+	"license": "SEE LICENSE IN LICENSE.txt",
+	"publisher": "oracle-labs-graalvm",
+	"author": {
+		"name": "Oracle Labs"
+	},
+	"icon": "images/graalvm-cloud-logo.png",
+	"homepage": "https://github.com/graalvm/vscode-extensions/blob/master/gcn/README.md",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/graalvm/vscode-extensions.git"
+	},
+	"bugs": {
+		"url": "https://github.com/graalvm/vscode-extensions/issues"
+	},
+	"engines": {
+		"vscode": "^1.76.0"
+	},
+	"categories": [
+		"Programming Languages",
+		"Other"
+	],
+	"keywords": [
+		"java",
+		"gcn", 
+		"graal",
+		"native image"
+	],
+	"main": "./dist/extension",
+	"contributes": {
+		"commands": [
+			{
+				"command": "gcn.createGcnProject",
+				"title": "Create New Project",
+				"category": "Graal Cloud Native"
+			}
+		]
+	},
+	"vsce": {
+		"baseImagesUrl": "https://github.com/graalvm/vscode-extensions/raw/master/gcn"
+	},
+	"config": {
+		"winBuildPath": "..\\node_modules\\.bin\\vsce",
+		"unixBuildPath": "../node_modules/.bin/vsce",
+		"buildCmd": "package --allow-star-activation --no-update-package-json"
+	},
+	"scripts": {
+		"vscode:prepublish": "NODE_OPTIONS='--max-old-space-size=8192' webpack --mode production",
+		"compile": "webpack --mode development",
+		"info": "webpack --display-modules",
+		"watch": "webpack --mode development --watch",
+		"watch-tests": "tsc --outDir out --watch",
+		"test-clean": "rm -r out",
+		"test-compile": "tsc -p . --outDir out",
+		"test": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/test/runTest.js",
+		"test-ui": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/test/runTest-ui.js",
+		"prebuild": "npm install",
+		"build": "cross-os build",
+		"lint": "eslint src --ext ts"
+	},
+	"cross-os": {
+		"build": {
+			"linux": "$npm_package_config_unixBuildPath $npm_package_config_buildCmd `[ -z ${BUILD_NUMBER} ] && echo \"${npm_package_version}\" || echo \"${npm_package_version}-${BUILD_NUMBER}\"`",
+			"darwin": "$npm_package_config_unixBuildPath $npm_package_config_buildCmd `[ -z ${BUILD_NUMBER} ] && echo \"${npm_package_version}\" || echo \"${npm_package_version}-${BUILD_NUMBER}\"`",
+			"win32": "%npm_package_config_winBuildPath% %npm_package_config_buildCmd%"
+		}
+	},
+	"dependencies": {
+		"jdk-utils": "^0.4.4"
+	},
+	"devDependencies": {
+		"@types/glob": "^8.0.1",
+		"@types/mocha": "^10.0.1",
+		"@types/node": "^14.16.0",
+		"@types/vscode": "^1.76.0",
+		"@typescript-eslint/eslint-plugin": "^5.54.1",
+		"@typescript-eslint/parser": "^5.54.1",
+		"@vscode/codicons": "0.0.20",
+		"@vscode/test-electron": "^2.2.3",
+		"cross-env": "^7.0.3",
+		"cross-os": "^1.5.0",
+		"ajv": "^8.12.0",
+		"encoding": "^0.1.13",
+		"eslint": "^8.35.0",
+		"eslint-webpack-plugin": "^4.0.0",
+		"global-agent": "^3.0.0",
+		"mocha": "^10.1.0",
+		"ts-loader": "^9.4.2",
+		"typescript": "^4.9.5",
+		"vscode-extension-tester": "^5.5.1",
+		"webpack": "^5.74.0",
+		"webpack-cli": "^4.10.0"
+	},
+	"extensionDependencies": []
+}
