@@ -37,7 +37,7 @@
 		{
 			"label": "tasks: tests-ui-prerequisites",
 			"type": "shell",
-			"command": "node_modules/.bin/extest get-vscode; node_modules/.bin/extest get-chromedriver; npm run test-compile"
+			"command": "node node_modules/vscode-extension-tester/out/cli.js get-vscode; node node_modules/vscode-extension-tester/out/cli.js get-chromedriver; npm run test-compile"
 		}
 	]
 }
