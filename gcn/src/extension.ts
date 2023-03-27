@@ -16,7 +16,7 @@ import * as persistenceUtils from './persistenceUtils';
 
 export const CLOUD_SUPPORTS: model.CloudSupport[] = [];
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) : Promise<vscode.ExtensionContext> {
 	logUtils.logInfo('[extension] Activating extension');
 
 	persistenceUtils.initialize(context);
@@ -44,4 +44,6 @@ export function activate(context: vscode.ExtensionContext) {
 	devopsServices.build(context.workspaceState);
 
 	logUtils.logInfo('[extension] Extension successfully activated');
+
+	return context;
 }

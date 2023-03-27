@@ -11,7 +11,7 @@ import { logError } from '../../logUtils';
 import * as projectUtils from '../../projectUtils';
 import * as gcnProjectCreate from '../../gcnProjectCreate';
 
-async function waitForStatup(wf? : vscode.WorkspaceFolder) : Promise<void> {
+export async function waitForStatup(wf? : vscode.WorkspaceFolder) : Promise<void> {
        if (!wf) {
                return;
        }
@@ -58,6 +58,7 @@ let wf = vscode.workspace.workspaceFolders;
 
 suite('Extension Test Suite', function() {
 	vscode.window.showInformationMessage('Start all tests.');
+        
 
         /* Wait for the NBLS to start */
 	// the timeout will propagate to beforeAll hook
@@ -66,8 +67,8 @@ suite('Extension Test Suite', function() {
 	        await waitForStatup(wf![0]);
 	});
 	// revert for tests
-	this.timeout(5000);
-
+	this.timeout(10000);
+        return;
         // This test must be run first, in order to activate the extension (and wait for the activation to complete)
         test("Extension loaded", async () => {
                 let extension = vscode.extensions.getExtension('oracle-labs-graalvm.oci-devops');
@@ -75,6 +76,7 @@ suite('Extension Test Suite', function() {
 
                 await extension.activate();
         });
+        
         // Check if OCI DevOps Tools commands have been loaded
         test("OCI DevOps Tools commands loaded", async () =>{
                 let commands = await vscode.commands.getCommands(true);

@@ -42,7 +42,15 @@ const NI_CONTAINER_NAME_LC = NI_CONTAINER_NAME.toLocaleLowerCase();
 
 export type SaveConfig = (folder: string, config: any) => boolean;
 
-export async function deployFolders(folders: vscode.WorkspaceFolder[], resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData): Promise<boolean> {
+export type DeployOptions = {
+    compartment: {
+        ocid: string;
+        name: string;
+    };
+    projectName: string;
+};
+
+export async function deployFolders(folders: vscode.WorkspaceFolder[], resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData, deployOptions? : DeployOptions): Promise<boolean> {
     logUtils.logInfo('[deploy] Invoked deploy folders to OCI');
 
     const bypassArtifacts = persistenceUtils.getWorkspaceConfiguration().get('bypassDeliverArtifactsStage');
@@ -166,7 +174,11 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], resources
                 deployData.compartment = { ocid: selectedProject.compartment, name: selectedProject.compartment };
             }
         } else {
-            deployData.compartment = await ociDialogs.selectCompartment(provider, ACTION_NAME);
+            if (deployOptions?.compartment) {
+                deployData.compartment = deployOptions.compartment;
+            } else {
+                deployData.compartment = await ociDialogs.selectCompartment(provider, ACTION_NAME);
+            }
         }
         if (!deployData.compartment) {
             dump();
