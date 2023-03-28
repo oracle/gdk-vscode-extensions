@@ -12,7 +12,8 @@ import * as http from 'http';
 import * as https from 'https';
 import * as path from 'path';
 import * as decompress from 'decompress';
-import { getMicronautHome, getMicronautLaunchURL, getJavaHome, MultiStepInput } from "./utils";
+import * as jdkUtils from 'jdk-utils';
+import { getMicronautHome, getMicronautLaunchURL, getJavaHome, getJavaVersion, simpleProgress, MultiStepInput } from "./utils";
 
 const HTTP_PROTOCOL: string = 'http://';
 const HTTPS_PROTOCOL: string = 'https://';
@@ -103,7 +104,40 @@ export async function createProject(context: vscode.ExtensionContext) {
 async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{url: string; args?: string[]; name: string; target: string; buildTool: string; java?: string} | undefined> {
 
     const commands: string[] = await vscode.commands.getCommands();
-    const graalVMs: {name: string; path: string; active: boolean}[] = commands.includes('extension.graalvm.findGraalVMs') ? await vscode.commands.executeCommand('extension.graalvm.findGraalVMs') || [] : [];
+    const javaVMs: {name: string; path: string; active: boolean}[] = commands.includes('extension.graalvm.findGraalVMs') ? await simpleProgress("Obtaining GraalVMs...", () => vscode.commands.executeCommand('extension.graalvm.findGraalVMs') || []) : [];
+    const javaRuntimes = await jdkUtils.findRuntimes({checkJavac: true});
+    if (javaRuntimes.length) {
+        for (const runtime of javaRuntimes) {
+            if (runtime.hasJavac && !javaVMs.find(vm => path.normalize(vm.path) === path.normalize(runtime.homedir))) {
+                const version = await getJavaVersion(runtime.homedir);
+                if (version) {
+                    javaVMs.push({name: version, path: runtime.homedir, active: false});
+                }
+            }
+        }
+    }
+	const configJavaRuntimes = vscode.workspace.getConfiguration('java').get('configuration.runtimes', []) as any[];
+    if (configJavaRuntimes.length) {
+        for (const runtime of configJavaRuntimes) {
+            if (runtime && typeof runtime === 'object' && runtime.path && !javaVMs.find(vm => path.normalize(vm.path) === path.normalize(runtime.path))) {
+                const version = await getJavaVersion(runtime.path);
+                if (version) {
+                    javaVMs.push({name: version, path: runtime.path, active: runtime.default});
+                }
+            }
+        }
+    }
+    javaVMs.sort((a, b) => {
+        const nameA = a.name.toUpperCase();
+        const nameB = b.name.toUpperCase();
+        if (nameA < nameB) {
+          return -1;
+        }
+        if (nameA > nameB) {
+          return 1;
+        }
+        return 0;
+    });
 
     interface State {
 		micronautVersion: {label: string; serviceUrl: string};
@@ -135,12 +169,15 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
     }
 
 	async function pickMicronautVersion(input: MultiStepInput, state: Partial<State>) {
+        const microVersions = await getMicronautVersions();
+        if(microVersions.length === 0)
+            return undefined;
         const selected: any = await input.showQuickPick({
 			title,
 			step: 1,
 			totalSteps: totalSteps(state),
 			placeholder: 'Pick Micronaut version',
-			items: await getMicronautVersions(),
+			items: microVersions,
 			activeItems: state.micronautVersion,
 			shouldResume: () => Promise.resolve(false)
         });
@@ -163,13 +200,13 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 	}
 
 	async function pickJavaVersion(input: MultiStepInput, state: Partial<State>) {
-        const items: {label: string; value: string; description?: string}[] = graalVMs.map(item => ({label: item.name, value: item.path, description: item.active ? '(active)' : undefined}));
+        const items: {label: string; value: string; description?: string}[] = javaVMs.map(item => ({label: item.name, value: item.path, description: item.active ? '(active)' : undefined}));
         items.push({label: 'Other Java', value: '', description: '(manual configuration)'});
 		const selected: any = await input.showQuickPick({
 			title,
 			step: 3,
 			totalSteps: totalSteps(state),
-			placeholder: graalVMs.length > 0 ? 'Pick project Java' : 'Pick project Java (no GraalVM registered)',
+			placeholder: 'Pick project Java',
 			items,
 			activeItems: state.javaVersion,
 			shouldResume: () => Promise.resolve(false)
@@ -360,20 +397,24 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 
 async function getMicronautVersions(): Promise<{label: string; serviceUrl: string}[]> {
     const micronautLauchURL: string = getMicronautLaunchURL();
-    return Promise.all([
-        get(MICRONAUT_LAUNCH_URL + VERSIONS).catch(() => undefined).then(data => {
+    return simpleProgress("Obtaining Micronaut versions...", () => Promise.all([
+        get(MICRONAUT_LAUNCH_URL + VERSIONS, 5000).catch(() => undefined).then(data => {
             return data ? { label: JSON.parse(data).versions["micronaut.version"], serviceUrl: MICRONAUT_LAUNCH_URL } : undefined;
         }),
-        get(MICRONAUT_SNAPSHOT_URL + VERSIONS).catch(() => undefined).then(data => {
+        get(MICRONAUT_SNAPSHOT_URL + VERSIONS, 5000).catch(() => undefined).then(data => {
             return data ? { label: JSON.parse(data).versions["micronaut.version"], serviceUrl: MICRONAUT_SNAPSHOT_URL } : undefined;
         }),
-        micronautLauchURL ? get(micronautLauchURL + VERSIONS).catch(() => undefined).then(data => {
+        micronautLauchURL ? get(micronautLauchURL + VERSIONS, 5000).catch(() => undefined).then(data => {
             return data ? { label: JSON.parse(data).versions["micronaut.version"], serviceUrl: micronautLauchURL, description: '(using configured Micronaut Launch URL)'  } : undefined;
         }) : undefined,
         getMNVersion()
-    ]).then((data: any) => {
-        return data.filter((item: any) => item !== undefined);
-    });
+    ]).then((data: ({ label: string; serviceUrl: string } | undefined)[]) => {
+        const out = data.filter((item: any) => item !== undefined) as { label: string; serviceUrl: string }[];
+        if (out.length === 0) {
+            vscode.window.showErrorMessage("Failed to obtain Micronaut versions.", { modal: true, detail: "Check your connection and proxy settings." });
+        }
+        return out;
+    }));
 }
 
 async function getApplicationTypes(micronautVersion: {label: string; serviceUrl: string}): Promise<{label: string; name: string}[]> {
@@ -466,10 +507,10 @@ async function getFeatures(micronautVersion: {label: string; serviceUrl: string}
     }
 }
 
-async function get(url: string): Promise<string> {
+async function get(url: string, timeout?: number): Promise<string> {
     return new Promise<string>((resolve, reject) => {
         const protocol = url.startsWith(HTTP_PROTOCOL) ? http : https;
-        protocol.get(url, res => {
+        const callback = (res: http.IncomingMessage) => {
             const { statusCode } = res;
             const contentType = res.headers['content-type'] || '';
             let error;
@@ -488,9 +529,13 @@ async function get(url: string): Promise<string> {
                     resolve(rawData);
                 });
             }
-        }).on('error', e => {
-            reject(e.message);
-        }).end();
+        };
+        const req = protocol.get(url, callback);
+        if(timeout){
+            const to = setTimeout(() => req.destroy(new Error("Timeout after " + timeout + " ms.")), timeout);
+            req.on('response', () => clearTimeout(to));
+        }
+        req.on('error', e => reject(e.message)).end();
     });
 }
 

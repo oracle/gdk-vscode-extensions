@@ -7,8 +7,8 @@
 
 const vscode = acquireVsCodeApi();
 document.addEventListener("DOMContentLoaded", function(event) {
-    const checkbox = document.getElementById('showWelcomePage');
+    const checkbox = document.getElementById('showToolsPage');
     checkbox.addEventListener('click', () => {
-        vscode.postMessage({ command: 'showWelcomePage', value: checkbox.checked });
+        vscode.postMessage({ command: 'showToolsPage', value: checkbox.checked });
     });
 });

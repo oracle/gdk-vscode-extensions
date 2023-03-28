@@ -21,7 +21,7 @@ import * as ociUtils from './ociUtils';
 import * as ociServices from './ociServices';
 
 
-const ACTION_NAME = 'Undeploy from OCI';
+const ACTION_NAME = 'Delete Folder(s) from OCI DevOps Project';
 
 export async function undeploy(folders: devopsServices.FolderData[], deployData: any, dump: model.DumpDeployData): Promise<void> {
     logUtils.logInfo('[undeploy] Invoked undeploy folders from OCI');
@@ -39,7 +39,7 @@ export async function undeploy(folders: devopsServices.FolderData[], deployData:
 
     const error: string | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: 'Undeploying from OCI',
+        title: 'Deleting folder(s) from OCI DevOps project',
         cancellable: false
     }, (progress, _token) => {
         return new Promise(async resolve => {
@@ -797,7 +797,7 @@ export async function undeploy(folders: devopsServices.FolderData[], deployData:
                         }
                         const resourcesDirPath = path.join(folderPath, projectUtils.getDevOpsResourcesDir());
                         if (fs.existsSync(resourcesDirPath)) {
-                            progress.report({ message : `Deleting local OCI devops resources at ${resourcesDirPath}` });
+                            progress.report({ message : `Deleting local OCI DevOps resources at ${resourcesDirPath}` });
                             logUtils.logInfo(`[undeploy] Deleting local OCI devops resources at ${resourcesDirPath}`);
                             fs.rmdirSync(resourcesDirPath, { recursive : true });
                         }
@@ -988,7 +988,7 @@ export async function undeployFolders(folders: devopsServices.FolderData[]) {
             await undeployFolder(folder);
             logUtils.logInfo(`[undeploy] Folder ${folder.folder.uri.fsPath} successfully undeployed`);
         } catch (err) {
-            dialogs.showErrorMessage(`Failed to undeploy folder ${folder.folder.name}`, err);
+            dialogs.showErrorMessage(`Failed to delete folder ${folder.folder.name} from an OCI DevOps project`, err);
         }
     }
 }
@@ -1003,7 +1003,7 @@ export async function undeployFolder(folder: devopsServices.FolderData) {
     const oci = services[0].getContext();
     const problem = oci.getConfigurationProblem();
     if (problem) {
-        dialogs.showErrorMessage(`Cannot undeploy folder ${folder.folder.name}: ${problem}`);
+        dialogs.showErrorMessage(`Cannot delete folder ${folder.folder.name} from an OCI DevOps project: ${problem}`);
         return;
     }
 
@@ -1023,15 +1023,15 @@ export async function undeployFolder(folder: devopsServices.FolderData) {
         return [p, c, reps.find(repo => repositoryName === repo.name && repo.freeformTags?.devops_tooling_deployID), reps.length === 1];
     });
     if (!data[0]) {
-        dialogs.showErrorMessage(`Cannot undeploy folder ${folder.folder.name}: Failed to resolve DevOps Project ${devopsId}`);
+        dialogs.showErrorMessage(`Cannot delete folder ${folder.folder.name} from an OCI DevOps project: Failed to resolve DevOps Project ${devopsId}`);
         return;
     }
     if (!data[1]) {
-        dialogs.showErrorMessage(`Cannot undeploy folder ${folder.folder.name}: Failed to resolve Compartment ${compartmentId}`);
+        dialogs.showErrorMessage(`Cannot delete folder ${folder.folder.name} from an OCI DevOps project: Failed to resolve Compartment ${compartmentId}`);
         return;
     }
     if (!data[2]) {
-        dialogs.showErrorMessage(`Cannot undeploy folder ${folder.folder.name}: Either failed to resolve Code Repository ${repositoryName} inside DevOps Project ${data[0].name} or the Code Repository resolved was not deployed via VSCode`);
+        dialogs.showErrorMessage(`Cannot delete folder ${folder.folder.name} from an OCI DevOps project: Either failed to resolve Code Repository ${repositoryName} inside DevOps Project ${data[0].name} or the Code Repository resolved was not created from VSCode`);
         return;
     }
 
@@ -1045,7 +1045,7 @@ export async function undeployFolder(folder: devopsServices.FolderData) {
 
     await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: `Undeploying ${folder.folder.name} from OCI`,
+        title: `Deleting ${folder.folder.name} from OCI DevOps project`,
         cancellable: false
     }, async (_progress, _token) => {
         _progress.report({ message: `Deleting code repository: ${repositoryName}`});
@@ -1329,7 +1329,7 @@ export async function undeployFolder(folder: devopsServices.FolderData) {
         fs.unlinkSync(configPath); 
         const resourcesDirPath = path.join(folderPath, projectUtils.getDevOpsResourcesDir());
         if (fs.existsSync(resourcesDirPath)) {
-            _progress.report({message : 'Deleting local OCI devops resources'});
+            _progress.report({message : 'Deleting local OCI DevOps resources'});
             logUtils.logInfo(`[undeploy] Deleting local OCI devops resources in ${resourcesDirPath}`);
             fs.rmdirSync(resourcesDirPath, { recursive : true});
         }

@@ -55,9 +55,9 @@ export function initialize(context: vscode.ExtensionContext) {
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.openCodeRepositoryInConsole_Global', () => {
-        dialogs.selectFolder('Open Folder Code Repository', 'Select deployed folder', true).then(folder => {
+        dialogs.selectFolder('Open Folder Code Repository', 'Select folder', true).then(folder => {
             if (folder === null) {
-                vscode.window.showWarningMessage('No deployed folder available.');
+                vscode.window.showWarningMessage('No folder added to an OCI DevOps project.');
             } else if (folder) {
                 openCodeRepoInConsole(folder);
             }
@@ -94,9 +94,9 @@ export function initialize(context: vscode.ExtensionContext) {
             const address = `https://cloud.oracle.com/devops-project/projects/${projects[0]}`;
             ociNodes.openInConsole(address);
         } else {
-            dialogs.selectFolder('Open DevOps Project', 'Select deployed folder', true).then(folder => {
+            dialogs.selectFolder('Open DevOps Project', 'Select folder', true).then(folder => {
                 if (folder === null) {
-                    vscode.window.showWarningMessage('No deployed folder available.');
+                    vscode.window.showWarningMessage('No folder added to an OCI DevOps project.');
                 } else if (folder) {
                     openDevOpsProjectInConsole(folder);
                 }
@@ -263,12 +263,12 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
             if (!devopsDecorations) {
                 this.decorableContainer.decorate({
                     description: undefined,
-                    tooltip: 'Local folder deployed to OCI'
+                    tooltip: 'Local folder added to an OCI DevOps project'
                 });
             } else {
                 this.decorableContainer.decorate({
                     description: '[resolving OCI target...]',
-                    tooltip: 'Local folder deployed to OCI'
+                    tooltip: 'Local folder added to an OCI DevOps project'
                 });
                 async function lazilyDecorateContainer(provider: common.ConfigFileAuthenticationDetailsProvider, project: string, repository: string, container: nodes.DecorableNode) {
                     try {
@@ -276,12 +276,12 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
                         const codeRepository = await ociUtils.getCodeRepository(provider, repository);
                         container.decorate({
                             description: `[${devopsProject.name}/${codeRepository.name}]`,
-                            tooltip: `Local folder deployed to OCI as code repository ${codeRepository.name} in devops project ${devopsProject.name}`
+                            tooltip: `Local folder added to OCI as code repository ${codeRepository.name} in devops project ${devopsProject.name}`
                         }, true);
                     } catch (err) {
                         container.decorate({
                             description: '[unknown OCI target]',
-                            tooltip: 'Local folder deployed to OCI'
+                            tooltip: 'Local folder added to an OCI DevOps project'
                         }, true);
                         logUtils.logError(`[folder oci resources] ${dialogs.getErrorMessage('Failed to resolve container decoration', err)}`);
                     }
@@ -304,7 +304,7 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
         } else {
             const selection = await vscode.window.showQuickPick(choices, {
                 title: ADD_ACTION_NAME,
-                placeHolder: 'Select OCI devops resource to add'
+                placeHolder: 'Select OCI DevOps resource to add'
             });
             if (selection?.object) {
                 selection.object();
@@ -331,7 +331,7 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
                 serviceNodes.push(...service.getNodes());
             }
             if (serviceNodes.length === 0) {
-                return [ new nodes.TextNode('<no OCI devops resources defined>') ];
+                return [ new nodes.TextNode('<no OCI DevOps resources defined>') ];
             }
         }
         return serviceNodes;

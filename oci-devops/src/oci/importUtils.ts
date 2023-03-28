@@ -22,12 +22,15 @@ import * as sshUtils from './sshUtils';
 import * as ociUtils from './ociUtils';
 
 
-const ACTION_NAME = 'Import from OCI';
+const IMPORT_ACTION_NAME = 'Import OCI DevOps Project';
+const ADD_ACTION_NAME = 'Import Folder(s) from OCI DevOps Project';
 
 // TODO: extract functions shared by deployUtils.ts
 
-export async function importFolders(): Promise<model.ImportResult | undefined> {
+export async function importFolders(getFromExisting: boolean): Promise<model.ImportResult | undefined> {
     logUtils.logInfo('[import] Invoked import folders from OCI');
+
+    const actionName = getFromExisting ? ADD_ACTION_NAME : IMPORT_ACTION_NAME;
 
     const openContexts: ociContext.Context[] = [];
 
@@ -51,13 +54,13 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                 profiles.push(contextProfile);
             }
         }
-        const selectedProfile = await ociDialogs.selectOciProfileFromList(profiles, true, ACTION_NAME);
+        const selectedProfile = await ociDialogs.selectOciProfileFromList(profiles, true, actionName);
         if (!selectedProfile) {
             return undefined;
         }
         auth = ociAuthentication.createCustom(undefined, selectedProfile);
     } else {
-        auth = await ociAuthentication.resolve(ACTION_NAME);
+        auth = await ociAuthentication.resolve(actionName);
     }
     const authentication = auth;
     if (!authentication) {
@@ -81,7 +84,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                 projects.push(contextProject);
             }
         }
-        const selectedProject = await ociDialogs.selectDevOpsProjectFromList(provider, projects, true, ACTION_NAME);
+        const selectedProject = await ociDialogs.selectDevOpsProjectFromList(provider, projects, true, actionName);
         if (!selectedProject) {
             // TODO: if (selectedProject === null) display error/warning
             return undefined;
@@ -89,11 +92,11 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
         devopsProject = selectedProject;
         compartment = { ocid: selectedProject.compartment, name: selectedProject.compartment };
     } else {
-        compartment = await ociDialogs.selectCompartment(provider, ACTION_NAME);
+        compartment = await ociDialogs.selectCompartment(provider, actionName);
         if (!compartment) {
             return undefined;
         }
-        devopsProject = await ociDialogs.selectDevOpsProject(provider, compartment, ACTION_NAME);
+        devopsProject = await ociDialogs.selectDevOpsProject(provider, compartment, actionName);
         if (!devopsProject) {
             return undefined;
         }
@@ -108,7 +111,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
             }
         }
     }
-    const repositories = await ociDialogs.selectCodeRepositories(provider, devopsProject, openContexts.length === 0, ACTION_NAME, ignoreRepositories);
+    const repositories = await ociDialogs.selectCodeRepositories(provider, devopsProject, openContexts.length === 0, actionName, ignoreRepositories);
     if (!repositories || repositories.length === 0) {
         return undefined;
     }
@@ -122,7 +125,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
             }
         }
     }
-    const targetDirectory = await dialogs.selectDirectory(targetDirectories, ACTION_NAME, 'Select Target Directory', 'Import Here');
+    const targetDirectory = await dialogs.selectDirectory(targetDirectories, actionName, 'Select Target Directory', 'Import Here');
     if (!targetDirectory) {
         return undefined;
     }
@@ -134,7 +137,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
 
     const error: string | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: 'Importing from OCI',
+        title: getFromExisting ? 'Importing folder(s) from OCI DevOps project' : 'Importing OCI DevOps project',
         cancellable: false
     }, (progress, _token) => {
         return new Promise(async resolve => {
@@ -219,7 +222,7 @@ export async function importFolders(): Promise<model.ImportResult | undefined> {
                         logUtils.logError(dialogs.getErrorMessage(`[import] Failed to read list of generated resources for code repository '${repository.name}'`));
                     }
                     progress.report({
-                        message: `Importing services for code repository ${repository.name}...`
+                        message: `Importing OCI DevOps resources for code repository ${repository.name}...`
                     });
                     logUtils.logInfo(`[import] Importing OCI devops resources and creating ${devopsConfig} in the locally cloned code repository '${repository.name}'`);
                     const services = await importServices(authentication, oci, projectResources, codeRepositoryResources);

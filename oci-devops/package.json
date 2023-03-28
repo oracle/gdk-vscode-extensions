@@ -82,18 +82,18 @@
 		"commands": [
 			{
 				"command": "oci.devops.undeployFromCloud",
-				"title": "Undeploy from OCI",
+				"title": "Delete Folder(s) from OCI DevOps Project",
 				"category": "OCI DevOps"
 			},
 			{
 				"command": "oci.devops.undeployPartialFromCloud",
-				"title": "Revert Partial Deploy to OCI",
+				"title": "Revert Partial Create/Add to OCI DevOps Project",
 				"icon": "$(trash)",
 				"category": "OCI DevOps"
 			},
 			{
 				"command": "oci.devops.undeployPartialFromCloud_Global",
-				"title": "Revert Partial Deploy to OCI",
+				"title": "Revert Partial Create/Add to OCI DevOps Project",
 				"icon": "$(trash)",
 				"category": "OCI DevOps"
 			},
@@ -103,32 +103,44 @@
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "oci.devops.deployToCloud",
-				"title": "Deploy Folder to OCI",
+				"command": "oci.devops.deployToCloud_Global",
+				"title": "Create OCI DevOps Project",
 				"icon": "$(cloud-upload)",
 				"category": "OCI DevOps"
 			},
 			{
-				"command": "oci.devops.deployToCloud_Global",
-				"title": "Deploy Folder(s) to OCI",
+				"command": "oci.devops.addToCloud",
+				"title": "Add to OCI DevOps Project",
+				"icon": "$(cloud-upload)",
+				"category": "OCI DevOps"
+			},
+			{
+				"command": "oci.devops.addToCloud_Global",
+				"title": "Add Folder(s) to OCI DevOps Project",
 				"icon": "$(cloud-upload)",
 				"category": "OCI DevOps"
 			},
 			{
 				"command": "oci.devops.resumeDeployToCloud",
-				"title": "Resume Deploy to OCI",
+				"title": "Resume Create/Add to OCI DevOps Project",
 				"icon": "$(cloud-upload)",
 				"category": "OCI DevOps"
 			},
 			{
 				"command": "oci.devops.resumeDeployToCloud_Global",
-				"title": "Resume Deploy to OCI",
+				"title": "Resume Create/Add to OCI DevOps Project",
 				"icon": "$(cloud-upload)",
 				"category": "OCI DevOps"
 			},
 			{
 				"command": "oci.devops.importFromCloud",
-				"title": "Import Folder(s) from OCI",
+				"title": "Import OCI DevOps Project",
+				"icon": "$(cloud-download)",
+				"category": "OCI DevOps"
+			},
+			{
+				"command": "oci.devops.importFoldersFromCloud",
+				"title": "Import Folder(s) from OCI DevOps Project",
 				"icon": "$(cloud-download)",
 				"category": "OCI DevOps"
 			},
@@ -338,33 +350,43 @@
 			},
 			{
 				"view": "oci-devops",
-				"contents": "Deploy to OCI in progress...",
+				"contents": "Creating OCI DevOps project...",
 				"when": "oci.devops.servicesInitialized && oci.devops.deployInProgress"
 			},
 			{
 				"view": "oci-devops",
-				"contents": "Import from OCI in progress...",
+				"contents": "Adding folder(s) to OCI DevOps project...",
+				"when": "oci.devops.servicesInitialized && oci.devops.addInProgress"
+			},
+			{
+				"view": "oci-devops",
+				"contents": "Importing OCI DevOps project...",
 				"when": "oci.devops.servicesInitialized && oci.devops.importInProgress"
 			},
 			{
 				"view": "oci-devops",
-				"contents": "Undeploy from OCI in progress...",
+				"contents": "Importing folder(s) from OCI DevOps project...",
+				"when": "oci.devops.servicesInitialized && oci.devops.importFoldersInProgress"
+			},
+			{
+				"view": "oci-devops",
+				"contents": "Deleting folder(s) from OCI DevOps project...",
 				"when": "oci.devops.servicesInitialized && oci.devops.undeployInProgress"
 			},
 			{
 				"view": "oci-devops",
-				"contents": "Import existing folder(s) from OCI, including remote build & deploy image functionality.\n[Import from OCI](command:oci.devops.importFromCloud)\n\nLearn more about [Oracle Cloud Infrastructure](https://www.oracle.com/cloud) and [Graal Cloud Native](https://developer.oracle.com/languages/graalvm/graal-cloud-native.html).",
-				"when": "oci.devops.servicesInitialized && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress && !oci.devops.deployFailed && workspaceFolderCount == 0"
+				"contents": "Import an existing OCI DevOps project, including remote build and deploy functionality.\n[Import OCI DevOps Project](command:oci.devops.importFromCloud)\n\nLearn more about the [OCI DevOps service](https://www.oracle.com/devops/devops-service).",
+				"when": "oci.devops.servicesInitialized && !oci.devops.deployInProgress && !oci.devops.addInProgress && !oci.devops.importInProgress && !oci.devops.importFoldersInProgress && !oci.devops.undeployInProgress && !oci.devops.deployFailed && workspaceFolderCount == 0"
 			},
 			{
 				"view": "oci-devops",
-				"contents": "Deploy the folder(s) to OCI to enable remote build & deploy image functionality.\n[Deploy to OCI](command:oci.devops.deployToCloud_Global)\n\nLearn more about [Oracle Cloud Infrastructure](https://www.oracle.com/cloud) and [Graal Cloud Native](https://developer.oracle.com/languages/graalvm/graal-cloud-native.html).",
-				"when": "oci.devops.servicesInitialized && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress && !oci.devops.deployFailed && workspaceFolderCount > 0 && oci.devops.serviceFoldersCount == 0"
+				"contents": "Create an OCI DevOps project to build and deploy remotely.\n[Create OCI DevOps Project](command:oci.devops.deployToCloud_Global)\n\nLearn more about the [OCI DevOps service](https://www.oracle.com/devops/devops-service).",
+				"when": "oci.devops.servicesInitialized && !oci.devops.deployInProgress && !oci.devops.addInProgress && !oci.devops.importInProgress && !oci.devops.importFoldersInProgress && !oci.devops.undeployInProgress && !oci.devops.deployFailed && workspaceFolderCount > 0 && oci.devops.serviceFoldersCount == 0"
 			},
 			{
 				"view": "oci-devops",
-				"contents": "Previous deployment to OCI failed. Check the failure, resolve the problem and continue with:\n[Resume Deploy to OCI](command:oci.devops.resumeDeployToCloud_Global)\n[Delete Partial Deployment](command:oci.devops.undeployPartialFromCloud_Global)\n\n",
-				"when": "oci.devops.servicesInitialized && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress && oci.devops.deployFailed && workspaceFolderCount > 0"
+				"contents": "Creating or adding to an OCI DevOps project failed. Check the failure, resolve the problem and continue with:\n[Resume Create/Add to OCI DevOps Project](command:oci.devops.resumeDeployToCloud_Global)\n[Revert Create/Add to OCI DevOps Project](command:oci.devops.undeployPartialFromCloud_Global)\n\n",
+				"when": "oci.devops.servicesInitialized && !oci.devops.deployInProgress && !oci.devops.addInProgress && !oci.devops.importInProgress && !oci.devops.importFoldersInProgress && !oci.devops.undeployInProgress && oci.devops.deployFailed && workspaceFolderCount > 0"
 			}
 		],
 		"views": {
@@ -378,6 +400,10 @@
 		},
 		"menus": {
 			"commandPalette": [
+				{
+					"command": "oci.devops.undeployFromCloud",
+					"when": "oci.devops.serviceFoldersCount > 0"
+				},
 				{
 					"command": "oci.devops.resumeDeployToCloud",
 					"when": "false"
@@ -400,7 +426,7 @@
 				},
 				{
 					"command": "oci.devops.addResource_Global",
-					"when": "oci.devops.manageViewItemsEnabled"
+					"when": "oci.devops.manageViewItemsEnabled && oci.devops.serviceFoldersCount > 0"
 				},
 				{
 					"command": "oci.devops.openInBrowser",
@@ -411,16 +437,40 @@
 					"when": "false"
 				},
 				{
-					"command": "oci.devops.deployToCloud",
+					"command": "oci.devops.importFromCloud",
+					"when": "oci.devops.globalImportAction"
+				},
+				{
+					"command": "oci.devops.importFoldersFromCloud",
+					"when": "oci.devops.globalImportFoldersAction"
+				},
+				{
+					"command": "oci.devops.deployToCloud_Global",
+					"when": "oci.devops.globalDeployAction"
+				},
+				{
+					"command": "oci.devops.addToCloud",
 					"when": "false"
+				},
+				{
+					"command": "oci.devops.addToCloud_Global",
+					"when": "oci.devops.globalAddAction"
 				},
 				{
 					"command": "oci.devops.openCodeRepositoryInConsole",
 					"when": "false"
 				},
 				{
+					"command": "oci.devops.openCodeRepositoryInConsole_Global",
+					"when": "oci.devops.serviceFoldersCount > 0"
+				},
+				{
 					"command": "oci.devops.openDevOpsProjectInConsole",
 					"when": "false"
+				},
+				{
+					"command": "oci.devops.openDevOpsProjectInConsole_Global",
+					"when": "oci.devops.serviceFoldersCount > 0"
 				},
 				{
 					"command": "oci.devops.renameNode",
@@ -491,6 +541,10 @@
 					"when": "false"
 				},
 				{
+					"command": "oci.devops.projectAudit.execute_Global",
+					"when": "oci.devops.globalAuditAction"
+				},
+				{
 					"command": "oci.devops.viewBuildLog",
 					"when": "false"
 				},
@@ -522,38 +576,38 @@
 			"editor/context": [],
 			"view/title": [
 				{
-					"command": "oci.devops.deployToCloud_Global",
-					"when": "view == oci-devops && oci.devops.servicesInitialized && oci.devops.globalDeployAction && nbJavaLSReady && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress && !oci.devops.deployFailed",
+					"command": "oci.devops.addToCloud_Global",
+					"when": "view == oci-devops && oci.devops.servicesInitialized && oci.devops.globalAddAction && nbJavaLSReady && !oci.devops.deployInProgress && !oci.devops.addInProgress && !oci.devops.importInProgress && !oci.devops.importFoldersInProgress && !oci.devops.undeployInProgress && !oci.devops.deployFailed",
 					"group": "oci_devops_group3@1"
 				},
 				{
-					"command": "oci.devops.importFromCloud",
-					"when": "view == oci-devops && oci.devops.servicesInitialized && oci.devops.globalImportAction && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress && !oci.devops.deployFailed",
+					"command": "oci.devops.importFoldersFromCloud",
+					"when": "view == oci-devops && oci.devops.servicesInitialized && oci.devops.globalImportFoldersAction && !oci.devops.deployInProgress && !oci.devops.addInProgress && !oci.devops.importInProgress && !oci.devops.importFoldersInProgress && !oci.devops.undeployInProgress && !oci.devops.deployFailed",
 					"group": "oci_devops_group3@2"
 				},
 				{
 					"command": "oci.devops.addResource_Global",
-					"when": "view == oci-devops && oci.devops.manageViewItemsEnabled && oci.devops.servicesInitialized && workspaceFolderCount == 1 && oci.devops.serviceFoldersCount == 1 && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress",
+					"when": "view == oci-devops && oci.devops.manageViewItemsEnabled && oci.devops.servicesInitialized && workspaceFolderCount == 1 && oci.devops.serviceFoldersCount == 1 && !oci.devops.deployInProgress && !oci.devops.addInProgress && !oci.devops.importInProgress && !oci.devops.importFoldersInProgress && !oci.devops.undeployInProgress",
 					"group": "navigation@3"
 				},
 				{
 					"command": "oci.devops.openCodeRepositoryInConsole_Global",
-					"when": "view == oci-devops && oci.devops.servicesInitialized && workspaceFolderCount == 1 && oci.devops.serviceFoldersCount == 1 && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress",
+					"when": "view == oci-devops && oci.devops.servicesInitialized && workspaceFolderCount == 1 && oci.devops.serviceFoldersCount == 1 && !oci.devops.deployInProgress && !oci.devops.addInProgress && !oci.devops.importInProgress && !oci.devops.importFoldersInProgress && !oci.devops.undeployInProgress",
 					"group": "oci_devops_group1@1"
 				},
 				{
 					"command": "oci.devops.openDevOpsProjectInConsole_Global",
-					"when": "view == oci-devops && oci.devops.servicesInitialized && workspaceFolderCount == 1 && oci.devops.serviceFoldersCount == 1 && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress",
+					"when": "view == oci-devops && oci.devops.servicesInitialized && workspaceFolderCount == 1 && oci.devops.serviceFoldersCount == 1 && !oci.devops.deployInProgress && !oci.devops.addInProgress && !oci.devops.importInProgress && !oci.devops.importFoldersInProgress && !oci.devops.undeployInProgress",
 					"group": "oci_devops_group1@2"
 				},
 				{
 					"command": "oci.devops.enableDevOpsDecorations",
-					"when": "view == oci-devops && oci.devops.servicesInitialized && workspaceFolderCount > 1 && oci.devops.serviceFoldersCount > 0 && !oci.devops.devOpsDecorations && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress",
+					"when": "view == oci-devops && oci.devops.servicesInitialized && workspaceFolderCount > 1 && oci.devops.serviceFoldersCount > 0 && !oci.devops.devOpsDecorations && !oci.devops.deployInProgress && !oci.devops.addInProgress && !oci.devops.importInProgress && !oci.devops.importFoldersInProgress && !oci.devops.undeployInProgress",
 					"group": "oci_devops_group4@1"
 				},
 				{
 					"command": "oci.devops.disableDevOpsDecorations",
-					"when": "view == oci-devops && oci.devops.servicesInitialized && workspaceFolderCount > 1 && oci.devops.serviceFoldersCount > 0 && oci.devops.devOpsDecorations && !oci.devops.deployInProgress && !oci.devops.importInProgress && !oci.devops.undeployInProgress",
+					"when": "view == oci-devops && oci.devops.servicesInitialized && workspaceFolderCount > 1 && oci.devops.serviceFoldersCount > 0 && oci.devops.devOpsDecorations && !oci.devops.deployInProgress && !oci.devops.addInProgress && !oci.devops.importInProgress && !oci.devops.importFoldersInProgress && !oci.devops.undeployInProgress",
 					"group": "oci_devops_group4@1"
 				},
 				{
@@ -569,12 +623,12 @@
 			],
 			"view/item/context": [
 				{
-					"command": "oci.devops.deployToCloud",
+					"command": "oci.devops.addToCloud",
 					"when": "viewItem in oci.devops.deployToCloudNodes && nbJavaLSReady",
 					"group": "inline@1"
 				},
 				{
-					"command": "oci.devops.deployToCloud",
+					"command": "oci.devops.addToCloud",
 					"when": "viewItem in oci.devops.deployToCloudNodes && nbJavaLSReady",
 					"group": "context@1@1"
 				},
@@ -833,10 +887,13 @@
 				"javaSupport.conflict": false
 		}
 	},
+	"vsce": {
+	  "baseImagesUrl": "https://github.com/graalvm/vscode-extensions/raw/master/gcn"
+	},
 	"config": {
 		"winBuildPath": "..\\node_modules\\.bin\\vsce",
 		"unixBuildPath": "../node_modules/.bin/vsce",
-		"buildCmd": "package --allow-star-activation --baseImagesUrl https://github.com/graalvm/vscode-extensions/raw/master/gcn"
+		"buildCmd": "package --allow-star-activation --no-update-package-json"
 	},
 	"scripts": {
 		"vscode:prepublish": "NODE_OPTIONS='--max-old-space-size=8192' webpack --mode production",
@@ -860,13 +917,13 @@
 		}
 	},
 	"dependencies": {
-		"encoding": "^0.1.13",
 		"isomorphic-fetch": "^3.0.0",
-		"mustache": "4.0.1",
+		"jdk-utils": "^0.4.4",
+		"mustache": "^4.2.0",
 		"oci-sdk": "^2.50.4",
 		"semver": "^7.3.8",
 		"vscode-kubernetes-tools-api": "^1.3.0",
-		"which": "^2.0.2",
+		"which": "^3.0.0",
 		"xml2js": "^0.4.23"
 	},
 	"devDependencies": {
