@@ -1,6 +1,14 @@
+/*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+ */
+
 // import the webdriver and the high level browser wrapper
 import { InputBox, Workbench } from 'vscode-extension-tester';
 import * as assert from 'assert';
+// import * as vscode from 'vscode';
 
 
 /**
@@ -49,9 +57,14 @@ async function getInputText(input : InputBox, timeout : number) : Promise<string
   return undefined;
 }
 
-
 // Create a Mocha suite
-describe('Extension UI tests', () => {
+describe('Extension UI tests', function() {
+	this.timeout(30000);
+	this.beforeAll(async () => {
+	        //await vscode.extensions.getExtension('oracle-labs-graalvm.gcn')?.activate();
+	});
+	// revert for tests
+	this.timeout(5000);
 
   it("Create project", async () => {
     // Open command pallet
