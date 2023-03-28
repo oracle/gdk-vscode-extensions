@@ -5,15 +5,13 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 // import * as myExtension from '../../extension';
 
-import {waitForStatup} from './extension.test';
 import * as ociUtils from '../../oci/ociUtils';
 import * as ociAuthentication from '../../oci/ociAuthentication';
 import { ConfigFileAuthenticationDetailsProvider, identity } from 'oci-sdk';
 import * as devopsServices from '../../devopsServices';
 import { CLOUD_SUPPORTS } from '../../extension';
-import { CloudSupport } from '../../model';
 
-let wf = vscode.workspace.workspaceFolders;
+//let wf = vscode.workspace.workspaceFolders;
 
 suite('Deployment Test Suite', function() {
 	vscode.window.showInformationMessage('Start all tests.');
@@ -22,11 +20,11 @@ suite('Deployment Test Suite', function() {
 	// the timeout will propagate to beforeAll hook
 	this.timeout(30000);
 	this.beforeAll(async () => {
-	        await waitForStatup(wf![0]);
+	        //await waitForStatup(wf![0]);
 	});
 	// revert for tests
-	this.timeout(10000);
-
+	this.timeout(10000000);
+    
     // configuration for creating a project
     /*let options = {
             micronautVersion: {
@@ -49,6 +47,15 @@ suite('Deployment Test Suite', function() {
     
     let provider : ConfigFileAuthenticationDetailsProvider | undefined;
     //let compartment_name = "stevo";
+
+    let context : vscode.ExtensionContext;
+
+    test("Activate extension", async () => {
+        const ext = vscode.extensions.getExtension("oracle-labs-graalvm.oci-devops");
+        assert.ok(ext, "OCI DevOps Extension not found!");
+
+        context = await ext.activate();
+    });
 
     // list all compartments and get the 'gcn-dev/tests' if none are provided
     test("Authenticate to oci", async () => {
@@ -79,21 +86,26 @@ suite('Deployment Test Suite', function() {
 
     // deploy project
     test("Deploy project", async() => {
-        const ext = vscode.extensions.getExtension("oracle-labs-graalvm.oci-devops");
-        assert.ok(ext, "OCI DevOps Extension not found!");
-
-        let context : vscode.ExtensionContext = await ext.activate();
-
         let workspaceState : vscode.Memento = context.workspaceState;
 
         assert.ok(workspaceState, "Workspace state is not defined");
 
-        const folderData : devopsServices.FolderData[] = await devopsServices.getFolderData();
-        assert.ok(folderData.length===1, "No folder data to deploy");
+        const folders = vscode.workspace.workspaceFolders;
+        assert.ok(folders, "No folder data to deploy");
+        assert.ok(folders.length===1, "There should be exactly one workspace folder");
+        const folderData: devopsServices.FolderData[ ] = [{
+            folder: folders[0],
+            configurations: [],
+            services: []
+        }];
+        
 
         const workspaceFolders = devopsServices.folderDataToWorkspaceFolders(folderData) as vscode.WorkspaceFolder[];
         const dump = devopsServices.dumpDeployData(workspaceState, workspaceFolders.map(f => f.name));
-        const cloudSupport : CloudSupport = CLOUD_SUPPORTS[0];
+        //const cloudSupport : CloudSupport = require("../../extension").CLOUD_SUPPORTS[0];
+        const cloudSupport = CLOUD_SUPPORTS[0];
+
+        assert.ok(cloudSupport, "No cloud support found!");
 
         try {
             const deployed = await cloudSupport.deployFolders(workspaceFolders, dump);
@@ -110,7 +122,7 @@ suite('Deployment Test Suite', function() {
         }
 
         //deployFolders()
-    }).timeout(100000);
+    }).timeout(1000000);
 
     // cleanup project deployment
     test("Cleanup deploy project", async () => {

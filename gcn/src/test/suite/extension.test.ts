@@ -68,7 +68,7 @@ suite('Extension Test Suite', function() {
 	});
 	// revert for tests
 	this.timeout(10000);
-        return;
+        
         // This test must be run first, in order to activate the extension (and wait for the activation to complete)
         test("Extension loaded", async () => {
                 let extension = vscode.extensions.getExtension('oracle-labs-graalvm.oci-devops');
@@ -76,6 +76,7 @@ suite('Extension Test Suite', function() {
 
                 await extension.activate();
         });
+        
         
         // Check if OCI DevOps Tools commands have been loaded
         test("OCI DevOps Tools commands loaded", async () =>{
