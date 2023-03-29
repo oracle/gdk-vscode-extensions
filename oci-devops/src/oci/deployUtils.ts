@@ -43,19 +43,7 @@ const NI_CONTAINER_NAME_LC = NI_CONTAINER_NAME.toLocaleLowerCase();
 
 export type SaveConfig = (folder: string, config: any) => boolean;
 
-<<<<<<< HEAD:gcn/src/oci/deployUtils.ts
-export type DeployOptions = {
-    compartment: {
-        ocid: string;
-        name: string;
-    };
-    projectName: string;
-};
-
-export async function deployFolders(folders: vscode.WorkspaceFolder[], resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData, deployOptions? : DeployOptions): Promise<boolean> {
-=======
 export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExisting: boolean, resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData): Promise<boolean> {
->>>>>>> 4ac079da486284658a8b3c3abc5011ec3560412f:oci-devops/src/oci/deployUtils.ts
     logUtils.logInfo('[deploy] Invoked deploy folders to OCI');
 
     const actionName = addToExisting ? ADD_ACTION_NAME : CREATE_ACTION_NAME;
@@ -181,15 +169,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                 deployData.compartment = { ocid: selectedProject.compartment, name: selectedProject.compartment };
             }
         } else {
-<<<<<<< HEAD:gcn/src/oci/deployUtils.ts
-            if (deployOptions?.compartment) {
-                deployData.compartment = deployOptions.compartment;
-            } else {
-                deployData.compartment = await ociDialogs.selectCompartment(provider, ACTION_NAME);
-            }
-=======
             deployData.compartment = await ociDialogs.selectCompartment(provider, actionName);
->>>>>>> 4ac079da486284658a8b3c3abc5011ec3560412f:oci-devops/src/oci/deployUtils.ts
         }
         if (!deployData.compartment) {
             dump();
