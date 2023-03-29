@@ -10,7 +10,7 @@
 		"name": "Oracle Labs"
 	},
 	"icon": "images/graalvm-cloud-logo.png",
-	"homepage": "https://github.com/graalvm/vscode-extensions/blob/master/gcn/README.md",
+	"homepage": "https://github.com/graalvm/vscode-extensions/blob/master/oci-devops/README.md",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/graalvm/vscode-extensions.git"
@@ -888,7 +888,7 @@
 		}
 	},
 	"vsce": {
-	  "baseImagesUrl": "https://github.com/graalvm/vscode-extensions/raw/master/gcn"
+	  "baseImagesUrl": "https://github.com/graalvm/vscode-extensions/raw/master/oci-devops"
 	},
 	"config": {
 		"winBuildPath": "..\\node_modules\\.bin\\vsce",

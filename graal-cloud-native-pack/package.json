@@ -1,0 +1,55 @@
+{
+    "name": "graal-cloud-native-pack",
+    "displayName": "Graal Cloud Native Extensions Pack",
+    "description": "Create, Build & Deploy Graal Cloud Native Applications.",
+    "version": "0.0.1",
+    "preview": true,
+    "license": "SEE LICENSE IN LICENSE.txt",
+    "publisher": "oracle-labs-graalvm",
+    "author": {
+        "name": "Oracle Labs"
+    },
+    "icon": "graalvm-cloud-logo.png",
+    "homepage": "https://github.com/graalvm/vscode-extensions/blob/master/graal-cloud-native-pack/README.md",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/graalvm/vscode-extensions.git"
+    },
+    "bugs": {
+        "url": "https://github.com/graalvm/vscode-extensions/issues"
+    },
+    "engines": {
+        "vscode": "^1.76.0"
+    },
+    "categories": [
+        "Extension Packs"
+    ],
+    "vsce": {
+        "baseImagesUrl": "https://github.com/graalvm/vscode-extensions/raw/master/micronaut"
+    },
+    "config": {
+        "winBuildPath": "..\\node_modules\\.bin\\vsce",
+        "unixBuildPath": "../node_modules/.bin/vsce",
+        "buildCmd": "package --allow-star-activation --no-update-package-json"
+    },
+    "scripts": {
+        "prebuild": "npm install",
+        "build": "cross-os build"
+    },
+    "cross-os": {
+        "build": {
+            "linux": "$npm_package_config_unixBuildPath $npm_package_config_buildCmd `[ -z ${BUILD_NUMBER} ] && echo \"${npm_package_version}\" || echo \"${npm_package_version}-${BUILD_NUMBER}\"`",
+            "darwin": "$npm_package_config_unixBuildPath $npm_package_config_buildCmd `[ -z ${BUILD_NUMBER} ] && echo \"${npm_package_version}\" || echo \"${npm_package_version}-${BUILD_NUMBER}\"`",
+            "win32": "%npm_package_config_winBuildPath% %npm_package_config_buildCmd%"
+        }
+    },
+    "devDependencies": {
+        "cross-os": "^1.5.0",
+        "cross-env": "^7.0.3"
+    },
+    "extensionDependencies": [
+        "oracle-labs-graalvm.gcn",
+        "oracle-labs-graalvm.gcn-database-drivers",
+        "oracle-labs-graalvm.oci-devops"
+    ]
+}
