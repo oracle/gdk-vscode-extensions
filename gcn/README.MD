@@ -1,4 +1,4 @@
-# OCI DevOps Tools
+# Graal Cloud Native Tools
 *** **Technology Preview** ***
 <!-- vscode-markdown-toc -->
 
