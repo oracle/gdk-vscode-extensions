@@ -74,9 +74,6 @@ suite('Extension Test Suite', function() {
 
                 await extension.activate();
         });
-        
-        // TODO: remove for pull
-        return;
 
         // Check if OCI DevOps Tools commands have been loaded
         test("OCI DevOps Tools commands loaded", async () =>{

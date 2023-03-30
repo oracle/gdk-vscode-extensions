@@ -22,17 +22,16 @@ suite('Deployment Test Suite', function() {
 	this.timeout(5*60*1000);
     
     let provider : ConfigFileAuthenticationDetailsProvider | undefined;
-    let context : vscode.ExtensionContext;
 
     const DEPLOY_COMPARTMENT_NAME : string = "tests";
     const DEPLOY_PROJECT_NAME : string = "base-oci-template-test";
 
     test("Activate extension", async () => {
         const ext = vscode.extensions.getExtension("oracle-labs-graalvm.oci-devops");
-        assert.ok(ext, "OCI DevOps Extension not found!");
+        assert.ok(ext, "OCI DevOps extension not found!");
 
-        context = await ext.activate();
-        assert.ok(context, "Context is undefined");
+        await ext.activate();
+        assert.ok(ext.isActive, "OCI DevOps extension failed to activate!");
     });
 
     // get provider data
