@@ -3,13 +3,10 @@ import * as assert from 'assert';
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
 import { logError } from '../../logUtils';
 // import * as myExtension from '../../extension';
 
 import * as projectUtils from '../../projectUtils';
-import * as gcnProjectCreate from '../../gcnProjectCreate';
 
 export async function waitForStatup(wf? : vscode.WorkspaceFolder) : Promise<void> {
        if (!wf) {
@@ -37,21 +34,6 @@ export async function waitForStatup(wf? : vscode.WorkspaceFolder) : Promise<void
                setTimeout(dowait, 1000);
        });
        return p;
-}
-
-/**
- * Searches value inside an array of ValueAndLabel
- * 
- * @param arrayOfValues 
- * @param search 
- * @returns 
- */
-function valueExists(arrayOfValues : gcnProjectCreate.ValueAndLabel[], search : string) : boolean {
-        for (let arrayElem of arrayOfValues) {
-                if (arrayElem.value == search)
-                        return true;
-        }
-        return false;
 }
 
 let wf = vscode.workspace.workspaceFolders;
@@ -131,62 +113,5 @@ suite('Extension Test Suite', function() {
 		}
 
 	});
-
-        // configuration for creating a project
-        let options = {
-                micronautVersion: {
-                  label: "3.7.4",
-                  serviceUrl: "",
-                },
-                applicationType: "APPLICATION",
-                buildTool: "GRADLE",
-                language: "JAVA",
-                testFramework: "JUNIT",
-                basePackage: "com.example",
-                projectName: "demo",
-                javaVersion: "JDK_17",
-                clouds: [
-                  "OCI",
-                ],
-                services: undefined,
-                features: undefined,
-        };
-
-        test("Create OCI project - Project options", async () => {
-                // init gcnAPI
-                await gcnProjectCreate.initialize();
-        
-                let micronautVersions = gcnProjectCreate.getMicronautVersions();
-                assert.ok(micronautVersions.length, "No micronaut versions found");
-
-                let applicationTypes = await gcnProjectCreate.getApplicationTypes();
-                assert.ok(applicationTypes.length, "No application type found");
-                assert.ok( valueExists(applicationTypes, "APPLICATION") );
-
-                let buildTools = gcnProjectCreate.getBuildTools();
-                assert.ok(buildTools.length, "No build tools found");
-                assert.ok( valueExists(buildTools, "GRADLE") );
-
-                let testFrameworks = gcnProjectCreate.getTestFrameworks();
-                assert.ok(testFrameworks.length, "No test frameworks found");
-                assert.ok( valueExists(testFrameworks, "JUNIT") );
-
-                let clouds = gcnProjectCreate.getClouds();
-                assert.ok(clouds.length, "No cloud platforms found");
-                assert.ok( valueExists(clouds, "OCI") );
-        });
-
-        // create OCI project
-        test("Create OCI project - Create project", async () => {
-
-                let workspaceFolders = vscode.workspace.workspaceFolders;
-                assert.ok(workspaceFolders?.length, "No workspace has been loaded!");
-
-                let projFolder = path.resolve(workspaceFolders[0].uri.fsPath, '../temp-proj/demo');
-                
-                // TODO: This function fails mid-run and partialy populated project is created but not deleted. Make sure `projFolder` is empty.
-                await gcnProjectCreate.writeProjectContents(options, projFolder);
-                fs.rmdirSync(projFolder, {recursive:true});
-        });
 
 });

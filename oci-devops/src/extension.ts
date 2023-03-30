@@ -10,7 +10,6 @@ import * as model from './model';
 import * as devopsServices from './devopsServices';
 import * as servicesView from './servicesView';
 import * as welcome from './welcome';
-import * as gcnProjectCreate from './gcnProjectCreate';
 import * as logUtils from './logUtils';
 import * as persistenceUtils from './persistenceUtils';
 
@@ -38,8 +37,6 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(async () => {
 		await devopsServices.build(context.workspaceState);
 	}));
-
-	context.subscriptions.push(vscode.commands.registerCommand('gcn.createGcnProject', () => gcnProjectCreate.createProject(context)));
 
 	devopsServices.build(context.workspaceState);
 

@@ -93,7 +93,8 @@ const devConf = {
                     transpileOnly: true, // https://github.com/TypeStrong/ts-loader#faster-builds
                 }
             }]
-        }]
+        }],
+        noParse: path.resolve(__dirname, 'lib', 'gcn.ui.api.js')
     },
     optimization: { 
         minimize: false

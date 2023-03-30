@@ -2,7 +2,6 @@
 *** **Technology Preview** ***
 <!-- vscode-markdown-toc -->
 
-* [GCN Projects Generation Wizard](#gcn-projects-generation-wizard)
 * [OCI DevOps Services](#oci-devops-services)
     * [Create DevOps Project](#create-devops-project)
     * [Default Pipelines Setup](#default-pipelines-setup)
@@ -35,31 +34,6 @@ The GCN extension comes with a project generation wizard to build and configure 
 
 Once Graal Cloud Native Tools and accompanying extensions are installed, notice **Gr** (stands for GraalVM) in the Activity Bar on the left, and the new **DATABASES** and **OCI DEVOPS SERVICES** panels in the Explorer.
 
-## <a name='gcn-projects-generation-wizard'></a>GCN Projects Generation Wizard 
-​
-The extension provides the GCN project creation wizard. The wizard supports generating different types of Micronaut applications including serverless applications and gateway functions.
-
-1. Go to **View**, **Command Palette**, search for "gcn", and invoke the **GCN: Create GCN Project** quick action.
-
-    ![gcn-vscode-actions.png](images/gcn-vscode-actions.png)
-
-2. Follow the command prompts to generate a new Maven or Gradle project. For example, create a simple Java Server application:
-    - Pick Micronaut version
-    - Pick Application type
-    - Pick Project Java
-    - Provide project name
-    - Provide base package
-    - Pick project languae
-    - Pick project services
-    - Pick build tool
-    - Pick test framework
-    - Pick cloud platform
-    - Choose categories to include features from
-    - Pick feature(s) for the selected category (category you selected at the previous step)
-
-3. Finally, you are asked to select the destination directory on your local disk and whether to open the created project in a new window or add it to the current workspace. The project is created and open in the VS Code window.
-
-​
 ## <a name='oci-devops-services'></a>OCI DevOps Services
 ​
 Graal Cloud Native Tools enable support for the core [Oracle Cloud Infrastructure (OCI)](https://www.oracle.com/cloud/) services in VS Code including Object Storage, Authentication, Secret Management, Streaming, etc. You can create build and deployment pipelines along with source code management to easy transmit from local to cloud-based development and deployment directly using the **OCI DEVOPS SERVICES** panel:
