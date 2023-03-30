@@ -1,5 +1,4 @@
 # Change Log
 
-## [Unreleased]
-
-- Initial release
+## Version 0.0.1
+* Initial release published on Visual Studio Marketplace, Technology Preview

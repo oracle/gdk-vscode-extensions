@@ -1,4 +1,4 @@
-# GraalVM Tools for Micronaut Extension
+# GraalVM Tools for Micronaut
 
 [GraalVM Tools for Micronaut](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) provides support for developing Micronaut applications with Visual Studio Code (VS Code).
 
