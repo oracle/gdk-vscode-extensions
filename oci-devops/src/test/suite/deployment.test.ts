@@ -24,7 +24,7 @@ suite('Deployment Test Suite', function() {
     let provider : ConfigFileAuthenticationDetailsProvider | undefined;
 
     const DEPLOY_COMPARTMENT_NAME : string = "tests";
-    const DEPLOY_PROJECT_NAME : string = "base-oci-template-test";
+    const DEPLOY_PROJECT_NAME : string = "base-oci-template-testdeploy";
 
     test("Activate extension", async () => {
         const ext = vscode.extensions.getExtension("oracle-labs-graalvm.oci-devops");
