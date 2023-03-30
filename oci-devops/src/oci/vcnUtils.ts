@@ -14,7 +14,7 @@ import * as ociUtils from './ociUtils';
 export async function selectNetwork(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, vcnID: string): Promise<{id: string; compartmentID: string} | undefined> {
     return await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
-        title: `Reading cluster's network configuration...`,
+        title: 'Reading cluster network configuration...',
         cancellable: false
     }, (_progress, _token) => {
         return new Promise(async resolve => {
@@ -34,10 +34,10 @@ export async function selectNetwork(authenticationDetailsProvider: common.Config
                         }
                     }
                 }
-                dialogs.showErrorMessage(`Failed to resolve cluster's network configuration`);
+                dialogs.showErrorMessage('Failed to resolve cluster network configuration');
                 resolve(undefined);
             } catch (err) {
-                dialogs.showErrorMessage(`Failed to read cluster's network configuration`, err);
+                dialogs.showErrorMessage('Failed to read cluster network configuration', err);
                 resolve(undefined);
             }
         });

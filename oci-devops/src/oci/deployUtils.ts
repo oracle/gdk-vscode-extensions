@@ -196,7 +196,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
         if (cluster) {
             deployData.okeCluster = { id: cluster.id, compartmentId: cluster.compartmentId };
             if (!cluster.vcnID) {
-                dialogs.showErrorMessage(`Cannot resolve cluster's network configuration.`);
+                dialogs.showErrorMessage('Cannot resolve cluster network configuration.');
                 dump();
                 return false;
             }
