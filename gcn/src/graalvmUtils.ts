@@ -192,9 +192,9 @@ export async function getJavaVersion(homeFolder: string): Promise<string | undef
     });
 }
 
-export function normalizeJavaVersion(version: string | undefined, supportedVersions: string[]): string {
+export function normalizeJavaVersion(version: string | undefined, supportedVersions: string[], defaultVersion : string = '8'): string {
     if (!version) {
-        return '8';
+        return defaultVersion;
     }
     if (!supportedVersions || supportedVersions.length === 0) {
         return version;
@@ -206,6 +206,6 @@ export function normalizeJavaVersion(version: string | undefined, supportedVersi
             return supportedVersion;
         }
     }
-    return '8';
+    return defaultVersion;
 }
 
