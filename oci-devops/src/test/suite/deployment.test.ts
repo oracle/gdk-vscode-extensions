@@ -1,63 +1,41 @@
 import * as assert from 'assert';
-
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
 import * as vscode from 'vscode';
-// import * as myExtension from '../../extension';
-
 import * as ociUtils from '../../oci/ociUtils';
 import * as ociAuthentication from '../../oci/ociAuthentication';
-import { ConfigFileAuthenticationDetailsProvider, identity } from 'oci-sdk';
-import * as devopsServices from '../../devopsServices';
-import { CLOUD_SUPPORTS } from '../../extension';
+import { ConfigFileAuthenticationDetailsProvider, devops, identity } from 'oci-sdk';
+import { DeployOptions } from '../../oci/deployUtils';
+import { waitForStatup } from './extension.test';
 
-//let wf = vscode.workspace.workspaceFolders;
+let wf = vscode.workspace.workspaceFolders;
 
 suite('Deployment Test Suite', function() {
 	vscode.window.showInformationMessage('Start all tests.');
 
-        /* Wait for the NBLS to start */
+    /* Wait for the NBLS to start */
 	// the timeout will propagate to beforeAll hook
 	this.timeout(30000);
 	this.beforeAll(async () => {
-	        //await waitForStatup(wf![0]);
+	    await waitForStatup(wf![0]);
 	});
-	// revert for tests
-	this.timeout(10000000);
     
-    // configuration for creating a project
-    /*let options = {
-            micronautVersion: {
-                label: "3.7.4",
-                serviceUrl: "",
-            },
-            applicationType: "APPLICATION",
-            buildTool: "GRADLE",
-            language: "JAVA",
-            testFramework: "JUNIT",
-            basePackage: "com.example",
-            projectName: "demo",
-            javaVersion: "JDK_17",
-            clouds: [
-                "OCI",
-            ],
-            services: undefined,
-            features: undefined,
-    };*/
+	// revert for tests (deployment/undeployment might take some time)
+	this.timeout(5*60*1000);
     
     let provider : ConfigFileAuthenticationDetailsProvider | undefined;
-    //let compartment_name = "stevo";
-
     let context : vscode.ExtensionContext;
+
+    const DEPLOY_COMPARTMENT_NAME : string = "tests";
+    const DEPLOY_PROJECT_NAME : string = "base-oci-template-test";
 
     test("Activate extension", async () => {
         const ext = vscode.extensions.getExtension("oracle-labs-graalvm.oci-devops");
         assert.ok(ext, "OCI DevOps Extension not found!");
 
         context = await ext.activate();
+        assert.ok(context, "Context is undefined");
     });
 
-    // list all compartments and get the 'gcn-dev/tests' if none are provided
+    // get provider data
     test("Authenticate to oci", async () => {
         const ACTION_NAME = 'Deploy to OCI';
 
@@ -70,63 +48,82 @@ suite('Deployment Test Suite', function() {
         provider = auth.getProvider();
     });
 
+    
+    let comaprtmentOCID = "";
+    // Find OCID of target compartment
     test("List compartments", async() => {
         if (provider) {
             const compartments : identity.models.Compartment[] = await ociUtils.listCompartments(provider);
             
             assert.ok(compartments.length>0, "No compartments listed");
 
+            for (let compartment of compartments) {
+                if (compartment.name === DEPLOY_COMPARTMENT_NAME)
+                    comaprtmentOCID = compartment.id;
+            }
+            assert.ok(comaprtmentOCID!=="", "No comaprtment " + DEPLOY_COMPARTMENT_NAME + " found!");
+
         } else assert.ok(false, "Authentication failed");
     });
 
     // list devops projects inside a compartment
     test("List devops projects", async () => {
-        
+        if (provider) {
+            const DevOpsProjects : devops.models.ProjectSummary[] = await ociUtils.listDevOpsProjects(provider, comaprtmentOCID);
+
+            // left from previos unsuccessfull runs
+            for (let project of DevOpsProjects) {
+                if (project.name === DEPLOY_PROJECT_NAME) {
+                    await vscode.commands.executeCommand("oci.devops.undeployFromCloudSync");
+                }
+            }
+
+        } else assert.ok(false, "Authentication failed");
     });
 
     // deploy project
+    let projectId : string = "";
     test("Deploy project", async() => {
-        let workspaceState : vscode.Memento = context.workspaceState;
+        if (provider) {
+            const deployOptions : DeployOptions = {
+                compartment: {
+                    ocid: comaprtmentOCID,
+                    name: "gcn-dev/"+DEPLOY_COMPARTMENT_NAME,
+                },
+                skipOKESupport: true,
+                projectName: DEPLOY_PROJECT_NAME
+            };
 
-        assert.ok(workspaceState, "Workspace state is not defined");
+            await vscode.commands.executeCommand("oci.devops.deployToCloud_GlobalSync", deployOptions);
 
-        const folders = vscode.workspace.workspaceFolders;
-        assert.ok(folders, "No folder data to deploy");
-        assert.ok(folders.length===1, "There should be exactly one workspace folder");
-        const folderData: devopsServices.FolderData[ ] = [{
-            folder: folders[0],
-            configurations: [],
-            services: []
-        }];
-        
+            const DevOpsProjects : devops.models.ProjectSummary[] = await ociUtils.listDevOpsProjects(provider, comaprtmentOCID);
 
-        const workspaceFolders = devopsServices.folderDataToWorkspaceFolders(folderData) as vscode.WorkspaceFolder[];
-        const dump = devopsServices.dumpDeployData(workspaceState, workspaceFolders.map(f => f.name));
-
-        const cloudSupport = CLOUD_SUPPORTS[0];
-
-        assert.ok(cloudSupport, "No cloud support found!");
-
-        try {
-            const deployed = await cloudSupport.deployFolders(workspaceFolders, false, dump);
-            if (deployed) {
-                await devopsServices.build(workspaceState);
+            for (let project of DevOpsProjects) {
+                if (project.name === DEPLOY_PROJECT_NAME) {
+                    projectId = project.id;
+                }
             }
-        } finally {
-            if (dump(null)) {
-                await vscode.commands.executeCommand('setContext', 'oci.devops.deployFailed', true);
-                await devopsServices.build(workspaceState);
-            } else {
-                await vscode.commands.executeCommand('setContext', 'oci.devops.deployFailed', false);
-            }
-        }
+            assert.ok(projectId!=="", "Project not successfully deployed");
 
-        //deployFolders()
-    }).timeout(1000000);
-
-    // cleanup project deployment
-    test("Cleanup deploy project", async () => {
-        
+        } else assert.ok(false, "Authentication failed");
     });
+
+    test("Undeploy project", async() => {
+        if (provider) {
+            const DevOpsProjects : devops.models.ProjectSummary[] = await ociUtils.listDevOpsProjects(provider, comaprtmentOCID);
+            let projectFound = false;
+
+            for (let project of DevOpsProjects) {
+                if (project.name === DEPLOY_PROJECT_NAME) {
+                    projectFound = true;
+                }
+            }
+            assert(projectFound, "Project not found for undeployment");
+
+            await vscode.commands.executeCommand("oci.devops.undeployFromCloudSync");
+
+        } else assert.ok(false, "Authentication failed");
+    });
+
 
 });

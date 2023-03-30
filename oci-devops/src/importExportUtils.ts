@@ -11,6 +11,7 @@ import * as servicesView from './servicesView';
 import * as dialogs from './dialogs';
 import * as folderStorage from './folderStorage';
 import * as undeployUtils from './oci/undeployUtils'; // TODO: include into CloudSupport API?
+import { DeployOptions } from './oci/deployUtils';
 
 
 let importInProgress: boolean;
@@ -18,6 +19,10 @@ let importFoldersInProgress: boolean;
 let deployInProgress: boolean;
 let addInProgress: boolean;
 let undeployInProgress: boolean;
+
+export type UndeployOptions = {
+    autoSelectSingleFolder : boolean;
+};
 
 export async function importDevopsProject(getFromExisting: boolean) {
     if (!anotherOperationInProgress()) {
@@ -65,7 +70,7 @@ export async function importDevopsProject(getFromExisting: boolean) {
     }
 }
 
-export async function deployFolders(workspaceState: vscode.Memento, addToExisting: boolean, folders?: devopsServices.FolderData | devopsServices.FolderData[]) {
+export async function deployFolders(workspaceState: vscode.Memento, addToExisting: boolean, folders?: devopsServices.FolderData | devopsServices.FolderData[], deployOptions? : DeployOptions) {
     if (!anotherOperationInProgress()) {
         if (!(await vscode.commands.getCommands()).includes('nbls.project.artifacts')) {
             vscode.window.showErrorMessage('Project inspection is not ready yet, please try again later.');
@@ -134,7 +139,7 @@ export async function deployFolders(workspaceState: vscode.Memento, addToExistin
             const workspaceFolders = devopsServices.folderDataToWorkspaceFolders(supportedFolders) as vscode.WorkspaceFolder[];
             const dump = devopsServices.dumpDeployData(workspaceState, workspaceFolders.map(f => f.name));
             try {
-                const deployed = await cloudSupport.deployFolders(workspaceFolders, addToExisting, dump);
+                const deployed = await cloudSupport.deployFolders(workspaceFolders, addToExisting, dump, deployOptions);
                 if (deployed) {
                     await devopsServices.build(workspaceState);
                 }
@@ -158,7 +163,7 @@ export async function deployFolders(workspaceState: vscode.Memento, addToExistin
     }
 }
 
-export async function undeployFolders(workspaceState: vscode.Memento, folders?: devopsServices.FolderData | devopsServices.FolderData[]) {
+export async function undeployFolders(workspaceState: vscode.Memento, folders?: devopsServices.FolderData | devopsServices.FolderData[], undeployOptions? : UndeployOptions) {
     if (!anotherOperationInProgress()) {
         undeployInProgress = true;
         await servicesView.showWelcomeView('oci.devops.undeployInProgress');
@@ -192,7 +197,7 @@ export async function undeployFolders(workspaceState: vscode.Memento, folders?: 
                     return;
                 }
             }
-            const selected = await dialogs.selectFolders('Delete Folder(s) from OCI DevOps Project', 'Select folders to delete', true, false);
+            const selected = await dialogs.selectFolders('Delete Folder(s) from OCI DevOps Project', 'Select folders to delete', true, (undeployOptions && undeployOptions.autoSelectSingleFolder)  );
             if (!selected) {
                 if (selected === null) {
                     vscode.window.showWarningMessage('No folders to delete.');
