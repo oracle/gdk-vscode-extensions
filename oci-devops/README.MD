@@ -6,34 +6,35 @@ The extension creates a project in the DevOps service, sets up a source code rep
 
 ## Quickstart
 
-If you are working with a Graal Cloud Native (or Spring Boot) project, the extension will setup build pipelines to build Java and GraalVM Native Image
-based containers. Deployment pipelines will be created that will deploy these containers to an OKE cluster.
+If you are working with a Graal Cloud Native (or Spring Boot) project, the extension will set up build pipelines to build containers for your Java-based application and native executable. The extension will also create deployment pipelines that will deploy these containers to an OKE cluster.
 
-If you have a normal Maven or Gradle project, you can still use this extension to build
-your JARs in the cloud on the OCI DevOps service, but as of now deployment pipelines are not created.
+If you have a standard Maven or Gradle project, you can still use this extension to build
+your JAR files in the cloud on the OCI DevOps service, but as of now deployment pipelines are not created.
 
-To find out more about [Graal Cloud Native](https://graal.cloud/) and the [OCI DevOps service](https://www.oracle.com/devops/devops-service/) see these links.
+For more information, see [Graal Cloud Native](https://graal.cloud/) and [OCI DevOps service](https://www.oracle.com/devops/devops-service/).
 
 To get started, you will need:
 
-- To install the extension
-- Have a Java installation (JDK 17+)
-- Have an [Oracle Cloud account](https://www.oracle.com/cloud/free/) (a free account is OK)
-- [Create an .oci/config file](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm) to access OCI services
-- [Add an API Key](https://docs.oracle.com/en/learn/generate_ssh_keys/index.html)
-- [Install the OCI CLI](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/cliinstall.htm)
-- [Create and setup access to an OKE cluster](https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingclusterusingoke.htm). OKE is Oracle's managed Kubernetes service.
+- To install the extension, you require
+- A Java installation (JDK 17+)
+- An [Oracle Cloud account](https://www.oracle.com/cloud/free/) (a free account is OK)
+- A [configured _.oci/config_ file](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm) to access OCI services
+- An [API Key](https://docs.oracle.com/en/learn/generate_ssh_keys/index.html)
+- The [OCI CLI](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/cliinstall.htm)
+- An [OKE cluster](https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingclusterusingoke.htm). OKE is Oracle's managed Kubernetes service.
+
 
 Having done the above, and with a [Graal Cloud Native](https://graal.cloud/), or a [Spring Boot](https://spring.io), project, you can
 can now create an OCI DevOps project.
 
 ### <a name='create-devops-project'></a>Create DevOps Project
 
-1. Open **OCI DEVOPS SERVICES** panel in VSCode Explorer and click Create DevOps Project button
+1. Open the **OCI DEVOPS** panel in VSCode Explorer and click the **Create OCI DevOps Project** button
 
     ![devops-ci-jobs.png](images/create_devops_prj.png)
 
 2. You will be guided through the process of creating an OCI DevOps project:
+    - If you are using mutiple OCI profiles, you will first be need to select the OCI profile that you wish to use
     - Select your comparment in OCI. Your DevOps project will be created here.
     - Confirm the DevOps project name. This must be unique to the tenancy.
     - Depending on your setup, you might be asked to:
@@ -59,12 +60,11 @@ You can run these build targets, which will run in the Cloud in the OCI DevOps s
 
 Once built, the container images can be pulled by clicking on the cloud icon, which provides the command required to pull the containers locally.
 
-The build specification files for each pipeline are stored in `.devops/`. If you update the build specification file, commit and push
-the change to the DevOps-hosted repository, the build pipelines will be updated to reflect this change.
+The build specification files for each pipeline are stored in _.devops/_. If you update the build specification file, commit and push the change to the DevOps-hosted repository, the build pipelines will be updated to reflect this change. It should be noted that the build pipelines run on custom sized build runners in order to ensure there is suffcient memory to build all native executables using GraalVM Native Image. These can be customised within the OCI Cloud Console.
 
 ## <a name='oci-kubernetes-deployment-with-oke'></a>OCI Kubernetes deployment with OKE
 
-When the build pipeline succeeds, the container image can be deployed to OKE using **Deploy OCI Docker Native Executable Container to OKE**
+When the build pipeline succeeds, the container image can be deployed to OKE using **Deploy OCI Native Executable Container to OKE**
 deployment pipeline. When complete, the application can be tested in a browser by selecting the action **Open in Browser** for Deploy pipeline. This will
 set up port forwarding using your local `kubectl`.
 
@@ -76,14 +76,13 @@ It will perform **kubectl** port forwarding from OKE to localhost as indicated b
 
 ## <a name='project-dependencies-vulnerability-audits'></a>Project Dependencies Vulnerability Audits
 
-The extension also performs project audits for vulnerabilities in 3rd party project libraries; supported project types are Maven and Gradle. Project Audits require an OCI account (**.oci/config** file) and uses OCI ADM Knowledgebase which retrieves data from the nvd.nist.gov database.
-Just select **Run Project Audit** action in the Java Projects panel to check for vulnerabilities in an opened project. If a project contains a vulnerable dependency, it is shown in the PROBLEMS view.
+The extension also performs project audits for vulnerabilities in third-party project libraries; supported project types are Maven and Gradle. Project Audits require an OCI account (_.oci/config_ file) and uses OCI ADM Knowledgebase which retrieves data from the nvd.nist.gov database.
+Just select the **Run Project Audit** action in the **Java Projects** panel to check for vulnerabilities in an opened project. If a project contains a vulnerable dependency, it is shown in the **PROBLEMS** view.
 
 ![Project Audits action and reported errors](images/project_audit.png)
 
-When your project is moved into the DevOps service in the OCI Cloud, it is scanned for vulnerabilities by the [Application Dependency Management service](https://docs.oracle.com/en-us/iaas/Content/application-dependency-management/home.htm).
-The results of this audit can be displayed within the OCI DevOps Services panel by clicking on the plus icon and selecting, "Add Knowledge Base", from the
-displayed menu.
+When your project is moved into the DevOps service in the OCI Cloud, it is scanned for vulnerabilities by the [Application Dependency Management service](https://docs.oracle.com/iaas/Content/application-dependency-management/home.htm).
+The results of this audit can be displayed within the OCI DevOps Services panel by clicking on the plus icon and selecting **Add Knowledge Base** from the displayed menu.
 
 ![Add Knowledge Base](images/add-knowledge_base.png)
 
@@ -94,7 +93,7 @@ add an existing build pipeline, a build artifact, a container registry, etc.
 ![more-ci-jobs.png](images/more-ci-jobs.png)
 
 
-## <a name='prerequisites'></a>Pre-requisites
+## <a name='prerequisites'></a>Prerequisites
 
 - [Extension Pack for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack) Microsoft extension
 - [Kubernetes](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools) Microsoft extension
@@ -102,11 +101,11 @@ add an existing build pipeline, a build artifact, a container registry, etc.
 > Note: The extension depends on the [Apache NetBeans Language Server](https://marketplace.visualstudio.com/items?itemName=ASF.apache-netbeans-java), [GraalVM Extension Pack for Java](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graalvm-pack). (VS Code installs these required extensions for you.)
 
 ## <a name='proxy-setup'></a>Proxy Setup
-When working behind firewall over proxy then VSCode Proxy has to be set ON. In VSCode **Settings** set **Http: Proxy Support** to **ON**. Subsequently when working without proxy set this **OFF**.
+When working behind firewall over a proxy then VSCode Proxy has to be set ON. In VSCode **Settings** set **Http: Proxy Support** to **ON**. Subsequently when working without proxy set this **OFF**.
 
 ![HTTP Proxy in VSCode](images/proxy.png)
 
-Many tools used to work on Java projects, like Maven, Gradle, kubectl and Docker (if used), could require setting up proxy configuration.
+Many tools used to work on Java projects, such as Maven, Gradle, `kubectl`, and `docker` (if used), may require proxy configuration.
 
 ## <a name='provide-feedback-or-seek-help'></a>Provide Feedback or Seek Help
 
