@@ -93,7 +93,7 @@ export async function resolve(actionName?: string, profile?: string): Promise<Au
     }
 }
 
-function createProvider(configurationFilePath?: string, profile?: string): common.ConfigFileAuthenticationDetailsProvider {
+export function createProvider(configurationFilePath?: string, profile?: string): common.ConfigFileAuthenticationDetailsProvider {
     const provider = new common.ConfigFileAuthenticationDetailsProvider(configurationFilePath, profile);
     fixCurrentProfile(provider, profile);
     return provider;
@@ -106,14 +106,14 @@ function fixCurrentProfile(provider: common.ConfigFileAuthenticationDetailsProvi
     }
 }
 
-function getDefaultConfigFile(): string {
+export function getDefaultConfigFile(): string {
     const defaultPath = common.ConfigFileReader.DEFAULT_FILE_PATH;
     const expandedPath = common.ConfigFileReader.expandUserHome(defaultPath);
     const normalizedPath = path.normalize(expandedPath);
     return normalizedPath;
 }
 
-function listProfiles(configFile: string): string[] {
+export function listProfiles(configFile: string): string[] {
     const profiles: string[] = [];
     const file = fs.readFileSync(configFile).toString();
     const lines = file.length === 0 ? [] : file.split(/\r?\n/);

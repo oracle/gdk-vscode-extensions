@@ -1,10 +1,12 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as ociUtils from '../../oci/ociUtils';
+import * as fs from 'fs';
 import * as ociAuthentication from '../../oci/ociAuthentication';
 import { ConfigFileAuthenticationDetailsProvider, devops, identity } from 'oci-sdk';
 import { DeployOptions } from '../../oci/deployUtils';
 import { waitForStatup } from './extension.test';
+import { getDefaultConfigFile, listProfiles } from '../../oci/ociAuthentication';
 
 let wf = vscode.workspace.workspaceFolders;
 
@@ -26,19 +28,42 @@ suite('Deployment Test Suite', function() {
     const DEPLOY_COMPARTMENT_NAME : string = "tests";
     const DEPLOY_PROJECT_NAME : string = "base-oci-template-testdeploy";
 
-    test("Activate extension", async () => {
+    test("Initial test setup", async () => {
         const ext = vscode.extensions.getExtension("oracle-labs-graalvm.oci-devops");
         assert.ok(ext, "OCI DevOps extension not found!");
 
         await ext.activate();
         assert.ok(ext.isActive, "OCI DevOps extension failed to activate!");
+
+        await vscode.commands.executeCommand("git.close");
+    });
+
+    // list adn get the default profile
+    let selectProfile : string = "";
+    test("List OCI Profiles", async () => {
+        const defaultConfig = getDefaultConfigFile();
+        assert.ok(fs.existsSync(defaultConfig), "Default configuration file not found");
+
+        const profiles = listProfiles(defaultConfig);
+        assert.ok(profiles.length>0, "No configuration profiles");
+
+        if (profiles.length === 1)
+            selectProfile = profiles[0];
+        else if (profiles.indexOf("TESTS") !== -1)
+            selectProfile = "TESTS";
+        else if (profiles.indexOf("DEFAULT") !== -1)
+            selectProfile = "DEFAULT";
+        else {
+            assert.ok(false, "Default profile cannot be determined. Make sure to have [DEFAULT] or [TESTS] profile in oci config.");
+        }
+
     });
 
     // get provider data
     test("Authenticate to oci", async () => {
         const ACTION_NAME = 'Deploy to OCI';
 
-        const auth = await ociAuthentication.resolve(ACTION_NAME, undefined);
+        const auth = await ociAuthentication.resolve(ACTION_NAME, selectProfile);
         assert.ok(auth, "Authentication failed! Check your oci config.");
 
         const configurationProblem = auth.getConfigurationProblem();
@@ -47,7 +72,6 @@ suite('Deployment Test Suite', function() {
         provider = auth.getProvider();
     });
 
-    
     let comaprtmentOCID = "";
     // Find OCID of target compartment
     test("List compartments", async() => {
@@ -73,7 +97,7 @@ suite('Deployment Test Suite', function() {
             // left from previos unsuccessfull runs
             for (let project of DevOpsProjects) {
                 if (project.name === DEPLOY_PROJECT_NAME) {
-                    await vscode.commands.executeCommand("oci.devops.undeployFromCloudSync");
+                    await ociUtils.deleteDevOpsProject(provider, project.id, true);
                 }
             }
 
@@ -90,7 +114,9 @@ suite('Deployment Test Suite', function() {
                     name: "gcn-dev/"+DEPLOY_COMPARTMENT_NAME,
                 },
                 skipOKESupport: true,
-                projectName: DEPLOY_PROJECT_NAME
+                projectName: DEPLOY_PROJECT_NAME,
+                selectProfile: selectProfile,
+                autoConfirmDeploy: true
             };
 
             await vscode.commands.executeCommand("oci.devops.deployToCloud_GlobalSync", deployOptions);

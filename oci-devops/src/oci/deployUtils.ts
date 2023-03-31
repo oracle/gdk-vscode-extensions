@@ -46,6 +46,8 @@ export type DeployOptions = {
     compartment : any;
     skipOKESupport : boolean;
     projectName : string;
+    selectProfile : string;
+    autoConfirmDeploy : boolean;
 };
 
 export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExisting: boolean, resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData, deployOptions? : DeployOptions): Promise<boolean> {
@@ -108,7 +110,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
         auth = ociAuthentication.createCustom(undefined, selectedProfile);
         deployData.profile = selectedProfile;
     } else {
-        auth = await ociAuthentication.resolve(actionName, deployData.profile);
+        auth = await ociAuthentication.resolve(actionName, deployOptions?.selectProfile?deployOptions.selectProfile:deployData.profile);
     }
 
     const authentication = auth;

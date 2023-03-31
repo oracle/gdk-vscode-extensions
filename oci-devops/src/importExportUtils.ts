@@ -20,10 +20,6 @@ let deployInProgress: boolean;
 let addInProgress: boolean;
 let undeployInProgress: boolean;
 
-export type UndeployOptions = {
-    autoSelectSingleFolder : boolean;
-};
-
 export async function importDevopsProject(getFromExisting: boolean) {
     if (!anotherOperationInProgress()) {
         if (getFromExisting) {
@@ -133,7 +129,7 @@ export async function deployFolders(workspaceState: vscode.Memento, addToExistin
             if (!cloudSupport) {
                 return;
             }
-            if (!await dialogs.confirmDeployToOCI()) {
+            if ( !(deployOptions && deployOptions.autoConfirmDeploy) && !await dialogs.confirmDeployToOCI()) {
                 return;
             }
             const workspaceFolders = devopsServices.folderDataToWorkspaceFolders(supportedFolders) as vscode.WorkspaceFolder[];
@@ -163,7 +159,7 @@ export async function deployFolders(workspaceState: vscode.Memento, addToExistin
     }
 }
 
-export async function undeployFolders(workspaceState: vscode.Memento, folders?: devopsServices.FolderData | devopsServices.FolderData[], undeployOptions? : UndeployOptions) {
+export async function undeployFolders(workspaceState: vscode.Memento, folders?: devopsServices.FolderData | devopsServices.FolderData[], undeployOptions? : undeployUtils.UndeployOptions) {
     if (!anotherOperationInProgress()) {
         undeployInProgress = true;
         await servicesView.showWelcomeView('oci.devops.undeployInProgress');
