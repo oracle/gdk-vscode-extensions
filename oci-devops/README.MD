@@ -1,10 +1,8 @@
 # OCI DevOps Tools
 
-Enables easy integration with the [Oracle Cloud Infrastructure (OCI)](https://www.oracle.com/cloud/) DevOps Service. The OCI DevOps service enables you
-to host your source code in the Oracle Cloud and build, then deploy, your projects in hosted CI/CD pipelines.
+Enables easy integration with the [Oracle Cloud Infrastructure (OCI) DevOps](https://www.oracle.com/devops/devops-service/) service. The DevOps service can host your source code in the Oracle Cloud and build, then deploy, your projects in hosted CI/CD pipelines.
 
-The extension will create a project in the OCI DevOps service for you, setting up a source code repository, build and deployment pipelines,
-allowing you to easily transition from local to cloud-based development and deployment.
+The extension creates a project in the DevOps service, sets up a source code repository, as well as build and deployment pipelines, enabling you to easily transition from local to cloud-based development and deployment.
 
 ## Quickstart
 
@@ -33,20 +31,20 @@ can now create an OCI DevOps project.
 
 1. Open **OCI DEVOPS SERVICES** panel in VSCode Explorer and click Create DevOps Project button
 
-![devops-ci-jobs.png](images/create_devops_prj.png)
+    ![devops-ci-jobs.png](images/create_devops_prj.png)
 
 2. You will be guided through the process of creating an OCI DevOps project:
-    1. Select your comparment on OCI. Your DevOps project will be created here.
-    2. Confirm the DevOps project. This must be unique to the tenancy.
-    3. Depending on your setup, you might be asked to:
-        a. Confirm the SSH keys for git operations and add the OCI DevOps git server to your SSH **config** and **known_hosts** file
-        b. Select an existing OKE cluster on OCI, or create a new one using the [OKE Quick Create](https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingclusterusingoke_topic-Using_the_Console_to_create_a_Quick_Cluster_with_Default_Settings.htm#create-quick-cluster) action.
+    - Select your comparment in OCI. Your DevOps project will be created here.
+    - Confirm the DevOps project name. This must be unique to the tenancy.
+    - Depending on your setup, you might be asked to:
+        - Confirm the SSH keys for git operations and add the OCI DevOps git server to your SSH **config** and **known_hosts** file.
+        - Select an existing OKE cluster on OCI, or create a new one using the [OKE Quick Create](https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingclusterusingoke_topic-Using_the_Console_to_create_a_Quick_Cluster_with_Default_Settings.htm#create-quick-cluster) action.
 
-        ![oke_quick_create.png](images/oke_quick_create.png)
+            ![oke_quick_create.png](images/oke_quick_create.png)
 
-        c. When the new OKE cluster is created, configure local access to the OKE Kubernetes cluster using the VNC-Native Public Endpoint. This is done using the OCI CLI and you may have already done this in the prerequisite steps.
+    - When the new OKE cluster is created, configure local access to the OKE Kubernetes cluster using the `VNC-Native Public Endpoint`. This is done using the OCI CLI and you may have already done this in the prerequisite steps.
 
-        ![set_oke_access.png](images/set_oke_access.png)
+        ![set_oke_access.png](images/set_oke_access.png)
 
 Once you create a DevOps project, the following build targets now become available from within VS Code:
 
@@ -61,7 +59,7 @@ You can run these build targets, which will run in the Cloud in the OCI DevOps s
 
 Once built, the container images can be pulled by clicking on the cloud icon, which provides the command required to pull the containers locally.
 
-The build specification files for each pipeline are stored in *project_folder*/.devops/. If you update the build specification file, commit and push
+The build specification files for each pipeline are stored in `.devops/`. If you update the build specification file, commit and push
 the change to the DevOps-hosted repository, the build pipelines will be updated to reflect this change.
 
 ## <a name='oci-kubernetes-deployment-with-oke'></a>OCI Kubernetes deployment with OKE
