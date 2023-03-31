@@ -195,12 +195,17 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
         }
         if (cluster) {
             deployData.okeCluster = { id: cluster.id, compartmentId: cluster.compartmentId };
-            const subnet  = await vcnUtils.selectNetwork(provider, deployData.compartment.ocid, cluster?.vcnID, true, deployData.compartment.name);
+            if (!cluster.vcnID) {
+                dialogs.showErrorMessage('Cannot resolve cluster network configuration.');
+                dump();
+                return false;
+            }
+            const subnet = await vcnUtils.selectNetwork(provider, cluster.vcnID);
             if (!subnet) {
                 dump();
                 return false;
             }
-            deployData.subnet = { id: subnet.subnetID, compartmentId: subnet.compartmentID };
+            deployData.subnet = { id: subnet.id, compartmentId: subnet.compartmentID };
         }
     }
 
