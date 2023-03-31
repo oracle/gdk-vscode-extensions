@@ -260,6 +260,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                 projectFolders.push(projectFolder);
                 totalSteps += 3; // code repository, cloud services config, populating code repository
                 if (projectFolder.projectType === 'GCN') {
+                    if (!projectFolder.subprojects.find(sub => sub.name === 'oci')) {
+                        resolve(`GCN project not configured for OCI: ${folder.name}. Creating OCI DevOps Project is not supported.`);
+                        return;
+                    }
                     totalSteps += 4; // Jar build spec and pipeline, NI build spec and pipeline
                     if (!bypassArtifacts) {
                         totalSteps += 2; // Jar artifact, NI artifact
