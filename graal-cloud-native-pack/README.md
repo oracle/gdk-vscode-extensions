@@ -2,7 +2,7 @@
 
 [Graal Cloud Native Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) is a collection of extensions that help you create, build & deploy Graal Cloud Native Applications.
 
-The Graal Cloud Native Extensions Pack bundles the [Graal Cloud Native Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn), [GCN Database Support](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn-database-drivers), and [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=asf.oci-devops) extensions.
+The Graal Cloud Native Extension Pack bundles the [Graal Cloud Native Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn), [GCN Database Support](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn-database-drivers), and [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=asf.oci-devops) extensions.
 
 ### Graal Cloud Native Development Support
 
@@ -11,7 +11,6 @@ The extension pack bundles support for [Graal Cloud Native](https://graal.cloud)
 1. An integrated Graal Cloud Native project creation wizard.
 2. Support for the core [Oracle Cloud Infrastructure (OCI)](https://www.oracle.com/cloud/) services in VS Code including: Object Storage; Authentication; Secret Management; Streaming; etc.;
 3. Drivers for the following databases:
- * MySQL
  * Oracle Database
 
 ### OCI DevOps Services Support
