@@ -1,11 +1,8 @@
-# GCN Database Support
-*** **Technology Preview** ***
+# Graal Cloud Native Database Support
 
-This extension delivers JDBC drivers for supported by Oracle GCN, that are used by Apache NetBeans Language Server.
-
+This extension provides the JDBC drivers that are supported by the Oracle Graal Cloud Native project and that are used by Apache NetBeans Language Server.
 ## Features
 
-Currently the extension delivers the drivers for the following databases:
+The extension provides drivers for the following databases:
 * MySQL
 * Oracle Database
-
