@@ -4,14 +4,15 @@
 * [Extension Settings](#extension-settings)
 * [Micronaut Commands](#micronaut-commands)
 * [Create a Micronaut Project](#create-a-micronaut-project)
-* [Package and Run Micronaut Applications](#package-and-run-micronaut-applications)
+* [Package and Run Micronaut Applications](#package-and-run-micronaut-applications) 
 * [Debug Micronaut Applications](#debug-micronaut-applications)
 * [Transform  Micronaut Applications into Native Executables](#transform-micronaut-applications-into-native-executables)
 * [Build Docker Images and Deploy Micronaut Applications to a Docker Registry](#build-docker-images-and-deploy-micronaut-applications-to-a-docker-registry)
 * [Deploy, Run, and Debug Micronaut Applications in a Kubernetes Cluster](#deploy-run-and-debug-micronaut-applications-in-a-kubernetes-cluster)
+<!--
 * [Manage Databases with Database Explorer](#manage-databases-with-database-explorer)
 * [Work with Oracle Autonomous Database from VS Code](#work-with-oracle-autonomous-database-from-vs-code)
-
+-->
 [GraalVM Tools for Micronaut](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extension provides support for developing Micronaut&trade; applications with Visual Studio Code (VS Code).
 
 The [Micronaut framework](https://micronaut.io/) is a lightweight reactive framework that provides a solid foundation for building cloud native Java microservices. Thanks to [Micronaut Data](https://micronaut-projects.github.io/micronaut-data/latest/guide/), the database access toolkit, you can access the database and execute queries.
@@ -23,9 +24,11 @@ The extension provides many features to boost your Java 8+ and Micronaut product
 * Code completion and navigation for Micronaut configuration (YAML) files and Java (available with [Apache NetBeans Language Server extension](https://marketplace.visualstudio.com/items?itemName=asf.apache-netbeans-java))
 * Ability to build Micronaut projects ahead-of-time into native executables with GraalVM Native Image
 * Continuous mode of operation: an application will reload automatically when source code is changed
-* Building Docker images
+* Building container images
 * Kubernetes support
+<!--
 * Databases integration
+-->
 * Oracle Cloud explorer
 
 While the extension delivers all these features on its own, it works best when used together with the [GraalVM Tools for Java extension](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graalvm). You get all the GraalVM-specific features like the innovative Graal compiler for better performance, ahead-of-time compilation with GraalVM Native Image, built-in VisualVM, and many more.
@@ -37,8 +40,6 @@ To install the GraalVM Tools for Micronaut extension in VS Code, do the followin
 2. Search for "Micronaut" in the search field.
 3. Once found, click **Install**. to install the GraalVM Tools for Micronaut extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut).
 4. Reload when required.
-
-The Micronaut extension requires the [GraalVM Tools for Java](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graalvm) extension for more features support such as GraalVM Java runtime and building native executables. For the Java language support, it depends on the [Apache NetBeans Language Server](https://marketplace.visualstudio.com/items?itemName=ASF.apache-netbeans-java). Both extensions will be installed in the background. 
 
 When installed, the extension checks whether there is a registered GraalVM installation, and eventually requests to download it or point to a local installation (see [GraalVM Installation and Setup in VS Code](../graalvm/README.md#graalvm-installation-wizard)).
 
@@ -188,6 +189,7 @@ GraalVM Tools for Micronaut provides all of the necessary tooling for a complete
 
   ![Quick commands for Kubernetes deployments](images/create_k8s_deployment.png)
 
+<!--
 ## Manage Databases with Database Explorer
 
 The GraalVM Tools for Micronaut extension provides out of the box integration with databases.
@@ -203,7 +205,7 @@ The GraalVM Tools for Micronaut extension provides the **CLOUD** explorer to cre
 The extension integrates with [Oracle Developer Tools for VS Code (SQL and PLSQL)](https://marketplace.visualstudio.com/items?itemName=Oracle.oracledevtools) which enables you to add JDBC connection to Oracle Autonomous Database.
 
   ![Oracle Autonomous Database support](images/oracle_db_support.png)
-
+-->
 ### Feedback
 
 * [Request a feature](https://github.com/graalvm/vscode-extensions/issues/new?labels=enhancement)
