@@ -12,7 +12,7 @@
 * [Manage Databases with Database Explorer](#manage-databases-with-database-explorer)
 * [Work with Oracle Autonomous Database from VS Code](#work-with-oracle-autonomous-database-from-vs-code)
 
-[GraalVM Tools for Micronaut](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extension provides support for developing Micronaut applications with Visual Studio Code (VS Code).
+[GraalVM Tools for Micronaut](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extension provides support for developing Micronaut&trade; applications with Visual Studio Code (VS Code).
 
 The [Micronaut framework](https://micronaut.io/) is a lightweight reactive framework that provides a solid foundation for building cloud native Java microservices. Thanks to [Micronaut Data](https://micronaut-projects.github.io/micronaut-data/latest/guide/), the database access toolkit, you can access the database and execute queries.
 
