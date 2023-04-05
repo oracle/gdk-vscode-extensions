@@ -9,7 +9,7 @@
     "author": {
         "name": "Oracle Labs"
     },
-    "icon": "graalvm-cloud-logo.png",
+    "icon": "GraalVM_icon_rgb.png",
     "homepage": "https://github.com/graalvm/vscode-extensions/blob/master/graal-cloud-native-pack/README.md",
     "repository": {
         "type": "git",

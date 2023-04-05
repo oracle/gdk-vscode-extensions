@@ -9,7 +9,7 @@
 	"author": {
 		"name": "Oracle Labs"
 	},
-	"icon": "images/graalvm-cloud-logo.png",
+	"icon": "images/oracle-logo.png",
 	"homepage": "https://github.com/graalvm/vscode-extensions/blob/master/oci-devops/README.md",
 	"repository": {
 		"type": "git",
