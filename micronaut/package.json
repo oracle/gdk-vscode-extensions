@@ -2,7 +2,7 @@
 	"name": "micronaut",
 	"displayName": "GraalVM Tools for Micronaut",
 	"description": "Micronaut support for VS Code",
-	"version": "0.5.16",
+	"version": "0.5.18",
 	"preview": true,
 	"license": "SEE LICENSE IN LICENSE.txt",
 	"publisher": "oracle-labs-graalvm",
@@ -13,11 +13,6 @@
 	"galleryBanner": {
 		"color": "#000000",
 		"theme": "dark"
-	},
-	"homepage": "https://github.com/graalvm/vscode-extensions/blob/master/micronaut/README.md",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/graalvm/vscode-extensions.git"
 	},
 	"bugs": {
 		"url": "https://github.com/graalvm/vscode-extensions/issues"
@@ -186,7 +181,7 @@
 	"config": {
 		"winBuildPath": "..\\node_modules\\.bin\\vsce",
 		"unixBuildPath": "../node_modules/.bin/vsce",
-		"buildCmd": "package --allow-star-activation --no-update-package-json"
+		"buildCmd": "package --allow-star-activation --allow-missing-repository --no-update-package-json"
 	},
 	"scripts": {
 		"vscode:prepublish": "webpack --mode production",
