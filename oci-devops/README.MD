@@ -4,6 +4,17 @@ Enables easy integration with the [Oracle Cloud Infrastructure (OCI) DevOps](htt
 
 The extension creates a project in the DevOps service, sets up a source code repository, as well as build and deployment pipelines, enabling you to easily transition from local to cloud-based development and deployment.
 
+## Supported Projects and Platforms
+Supported project types:
+- Maven & Gradle for following technologies: 
+  - Micronaut
+  - Graal Cloud Native (OCI support required)
+  - SpringBoot 3.0.5 (GraalVM Native Support dependency must be enabled in project)
+
+Supported GraalVM versions:
+- GraalVM 22.x
+- GraalVM 23.0, Java 17
+
 ## Quickstart
 
 If you are working with a Graal Cloud Native (or Spring Boot) project, the extension will set up build pipelines to build containers for your Java-based application and native executable. The extension will also create deployment pipelines that will deploy these containers to an OKE cluster.
