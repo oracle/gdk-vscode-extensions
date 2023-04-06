@@ -3,18 +3,13 @@
   "displayName": "GCN Database Support",
   "description": "JDBC and database drivers for clouds supported by GCN",
   "license": "SEE LICENSE IN LICENSE.txt",
-  "version": "0.0.1",
+  "version": "0.9.0",
   "preview": true,
   "publisher": "oracle-labs-graalvm",
   "author": {
     "name": "Oracle Labs"
   },
   "icon": "images/GraalVM_icon_rgb.png",
-  "homepage": "https://github.com/graalvm/vscode-extensions/blob/master/gcn-database-drivers/README.md",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/graalvm/vscode-extensions.git"
-  },
   "bugs": {
     "url": "https://github.com/graalvm/vscode-extensions/issues"
   },
@@ -32,7 +27,7 @@
   "config": {
 		"winBuildPath": "..\\node_modules\\.bin\\vsce",
 		"unixBuildPath": "../node_modules/.bin/vsce",
-		"buildCmd": "package --allow-star-activation --no-update-package-json"
+		"buildCmd": "package --allow-star-activation --allow-missing-repository --no-update-package-json"
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
