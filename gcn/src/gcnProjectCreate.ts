@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
@@ -456,8 +456,23 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 		return (input: dialogs.MultiStepInput) => pickJavaVersion(input, state);
 	}
 
-	async function pickJavaVersion(input: dialogs.MultiStepInput, state: Partial<State>) {
-        const items: {label: string; value: string; description?: string}[] = javaVMs.map(item => ({label: item.name, value: item.path, description: item.active ? '(active)' : undefined}));
+    async function pickJavaVersion(input: dialogs.MultiStepInput, state: Partial<State>) {
+        const supportedVersions = state.micronautVersion ? getJavaVersions() : [];
+
+
+        function isJavaAccepted(java : string) : boolean {
+            const version: string[] | null = java.match(/Java (\d+)/);
+            const resolvedVersion = version && version.length > 1 ? version[1] : undefined;
+            if (!resolvedVersion) {
+                // don't know, let the user choose
+                return true;
+            }
+            return !!normalizeJavaVersion(resolvedVersion, supportedVersions, '');
+        }
+
+        const items: {label: string; value: string; description?: string}[] = javaVMs.
+            filter(item => isJavaAccepted(item.name)).
+            map(item => ({label: item.name, value: item.path, description: item.active ? '(active)' : undefined}));
         
         items.push({label: 'Other Java', value: '', description: '(manual configuration)'});
 		const selected: any = await input.showQuickPick({
@@ -471,8 +486,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
         });
         const version: string[] | null = selected ? selected.label.match(/Java (\d+)/) : null;
         const resolvedVersion = version && version.length > 1 ? version[1] : undefined;
-        const supportedVersions = state.micronautVersion ? getJavaVersions() : [];
-        const javaVersion = normalizeJavaVersion(resolvedVersion, supportedVersions);
+        const javaVersion = resolvedVersion || getDefaultJavaVersion();
         state.javaVersion = {
             label: selected.label,
             value: selected.value,

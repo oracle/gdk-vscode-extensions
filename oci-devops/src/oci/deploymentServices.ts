@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
@@ -117,7 +117,7 @@ export function findByNode(node: nodes.BaseNode): Service | undefined {
 
 async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vscode.WorkspaceFolder): Promise<DeploymentPipeline[] | undefined> {
     const okeCluster = await okeUtils.selectOkeCluster(oci.getProvider(), oci.getCompartment(), oci.getProvider().getRegion().regionId);
-    if (!okeCluster?.id) {
+    if (!okeCluster?.id || !okeCluster?.vcnID) {
         return undefined;
     }
     async function getProjectAndRepositoryName(oci: ociContext.Context): Promise<string[] | undefined> {
@@ -223,8 +223,8 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         return undefined;
     }
 
-    const subnet = await vcnUtils.selectNetwork(oci.getProvider(), oci.getCompartment(), okeCluster.vcnID);
-    if (!subnet?.subnetID) {
+    const subnet = await vcnUtils.selectNetwork(oci.getProvider(), okeCluster.vcnID);
+    if (!subnet?.id) {
         return undefined;
     }
 
@@ -299,7 +299,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
     async function createDeploySetupCommandSpecArtifact(oci: ociContext.Context, repositoryName: string, repoEndpoint: string, cluster: string, secretName: string): Promise<string | null | undefined> {
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: 'Creating deploy setup command specifacation artifact...',
+            title: 'Creating deploy setup command specification artifact...',
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
@@ -323,7 +323,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     resolve(artifact);
                 } catch (err) {
                     resolve(null);
-                    dialogs.showErrorMessage('Failed to create setup command specifacation artifact', err);
+                    dialogs.showErrorMessage('Failed to create setup command specification artifact', err);
                 }
             });
         });
@@ -387,7 +387,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         deployConfigArtifact = artifact;
     }
 
-    async function createDeployPipeline(oci: ociContext.Context, projectName: string, repositoryName: string, okeCompartmentId: string, okeClusterEnvironment: string, setupCommandSpecArtifact: string, deployConfigArtifact: string, subnet: {vcnID: string; subnetID: string; compartmentID: string}, buildPipeline: devops.models.BuildPipelineSummary): Promise<{ocid: string; displayName: string}[] | undefined> {
+    async function createDeployPipeline(oci: ociContext.Context, projectName: string, repositoryName: string, okeCompartmentId: string, okeClusterEnvironment: string, setupCommandSpecArtifact: string, deployConfigArtifact: string, subnet: {id: string; compartmentID: string}, buildPipeline: devops.models.BuildPipelineSummary): Promise<{ocid: string; displayName: string}[] | undefined> {
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: `Creating deployment to OKE pipeline...`,
@@ -429,7 +429,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                 }
                 let setupSecretStage;
                 try {
-                    setupSecretStage = await ociUtils.createSetupKubernetesDockerSecretStage(oci.getProvider(), deployPipeline.id, setupCommandSpecArtifact, subnet.subnetID);
+                    setupSecretStage = await ociUtils.createSetupKubernetesDockerSecretStage(oci.getProvider(), deployPipeline.id, setupCommandSpecArtifact, subnet.id);
                 } catch (err) {
                     resolve(undefined);
                     dialogs.showErrorMessage(`Failed to create deployment to OKE stage for ${repositoryName}`, err);

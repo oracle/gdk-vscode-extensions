@@ -3,76 +3,93 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src {{cspSource}} 'self' 'unsafe-inline'; img-src {{cspSource}}; script-src {{cspSource}}">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src {{cspSource}} 'self' 'unsafe-inline'; img-src {{cspSource}}; script-src {{cspSource}}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{cssUri}}">
     <title>OCI DevOps Tools</title>
 </head>
 
 <body>
-	<div class="welcomePageContainer">
-		<div class="welcomePage" role="document">
+    <div class="welcomePageContainer">
+        <div class="welcomePage" role="document">
 
-			<div class="title">
-				<h1>OCI DevOps Tools</h1>
-			</div>
+            <div class="title">
+                <h1>OCI DevOps Tools</h1>
+            </div>
 
-			<div class="subtitle">
-				<h2>Technology Preview For Internal Testing</h2>
-			</div>
+            <div class="subtitle">
+                <h2>Build and Deploy Your Projects using OCI (Technology Preview)</h2>
+            </div>
 
-			<div class="content">
-				<div class="links">
-					<div class="section">
-						<h2 class="caption">Project</h2>
-						<ul>
-							<li><a href="command:gcn.createGcnProject" title="Create a new Graal Cloud Native project">Create new GCN project...</a></li>
-							<li><a href="command:vscode.openFolder" title="Open existing Graal Cloud Native project">Open existing GCN project...</a></li>
-						</ul>
-					</div>
-					<div class="section">
-						<h2 class="caption">Help</h2>
-						<ul>
-							<li><a href="vscode:extension/oracle-labs-graalvm.oci-devops" title="Open extension documentation">Extension documentation</a></li>
-							<li><a href="https://github.com/graalvm/vscode-extensions/issues/new?labels=enhancement" title="File a new feature request">Request a feature</a></li>
-							<li><a href="https://github.com/graalvm/vscode-extensions/issues/new?labels=bug" title="File a new bug report">File a bug</a></li>
-							<li><a href="https://github.com/oracle/graal/discussions" title="Provide us with a feedback">Send feedback</a></li>
-						</ul>
-					</div>
-				</div>
+            <div class="content">
+                <div class="links">
+                    <div class="section">
+                        <h2 class="caption">Project</h2>
+                        <ul>
+                            <li><a href="command:vscode.openFolder" title="Open existing Java project">Open an existing
+                                    Java project</a></li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <h2 class="caption">Help</h2>
+                        <ul>
+                            <li><a href="vscode:extension/oracle-labs-graalvm.oci-devops"
+                                    title="Open extension documentation">Extension documentation</a></li>
+                            <li><a href="https://github.com/graalvm/vscode-extensions/issues/new?labels=enhancement"
+                                    title="File a new feature request">Request a feature</a></li>
+                            <li><a href="https://github.com/graalvm/vscode-extensions/issues/new?labels=bug"
+                                    title="File a new bug report">File a bug</a></li>
+                            <li><a href="https://github.com/oracle/graal/discussions"
+                                    title="Provide us with a feedback">Send feedback</a></li>
+                        </ul>
+                    </div>
+                </div>
 
-				<div class="docs">
-					<div class="section">
-						<h2 class="caption">Prerequisites</h2>
-						<ul>
-							<li>• Git - required for core functionality</li>
-							<li>• Kubectl - used to access applications deployed to OKE</li>
-							<li>• Docker - used to pull the built docker images locally</li>
-						</ul>
-					</div>
-					<div class="section">
-						<h2 class="caption">Setup</h2>
-						<ol>
-							<li>1. <a href="https://www.oracle.com/cloud/free/" title="Create Oracle Cloud account">Create Oracle Cloud account</a> (free tier supported)</li>
-							<li>2. <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm" title="Configure cloud access">Create .oci/config</a> cloud access configuration</li>
-							<li>3. <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/cliconcepts.htm" title="OCI CLI (Command Line Interface)">Install OCI CLI</a> needed for the <a href="https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingclusterusingoke_topic-Using_the_Console_to_create_a_Quick_Cluster_with_Default_Settings.htm#create-quick-cluster">OKE</a> local access</li>
-							<li><b>!!</b> If behind a proxy, configure all the tooling accordingly</li>
-						</ol>
-					</div>
-				</div>
+                <div class="docs">
+                    <div class="section">
+                        <h2 class="caption">Prerequisites</h2>
+                        <ul>
+                            <li>• Git - required for core functionality</li>
+                            <li>• Java (JDK 17+)</li>
+                            <li>• Kubectl - used to access applications deployed to OKE</li>
+                            <li>• A Docker-API compatible container runtime such as Rancher Desktop or Docker</li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <h2 class="caption">Setup</h2>
+                        <ol>
+                            <li>1. <a href="https://www.oracle.com/cloud/free/"
+                                    title="Create Oracle Cloud account">Create Oracle Cloud account</a> (free tier
+                                supported)</li>
+                            <li>2. <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm"
+                                    title="Configure cloud access">Create <em>.oci/config</em></a> cloud access configuration file
+                            </li>
+                            <li>3. <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/cliconcepts.htm"
+                                    title="OCI CLI (Command Line Interface)">Install OCI CLI</a> needed for the <a
+                                    href="https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingclusterusingoke_topic-Using_the_Console_to_create_a_Quick_Cluster_with_Default_Settings.htm#create-quick-cluster">OKE</a>
+                                local access</li>
+                            <li>4. <a
+                                    href="https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingclusterusingoke.htm"
+                                    title="OCI CLI (Command Line Interface)">Create and setup access to an OKE
+                                    cluster</a>. OKE is Oracle's managed Kubernetes service.</li>
+                            <!--li><b>!!</b> If behind a proxy, configure all the tooling accordingly</li-->
+                        </ol>
+                    </div>
+                </div>
 
-			</div>
+            </div>
 
-			<div class="footer">
-				<p class="showOnStartup">
-					<input type="checkbox" id="showToolsPage" class="checkbox" {{showToolsPage}}>
-					<label for="showToolsPage" class="checkboxLabel">Show this page when using OCI DevOps Tools</label>
-				</p>
-			</div>
+            <div class="footer">
+                <p class="showOnStartup">
+                    <input type="checkbox" id="showToolsPage" class="checkbox" {{showToolsPage}}>
+                    <label for="showToolsPage" class="checkboxLabel">Show this page when using OCI DevOps Tools</label>
+                </p>
+            </div>
 
-		</div>
-	</div>
+        </div>
+    </div>
 
-	<script src="{{jsUri}}"></script>
+    <script src="{{jsUri}}"></script>
 
 </body>

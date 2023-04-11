@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
@@ -206,12 +206,17 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
         }
         if (cluster) {
             deployData.okeCluster = { id: cluster.id, compartmentId: cluster.compartmentId };
-            const subnet  = await vcnUtils.selectNetwork(provider, deployData.compartment.ocid, cluster?.vcnID, true, deployData.compartment.name);
+            if (!cluster.vcnID) {
+                dialogs.showErrorMessage('Cannot resolve cluster network configuration.');
+                dump();
+                return false;
+            }
+            const subnet = await vcnUtils.selectNetwork(provider, cluster.vcnID);
             if (!subnet) {
                 dump();
                 return false;
             }
-            deployData.subnet = { id: subnet.subnetID, compartmentId: subnet.compartmentID };
+            deployData.subnet = { id: subnet.id, compartmentId: subnet.compartmentID };
         }
     }
 
@@ -275,6 +280,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                 projectFolders.push(projectFolder);
                 totalSteps += 3; // code repository, cloud services config, populating code repository
                 if (projectFolder.projectType === 'GCN') {
+                    if (!projectFolder.subprojects.find(sub => sub.name === 'oci')) {
+                        resolve(`GCN project not configured for OCI: ${folder.name}. Creating OCI DevOps Project is not supported.`);
+                        return;
+                    }
                     totalSteps += 4; // Jar build spec and pipeline, NI build spec and pipeline
                     if (!bypassArtifacts) {
                         totalSteps += 2; // Jar artifact, NI artifact

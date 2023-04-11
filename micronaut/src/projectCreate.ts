@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
@@ -200,7 +200,22 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 	}
 
 	async function pickJavaVersion(input: MultiStepInput, state: Partial<State>) {
-        const items: {label: string; value: string; description?: string}[] = javaVMs.map(item => ({label: item.name, value: item.path, description: item.active ? '(active)' : undefined}));
+        const javaVersions = state.micronautVersion ? await getJavaVersions(state.micronautVersion) : { default: '11', versions: [] };
+        const supportedVersions = javaVersions.versions;
+        
+        function isJavaAccepted(java : string) : boolean {
+            const resolvedVersion = parseJavaVersion(java);
+            if (!resolvedVersion) {
+                // don't know, let the user choose
+                return true;
+            }
+            return !!normalizeJavaVersion(resolvedVersion, supportedVersions, '');
+        }
+
+        const items: {label: string; value: string; description?: string}[] = javaVMs.
+            filter(item => isJavaAccepted(item.name)).
+            map(item => ({label: item.name, value: item.path, description: item.active ? '(active)' : undefined}));
+        
         items.push({label: 'Other Java', value: '', description: '(manual configuration)'});
 		const selected: any = await input.showQuickPick({
 			title,
@@ -211,10 +226,8 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 			activeItems: state.javaVersion,
 			shouldResume: () => Promise.resolve(false)
         });
-        const version: string[] | null = selected ? selected.label.match(/Java (\d+)/) : null;
-        const resolvedVersion = version && version.length > 1 ? version[1] : undefined;
-        const supportedVersions = state.micronautVersion ? await getJavaVersions(state.micronautVersion) : [];
-        const javaVersion = normalizeJavaVersion(resolvedVersion, supportedVersions);
+        const resolvedVersion = selected ? parseJavaVersion(selected.label) : undefined;
+        const javaVersion = normalizeJavaVersion(resolvedVersion, supportedVersions, javaVersions.default);
         state.javaVersion = {
             label: selected.label,
             value: selected.value,
@@ -395,6 +408,11 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
     return undefined;
 }
 
+function parseJavaVersion(j : string) : string | undefined {
+    const re = j.match(/(?:Java |JDK_)(\d+)/);
+    return re && re.length > 1 ? re[1] : undefined;
+}
+
 async function getMicronautVersions(): Promise<{label: string; serviceUrl: string}[]> {
     const micronautLauchURL: string = getMicronautLaunchURL();
     return simpleProgress("Obtaining Micronaut versions...", () => Promise.all([
@@ -426,18 +444,21 @@ async function getApplicationTypes(micronautVersion: {label: string; serviceUrl:
     return getMNApplicationTypes(micronautVersion.serviceUrl);
 }
 
-async function getJavaVersions(micronautVersion: {label: string; serviceUrl: string}): Promise<string[]> {
+async function getJavaVersions(micronautVersion: {label: string; serviceUrl: string}): Promise<{ default: string, versions: string[]}> {
     if (micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL)) {
         return get(micronautVersion.serviceUrl + SELECT_OPTIONS).then(data => {
-            return JSON.parse(data).jdkVersion.options.map((version: any) => (version.label));
+            let parsed = JSON.parse(data).jdkVersion;
+            let parsedVersions = parsed.options.map((version: any) => (version.label));
+
+            return { default: parseJavaVersion(parsed.defaultOption.label) || '11' , versions: parsedVersions };
         });
     }
-    return []; // Listing supported Java versions not available using CLI
+    return { default: '11', versions: [] }; // Listing supported Java versions not available using CLI
 }
 
-function normalizeJavaVersion(version: string | undefined, supportedVersions: string[]): string {
+function normalizeJavaVersion(version: string | undefined, supportedVersions: string[], defaultVersion : string = '8'): string {
     if (!version) {
-        return '8';
+        return defaultVersion;
     }
     if (!supportedVersions || supportedVersions.length === 0) {
         return version;
@@ -449,7 +470,7 @@ function normalizeJavaVersion(version: string | undefined, supportedVersions: st
             return supportedVersion;
         }
     }
-    return '8';
+    return defaultVersion;
 }
 
 function getLanguages(): {label: string; value: string}[] {

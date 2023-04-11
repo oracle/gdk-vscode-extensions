@@ -1,46 +1,32 @@
 # Graal Cloud Native Tools
-*** **Technology Preview** ***
-<!-- vscode-markdown-toc -->
 
-* [GCN Projects Generation Wizard](#gcn-projects-generation-wizard)
-* [Provide Feedback or Seek Help](#provide-feedback-or-seek-help)
-    * [Privacy Policy](#privacy-policy)
+[Graal Cloud Native](https://graal.cloud/) is a cloud-agnostic development framework, built on top of
+[Micronaut](https://micronaut.io/). Using Graal Cloud Native you can write once and then run the same code on multiple cloud platforms.
 
-<!-- vscode-markdown-toc-config
-	numbering=false
-	autoSave=true
-	/vscode-markdown-toc-config -->
-<!-- /vscode-markdown-toc -->
+This extension provides a wizard to easily create a new Graal Cloud Native project.
 
-
-The GCN extension comes with a project generation wizard to build and configure Micronaut and GCN applications.
-
-### <a name='prerequisites:'></a>Prerequisites:
-
-## <a name='gcn-projects-generation-wizard'></a>GCN Projects Generation Wizard 
+## <a name='gcn-projects-generation-wizard'></a>Create New Project Wizard
 ​
-The extension provides the GCN project creation wizard. The wizard supports generating different types of Micronaut applications including serverless applications and gateway functions.
+The wizard can generate different types of Graal Cloud Native applications and serverless applications. You can select the Graal Cloud Native features you want your project to include.
 
-1. Go to **View**, **Command Palette**, search for "gcn", and invoke the **GCN: Create GCN Project** quick action.
+1. Go to **View**, **Command Palette**, search for "Graal Cloud Native", and invoke the **Graal Cloud Native: Create New Project** command.
 
-    ![gcn-vscode-actions.png](images/gcn-vscode-actions.png)
+    ![Create New Proct Action](images/gcn-vscode-actions.png)
 
-2. Follow the command prompts to generate a new Maven or Gradle project. For example, create a simple Java Server application:
-    - Pick Micronaut version
-    - Pick Application type
-    - Pick Project Java
-    - Provide project name
-    - Provide base package
-    - Pick project languae
-    - Pick project services
-    - Pick build tool
-    - Pick test framework
-    - Pick cloud platform
-    - Choose categories to include features from
-    - Pick feature(s) for the selected category (category you selected at the previous step)
+2. Follow the command prompts to generate a new Maven or Gradle project. For example, to create a simple Java-based Graal Cloud Native application:
+    - Select the Micronaut version
+    - Select an Application type
+    - Select an installed JDK
+    - Provide a name for the project
+    - Provide a base package
+    - Pick the Graal Cloud Native services to be included in the project
+    - Select a build tool: Maven or Gradle
+    - Select a unit test framework: JUnit, Spock, Kotest
+    - Select cloud providers to support: OCI and/or AWS; Note: you need to select OCI if you want OCI DevOps support
 
-3. Finally, you are asked to select the destination directory on your local disk and whether to open the created project in a new window or add it to the current workspace. The project is created and open in the VS Code window.
+3. Finally, you are asked where to save your new project. You then choose to open it in a new VS Code window or add it to a Workspace in the current VS Code window.
 
+You now have a new Graal Cloud Native application, complete with example code showing you how to start using [Graal Cloud Native](https://graal.cloud/).
 
 ## <a name='provide-feedback-or-seek-help'></a>Provide Feedback or Seek Help
 
