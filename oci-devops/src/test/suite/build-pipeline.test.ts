@@ -40,8 +40,8 @@ suite('Build pipeline Test Suite', function() {
 	});
 
     const DEPLOY_COMPARTMENT_NAME : string = "tests";
-    const DEPLOY_PROJECT_NAME : string = "base-oci-template-testpipeline";
-    const COMPARTMENT_OCID : string = "ocid1.compartment.oc1..aaaaaaaa7thgaondgokuwyujlq4tosnpfaohdivlbbr64izsx5jxfxrezxca";
+    const DEPLOY_PROJECT_NAME : string = (process.env["TEST_DEPLOY_PROJECT_NAME"] ? process.env["TEST_DEPLOY_PROJECT_NAME"] : "base-oci-template-testpipeline");
+    const COMPARTMENT_OCID : string =  (process.env["TEST_DEPLOY_COMPARTMENT_OCID"] ? process.env["TEST_DEPLOY_COMPARTMENT_OCID"] : "ocid1.compartment.oc1..aaaaaaaa7thgaondgokuwyujlq4tosnpfaohdivlbbr64izsx5jxfxrezxca" );
     const ACTION_NAME = 'Deploy to OCI';
 
     let provider : ConfigFileAuthenticationDetailsProvider | undefined;
