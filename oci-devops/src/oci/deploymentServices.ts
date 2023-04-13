@@ -821,9 +821,10 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                     }
                     
                     run(resolve, deploymentName, kubectl);
+                    resolve(true);
                 } catch (err) {
                     dialogs.showErrorMessage('Failed to open deployment in browser', err);
-                    resolve(false)
+                    resolve(false);
                 }
             });
         });
@@ -853,17 +854,19 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
         const run = async (resolve: Function, deploymentName: string, kubectl: k8s.KubectlV1) => {
             const localPort = this.random(3000, 50000);
             const debugPort = this.random(3000, 50000);
-            const pods = await kubectl.invokeCommand(`get pods -l app=${deploymentName} -o jsonpath='{range .items[*]}{@.metadata.name}{\"\\t\"}{@.type}{\"\\n\"}{end}'`).then((values) => {
+            const pods = await kubectl.invokeCommand(`get pods -l app=${deploymentName} -o jsonpath=\"{range .items[*]}{@.metadata.name}{\'\\t\'}{@.type}{\'\\n\'}{end}\"`).then((values) => {
                 if (values) {
                     let pods: vscode.QuickPickItem[] = [];
-                    values?.stdout.split("\n").forEach(line => {if (line) pods.push({label: line})});
+                    values?.stdout.split("\n").forEach(line => {
+                        if (line) pods.push({label: line});
+                    });
                     return pods;
                 } 
                 return Promise.reject();
             }).catch((err) => {
                 vscode.window.showErrorMessage(err.stderr);
             });
-            if (!pods) {
+            if (!pods?.length) {
                 vscode.window.showErrorMessage("Pods not found");
                 return;
             }
@@ -876,9 +879,12 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                     ignoreFocusOut: true,
                     placeHolder: "Pick a pod to debug"
                 });
+                if (!selected) {
+                    return;
+                }
                 pod = selected.label;
             } else {
-                pod = pods[0].label
+                pod = pods[0].label;
             }
 
             
