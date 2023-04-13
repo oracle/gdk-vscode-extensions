@@ -59,8 +59,8 @@ suite('Deployment Test Suite', function() {
         const profiles = listProfiles(defaultConfig);
         assert.ok(profiles.length>0, "No configuration profiles");
 
-        const selectProfile : string = getProfile(profiles);
-        assert.strictEqual(selectProfile!=="", "Default profile cannot be determined. Make sure to have [DEFAULT] or [TESTS] profile in oci config.");
+        selectProfile = getProfile(profiles);
+        assert.ok(selectProfile!=="", "Default profile cannot be determined. Make sure to have [DEFAULT] or [TESTS] profile in oci config.");
     });
 
     // get provider data
