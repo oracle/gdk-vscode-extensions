@@ -13,7 +13,7 @@
 
 The [Micronaut framework](https://micronaut.io/) is a lightweight reactive framework that provides a solid foundation for building cloud native Java microservices. Thanks to [Micronaut Data](https://micronaut-projects.github.io/micronaut-data/latest/guide/), the database access toolkit, you can access the database and execute queries.
 
-The extension provides many features to boost your Java 8+ and Micronaut productivity in the VS Code environment:
+The extension provides many features to boost your Java and Micronaut productivity in the VS Code environment:
 
 * Micronaut project creation wizard
 * Editing and debugging capabilities for Micronaut projects
@@ -115,7 +115,7 @@ To debug a Micronaut application, first create a launch configuration:
 
 1. Open the file to be debugged or run.
 2. Switch to the Debug view by clicking the bug icon in the left-hand side panel. The newly opened window will suggest you create a _launch.json_ file.
-3. Select the **Java 8+** environment.
+3. Select the **Java+** environment.
 4. Start debugging. Press `F5` or navigate to **Run**, then **Start Debugging**.
 
 ## Transform  Micronaut Applications into Native Executables
