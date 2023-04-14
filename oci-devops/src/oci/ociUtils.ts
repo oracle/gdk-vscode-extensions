@@ -977,7 +977,7 @@ export async function deleteKnowledgeBasesByDeployIDTag(authenticationDetailsPro
     }
 }
 
-export async function listVulnerabilityAudits(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, knowledgeBaseID: string, limit: number | undefined = 10): Promise<adm.models.VulnerabilityAuditSummary[]> {
+export async function listVulnerabilityAudits(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, knowledgeBaseID: string, limit?: number): Promise<adm.models.VulnerabilityAuditSummary[]> {
     const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const request: adm.requests.ListVulnerabilityAuditsRequest = {
         compartmentId: compartmentID,
