@@ -76,6 +76,12 @@ export function getHEAD(target: vscode.Uri, silent?: boolean): { name?: string; 
         }
         return undefined;
     }
+    if (gitApi.state === 'uninitialized') {
+        if (!silent) {
+            dialogs.showErrorMessage('Git support has not been initialized yet.');
+        }
+        return undefined;
+    }
     const repository = gitApi.getRepository(target);
     if (!repository) {
         if (!silent) {
@@ -93,6 +99,10 @@ export function locallyModified(target: vscode.Uri): boolean | undefined {
         dialogs.showErrorMessage('Cannot access Git support.');
         return undefined;
     }
+    if (gitApi.state === 'uninitialized') {
+        dialogs.showErrorMessage('Git support has not been initialized yet.');
+        return undefined;
+    }
     const repository = gitApi.getRepository(target);
     if (!repository) {
         dialogs.showErrorMessage(`Cannot find Git repository for ${target}`);
@@ -106,6 +116,10 @@ export async function pushLocalBranch(target: vscode.Uri): Promise<boolean | und
     const gitApi = getGitAPI();
     if (!gitApi) {
         dialogs.showErrorMessage('Cannot access Git support.');
+        return undefined;
+    }
+    if (gitApi.state === 'uninitialized') {
+        dialogs.showErrorMessage('Git support has not been initialized yet.');
         return undefined;
     }
     const repository = gitApi.getRepository(target);
