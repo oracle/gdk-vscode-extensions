@@ -968,6 +968,10 @@ export async function deleteKnowledgeBasesByDeployIDTag(authenticationDetailsPro
         if (knowledgeBase.freeformTags && knowledgeBase.freeformTags['devops_tooling_deployID'] === tag
             && knowledgeBase.lifecycleState !== adm.models.KnowledgeBase.LifecycleState.Deleting
             && knowledgeBase.lifecycleState !== adm.models.KnowledgeBase.LifecycleState.Deleted) {
+                const audits = await listVulnerabilityAudits(authenticationDetailsProvider, compartmentID, knowledgeBase.id);
+                for (const audit of audits) {
+                    await deleteVulnerabilityAudit(authenticationDetailsProvider, audit.id, true);
+                }
                 await deleteKnowledgeBase(authenticationDetailsProvider, knowledgeBase.id, true);
         }
     }
@@ -999,6 +1003,14 @@ export async function getVulnerabilityAudit(authenticationDetailsProvider: commo
         vulnerabilityAuditId: vulnerabilityAuditID
     };
     return client.getVulnerabilityAudit(request).then(response => response.vulnerabilityAudit);
+}
+
+export async function deleteVulnerabilityAudit(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, vulnerabilityAuditID: string, wait: boolean = false) {
+    const client = new adm.ApplicationDependencyManagementClient({ authenticationDetailsProvider: authenticationDetailsProvider });
+    let response = client.deleteVulnerabilityAudit({ vulnerabilityAuditId : vulnerabilityAuditID });
+    if (wait) {
+        await response;
+    }
 }
 
 export async function listNotificationTopics(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string): Promise<ons.models.NotificationTopicSummary[]> {
