@@ -835,6 +835,10 @@ export async function undeploy(folders: devopsServices.FolderData[], deployData:
                 try {
                     progress.report({ message: `Deleting ADM knowledge base for ${projectName}...` });
                     logUtils.logInfo(`[undeploy] Deleting ADM knowledge base for ${deployData.compartment.name}/${projectName}`);
+                    const audits = await ociUtils.listVulnerabilityAudits(provider, deployData.compartment.ocid, knowledgeBase);
+                    for (const audit of audits) {
+                        await ociUtils.deleteVulnerabilityAudit(provider, audit.id, true);
+                    }
                     await ociUtils.deleteKnowledgeBase(provider, knowledgeBase, true);
                 } catch (err) {
                     toCheck = true;
@@ -1048,17 +1052,6 @@ export async function undeployFolder(folder: devopsServices.FolderData) {
         title: `Deleting ${folder.folder.name} from OCI DevOps project`,
         cancellable: false
     }, async (_progress, _token) => {
-        _progress.report({ message: `Deleting code repository: ${repositoryName}`});
-        logUtils.logInfo(`[undeploy] Deleting code repository ${repositoryName} in ${projectLogname}`);
-        await ociUtils.deleteCodeRepository(authProvider, repositoryId);
-        
-        const gitPath = path.join(folderPath, '.git');
-        if (fs.existsSync(gitPath)) {
-            _progress.report({ message: `Deleting local GIT repository at ${gitPath}`});
-            logUtils.logInfo(`[undeploy] Deleting local GIT repository at ${gitPath}`);
-            fs.rmdirSync(gitPath, { recursive : true});
-        }
-
         _progress.report({message : 'Listing Build Pipelines'});
         logUtils.logInfo(`[undeploy] Listing all build pipelines in ${projectLogname}`);
 
@@ -1271,6 +1264,17 @@ export async function undeployFolder(folder: devopsServices.FolderData) {
             }
         }
 
+        _progress.report({ message: `Deleting code repository: ${repositoryName}`});
+        logUtils.logInfo(`[undeploy] Deleting code repository ${repositoryName} in ${projectLogname}`);
+        await ociUtils.deleteCodeRepository(authProvider, repositoryId);
+
+        const gitPath = path.join(folderPath, '.git');
+        if (fs.existsSync(gitPath)) {
+            _progress.report({ message: `Deleting local GIT repository at ${gitPath}`});
+            logUtils.logInfo(`[undeploy] Deleting local GIT repository at ${gitPath}`);
+            fs.rmdirSync(gitPath, { recursive : true});
+        }
+
         if (isLast) {
             _progress.report({message : 'Listing project logs'});
             logUtils.logInfo(`[undeploy] Listing all logs in ${projectLogname}`);
@@ -1312,6 +1316,12 @@ export async function undeployFolder(folder: devopsServices.FolderData) {
             for (let kb of knowledgeBases) {
                 if ((kb.freeformTags?.['devops_tooling_usage'] === 'oci-devops-adm-audit') &&
                     (kb.freeformTags?.['devops_tooling_projectOCID'] === devopsId)) {
+                        _progress.report({ message: 'Deleting vulnerability audits'});
+                        logUtils.logInfo(`[undeploy] Deleting all vulnerability audits in ${kb.displayName}`);
+                        const audits = await ociUtils.listVulnerabilityAudits(authProvider, compartmentId, kb.id);
+                        for (const audit of audits) {
+                            await ociUtils.deleteVulnerabilityAudit(authProvider, audit.id, true);
+                        }
                         _progress.report({message : `Deleting knowledge base ${kb.displayName}`});
                         logUtils.logInfo(`[undeploy] Deleting knowledge base ${kb.displayName} in ${compartmentLogname}`);
                         await ociUtils.deleteKnowledgeBase(authProvider, kb.id, true);

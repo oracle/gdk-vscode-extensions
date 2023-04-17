@@ -633,7 +633,7 @@ class KnowledgeBaseNode extends nodes.AsyncNode implements nodes.RemovableNode, 
         const provider = this.oci.getProvider();
         const compartment = this.oci.getCompartment();
         const knowledgeBase = this.object.ocid;
-        const audits = await ociUtils.listVulnerabilityAudits(provider, compartment, knowledgeBase);
+        const audits = await ociUtils.listVulnerabilityAudits(provider, compartment, knowledgeBase, 10);
         if (audits !== undefined && audits.length > 0) {
             let idx = 0;
             for (const audit of audits) {
