@@ -56,7 +56,8 @@
 		"test-ui": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/test/runTest-ui.js",
 		"prebuild": "npm install",
 		"build": "cross-os build",
-		"lint": "eslint src --ext ts"
+		"lint": "eslint src --ext ts",
+		"open-in-browser": "vscode-test-web --extensionDevelopmentPath=. ."
 	},
 	"cross-os": {
 		"build": {
@@ -73,6 +74,7 @@
 		"@types/mocha": "^10.0.1",
 		"@types/node": "^14.16.0",
 		"@types/vscode": "^1.76.0",
+		"@vscode/test-web": "*",
 		"@typescript-eslint/eslint-plugin": "^5.54.1",
 		"@typescript-eslint/parser": "^5.54.1",
 		"@vscode/codicons": "0.0.20",
