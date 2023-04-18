@@ -19,11 +19,6 @@ require('../lib/gcn.ui.api');
   * Number of fixed steps. Update whenever steps in selectCreateOptions change
   */
  const fixedSteps = 9;
-
- /**
-  * Global option
-  */
- const LAST_PROJECT_PARENTDIR: string = 'lastCreateProjectParentDirs';
  
 /**
  * Common type for list item display. Value is the code/id, label is the user-facing label, description goes to QuickPickItem.detail.
@@ -78,6 +73,20 @@ export interface CreateOptions {
 }
 
 /**
+ * Describes the shape of objects that hold information about javaVMs
+ */
+export type JavaVMType = {
+    name: string; 
+    path: string; 
+    active: boolean;
+};
+
+/**
+ * Defines the fileHandler function type
+ */
+export type FileHandlerType = (pathName: any, bytes: any, _isBinary: any, isExecutable: any)=>void;
+
+/**
  * External variable filled by resolve()
  */
 declare var AotjsVM: any;
@@ -97,8 +106,7 @@ export async function initialize(): Promise<any> {
     });
 }
 
-export async function writeProjectContents(options: CreateOptions, 
-    fileHandler:(pathName: any, bytes: any, _isBinary: any, isExecutable: any)=>void) {
+export async function writeProjectContents(options: CreateOptions, fileHandler:FileHandlerType) {
    function j(multi?: string[]) {
     if (!multi) {
         return "";
@@ -254,7 +262,7 @@ function findSelectedItems(from: ValueAndLabel[], selected: ValueAndLabel[] | Va
     return ret;
 }
 
-export async function selectCreateOptions(javaVMs:{name: string; path: string; active: boolean}[]): Promise<CreateOptions | undefined> {    
+export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateOptions | undefined> {    
 	
     async function collectInputs(): Promise<State | undefined> {
 		const state = {} as Partial<State>;

@@ -11,11 +11,13 @@ import * as path from 'path';
 import * as jdkUtils from 'jdk-utils';
 import * as dialogs from "./dialogs";
 import { getJavaVersion } from './graalvmUtils';
+import {handleNewGCNProject} from './projectHandler';
 import {
     initialize,
     selectCreateOptions,
     writeProjectContents,
-    CreateOptions
+    CreateOptions,
+    JavaVMType
 } from './common';
 
 
@@ -24,9 +26,6 @@ import {
   */
  const LAST_PROJECT_PARENTDIR: string = 'lastCreateProjectParentDirs';
 
-const OPEN_IN_NEW_WINDOW = 'Open in new window';
-const OPEN_IN_CURRENT_WINDOW = 'Open in current window';
-const ADD_TO_CURRENT_WORKSPACE = 'Add to current workspace';
 
 export async function createProject(context: vscode.ExtensionContext): Promise<void> {
     var options: CreateOptions | undefined;
@@ -83,21 +82,7 @@ export async function createProjectBase(options : CreateOptions, targetLocation 
     await writeProjectContents(options,fileHandler(targetLocation));
 
     const uri = vscode.Uri.file(targetLocation);
-    if (vscode.workspace.workspaceFolders) {
-        const value = await vscode.window.showInformationMessage('New GCN project created', OPEN_IN_NEW_WINDOW, ADD_TO_CURRENT_WORKSPACE);
-        if (value === OPEN_IN_NEW_WINDOW) {
-            await vscode.commands.executeCommand('vscode.openFolder', uri, true);
-        } else if (value === ADD_TO_CURRENT_WORKSPACE) {
-            vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, undefined, { uri });
-        }
-    } else if (vscode.window.activeTextEditor) {
-        const value = await vscode.window.showInformationMessage('New GCN project created', OPEN_IN_NEW_WINDOW, OPEN_IN_CURRENT_WINDOW);
-        if (value) {
-            await vscode.commands.executeCommand('vscode.openFolder', uri, OPEN_IN_NEW_WINDOW === value);
-        }
-    } else {
-        await vscode.commands.executeCommand('vscode.openFolder', uri, false);
-    }
+    handleNewGCNProject(uri);
 }
 
 function fileHandler(location:string){
@@ -155,9 +140,9 @@ async function selectLocation(context: vscode.ExtensionContext, options: CreateO
     }
 }
 
-async function getJavaVMs(): Promise<{name: string; path: string; active: boolean}[]> {
+async function getJavaVMs(): Promise<JavaVMType[]> {
     const commands: string[] = await vscode.commands.getCommands();
-    const javaVMs: {name: string; path: string; active: boolean}[] = commands.includes('extension.graalvm.findGraalVMs') ? await vscode.commands.executeCommand('extension.graalvm.findGraalVMs') || [] : [];
+    const javaVMs: JavaVMType[] = commands.includes('extension.graalvm.findGraalVMs') ? await vscode.commands.executeCommand('extension.graalvm.findGraalVMs') || [] : [];
     const javaRuntimes = await jdkUtils.findRuntimes({checkJavac: true});
     if (javaRuntimes.length) {
         for (const runtime of javaRuntimes) {
