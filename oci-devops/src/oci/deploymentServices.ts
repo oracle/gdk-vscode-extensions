@@ -850,12 +850,11 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
     }
 
     debugInK8s() {
-
         const run = async (resolve: Function, deploymentName: string, kubectl: k8s.KubectlV1) => {
             const localPort = this.random(3000, 50000);
             const debugPort = this.random(3000, 50000);
             const pods = await kubectl.invokeCommand(`get pods -l app=${deploymentName} -o jsonpath=\"{range .items[*]}{@.metadata.name}{\'\\t\'}{@.type}{\'\\n\'}{end}\"`).then((values) => {
-                if (values) {
+                if (values && values.code === 0) {
                     let pods: vscode.QuickPickItem[] = [];
                     values?.stdout.split("\n").forEach(line => {
                         if (line) pods.push({label: line});
@@ -867,7 +866,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                 vscode.window.showErrorMessage(err.stderr);
             });
             if (!pods?.length) {
-                vscode.window.showErrorMessage("Pods not found");
+                vscode.window.showErrorMessage("There are no pods for this deployment.");
                 return;
             }
             
