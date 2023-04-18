@@ -26,6 +26,7 @@
 		"native image"
 	],
 	"main": "./dist/extension",
+	"browser": "./dist/webExtension",
 	"contributes": {
 		"commands": [
 			{
