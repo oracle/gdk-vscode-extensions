@@ -111,14 +111,31 @@ const devConf = {
         },
     },
 };
+
+//Browser webpack configuration, 📖 -> https://code.visualstudio.com/api/extension-guides/web-extensions#webpack-configuration
+const commonWebConfig = {
+    target:'webworker',
+    entry: {
+        webExtension: './src/browser/extension.ts',
+    },
+    plugins:(config.plugins || []).concat(
+        new webpack.ProvidePlugin({
+        process: 'process/browser' // provide a shim for the global `process` variable
+        })
+    ),
+};
+
+const webConfig = Object.assign({},config,commonWebConfig);
+const devWebConfig = Object.assign({},devConf,commonWebConfig);
+
 // https://webpack.js.org/configuration/mode/#mode-none
 module.exports = (env, argv) => {
     if (argv.mode === 'development') {
-        return devConf;
+        return [devConf, webConfig];
     }
 
     if (argv.mode === 'production') {
-        return config;
+        return [config, devWebConfig];
     }
-    return config;
+    return [config, webConfig];
 };
