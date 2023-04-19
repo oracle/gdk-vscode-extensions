@@ -17,7 +17,7 @@ import {
 } from '../common';
 
 
-export async function createProject(context: vscode.ExtensionContext): Promise<void> {
+export async function createProject(): Promise<void> {
     var options: CreateOptions | undefined;
     options = await initialize().then(async () => {
         let javaVMs = await getJavaVMs();
@@ -44,7 +44,7 @@ export async function createProject(context: vscode.ExtensionContext): Promise<v
     };
     */
 
-    const targetLocation = await selectLocation(context, options);
+    const targetLocation = await selectLocation(options);
     if (!targetLocation) {
         return;
     }
@@ -63,9 +63,9 @@ export async function createProjectBase(options : CreateOptions, targetLocation 
 }
 
 function fileHandler(locationUri:vscode.Uri){
-    return async (pathName: any, bytes: any, _isBinary: any, isExecutable: any) => {
+    return async (pathName: any, bytes: any, _isBinary: any, _isExecutable: any) => {
         const p : string = pathName.$as('string');
-        const exe : boolean = isExecutable.$as('boolean');
+        // const exe : boolean = isExecutable.$as('boolean');
         const data = bytes.$as(Int8Array).buffer;
         const view = new Uint8Array(data);
 
@@ -82,7 +82,7 @@ function fileHandler(locationUri:vscode.Uri){
     };
 }
 
-async function selectLocation(context: vscode.ExtensionContext, options: CreateOptions) {
+async function selectLocation(options: CreateOptions) {
     const location: vscode.Uri[] | undefined = await vscode.window.showOpenDialog({
         defaultUri: vscode.Uri.file('/'),
         canSelectFiles: false,
