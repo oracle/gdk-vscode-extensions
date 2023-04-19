@@ -4,6 +4,7 @@
 **/node_modules
 **/.vscode-test/
 **/*.vsix
+**/.vscode-test-web
 package-lock.json
 /mxbuild
 /.project
