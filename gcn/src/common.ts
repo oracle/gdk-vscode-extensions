@@ -168,7 +168,7 @@ export async function getApplicationTypes(): Promise<ValueAndLabel[]> {
     return convertLabelledValues(gcnApi.applicationTypes().getTypes().toArray());
 }
 
-function getJavaVersions(): string[] {
+export function getJavaVersions(): string[] {
     const versions: string[] = [];
 
     let items = gcnApi.javaVersions().getOptions().toArray();
