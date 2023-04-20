@@ -131,11 +131,11 @@ const devWebConfig = Object.assign({},devConf,commonWebConfig);
 // https://webpack.js.org/configuration/mode/#mode-none
 module.exports = (env, argv) => {
     if (argv.mode === 'development') {
-        return [devConf, webConfig];
+        return [devConf, devWebConfig];
     }
 
     if (argv.mode === 'production') {
-        return [config, devWebConfig];
+        return [config, webConfig];
     }
     return [config, webConfig];
 };
