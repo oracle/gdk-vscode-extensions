@@ -460,21 +460,42 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
         const supportedVersions = state.micronautVersion ? getJavaVersions() : [];
 
 
-        function isJavaAccepted(java : string) : boolean {
+        function isJavaAccepted(java : string) : string {
             const version: string[] | null = java.match(/Java (\d+)/);
             const resolvedVersion = version && version.length > 1 ? version[1] : undefined;
             if (!resolvedVersion) {
-                // don't know, let the user choose
-                return true;
+                // don't know, let the user choose. Do not return '' as it indicates rejection.
+                return '-';
             }
-            return !!normalizeJavaVersion(resolvedVersion, supportedVersions, '');
+            return normalizeJavaVersion(resolvedVersion, supportedVersions, '');
         }
 
-        const items: {label: string; value: string; description?: string}[] = javaVMs.
-            filter(item => isJavaAccepted(item.name)).
-            map(item => ({label: item.name, value: item.path, description: item.active ? '(active)' : undefined}));
+        const items: (ValueAndLabel & { description? : string; target? : string })[] = [];
         
-        items.push({label: 'Other Java', value: '', description: '(manual configuration)'});
+        javaVMs.forEach(item => {
+            let n = item.name;
+            let v  = isJavaAccepted(item.name);
+            if (!v) {
+                return;
+            }
+            if (v !== '-') {
+                const version: string[] | null = n.match(/Java (\d+)/);
+                const resolvedVersion = version && version.length > 1 ? version[1] : undefined;
+                if (!resolvedVersion) {
+                    return;
+                }
+                if (resolvedVersion !== v) {
+                    n += ` (target ${v})`;
+                }
+            } else {
+                v = '';
+            }
+            items.push(
+                {label: n, value: item.path, description: item.active ? '(active)' : undefined, target: v }
+            );
+        });
+        
+        items.push({label: 'Other Java', value: '', target: '', description: '(manual configuration)'});
 		const selected: any = await input.showQuickPick({
 			title,
 			step: 3,
@@ -484,8 +505,7 @@ async function selectCreateOptions(): Promise<CreateOptions | undefined> {
 			activeItems: findSelection(items, state.javaVersion),
 			shouldResume: () => Promise.resolve(false)
         });
-        const version: string[] | null = selected ? selected.label.match(/Java (\d+)/) : null;
-        const resolvedVersion = version && version.length > 1 ? version[1] : undefined;
+        const resolvedVersion = selected ? selected.target : undefined;
         const javaVersion = resolvedVersion || getDefaultJavaVersion();
         state.javaVersion = {
             label: selected.label,
