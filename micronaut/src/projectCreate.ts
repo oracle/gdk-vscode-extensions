@@ -142,7 +142,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
     interface State {
 		micronautVersion: {label: string; serviceUrl: string};
 		applicationType: {label: string; name: string};
-        javaVersion: {label: string; value: string; target: string};
+        javaVersion: {label: string; value: string; target: number};
         projectName: string;
         basePackage: string;
         language: {label: string; value: string};
@@ -200,8 +200,8 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 	}
 
 	async function pickJavaVersion(input: MultiStepInput, state: Partial<State>) {
-        const javaVersions = state.micronautVersion ? await getJavaVersions(state.micronautVersion) : { default: '11', versions: [] };
-        const supportedVersions = javaVersions.versions;
+        const javaVersions = state.micronautVersion ? await getJavaVersions(state.micronautVersion) : { default: 11, versions: [] };
+        const supportedVersions = javaVersions.versions.sort((a, b) => b - a);
         
         function isJavaAccepted(java : string) : boolean {
             const resolvedVersion = parseJavaVersion(java);
@@ -209,7 +209,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
                 // don't know, let the user choose
                 return true;
             }
-            return !!normalizeJavaVersion(resolvedVersion, supportedVersions, '');
+            return normalizeJavaVersion(resolvedVersion, supportedVersions, -1) > -1;
         }
 
         const items: {label: string; value: string; description?: string}[] = javaVMs.
@@ -408,9 +408,9 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
     return undefined;
 }
 
-function parseJavaVersion(j : string) : string | undefined {
+function parseJavaVersion(j : string) : number | undefined {
     const re = j.match(/(?:Java |JDK_)(\d+)/);
-    return re && re.length > 1 ? re[1] : undefined;
+    return re && re.length > 1 ? parseInt(re[1]) : undefined;
 }
 
 async function getMicronautVersions(): Promise<{label: string; serviceUrl: string}[]> {
@@ -444,29 +444,27 @@ async function getApplicationTypes(micronautVersion: {label: string; serviceUrl:
     return getMNApplicationTypes(micronautVersion.serviceUrl);
 }
 
-async function getJavaVersions(micronautVersion: {label: string; serviceUrl: string}): Promise<{ default: string, versions: string[]}> {
+async function getJavaVersions(micronautVersion: {label: string; serviceUrl: string}): Promise<{ default: number; versions: number[]}> {
     if (micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL)) {
         return get(micronautVersion.serviceUrl + SELECT_OPTIONS).then(data => {
             let parsed = JSON.parse(data).jdkVersion;
-            let parsedVersions = parsed.options.map((version: any) => (version.label));
+            let parsedVersions: number[] = parsed.options.map((version: any) => parseInt(version.label));
 
-            return { default: parseJavaVersion(parsed.defaultOption.label) || '11' , versions: parsedVersions };
+            return { default: parseJavaVersion(parsed.defaultOption.label) || 11, versions: parsedVersions };
         });
     }
-    return { default: '11', versions: [] }; // Listing supported Java versions not available using CLI
+    return { default: 11, versions: [] }; // Listing supported Java versions not available using CLI
 }
 
-function normalizeJavaVersion(version: string | undefined, supportedVersions: string[], defaultVersion : string = '8'): string {
+function normalizeJavaVersion(version: number | undefined, supportedVersions: number[], defaultVersion : number = 8): number {
     if (!version) {
         return defaultVersion;
     }
-    if (!supportedVersions || supportedVersions.length === 0) {
+    if (supportedVersions.length === 0) {
         return version;
     }
-    let versionN = parseInt(version);
-    for (let supportedVersion of supportedVersions.reverse()) {
-        const supportedN = parseInt(supportedVersion);
-        if (versionN >= supportedN) {
+    for (let supportedVersion of supportedVersions) {
+        if (version >= supportedVersion) {
             return supportedVersion;
         }
     }
@@ -496,7 +494,7 @@ function getTestFrameworks() {
     ];
 }
 
-async function getFeatures(micronautVersion: {label: string; serviceUrl: string}, applicationType: {label: string; name: string}, javaVersion: {target: string}): Promise<{label: string; detail?: string; category: string; name: string}[]> {
+async function getFeatures(micronautVersion: {label: string; serviceUrl: string}, applicationType: {label: string; name: string}, javaVersion: {target: number}): Promise<{label: string; detail?: string; category: string; name: string}[]> {
     const comparator = (f1: any, f2: any) => f1.category < f2.category ? -1 : f1.category > f2.category ? 1 : f1.label < f2.label ? -1 : 1;
     if (micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL)) {
         return get(micronautVersion.serviceUrl + APPLICATION_TYPES + '/' + applicationType.name + FEATURES).then(data => {
@@ -586,7 +584,7 @@ function getMNApplicationTypes(mnPath: string): {label: string; name: string}[] 
     return types;
 }
 
-function getMNFeatures(mnPath: string, applicationType: string, javaVersion: string): {label: string; detail?: string; category: string; name: string}[] {
+function getMNFeatures(mnPath: string, applicationType: string, javaVersion: number): {label: string; detail?: string; category: string; name: string}[] {
     const features: {label: string; detail?: string; category: string; name: string}[] = [];
     let header: boolean = true;
     let category: string | undefined;
