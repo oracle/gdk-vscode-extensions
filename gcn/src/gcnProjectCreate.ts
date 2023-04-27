@@ -17,7 +17,8 @@ import {
     selectCreateOptions,
     writeProjectContents,
     CreateOptions,
-    JavaVMType
+    JavaVMType,
+    FileHandler
 } from './common';
 
 
@@ -79,28 +80,10 @@ export async function createProjectBase(options : CreateOptions, targetLocation 
         fs.mkdirSync(targetLocation, { recursive: true });
     }
 
-    await writeProjectContents(options,fileHandler(targetLocation));
+    await writeProjectContents(options,new NodeFileHandler(vscode.Uri.file(targetLocation)).writeFile());
 
     const uri = vscode.Uri.file(targetLocation);
     handleNewGCNProject(uri);
-}
-
-function fileHandler(location:string){
-
-    return (pathName: any, bytes: any, _isBinary: any, isExecutable: any) => {
-        const p : string = pathName.$as('string');
-        const exe : boolean = isExecutable.$as('boolean');
-        const data = bytes.$as(Int8Array).buffer;
-
-        const dir = path.dirname(p);
-
-        const view = new Uint8Array(data);
-
-        if (dir && dir !== '.') {
-            fs.mkdirSync(path.join(location, dir), { recursive : true });
-        }
-        fs.writeFileSync(path.join(location, p), view, { mode : exe ? 0o777 : 0o666 });
-    };
 }
 
 async function selectLocation(context: vscode.ExtensionContext, options: CreateOptions) {
@@ -178,4 +161,18 @@ async function getJavaVMs(): Promise<JavaVMType[]> {
     });
 
     return javaVMs;
+}
+
+/**
+ * A Node.js implementation of FileHandler abstract class.
+ */
+class NodeFileHandler extends FileHandler{
+
+    constructor(locationUri:vscode.Uri){
+        super(locationUri);
+    }
+    
+    changeMode(fileUri: vscode.Uri, isExecutable: boolean): void {
+        fs.chmodSync(fileUri.fsPath,isExecutable ? 0o777 : 0o666);
+    }
 }

@@ -13,7 +13,8 @@ import {
     getJavaVersions, 
     initialize, 
     selectCreateOptions, 
-    writeProjectContents 
+    writeProjectContents,
+    FileHandler
 } from '../common';
 
 
@@ -57,29 +58,9 @@ export async function createProjectBase(options : CreateOptions, targetLocation 
 
     await vscode.workspace.fs.createDirectory(targetLocationUri);
     
-    await writeProjectContents(options,fileHandler(targetLocationUri));
+    await writeProjectContents(options,new WebFileHandler(targetLocationUri).writeFile());
 
     handleNewGCNProject(targetLocationUri);
-}
-
-function fileHandler(locationUri:vscode.Uri){
-    return async (pathName: any, bytes: any, _isBinary: any, _isExecutable: any) => {
-        const p : string = pathName.$as('string');
-        // const exe : boolean = isExecutable.$as('boolean');
-        const data = bytes.$as(Int8Array).buffer;
-        const view = new Uint8Array(data);
-
-        const dir = vscode.Uri.joinPath(vscode.Uri.file(p),'..').fsPath;
-
-        const dirUri = vscode.Uri.joinPath(locationUri, dir);
-        //Create directory if not exists
-        await vscode.workspace.fs.createDirectory(dirUri);
-        // Write file to disk
-        const fileUri = vscode.Uri.joinPath(locationUri, p);
-        await vscode.workspace.fs.writeFile(fileUri, view);
-        //TODO: writes a file to the specified location with the given permissions (handle executable files)
-
-    };
 }
 
 async function selectLocation(options: CreateOptions) {
@@ -111,3 +92,16 @@ async function getJavaVMs(): Promise<JavaVMType[]> {
     return javaVMs;
 }
 
+/**
+ * A browser implementation of FileHandler abstract class.
+ */
+class WebFileHandler extends FileHandler{
+
+    constructor(locationUri:vscode.Uri){
+        super(locationUri);
+    }
+    
+    changeMode(_fileUri: vscode.Uri, _isExecutable: boolean):void {
+        //TODO: writes a file to the specified location with the given permissions (handle executable files)
+    }
+}

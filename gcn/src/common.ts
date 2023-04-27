@@ -487,3 +487,38 @@ export function normalizeJavaVersion(version: string | undefined, supportedVersi
     }
     return defaultVersion;
 }
+
+/**
+ * Abstract class representing a file handler that can be used to create GCN project
+ * in different environments, such as a browser or a Node.js.
+ */
+export abstract class FileHandler {
+
+    constructor(private locationUri:vscode.Uri){}
+
+    writeFile(){
+        return async (pathName: any, bytes: any, _isBinary: any, isExecutable: any) => {
+            const p : string = pathName.$as('string');
+            const exe : boolean = isExecutable.$as('boolean');
+            const data = bytes.$as(Int8Array).buffer;
+            const view = new Uint8Array(data);
+
+            const dir = vscode.Uri.joinPath(vscode.Uri.file(p),'..').fsPath;
+            const dirUri = vscode.Uri.joinPath(this.locationUri, dir);
+            //Create directory if not exists
+            await vscode.workspace.fs.createDirectory(dirUri);
+            // Write file to disk
+            const fileUri = vscode.Uri.joinPath(this.locationUri, p);
+            await vscode.workspace.fs.writeFile(fileUri, view);
+            this.changeMode(fileUri,exe);
+        };
+    };
+
+    /**
+     * Changes the mode of the file at the given URI to be executable or non-executable.
+     * @param fileUri - The Uri of the file to change the mode of.
+     * @param isExecutable - A boolean flag indicating whether the file should be executable or not.
+    */
+    abstract changeMode(fileUri:vscode.Uri, isExecutable:boolean):void;
+
+}
