@@ -668,12 +668,12 @@
 				},
 				{
 					"command": "oci.devops.openInBrowser",
-					"when": "viewItem == oci.devops.deploymentPipelineNode-deployments-available",
+					"when": "viewItem == oci.devops.deploymentPipelineNode-deployments-available && oci.devops.portForward == false",
 					"group": "inline@3"
 				},
 				{
 					"command": "oci.devops.openInBrowser",
-					"when": "viewItem == oci.devops.deploymentPipelineNode-deployments-available",
+					"when": "viewItem == oci.devops.deploymentPipelineNode-deployments-available && oci.devops.portForward == false",
 					"group": "context@1@3"
 				},
 				{

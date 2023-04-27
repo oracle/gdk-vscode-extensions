@@ -819,9 +819,15 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                         dialogs.showErrorMessage(`Cannot find deployment '${deploymentName}' in the destination OKE cluster.`);
                         return;
                     }
-                    
-                    run(resolve, deploymentName, kubectl);
                     resolve(true);
+                    vscode.window.withProgress({
+                        location: vscode.ProgressLocation.Notification,
+                        title: 'Starting port forwards and opening browser...',
+                        cancellable: false
+                    }, async (_progress, _token) => {
+                        run(resolve, deploymentName, kubectl);
+                    });
+                    
                 } catch (err) {
                     dialogs.showErrorMessage('Failed to open deployment in browser', err);
                     resolve(false);
@@ -910,6 +916,8 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                 vscode.window.showWarningMessage(`Deployment wll be restarted with debugger enabled. Try again later.`)
             }
 
+            await vscode.commands.executeCommand('setContext', 'oci.devops.portForward', true);
+
             const forward = await kubectl.portForward(`deployments/${deploymentName}`, undefined, localPort, 8080, { showInUI: { location: 'status-bar' } }); 
             const forwardDebug = await kubectl.portForward(`deployments/${deploymentName}`, undefined, debugPort, localDebugPort, { showInUI: { location: 'status-bar' } }); 
 
@@ -923,10 +931,12 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                 vscode.debug.onDidTerminateDebugSession(() => {
                     forward?.dispose();
                     forwardDebug?.dispose();
+                    vscode.commands.executeCommand('setContext', 'oci.devops.portForward', false);
                 });
             }).catch(() => {
                 forward?.dispose();
                 forwardDebug?.dispose();
+                vscode.commands.executeCommand('setContext', 'oci.devops.portForward', false);
             });
             vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${localPort}`));
 
@@ -955,7 +965,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
     async debug(port: number) : Promise<void>{
         const workspaceFolder = await this.selectWorkspaceFolder();
         const debugConfig : vscode.DebugConfiguration = {
-            type: "java8+",
+            type: "java+",
             name: "Attach to Kubernetes",
             request: "attach",
             hostName: "localhost",
