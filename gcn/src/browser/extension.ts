@@ -6,7 +6,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as gcnProjectCreate from './gcnProjectCreate';
+import * as gcnProjectCreate from './gcnProjectCreateWeb';
 import * as logUtils from './../logUtils';
 
 
