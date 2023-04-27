@@ -158,6 +158,11 @@
 				"category": "OCI DevOps"
 			},
 			{
+				"command": "oci.devops.debugInK8s",
+				"title": "Debug in Kubernetes",
+				"category": "OCI DevOps"
+			},
+			{
 				"command": "oci.devops.openInConsole",
 				"title": "Open in Oracle Cloud Console",
 				"icon": "$(globe)",
@@ -428,6 +433,10 @@
 					"when": "false"
 				},
 				{
+					"command": "oci.devops.debugInK8s",
+					"when": "false"
+				},
+				{
 					"command": "oci.devops.openInConsole",
 					"when": "false"
 				},
@@ -659,18 +668,23 @@
 				},
 				{
 					"command": "oci.devops.openInBrowser",
-					"when": "viewItem == oci.devops.deploymentPipelineNode-deployments-available",
+					"when": "viewItem == oci.devops.deploymentPipelineNode-deployments-available && oci.devops.portForward == false",
 					"group": "inline@3"
 				},
 				{
 					"command": "oci.devops.openInBrowser",
-					"when": "viewItem == oci.devops.deploymentPipelineNode-deployments-available",
+					"when": "viewItem == oci.devops.deploymentPipelineNode-deployments-available && oci.devops.portForward == false",
 					"group": "context@1@3"
 				},
 				{
 					"command": "oci.devops.openInConsole",
 					"when": "viewItem in oci.devops.openInConsoleNodes",
 					"group": "context@3@1"
+				},
+				{					
+					"command": "oci.devops.debugInK8s",
+					"when": "viewItem == oci.devops.deploymentPipelineNode-deployments-available",
+					"group": "context@1@3"
 				},
 				{
 					"command": "oci.devops.openCodeRepositoryInConsole",
