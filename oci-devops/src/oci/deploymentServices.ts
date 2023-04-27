@@ -866,6 +866,8 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                         if (line) pods.push({label: line});
                     });
                     return pods;
+                } else if (values) {
+                    vscode.window.showErrorMessage(values.stderr);
                 } 
                 return Promise.reject();
             }).catch((err) => {
