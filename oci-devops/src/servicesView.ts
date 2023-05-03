@@ -90,6 +90,10 @@ export function initialize(context: vscode.ExtensionContext) {
         }
 	}));
 
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.nodeProvider', () => {
+        return nodeProvider;
+    }));
+
     context.subscriptions.push(vscode.window.registerTreeDataProvider('oci-devops', nodeProvider));
 }
 
@@ -324,7 +328,7 @@ class PartiallyDeployedNode extends nodes.TextNode {
 
 }
 
-class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+export class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 
 	private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null> = new vscode.EventEmitter<vscode.TreeItem | undefined | null>();
 	readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null> = this._onDidChangeTreeData.event;

@@ -10,6 +10,18 @@ import { getDefaultConfigFile, listProfiles } from '../../oci/ociAuthentication'
 
 let wf = vscode.workspace.workspaceFolders;
 
+export function getProfile(profiles : string[]) : string {
+    if (profiles.length === 1)
+        return  profiles[0];
+    else if (profiles.indexOf("TESTS") !== -1)
+        return "TESTS";
+    else if (profiles.indexOf("DEFAULT") !== -1)
+        return "DEFAULT";
+    else {
+        return "";
+    }
+}
+
 suite('Deployment Test Suite', function() {
 	vscode.window.showInformationMessage('Start all tests.');
 
@@ -38,7 +50,7 @@ suite('Deployment Test Suite', function() {
         await vscode.commands.executeCommand("git.close");
     });
 
-    // list adn get the default profile
+    // list and get the default profile
     let selectProfile : string = "";
     test("List OCI Profiles", async () => {
         const defaultConfig = getDefaultConfigFile();
@@ -47,16 +59,8 @@ suite('Deployment Test Suite', function() {
         const profiles = listProfiles(defaultConfig);
         assert.ok(profiles.length>0, "No configuration profiles");
 
-        if (profiles.length === 1)
-            selectProfile = profiles[0];
-        else if (profiles.indexOf("TESTS") !== -1)
-            selectProfile = "TESTS";
-        else if (profiles.indexOf("DEFAULT") !== -1)
-            selectProfile = "DEFAULT";
-        else {
-            assert.ok(false, "Default profile cannot be determined. Make sure to have [DEFAULT] or [TESTS] profile in oci config.");
-        }
-
+        selectProfile = getProfile(profiles);
+        assert.ok(selectProfile!=="", "Default profile cannot be determined. Make sure to have [DEFAULT] or [TESTS] profile in oci config.");
     });
 
     // get provider data
@@ -97,6 +101,7 @@ suite('Deployment Test Suite', function() {
             // left from previos unsuccessfull runs
             for (let project of DevOpsProjects) {
                 if (project.name === DEPLOY_PROJECT_NAME) {
+                    await vscode.commands.executeCommand("oci.devops.undeployFromCloudSync");
                     await ociUtils.deleteDevOpsProject(provider, project.id, true);
                 }
             }
