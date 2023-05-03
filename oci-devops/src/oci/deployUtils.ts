@@ -28,7 +28,6 @@ import * as okeUtils from './okeUtils';
 import * as ociFeatures from './ociFeatures';
 import * as vcnUtils from './vcnUtils';
 
-
 const CREATE_ACTION_NAME = 'Create OCI DevOps Project';
 const ADD_ACTION_NAME = 'Add Folder(s) to OCI DevOps Project';
 
@@ -43,7 +42,15 @@ const NI_CONTAINER_NAME_LC = NI_CONTAINER_NAME.toLocaleLowerCase();
 
 export type SaveConfig = (folder: string, config: any) => boolean;
 
-export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExisting: boolean, resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData): Promise<boolean> {
+export type DeployOptions = {
+    compartment : any;
+    skipOKESupport : boolean;
+    projectName : string;
+    selectProfile : string;
+    autoConfirmDeploy : boolean;
+};
+
+export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExisting: boolean, resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData, deployOptions? : DeployOptions): Promise<boolean> {
     logUtils.logInfo('[deploy] Invoked deploy folders to OCI');
 
     const actionName = addToExisting ? ADD_ACTION_NAME : CREATE_ACTION_NAME;
@@ -103,7 +110,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
         auth = ociAuthentication.createCustom(undefined, selectedProfile);
         deployData.profile = selectedProfile;
     } else {
-        auth = await ociAuthentication.resolve(actionName, deployData.profile);
+        auth = await ociAuthentication.resolve(actionName, deployOptions?.selectProfile?deployOptions.selectProfile:deployData.profile);
     }
 
     const authentication = auth;
@@ -131,6 +138,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
             dump();
             return false;
         }
+    }
+
+    if (deployOptions?.compartment) {
+        deployData.compartment = deployOptions.compartment;
     }
 
     if (deployData.compartment) {
@@ -187,7 +198,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
             deployData.okeCluster = undefined;
         }
     }
-    if (!deployData.okeCluster) {
+    if (!deployData.okeCluster && (!deployOptions || !deployOptions.skipOKESupport ) ) {
         const cluster = await okeUtils.selectOkeCluster(provider, deployData.compartment.ocid, provider.getRegion().regionId, true, deployData.compartment.name, true);
         if (cluster === undefined) {
             dump();
@@ -221,7 +232,11 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
             }
         }
         if (!deployData.project) {
-            devopsProjectName = await selectProjectName(actionName, folders.length === 1 ? removeSpaces(folders[0].name) : undefined);
+            if (deployOptions?.projectName) {
+                devopsProjectName = deployOptions.projectName;
+            } else {
+                devopsProjectName = await selectProjectName(actionName, folders.length === 1 ? removeSpaces(folders[0].name) : undefined);
+            }
         }
     }
     if (!devopsProjectName) {
