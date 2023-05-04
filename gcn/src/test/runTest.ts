@@ -9,8 +9,13 @@ import * as path from 'path';
 import * as cp from 'child_process';
 
 import { runTests, downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron';
+import { AbortController } from 'node-abort-controller';
 
 async function main() {
+	// BuildBot Abort controller fix
+	// @ts-ignore
+	global.AbortController = AbortController;
+
 	try {
 		// The folder containing the Extension Manifest package.json
 		// Passed to `--extensionDevelopmentPath`

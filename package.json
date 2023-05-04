@@ -9,6 +9,9 @@
 		"build:micronaut": "cd micronaut; npm run build",
 		"build:gcn": "cd gcn; npm run build",
 		"build:oci-devops": "cd oci-devops; npm run build",
-		"build:graal-cloud-native-pack": "cd graal-cloud-native-pack; npm run build"
+		"build:graal-cloud-native-pack": "cd graal-cloud-native-pack; npm run build",
+
+		"tests": "npm run tests:gcn",
+		"tests:gcn": "cd gcn; npm install; npm run compile; npm run test-compile; xvfb-run -a npm run test"
 	}
 }
