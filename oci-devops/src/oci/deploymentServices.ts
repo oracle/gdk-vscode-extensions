@@ -965,9 +965,24 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
     }
 
     async debug(port: number) : Promise<void>{
+        var type: string | undefined;
+        const debugTypes: string[] | undefined = vscode.extensions.getExtension('asf.apache-netbeans-java')?.packageJSON?.contributes?.debuggers?.map((d: any) => d.type);
+        if (debugTypes) {
+            let conf = vscode.workspace.getConfiguration();
+            if (conf.get("netbeans.javaSupport.enabled") === true) {
+                type = debugTypes?.includes('java+') ? "java+" : "java8+";
+            }
+        } 
+        if (!type && vscode.extensions.getExtension('vscjava.vscode-java-debug')) {
+            type = 'java';
+        } 
+        if (!type) {
+            vscode.window.showErrorMessage("Java debugger was not found");
+            return Promise.reject();
+        }
         const workspaceFolder = await this.selectWorkspaceFolder();
         const debugConfig : vscode.DebugConfiguration = {
-            type: "java+",
+            type,
             name: "Attach to Kubernetes",
             request: "attach",
             hostName: "localhost",
