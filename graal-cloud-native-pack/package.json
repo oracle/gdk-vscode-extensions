@@ -2,7 +2,7 @@
     "name": "graal-cloud-native-pack",
     "displayName": "Graal Cloud Native Extensions Pack",
     "description": "Create, Build & Deploy Graal Cloud Native Applications.",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "preview": true,
     "license": "SEE LICENSE IN LICENSE.txt",
     "publisher": "oracle-labs-graalvm",
