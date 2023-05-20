@@ -11,6 +11,7 @@ import * as model from './model';
 import * as nodes from './nodes';
 import * as dialogs from './dialogs';
 import * as importExportUtils from './importExportUtils';
+import { DeployOptions } from './oci/deployUtils';
 
 
 export function initialize(context: vscode.ExtensionContext) {
@@ -35,6 +36,9 @@ export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.deployToCloud_Global', () => {
         importExportUtils.deployFolders(context.workspaceState, false);
 	}));
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.deployToCloud_GlobalSync', async (deployOptions : DeployOptions) => {
+        await importExportUtils.deployFolders(context.workspaceState, false, undefined, deployOptions);
+	}));
 	context.subscriptions.push(vscode.commands.registerCommand('oci.devops.resumeDeployToCloud', (...params: any[]) => {
         if (params[0]?.deploy) {
             (params[0] as nodes.DeployNode).deploy(context.workspaceState);
@@ -53,6 +57,9 @@ export function initialize(context: vscode.ExtensionContext) {
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.undeployFromCloud', () => {
         importExportUtils.undeployFolders(context.workspaceState);
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.undeployFromCloudSync', async () => {
+        await importExportUtils.undeployFolders(context.workspaceState, undefined, {autoSelectSingleFolder:true} );
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.addResource', (...params: any[]) => {
         if (params[0]?.addContent) {
@@ -82,6 +89,10 @@ export function initialize(context: vscode.ExtensionContext) {
             (params[0] as nodes.ShowReportNode).showReport();
         }
 	}));
+
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.nodeProvider', () => {
+        return nodeProvider;
+    }));
 
     context.subscriptions.push(vscode.window.registerTreeDataProvider('oci-devops', nodeProvider));
 }
@@ -317,7 +328,7 @@ class PartiallyDeployedNode extends nodes.TextNode {
 
 }
 
-class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+export class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
 
 	private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null> = new vscode.EventEmitter<vscode.TreeItem | undefined | null>();
 	readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null> = this._onDidChangeTreeData.event;

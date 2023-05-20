@@ -311,7 +311,7 @@ class Service extends ociService.Service {
 
 }
 
-class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ViewBuildLogNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
+export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.RemovableNode, nodes.RenameableNode, nodes.ViewBuildLogNode, ociNodes.CloudConsoleItem, ociNodes.OciResource, dataSupport.DataProducer {
 
     static readonly DATA_NAME = 'buildPipelineNode';
     static readonly CONTEXTS = [

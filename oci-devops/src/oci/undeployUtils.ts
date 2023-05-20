@@ -23,6 +23,10 @@ import * as ociServices from './ociServices';
 
 const ACTION_NAME = 'Delete Folder(s) from OCI DevOps Project';
 
+export type UndeployOptions = {
+    autoSelectSingleFolder : boolean;
+};
+
 export async function undeploy(folders: devopsServices.FolderData[], deployData: any, dump: model.DumpDeployData): Promise<void> {
     logUtils.logInfo('[undeploy] Invoked undeploy folders from OCI');
 

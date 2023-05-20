@@ -12,9 +12,9 @@ import { kubernetesChannel } from './kubernetesChannel';
 
 let forwardSession: vscode.Disposable | undefined;
 
-export async function runProject(debug: boolean) {
+export async function runProject() {
     kubernetesChannel.clearAndShow();
-    kubernetesChannel.appendLine(`Starting ${debug ? 'debug' : 'run'} of project`);
+    kubernetesChannel.appendLine(`Starting project`);
     let wrapper =  await createWrapper();
     let proj = await wrapper.getProjectInfo();
 
@@ -22,7 +22,7 @@ export async function runProject(debug: boolean) {
         forwardSession.dispose();
     }
 
-    collectInfo(proj.name, debug)
+    collectInfo(proj.name)
         .then((runInfo) => wrapper.buildAll(runInfo))
         .then((runInfo) => deploy(runInfo))
         .then((runInfo) => run(runInfo));
@@ -40,9 +40,6 @@ async function run(info: RunInfo) {
             info.port, 
             { showInUI: { location: 'status-bar' } 
         }).then(() => {
-            if (info.debug) {
-                vscode.commands.executeCommand('extension.graalvm.debugPod', info.kubectl, podName, undefined);
-            }
             kubernetesChannel.appendLine(`You can access ${podName} on http://localhost:${info.port}`);
         }).catch(e => kubernetesChannel.appendLine(`failed to start port-forward ${e}`));
     }

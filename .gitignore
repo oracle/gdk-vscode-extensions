@@ -15,5 +15,4 @@ package-lock.json
 /gcn-database-drivers/nbcode
 /nbcode-gcn-database/nbcode-gcn-database-drivers/target/
 /oci-devops/fixtures/base-oci-template/oci/bin/
-/gcn/test-resources
-
+/oci-devops/test-resources/

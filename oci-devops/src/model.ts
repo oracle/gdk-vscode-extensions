@@ -7,6 +7,7 @@
 
 import * as nodes from './nodes';
 import * as vscode from 'vscode';
+import { DeployOptions } from './oci/deployUtils';
 
 export type DumpDeployData = (data?: any) => any;
 
@@ -49,7 +50,7 @@ export interface CloudSupport {
 
     importFolders(getFromExisting: boolean): Promise<ImportResult | undefined>;
 
-    deployFolders(folders: vscode.WorkspaceFolder[], addToExisting: boolean, dump: DumpDeployData): Promise<boolean>;
+    deployFolders(folders: vscode.WorkspaceFolder[], addToExisting: boolean, dump: DumpDeployData, DeployOptions? : DeployOptions): Promise<boolean>;
 
     getServices(folder: vscode.WorkspaceFolder, configuration: ServicesConfiguration): CloudServices | undefined;
 

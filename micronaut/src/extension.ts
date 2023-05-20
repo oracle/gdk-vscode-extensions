@@ -44,10 +44,7 @@ export function activate(context: vscode.ExtensionContext) {
 		createService(context);
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut.kubernetes.run', () => {
-		runProject(false);
-	}));
-	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut.kubernetes.debug', () => {
-		runProject(true);
+		runProject();
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut.odb.register', (dbNode) => {
 		let userId: string = dbNode.connectionProperties.userID;

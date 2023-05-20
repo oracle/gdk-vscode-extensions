@@ -23,6 +23,7 @@ import * as deployUtils from './deployUtils';
 import * as okeUtils from './okeUtils';
 import * as ociFeatures from './ociFeatures';
 import * as vcnUtils from './vcnUtils';
+import * as k8s from 'vscode-kubernetes-tools-api';
 
 
 export const DATA_NAME = 'deploymentPipelines';
@@ -35,6 +36,8 @@ type DeploymentPipeline = {
     displayName: string;
     lastDeployment?: string;
 };
+
+type RunOnDeployment = (resolve: Function, deploymentName: string, kubectl: k8s.KubectlV1) => void
 
 let RESOURCES_FOLDER: string;
 
@@ -53,6 +56,9 @@ export function initialize(context: vscode.ExtensionContext) {
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.openInBrowser', (node: DeploymentPipelineNode) => {
 		node.openDeploymentInBrowser();
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.debugInK8s', (node: DeploymentPipelineNode) => {
+		node.debugInK8s();
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.viewDeploymentLog', (node: DeploymentPipelineNode) => {
 		node.viewLog();
@@ -771,7 +777,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
         }
     }
 
-    openDeploymentInBrowser() {
+    runOnDeployment(run: RunOnDeployment) {
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: 'Resolving deployment...',
@@ -813,23 +819,196 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                         dialogs.showErrorMessage(`Cannot find deployment '${deploymentName}' in the destination OKE cluster.`);
                         return;
                     }
-                    // TODO: get remote port number from deployment ?
-                    const remotePort = 8080;
-                    const localPort = this.random(3000, 50000);
-                    const result = await kubectl.portForward(`deployments/${deploymentName}`, undefined, localPort, remotePort, { showInUI: { location: 'status-bar' } }); 
-                    if (!result) {
-                        resolve(false);
-                        dialogs.showErrorMessage(`Cannot forward port for the '${deploymentName}' deployment.`);
-                        return;
-                    }
-                    vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${localPort}`));
                     resolve(true);
+                    vscode.window.withProgress({
+                        location: vscode.ProgressLocation.Notification,
+                        title: 'Starting port forwards and opening browser...',
+                        cancellable: false
+                    }, async (_progress, _token) => {
+                        run(resolve, deploymentName, kubectl);
+                    });
+                    
                 } catch (err) {
                     dialogs.showErrorMessage('Failed to open deployment in browser', err);
                     resolve(false);
                 }
             });
         });
+    }
+
+    openDeploymentInBrowser() {
+        const run = async (resolve: Function, deploymentName: string, kubectl: k8s.KubectlV1) => {
+            // TODO: get remote port number from deployment ?
+            const remotePort = 8080;
+            const localPort = this.random(3000, 50000);
+            
+            const result = kubectl.portForward(`deployments/${deploymentName}`, undefined, localPort, remotePort, { showInUI: { location: 'status-bar' } }); 
+            if (!result) {
+                resolve(false);
+                dialogs.showErrorMessage(`Cannot forward port for the '${deploymentName}' deployment.`);
+                return;
+            }
+            vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${localPort}`));
+            resolve(true);
+        };
+        this.runOnDeployment(run);
+
+    }
+
+    debugInK8s() {
+        const run = async (resolve: Function, deploymentName: string, kubectl: k8s.KubectlV1) => {
+            const localPort = this.random(3000, 50000);
+            const debugPort = this.random(3000, 50000);
+            const pods = await kubectl.invokeCommand(`get pods -l app=${deploymentName} -o jsonpath=\"{range .items[*]}{@.metadata.name}{\'\\t\'}{@.type}{\'\\n\'}{end}\"`).then((values) => {
+                if (values && values.code === 0) {
+                    let pods: vscode.QuickPickItem[] = [];
+                    values?.stdout.split("\n").forEach(line => {
+                        if (line) pods.push({label: line});
+                    });
+                    return pods;
+                } else if (values) {
+                    vscode.window.showErrorMessage(values.stderr);
+                } 
+                return Promise.reject();
+            }).catch((err) => {
+                vscode.window.showErrorMessage(err.stderr);
+            });
+            if (!pods?.length) {
+                vscode.window.showErrorMessage("There are no pods for this deployment.");
+                return;
+            }
+            
+            var pod: string;
+            if (pods.length > 1) {
+                const selected: any = await vscode.window.showQuickPick(pods, {
+                    title: "Debug in Kubernetes: Select pod",
+                    canPickMany: false,
+                    ignoreFocusOut: true,
+                    placeHolder: "Pick a pod to debug"
+                });
+                if (!selected) {
+                    return;
+                }
+                pod = selected.label;
+            } else {
+                pod = pods[0].label;
+            }
+
+            
+            const localDebugPort = await this.getEnv(kubectl, pod, "default").then((env) => {
+                if (env) {
+                    for (const e of env) {
+                        const matches = e.match(/^JAVA_TOOL_OPTIONS=(-agentlib|-Xrunjdwp):\S*(address=[^\s,]+)\S*/i);
+                        if (matches && matches.length > 0) {
+                            const addresses = matches[2].split("=")[1].split(":");
+                            return Number(addresses[addresses.length - 1]);
+                        }
+                    }
+                    return -1;
+                }
+                vscode.window.showErrorMessage(`Reject`);
+                return Promise.reject();
+            }).catch((err) => {
+                vscode.window.showErrorMessage(`Unable to get debug port from running pod's environment: ${err}`)
+                return -1;
+            });
+
+            if (localDebugPort === -1) {
+                this.redeployWithDebugPortOpened(kubectl, deploymentName);
+                vscode.window.showWarningMessage(`Deployment wll be restarted with debugger enabled. Try again later.`)
+            }
+
+            await vscode.commands.executeCommand('setContext', 'oci.devops.portForward', true);
+
+            const forward = await kubectl.portForward(`deployments/${deploymentName}`, undefined, localPort, 8080, { showInUI: { location: 'status-bar' } }); 
+            const forwardDebug = await kubectl.portForward(`deployments/${deploymentName}`, undefined, debugPort, localDebugPort, { showInUI: { location: 'status-bar' } }); 
+
+            if (!forward && !forwardDebug) {
+                dialogs.showErrorMessage(`Cannot forward port for the '${deploymentName}' deployment.`);
+                resolve(false);
+                return;
+            }
+
+            this.debug(debugPort).then(() => {
+                vscode.debug.onDidTerminateDebugSession(() => {
+                    forward?.dispose();
+                    forwardDebug?.dispose();
+                    vscode.commands.executeCommand('setContext', 'oci.devops.portForward', false);
+                });
+            }).catch(() => {
+                forward?.dispose();
+                forwardDebug?.dispose();
+                vscode.commands.executeCommand('setContext', 'oci.devops.portForward', false);
+            });
+            vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${localPort}`));
+
+            resolve(true);
+        };
+
+        this.runOnDeployment(run);
+    }
+
+    async getEnv(kubectl: k8s.KubectlV1, podName: string, podNamespace?: string): Promise<string[]> {
+        const namespaceArg = podNamespace ? `--namespace ${podNamespace}` : '';
+        const command = `exec ${podName} ${namespaceArg} -- env`;
+        return kubectl.invokeCommand(command).then((result) => {
+                if (result && result.code === 0) {
+                    return result.stdout.split('\n');
+                }
+                return Promise.reject("not found");      
+            })
+            .catch((err) => {
+                vscode.window.showErrorMessage(err.stderr);
+                return Promise.reject(`not found ${err}`);
+            }
+        );
+    }
+
+    async debug(port: number) : Promise<void>{
+        var type: string | undefined;
+        const debugTypes: string[] | undefined = vscode.extensions.getExtension('asf.apache-netbeans-java')?.packageJSON?.contributes?.debuggers?.map((d: any) => d.type);
+        if (debugTypes) {
+            let conf = vscode.workspace.getConfiguration();
+            if (conf.get("netbeans.javaSupport.enabled") === true) {
+                type = debugTypes?.includes('java+') ? "java+" : "java8+";
+            }
+        } 
+        if (!type && vscode.extensions.getExtension('vscjava.vscode-java-debug')) {
+            type = 'java';
+        } 
+        if (!type) {
+            vscode.window.showErrorMessage("Java debugger was not found");
+            return Promise.reject();
+        }
+        const workspaceFolder = await this.selectWorkspaceFolder();
+        const debugConfig : vscode.DebugConfiguration = {
+            type,
+            name: "Attach to Kubernetes",
+            request: "attach",
+            hostName: "localhost",
+            port: port.toString()
+        };
+        const ret = await vscode.debug.startDebugging(workspaceFolder, debugConfig);
+        if (ret) {
+                console.log(ret);
+                return Promise.resolve();
+        }
+        return Promise.reject();
+    }
+
+    async selectWorkspaceFolder(): Promise<vscode.WorkspaceFolder | undefined> {
+        if (!vscode.workspace.workspaceFolders) {
+            vscode.window.showErrorMessage('No open folder found.');
+            return undefined;
+        } else if (vscode.workspace.workspaceFolders.length === 1) {
+            return vscode.workspace.workspaceFolders[0];
+        }
+        return await vscode.window.showWorkspaceFolderPick();
+    }
+
+    redeployWithDebugPortOpened(kubectl: k8s.KubectlV1, appName?: string) {
+        let command = `set env deployment/${appName} JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005`;
+        kubectl.invokeCommand(command);
     }
 
     viewLog() {
