@@ -192,20 +192,3 @@ export async function getJavaVersion(homeFolder: string): Promise<string | undef
     });
 }
 
-export function normalizeJavaVersion(version: string | undefined, supportedVersions: string[], defaultVersion : string = '8'): string {
-    if (!version) {
-        return defaultVersion;
-    }
-    if (!supportedVersions || supportedVersions.length === 0) {
-        return version;
-    }
-    let versionN = parseInt(version);
-    for (let supportedVersion of supportedVersions.reverse()) {
-        const supportedN = parseInt(supportedVersion);
-        if (versionN >= supportedN) {
-            return supportedVersion;
-        }
-    }
-    return defaultVersion;
-}
-
