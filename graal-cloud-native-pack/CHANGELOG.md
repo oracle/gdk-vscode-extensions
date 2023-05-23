@@ -1,5 +1,8 @@
 # Change Log
 
+## Version 0.0.3
+* Micronaut extension added
+
 ## Version 0.0.2
 * Documentation improvements
 
