@@ -2,7 +2,7 @@
     "name": "graal-cloud-native-pack",
     "displayName": "Graal Cloud Native Extensions Pack",
     "description": "Create, Build & Deploy Graal Cloud Native Applications.",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "preview": true,
     "license": "SEE LICENSE IN LICENSE.txt",
     "publisher": "oracle-labs-graalvm",
@@ -50,6 +50,7 @@
     "extensionDependencies": [
         "oracle-labs-graalvm.gcn",
         "oracle-labs-graalvm.gcn-database-drivers",
-        "oracle-labs-graalvm.oci-devops"
+        "oracle-labs-graalvm.oci-devops",
+        "oracle-labs-graalvm.micronaut"
     ]
 }
