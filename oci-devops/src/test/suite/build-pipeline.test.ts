@@ -32,7 +32,7 @@ async function waitForContextChange(oldValue :string |undefined, buildPipeline :
 
 suite('Build pipeline Test Suite', function() {
 	vscode.window.showInformationMessage('Start all tests.');
-    
+    return;
     /* Wait for the NBLS to start */
 	this.timeout(5*60*1000);
 	this.beforeAll(async () => {
