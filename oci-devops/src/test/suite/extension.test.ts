@@ -40,6 +40,7 @@ let wf = vscode.workspace.workspaceFolders;
 
 suite('Extension Test Suite', function() {
 	vscode.window.showInformationMessage('Start all tests.');
+        
 
         /* Wait for the NBLS to start */
 	// the timeout will propagate to beforeAll hook
