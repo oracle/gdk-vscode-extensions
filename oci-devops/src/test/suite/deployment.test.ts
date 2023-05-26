@@ -24,7 +24,7 @@ export function getProfile(profiles : string[]) : string {
 
 suite('Deployment Test Suite', function() {
 	vscode.window.showInformationMessage('Start all tests.');
-    
+
     /* Wait for the NBLS to start */
 	// the timeout will propagate to beforeAll hook
 	this.timeout(30000);
@@ -62,7 +62,7 @@ suite('Deployment Test Suite', function() {
         selectProfile = getProfile(profiles);
         assert.ok(selectProfile!=="", "Default profile cannot be determined. Make sure to have [DEFAULT] or [TESTS] profile in oci config.");
     });
-    return;
+
     // get provider data
     test("Authenticate to oci", async () => {
         const ACTION_NAME = 'Deploy to OCI';
