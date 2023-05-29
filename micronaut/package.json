@@ -106,11 +106,6 @@
 				"command": "extension.micronaut.odb.register",
 				"title": "Register Database for Micronaut",
 				"category": "Micronaut"
-			},
-			{
-				"command": "extension.micronaut.oci.register",
-				"title": "Register Database for Micronaut",
-				"category": "Micronaut"
 			}
 		],
 		"menus": {
@@ -146,10 +141,6 @@
 				{
 					"command": "extension.micronaut.odb.register",
 					"when": "false"
-				},
-				{
-					"command": "extension.micronaut.oci.register",
-					"when": "false"
 				}
 			],
 			"view/item/context": [
@@ -157,11 +148,6 @@
 					"command": "extension.micronaut.odb.register",
 					"when": "view == oracleDBObjectExplorer && viewItem =~ /Connection/ && dbAddConnectionPresent",
 					"group": "connection_3@1"
-				},
-				{
-					"command": "extension.micronaut.oci.register",
-					"when": "view == oracleCloudExplorer && viewItem =~ /(ociNonDedicatedDatabaseItem|ociDedicatedDatabaseItem)/ && dbAddConnectionPresent",
-					"group": "CloudExplorer1@11"
 				}
 			]
 		}
