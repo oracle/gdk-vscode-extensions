@@ -7,7 +7,7 @@
 
 import * as extest from 'vscode-extension-tester';
 
-async function main() {
+export async function runTestUI() {
 	// run UI extension tests
 	try {
 		// download code and chromedriver
@@ -22,5 +22,3 @@ async function main() {
 		process.exit(1);
 	}
 }
-
-main();

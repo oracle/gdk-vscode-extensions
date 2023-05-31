@@ -9,18 +9,23 @@ import * as path from 'path';
 import * as cp from 'child_process';
 
 import { runTests, downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron';
+import { AbortController } from 'node-abort-controller';
 
-async function main() {
+export async function runTest() {
+	// BuildBot Abort controller fix
+	// @ts-ignore
+	global.AbortController = AbortController;
+
 	try {
 		// The folder containing the Extension Manifest package.json
 		// Passed to `--extensionDevelopmentPath`
-		const extensionDevelopmentPath = path.resolve(__dirname, '../../');
+		const extensionDevelopmentPath = path.resolve(__dirname, '../../../');
 
 		// The path to test runner
 		// Passed to --extensionTestsPath
-		const extensionTestsPath = path.resolve(__dirname, './suite/index');
+		const extensionTestsPath = path.resolve(__dirname, '../../../out/test/suite/index');
 
-		const testWorkspace = path.resolve(__dirname, '../../fixtures/base-oci-template');
+		const testWorkspace = path.resolve(__dirname, '../../../fixtures/base-oci-template');
 
 		// Install NBLS extension
 		const vscodeExecutablePath = await downloadAndUnzipVSCode('1.76.0');
@@ -56,5 +61,3 @@ async function main() {
 		process.exit(1);
 	}
 }
-
-main();
