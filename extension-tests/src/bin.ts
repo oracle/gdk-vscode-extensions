@@ -5,14 +5,13 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
-import {runTest} from './runTest'
-import {runTestUI} from './runTest-ui'
-
 function main() {
     if (process.argv.indexOf('--runTest') != -1) {
-        runTest();
+        const test = require('runTest');
+        test.runTest();
     } else if (process.argv.indexOf('--runTest-ui') != -1) {
-        runTestUI();
+        const test = require('runTest-ui');
+        test.runTestUI();
     } else {
         console.log("Invalid arguments passed");
     }

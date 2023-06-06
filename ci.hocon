@@ -5,6 +5,7 @@ common : {
   ],
   environment: {
     npm_config_registry: "https://artifacthub-phx.oci.oraclecorp.com/api/npm/npm-virtual/"
+    ARTIFACT_REPO_URL: "https://objectstorage.us-phoenix-1.oraclecloud.com/n/oraclelabs/b/buildbot-bucket/o/"
   }
 }
 
@@ -12,6 +13,8 @@ linux : ${common} {
   packages: {
     nodejs : ">=14.16.0"
     maven: ">=3.6.3"
+    "pip:requests": ">=2.0.0"
+    "pip:python-dateutil": ">=1.0.0"
   }
 }
 
@@ -51,6 +54,9 @@ vscodeBuildGate : ${vscodeCommon} {
 vscodeRunTests : ${vscodeCommon} {
   targets : [ gate ],
   run : [
+    ["artifact_download", "tests_cache-linux-amd64.zip", "./tests_cache-linux-amd64.zip"],
+    ["unzip", "-q", "tests_cache-linux-amd64.zip", ".vscode-test/*", "-d", "gcn"],
+    ["chmod", "-R", "+x", "./gcn/.vscode-test"],
     ["npm", "run", "tests"]
   ]
 }
