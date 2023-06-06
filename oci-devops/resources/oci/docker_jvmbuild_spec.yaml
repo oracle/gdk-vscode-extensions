@@ -53,11 +53,11 @@ steps:
       export PATH=${JAVA_HOME}/bin:${PATH}
       echo "Updated PATH: ${PATH}"
   - type: Command
-    name: "Define unique image tag"
+    name: "Define docker image tag"
     timeoutInSeconds: 40
     command: |
       echo "OCI_BUILD_RUN_ID: ${OCI_BUILD_RUN_ID}"
-      export DOCKER_TAG=`echo ${OCI_BUILD_RUN_ID} | rev | cut -c 1-7`
+      export DOCKER_TAG="latest"
       echo "DOCKER_TAG: ${DOCKER_TAG}"
   - type: Command
     name: "Package application"

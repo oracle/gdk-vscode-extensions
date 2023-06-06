@@ -12,7 +12,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as gcnProjectCreate from '../../gcnProjectCreate';
+import * as Common from '../../common';
 
 /**
  * Searches value inside an array of ValueAndLabel
@@ -21,7 +21,7 @@ import * as gcnProjectCreate from '../../gcnProjectCreate';
  * @param search 
  * @returns 
  */
-function valueExists(arrayOfValues : gcnProjectCreate.ValueAndLabel[], search : string) : boolean {
+function valueExists(arrayOfValues : Common.ValueAndLabel[], search : string) : boolean {
         for (let arrayElem of arrayOfValues) {
                 if (arrayElem.value == search)
                         return true;
@@ -75,24 +75,24 @@ suite('Extension Test Suite', function() {
 
         test("Create GCN project - Project options", async () => {
                 // init gcnAPI
-                await gcnProjectCreate.initialize();
+                await Common.initialize();
         
-                let micronautVersions = gcnProjectCreate.getMicronautVersions();
+                let micronautVersions = Common.getMicronautVersions();
                 assert.ok(micronautVersions.length, "No micronaut versions found");
 
-                let applicationTypes = await gcnProjectCreate.getApplicationTypes();
+                let applicationTypes = await Common.getApplicationTypes();
                 assert.ok(applicationTypes.length, "No application type found");
                 assert.ok( valueExists(applicationTypes, "APPLICATION") );
 
-                let buildTools = gcnProjectCreate.getBuildTools();
+                let buildTools = Common.getBuildTools();
                 assert.ok(buildTools.length, "No build tools found");
                 assert.ok( valueExists(buildTools, "GRADLE") );
 
-                let testFrameworks = gcnProjectCreate.getTestFrameworks();
+                let testFrameworks = Common.getTestFrameworks();
                 assert.ok(testFrameworks.length, "No test frameworks found");
                 assert.ok( valueExists(testFrameworks, "JUNIT") );
 
-                let clouds = gcnProjectCreate.getClouds();
+                let clouds = Common.getClouds();
                 assert.ok(clouds.length, "No cloud platforms found");
                 assert.ok( valueExists(clouds, "OCI") );
         });
@@ -110,5 +110,23 @@ suite('Extension Test Suite', function() {
 
                 fs.rmdirSync(projFolder, {recursive:true});
         });
+
+        function fileHandler(location:string){
+
+                return (pathName: any, bytes: any, _isBinary: any, isExecutable: any) => {
+                    const p : string = pathName.$as('string');
+                    const exe : boolean = isExecutable.$as('boolean');
+                    const data = bytes.$as(Int8Array).buffer;
+            
+                    const dir = path.dirname(p);
+            
+                    const view = new Uint8Array(data);
+            
+                    if (dir && dir !== '.') {
+                        fs.mkdirSync(path.join(location, dir), { recursive : true });
+                    }
+                    fs.writeFileSync(path.join(location, p), view, { mode : exe ? 0o777 : 0o666 });
+                };
+            }
 
 });

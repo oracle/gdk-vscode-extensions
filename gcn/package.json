@@ -26,6 +26,7 @@
 		"native image"
 	],
 	"main": "./dist/extension",
+	"browser": "./dist/webExtension",
 	"contributes": {
 		"commands": [
 			{
@@ -51,11 +52,12 @@
 		"watch-tests": "tsc --outDir out --watch",
 		"test-clean": "rm -r out",
 		"test-compile": "tsc -p . --outDir out",
-		"test": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/test/runTest.js",
-		"test-ui": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/test/runTest-ui.js",
+		"test": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./node_modules/gcn-extension-tests/bin/main.js --runTest",
+		"test-ui": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./node_modules/gcn-extension-tests/bin/main.js --runTest-ui",
 		"prebuild": "npm install",
 		"build": "cross-os build",
-		"lint": "eslint src --ext ts"
+		"lint": "eslint src --ext ts",
+		"open-in-browser": "vscode-test-web --extensionDevelopmentPath=. ."
 	},
 	"cross-os": {
 		"build": {
@@ -76,14 +78,17 @@
 		"@typescript-eslint/parser": "^5.54.1",
 		"@vscode/codicons": "0.0.20",
 		"@vscode/test-electron": "^2.2.3",
+		"@vscode/test-web": "*",
 		"ajv": "^8.12.0",
 		"cross-env": "^7.0.3",
 		"cross-os": "^1.5.0",
 		"encoding": "^0.1.13",
 		"eslint": "^8.35.0",
 		"eslint-webpack-plugin": "^4.0.0",
+		"gcn-extension-tests": "^1.0.1",
 		"global-agent": "^3.0.0",
 		"mocha": "^10.1.0",
+		"node-abort-controller": "^3.1.1",
 		"ts-loader": "^9.4.2",
 		"typescript": "^4.9.5",
 		"vscode-extension-tester": "^5.5.1",
