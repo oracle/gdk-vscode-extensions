@@ -85,7 +85,7 @@
 		"encoding": "^0.1.13",
 		"eslint": "^8.35.0",
 		"eslint-webpack-plugin": "^4.0.0",
-		"gcn-extension-tests": "^1.0.1",
+		"gcn-extension-tests": "^1.0.2",
 		"global-agent": "^3.0.0",
 		"mocha": "^10.1.0",
 		"node-abort-controller": "^3.1.1",

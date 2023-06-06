@@ -103,7 +103,11 @@ suite('Extension Test Suite', function() {
                 let projFolder = path.resolve(__dirname, '../../../out/test/temp-proj');
                 
                 // TODO: This function fails mid-run and partialy populated project is created but not deleted. Make sure `projFolder` is empty.
+                if (!fs.existsSync(projFolder)) {
+                        fs.mkdirSync(projFolder, { recursive: true });
+                    }
                 await Common.writeProjectContents(options, fileHandler(projFolder));
+
                 fs.rmdirSync(projFolder, {recursive:true});
         });
 
