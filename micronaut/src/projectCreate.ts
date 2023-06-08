@@ -246,7 +246,8 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 			totalSteps: totalSteps(state),
 			value: state.projectName || 'demo',
 			prompt: 'Provide project name',
-			validate: (value: string) => Promise.resolve((/^[a-z_][a-z0-9_]*(-[a-z_][a-z0-9_]*)*$/.test(value)) ? undefined : 'Invalid project name'),
+            // From OCI: Name cannot start and end with '-' (hyphen), have '--' (sequential hyphen), and can only consist of ASCII letter, digit, '_' (underscore) or '-' (hyphen) characters.
+			validate: (value: string) => Promise.resolve((/^[A-Za-z0-9_]([A-Za-z0-9_]|-(?!-))*[A-Za-z0-9_]?$/.test(value)) ? undefined : 'Name cannot start and end with "-" (hyphen), have "--" (sequential hyphen), and can only consist of ASCII letter, digit, "_" (underscore) or "-" (hyphen) characters'),
 			shouldResume: () => Promise.resolve(false)
 		});
 		return (input: MultiStepInput) => basePackage(input, state);
