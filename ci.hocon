@@ -13,8 +13,6 @@ linux : ${common} {
   packages: {
     nodejs : ">=14.16.0"
     maven: ">=3.6.3"
-    "pip:requests": ">=2.0.0"
-    "pip:python-dateutil": ">=1.0.0"
   }
 }
 
@@ -51,8 +49,9 @@ vscodeBuildGate : ${vscodeCommon} {
   ]
 }
 
-vscodeRunTests : ${vscodeCommon} {
-  targets : [ gate ],
+vscodeTestsCommon : ${vscodeCommon} {
+  deploysArtifacts: true,
+  python_version: 3,
   run : [
     ["artifact_download", "tests_cache-linux-amd64.zip", "./tests_cache-linux-amd64.zip"],
     ["unzip", "-q", "tests_cache-linux-amd64.zip", ".vscode-test/*", "-d", "gcn"],
@@ -61,7 +60,17 @@ vscodeRunTests : ${vscodeCommon} {
   ]
 }
 
+vscodeRunTests : ${vscodeTestsCommon} {
+  targets : [ gate ],
+}
+
+
+vscodeTestsDaily : ${vscodeTestsCommon} {
+  targets : [ daily ],
+}
+
 builds += [
   ${linux-amd64} ${vscodeRunTests} { name: "gate-vscode-tests" },
-  ${linux-amd64} ${vscodeBuildGate} { name: "gate-vscode-build" },
+  ${linux-amd64} ${vscodeTestsDaily} { name: "daily-vscode-tests" },
+  ${linux-amd64} ${vscodeBuildGate} { name: "gate-vscode-build" }
 ]
