@@ -1,5 +1,8 @@
 # Change Log
 
+# Version 0.5.19
+* Enable uppercase letters in Micronaut project name
+
 # Version 0.5.18
 * Dependency on the GraalVM Tools for Java extension removed
 * Update of 3rd party libraries
