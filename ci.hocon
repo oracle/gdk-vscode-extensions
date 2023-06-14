@@ -67,6 +67,9 @@ vscodeRunTests : ${vscodeTestsCommon} {
 
 vscodeTestsDaily : ${vscodeTestsCommon} {
   targets : [ daily ],
+  notify_emails: [
+    "stevo.mitric@oracle.com",
+  ]
 }
 
 builds += [
