@@ -1,32 +1,32 @@
-# Visual Studio Code extension
+# Graal Cloud Native VSCode extensions
 
-This suite provides extension to Visual Studio Code that supports development of polyglot applications using GraalVM.
-The extension is Technology Preview.
+This suite provides extensions to Visual Studio Code that supports development of Graal Cloud Native (GCN) and Micronaut applications, OCI DevOps support and JDBC support for Oracle Database and MySQL for VSCode.
+
+The extensions are Technology Preview.
 
 ## Build VSIX package from sources
 
-To build VSIX package of the GraalVM extension, take the following steps:
-
-* Install `vsce` (short for "Visual Studio Code Extensions"), a command-line tool for packaging, publishing and managing VS Code extensions
+To build VSIX packages of the GCN extensions, take the following steps:
+* Install `npm`
+  * Install `vsce` if not installed automatically 
+* To build all extensions at once run following command at this top level folder.
 ```bash
-npm install -g vsce
+$ npm run build
 ```
-
-* Compile and package the extension
+* Build each extension separately, e.g. **gcn** ext:
 ```bash
-pushd graalvm; npm install; vsce package; popd;
+npm run build:gcn
 ```
-
-Alternatively, invoke `mx build` to create a zip file distribution with the extension contained.
+Specify name of the folder with extension after **`:`**
 
 ## Installation
 
-To install the GraalVM extension into Visual Studio Code, take the following step:
+To install the extension into Visual Studio Code, take the following step:
 
 * Install desired package with `code --install-extension <extension.vsix>`
 ```bash
-code --install-extension graalvm/graalvm-*.vsix
+code --install-extension gcn/gcn-*.vsix
 ```
 ## License
 
-GraalVM VS Code Extension is licensed under [The Universal Permissive License (UPL), Version 1.0](LICENSE)
+Graal Cloud Native VS Code Extension are licensed under [The Universal Permissive License (UPL), Version 1.0](LICENSE)
