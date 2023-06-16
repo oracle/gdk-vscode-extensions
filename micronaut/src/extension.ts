@@ -46,18 +46,6 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut.kubernetes.run', () => {
 		runProject();
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut.odb.register', (dbNode) => {
-		let userId: string = dbNode.connectionProperties.userID;
-		let dataSource: string = dbNode.connectionProperties.dataSource;
-		let tnsAdmin: string = dbNode.connectionProperties.tnsAdmin;
-		let password: string = String.fromCharCode(...dbNode.connectionProperties.password);
-		let url = `jdbc:oracle:thin:@${dataSource}?TNS_ADMIN=\"${tnsAdmin}\"`;
-		let driver = "oracle.jdbc.OracleDriver";
-		let schema = userId.toUpperCase();
-		let displayName = dataSource;
-		let info = {userId, password, url, driver, schema, displayName};
-		vscode.commands.executeCommand('db.add.connection', info);
-	}));
 	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut.oci.register', (ociNode) => {
 		let id: string = ociNode.adbInstanceNodeProperties.adbInstanceID;
 		let name: string = ociNode.adbInstanceNodeProperties.adbInstanceDisplayName;
