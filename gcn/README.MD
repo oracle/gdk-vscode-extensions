@@ -21,8 +21,8 @@ The wizard can generate different types of Graal Cloud Native applications and s
     - Provide a base package
     - Pick the Graal Cloud Native services to be included in the project
     - Select a build tool: Maven or Gradle
-    - Select a unit test framework: JUnit, Spock, Kotest
-    - Select cloud providers to support: OCI and/or AWS; Note: you need to select OCI if you want OCI DevOps support
+    - Select a unit test framework: JUnit, Spock, or Kotest
+    - Select cloud providers to support: Oracle Cloud Infrastructure and/or Amazon Web Services; Note: you need to select OCI if you want OCI DevOps support
 
 3. Finally, you are asked where to save your new project. You then choose to open it in a new VS Code window or add it to a Workspace in the current VS Code window.
 

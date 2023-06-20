@@ -13,8 +13,8 @@ import * as vscode from 'vscode';
 
 // NOTE: should be updated whenever the defaults change
 // TODO: could this be automated somehow based on the GitHub/GDS catalogs?
-const DEFAULT_JAVA_VERSION = '17';
-const DEFAULT_GRAALVM_VERSION = '22';
+export const DEFAULT_JAVA_VERSION = '17';
+export const DEFAULT_GRAALVM_VERSION = '23';
 
 export async function getActiveGVMVersion(): Promise<string[] | undefined> {
     const gvm = getActiveGVM();
