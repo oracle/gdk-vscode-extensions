@@ -2,6 +2,7 @@
 
 ## Version 0.0.3
 * Micronaut extension added
+* Documentation updated
 
 ## Version 0.0.2
 * Documentation improvements

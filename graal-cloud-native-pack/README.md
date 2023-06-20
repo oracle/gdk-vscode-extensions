@@ -1,6 +1,6 @@
 # Graal Cloud Native Extensions Pack
 
-[Graal Cloud Native Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) is a collection of extensions that help you create, build & deploy Graal Cloud Native Applications.
+[Graal Cloud Native Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) is a collection of extensions that help you create, build, and deploy Graal Cloud Native applications.
 
 The Graal Cloud Native Extension Pack bundles the [Graal Cloud Native Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn), [GCN Database Support](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn-database-drivers), and [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops) extensions.
 
@@ -8,18 +8,18 @@ The Graal Cloud Native Extension Pack bundles the [Graal Cloud Native Tools](htt
 
 The extension pack bundles support for [Graal Cloud Native](https://graal.cloud) applications. In particular:
 
-1. An integrated Graal Cloud Native and Micronaut project creation wizards.
-2. Support for the core [Oracle Cloud Infrastructure (OCI)](https://www.oracle.com/cloud/) services in VS Code including: Object Storage; Authentication; Secret Management; Streaming; etc.;
+1. Integrated Graal Cloud Native and Micronaut project creation wizards.
+2. Support for the core [Oracle Cloud Infrastructure](https://www.oracle.com/cloud/) services in VS Code including: Object Storage; Authentication; Secret Management; Streaming; etc.;
 3. Drivers for the following databases:
  * Oracle Database
 
 ### OCI DevOps Services Support
 
-The extension pack also bundles support for using Oracle Cloud Infrastructure's (OCI) [DevOps service](), offering:
+The extension pack also bundles support for using Oracle Cloud Infrastructure's [DevOps service](), offering:
 
-1. Source code management in the Oracle Cloud.
-2. Cloud-based build pipelines for JVM and [GraalVM Native Image](https://www.oracle.com/uk/java/graalvm/) based containers.
-3. Deployment pipelines for [Oracle Kubernetes Engine](https://www.oracle.com/uk/cloud/cloud-native/container-engine-kubernetes/) (OKE).
+1. Source code management in Oracle Cloud Infrastructure.
+2. Cloud-based build pipelines for JVM and [GraalVM Native Image](https://www.oracle.com/java/graalvm/) based containers.
+3. Deployment pipelines for [Oracle Kubernetes Engine](https://www.oracle.com/cloud/cloud-native/container-engine-kubernetes/) (OKE).
 
 ## Extensions Included
 

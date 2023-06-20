@@ -37,8 +37,15 @@ steps:
       if [ ! -n "${GRAALVM_VERSION}" ]; then export GRAALVM_VERSION=22; fi
       if [ ! -n "${JAVA_VERSION}" ]; then export JAVA_VERSION=17; fi
       echo "GraalVM Version: ${GRAALVM_VERSION}, Java Version: ${JAVA_VERSION}"
-      yum -y install graalvm${GRAALVM_VERSION}-ee-${JAVA_VERSION}-jdk
-      export JAVA_HOME=/usr/lib64/graalvm/graalvm${GRAALVM_VERSION}-ee-java${JAVA_VERSION}
+      if [ "${GRAALVM_VERSION}" -ge 23 ]; then
+        echo "yum -y install graalvm-${JAVA_VERSION}-jdk";
+        yum -y install graalvm-${JAVA_VERSION}-jdk;
+        export JAVA_HOME=`rpm -ql graalvm-${JAVA_VERSION}-jdk | grep "bin/javac" | sed "s/\/bin\/javac$//"`;
+      else
+        echo "yum -y install graalvm${GRAALVM_VERSION}-ee-${JAVA_VERSION}-jdk";
+        yum -y install graalvm${GRAALVM_VERSION}-ee-${JAVA_VERSION}-jdk;
+        export JAVA_HOME=/usr/lib64/graalvm/graalvm${GRAALVM_VERSION}-ee-java${JAVA_VERSION};
+      fi
       echo "Exported JAVA_HOME: ${JAVA_HOME}"
   - type: Command
     name: "Set the PATH"
