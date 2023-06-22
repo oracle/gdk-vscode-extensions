@@ -1,6 +1,10 @@
 import * as vscode from 'vscode';
 import { isBoolean, isInIs, isNumber, isObject, isString, isTypeArray } from './typeUtils';
 
+export const COMMAND_PREFIX = "";
+export const COMMAND_NBLS_ADD_DB_CONNECTION = COMMAND_PREFIX + 'db.add.connection';
+export const COMMAND_ODT_GET_DB_CONNECTIONS = 'oracledevtools.getDBExplorerConnections';
+
 export type DatabaseConnectionInfo = {
     "connectionType"?: string;
     "connectionName": string;
@@ -56,7 +60,7 @@ function registerDatabase(databaseInfo: DatabaseConnectionInfo) {
         schema: userId.toUpperCase(),
         displayName: dataSource,
     };
-    vscode.commands.executeCommand('db.add.connection', info);
+    vscode.commands.executeCommand(COMMAND_NBLS_ADD_DB_CONNECTION, info);
 }
 
 function readPassword(databaseInfo: DatabaseConnectionInfo): string | undefined {
@@ -80,12 +84,13 @@ async function pickDatabase(): Promise<DatabaseConnectionInfo[] | undefined> {
     return selectedItems.map(i => i.content);
 }
 
+const CONNECTIONS_FIELD = 'oracledevtools.connections';
 export async function getODTDatabaseConnections(): Promise<DatabaseConnectionInfo[]> {
-    const databases = vscode.commands.executeCommand("oracledevtools.getDBExplorerConnections");
+    const databases = vscode.commands.executeCommand(COMMAND_ODT_GET_DB_CONNECTIONS);
     if (!(databases && typeof databases === "string")) { return []; }
     const dat = JSON.parse(databases);
-    if (!("oracledevtools.connections" in dat)) { return []; }
-    const conns = dat["oracledevtools.connections"];
+    if (!(CONNECTIONS_FIELD in dat)) { return []; }
+    const conns = dat[CONNECTIONS_FIELD];
     if (!(conns && isTypeArray(conns, isDatabaseConnectionInfo))) { return []; }
     return conns;
 }
