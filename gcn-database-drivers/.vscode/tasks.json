@@ -5,12 +5,12 @@
 	"tasks": [
 		{
 			"type": "npm",
-			"script": "watch",
+			"script": "compile",
 			"problemMatcher": "$ts-webpack-watch",
 			"isBackground": true,
 			"presentation": {
 				"reveal": "never",
-				"group": "watchers"
+				"group": "compile"
 			},
 			"group": {
 				"kind": "build",

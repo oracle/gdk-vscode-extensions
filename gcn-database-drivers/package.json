@@ -23,11 +23,33 @@
     "*"
   ],
   "main": "./dist/extension.js",
-  "contributes": {},
+  "contributes": {
+    "commands": [
+      {
+        "command": "gcn-database-drivers.database.register",
+        "title": "Register Database for Micronaut/GCN"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "gcn-database-drivers.database.register",
+          "when": "odt.extension.enabled"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "gcn-database-drivers.database.register",
+          "when": "view == oracleDBObjectExplorer && viewItem =~ /Connection/ && dbAddConnectionPresent",
+          "group": "connection_3@1"
+        }
+      ]
+    }
+  },
   "config": {
-		"winBuildPath": "..\\node_modules\\.bin\\vsce",
-		"unixBuildPath": "../node_modules/.bin/vsce",
-		"buildCmd": "package --allow-star-activation --allow-missing-repository --no-update-package-json"
+    "winBuildPath": "..\\node_modules\\.bin\\vsce",
+    "unixBuildPath": "../node_modules/.bin/vsce",
+    "buildCmd": "package --allow-star-activation --allow-missing-repository --no-update-package-json"
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -43,11 +65,11 @@
     "build": "cross-os build"
   },
   "cross-os": {
-		"build": {
-			"linux": "$npm_package_config_unixBuildPath $npm_package_config_buildCmd `[ -z ${BUILD_NUMBER} ] && echo \"${npm_package_version}\" || echo \"${npm_package_version}-${BUILD_NUMBER}\"`",
-			"darwin": "$npm_package_config_unixBuildPath $npm_package_config_buildCmd `[ -z ${BUILD_NUMBER} ] && echo \"${npm_package_version}\" || echo \"${npm_package_version}-${BUILD_NUMBER}\"`",
-			"win32": "%npm_package_config_winBuildPath% %npm_package_config_buildCmd%"
-		}
+    "build": {
+      "linux": "$npm_package_config_unixBuildPath $npm_package_config_buildCmd `[ -z ${BUILD_NUMBER} ] && echo \"${npm_package_version}\" || echo \"${npm_package_version}-${BUILD_NUMBER}\"`",
+      "darwin": "$npm_package_config_unixBuildPath $npm_package_config_buildCmd `[ -z ${BUILD_NUMBER} ] && echo \"${npm_package_version}\" || echo \"${npm_package_version}-${BUILD_NUMBER}\"`",
+      "win32": "%npm_package_config_winBuildPath% %npm_package_config_buildCmd%"
+    }
   },
   "devDependencies": {
     "@types/vscode": "^1.76.0",
@@ -68,5 +90,8 @@
     "webpack": "^5.76.0",
     "webpack-cli": "^5.0.1",
     "@vscode/test-electron": "^2.2.0"
-  }
+  },
+  "extensionDependencies": [
+    "asf.apache-netbeans-java"
+  ]
 }

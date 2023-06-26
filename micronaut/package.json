@@ -101,11 +101,6 @@
 				"command": "extension.micronaut.kubernetes.run",
 				"title": "Run in Kubernetes",
 				"category": "Micronaut"
-			},
-			{
-				"command": "extension.micronaut.odb.register",
-				"title": "Register Database for Micronaut",
-				"category": "Micronaut"
 			}
 		],
 		"menus": {
@@ -137,17 +132,6 @@
 				{
 					"command": "extension.micronaut.kubernetes.run",
 					"when": "kubectl.available && graalVMExt.available"
-				},
-				{
-					"command": "extension.micronaut.odb.register",
-					"when": "false"
-				}
-			],
-			"view/item/context": [
-				{
-					"command": "extension.micronaut.odb.register",
-					"when": "view == oracleDBObjectExplorer && viewItem =~ /Connection/ && dbAddConnectionPresent",
-					"group": "connection_3@1"
 				}
 			]
 		}
