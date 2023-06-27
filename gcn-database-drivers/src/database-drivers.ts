@@ -86,7 +86,7 @@ async function pickDatabase(): Promise<DatabaseConnectionInfo[] | undefined> {
 
 const CONNECTIONS_FIELD = 'oracledevtools.connections';
 export async function getODTDatabaseConnections(): Promise<DatabaseConnectionInfo[]> {
-    const databases = vscode.commands.executeCommand(COMMAND_ODT_GET_DB_CONNECTIONS);
+    const databases = await vscode.commands.executeCommand(COMMAND_ODT_GET_DB_CONNECTIONS);
     if (!(databases && typeof databases === "string")) { return []; }
     const dat = JSON.parse(databases);
     if (!(CONNECTIONS_FIELD in dat)) { return []; }
