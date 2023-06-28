@@ -280,6 +280,26 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 		return (input: MultiStepInput) => pickFeatures(input, state);
 	}
 
+    async function pickedFeaturesValid(state : Partial<State>) : Promise<any> {
+        if (state.micronautVersion && (state.micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || state.micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL))) {
+            let query = `?javaVersion=JDK_${state.javaVersion?.target}`;
+            query += `&lang=${state.language?.value}`;
+            state.features?.forEach((feature: {label: string; detail: string; name: string}) => {
+                query += `&features=${feature.name}`;
+            });
+            
+            const url = state.micronautVersion.serviceUrl + CREATE + "/" + state.applicationType?.name + "/com.example.project" + query
+            const status = await getProjectStatus(url);
+            if (status?.success === true) {
+                let messageErr : string = status.data?.message ? status.data?.message + ": ": "";
+                messageErr += status?.data?._embedded?.errors[0].message; // show first error
+                return {success: false, message: messageErr};
+            }
+
+        }
+        return {status: true};
+    }
+
 	async function pickFeatures(input: MultiStepInput, state: Partial<State>) {
         const features = state.micronautVersion && state.applicationType && state.javaVersion ? await getFeatures(state.micronautVersion, state.applicationType, state.javaVersion) : [];
         const items: vscode.QuickPickItem[] = [];
@@ -291,17 +311,26 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
             }
             items.push(feature);
         }
-		const selected: any = await input.showQuickPick({
-			title,
-			step: 7,
-			totalSteps: totalSteps(state),
-            placeholder: 'Pick project features',
-            items,
-            activeItems: state.features,
-            canSelectMany: true,
-			shouldResume: () => Promise.resolve(false)
-        });
-        state.features = selected;
+
+        let validFeatures;
+        do {
+            const selected: any = await input.showQuickPick({
+                title,
+                step: 7,
+                totalSteps: totalSteps(state),
+                placeholder: 'Pick project features',
+                items,
+                activeItems: state.features,
+                canSelectMany: true,
+                shouldResume: () => Promise.resolve(false)
+            });
+            state.features = selected;
+            validFeatures = await pickedFeaturesValid(state);
+            if (validFeatures?.success === false) {
+                vscode.window.showErrorMessage(validFeatures.message ? validFeatures.message : "Invalid features selected");
+            }
+        } while (validFeatures?.success === false);
+
 		return (input: MultiStepInput) => pickBuildTool(input, state);
 	}
 
@@ -646,5 +675,30 @@ async function downloadProject(options: {url: string; name: string; target: stri
         }).on('error', e => {
             reject(e.message);
         }).end();
+    });
+}
+
+async function getProjectStatus(url : string) : Promise<any> {
+    return new Promise<any>((resolve, reject) => {
+        const request = https.get(url, res => {
+            const contentType = res.headers['content-type'] || '';
+            let rawData: string = '';
+            res.on('data', chunk => { rawData += chunk; });
+            res.on('end', () => {
+                if (/^application\/json/.test(contentType)) {
+                    resolve({success: true, data: JSON.parse(rawData)});
+                } else {
+                    resolve({success: false});
+                }
+            });
+            res.on('error', e => {
+                reject({success:false, data: e.message} );
+            });
+        }).on('error', (error) => { reject( {success:false, data:error} ); });
+
+        setTimeout(() => {
+            request.abort();
+            reject({success:false, data:'Timed out'});
+          }, 5000);
     });
 }
