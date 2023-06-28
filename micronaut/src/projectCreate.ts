@@ -326,8 +326,9 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
             });
             state.features = selected;
             validFeatures = await pickedFeaturesValid(state);
-            if (validFeatures?.success === false)
+            if (validFeatures?.success === false) {
                 vscode.window.showErrorMessage(validFeatures.message ? validFeatures.message : "Invalid features selected");
+            }
         } while (validFeatures?.success === false);
 
 		return (input: MultiStepInput) => pickBuildTool(input, state);
