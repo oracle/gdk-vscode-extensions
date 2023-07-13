@@ -4,6 +4,7 @@
 * [Extension Settings](#extension-settings)
 * [Micronaut Commands](#micronaut-commands)
 * [Create a Micronaut Project](#create-a-micronaut-project)
+* [Navigate the Source Code](#navigate-the-source-code)
 * [Package and Run Micronaut Applications](#package-and-run-micronaut-applications) 
 * [Debug Micronaut Applications](#debug-micronaut-applications)
 * [Transform  Micronaut Applications into Native Executables](#transform-micronaut-applications-into-native-executables)
@@ -85,6 +86,16 @@ The GUI part of the Micronaut extension adds a new view to the Explorer activity
 
 Besides the project creation wizard, you can use the console CLI.
 If you provide a path to the [Micronaut CLI installation](https://micronaut-projects.github.io/micronaut-starter/latest/guide/#installation), you can create a project using the `mn` executable.
+
+## Navigate the Source Code
+
+When installed together with the [Language Server for Java by Apache NetBeans](https://marketplace.visualstudio.com/items?itemName=ASF.apache-netbeans-java), easy navigation to Micronaut-specific elements of your source code is provided via **Go to Symbol in Workspace**.
+
+   ![Micronaut Source Code Navigaion](images/micronaut-navigation.png)
+
+Invoke **Go to Symbol in Workspace** with Ctrl+T (Cmd+T on Mac) and type the prefix:
+  * `@/` to show all defined request mappings
+  * `@+` to show all defined beans
 
 ## Package and Run Micronaut Applications
 
