@@ -82,11 +82,6 @@ export type JavaVMType = {
 };
 
 /**
- * Defines the fileHandler function type
- */
-export type FileHandlerType = (pathName: any, bytes: any, _isBinary: any, isExecutable: any)=>void;
-
-/**
  * External variable filled by resolve()
  */
 declare var AotjsVM: any;
@@ -106,7 +101,7 @@ export async function initialize(): Promise<any> {
     });
 }
 
-export async function writeProjectContents(options: CreateOptions, fileHandler:FileHandlerType) {
+export async function writeProjectContents(options: CreateOptions, fileHandler:FileHandler) {
    function j(multi?: string[]) {
     if (!multi) {
         return "";
@@ -135,8 +130,11 @@ export async function writeProjectContents(options: CreateOptions, fileHandler:F
         options.javaVersion,
         'gcn-vscode-extension',
         true,
-        fileHandler
+        fileHandler.writeFile()
     );
+
+    await Promise.all(fileHandler.fileHandlerPromises);
+
    } catch (err) {
     dialogs.showErrorMessage(`Project generation failed`, err);
     throw err;
@@ -515,25 +513,39 @@ export function normalizeJavaVersion(version: string | undefined, supportedVersi
  */
 export abstract class FileHandler {
 
+    private _fileHandlerPromises: Thenable<void>[] = [];
+
     constructor(private locationUri:vscode.Uri){}
 
     writeFile(){
-        return async (pathName: any, bytes: any, _isBinary: any, isExecutable: any) => {
+        return (pathName: any, bytes: any, _isBinary: any, isExecutable: any) => {
             const p : string = pathName.$as('string');
             const exe : boolean = isExecutable.$as('boolean');
             const data = bytes.$as(Int8Array).buffer;
             const view = new Uint8Array(data);
 
-            const dir = vscode.Uri.joinPath(vscode.Uri.file(p),'..').fsPath;
-            const dirUri = vscode.Uri.joinPath(this.locationUri, dir);
-            //Create directory if not exists
-            await vscode.workspace.fs.createDirectory(dirUri);
-            // Write file to disk
-            const fileUri = vscode.Uri.joinPath(this.locationUri, p);
-            await vscode.workspace.fs.writeFile(fileUri, view);
-            this.changeMode(fileUri,exe);
+            this._fileHandlerPromises.push(
+                new Promise<void>(async (resolve, reject) => {
+                    try {
+                        const dir = vscode.Uri.joinPath(vscode.Uri.file(p),'..').fsPath;
+                        const dirUri = vscode.Uri.joinPath(this.locationUri, dir);
+                        //Create directory if not exists
+                        await vscode.workspace.fs.createDirectory(dirUri);
+                        // Write file to disk
+                        const fileUri = vscode.Uri.joinPath(this.locationUri, p);
+                        await vscode.workspace.fs.writeFile(fileUri, view);
+                        this.changeMode(fileUri,exe);
+                        resolve();
+                    }catch(e){
+                        reject(e);
+                    }
+            }));
         };
     };
+
+    public get fileHandlerPromises() {
+        return this._fileHandlerPromises;
+    }
 
     /**
      * Changes the mode of the file at the given URI to be executable or non-executable.

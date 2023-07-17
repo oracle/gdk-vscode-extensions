@@ -80,7 +80,7 @@ export async function createProjectBase(options : CreateOptions, targetLocation 
         fs.mkdirSync(targetLocation, { recursive: true });
     }
 
-    await writeProjectContents(options,new NodeFileHandler(vscode.Uri.file(targetLocation)).writeFile());
+    await writeProjectContents(options,new NodeFileHandler(vscode.Uri.file(targetLocation)));
 
     const uri = vscode.Uri.file(targetLocation);
     handleNewGCNProject(uri);

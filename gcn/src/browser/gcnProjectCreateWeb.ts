@@ -58,7 +58,7 @@ export async function createProjectBase(options : CreateOptions, targetLocation 
 
     await vscode.workspace.fs.createDirectory(targetLocationUri);
     
-    await writeProjectContents(options,new WebFileHandler(targetLocationUri).writeFile());
+    await writeProjectContents(options,new WebFileHandler(targetLocationUri));
 
     handleNewGCNProject(targetLocationUri);
 }
