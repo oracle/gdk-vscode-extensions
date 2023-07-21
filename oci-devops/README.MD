@@ -119,7 +119,7 @@ When working behind firewall over a proxy then VSCode Proxy has to be set ON. In
 Many tools used to work on Java projects, such as Maven, Gradle, `kubectl`, and `docker` (if used), may require proxy configuration.
 
 ## <a name='known-issues'></a>Known Issues
-- Micronaut 4.0.0 Gradle project has known [issue #781](https://github.com/micronaut-projects/micronaut-gradle-plugin/issues/781) when building GraalVM Native images. DevOps Build pipelines (yaml files in your project) need to be modified either by what is recommended in issue #781 or by using `./gradlew nativeOptimizedCompile` build target. This issue was already fixed in Micronaut 4.0.1 build plugin. 
+- Micronaut 4.0.0 Gradle project has known [issue #781](https://github.com/micronaut-projects/micronaut-gradle-plugin/issues/781) when building GraalVM Native images. This issue was already fixed in Micronaut 4.0.1 AOT build plugin. Open `build.gradle` file from your project and update aot plugin to version 4.0.1, e.g. `id("io.micronaut.aot") version "4.0.1"`. Then push updated `build.gradle` to OCI git or perform OCI project deploy.
 
 ## <a name='provide-feedback-or-seek-help'></a>Provide Feedback or Seek Help
 
