@@ -1,5 +1,8 @@
 # Change Log
 
+## Version 0.9.2
+* 3rd party libraries updated
+
 ## Version 0.9.1
 * Generated Graal Cloud Native applications updated
 * Documentation fixes
