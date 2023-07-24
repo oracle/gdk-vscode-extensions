@@ -89,7 +89,7 @@ If you provide a path to the [Micronaut CLI installation](https://micronaut-proj
 
 ## Navigate the Source Code
 
-When installed together with the [Language Server for Java by Apache NetBeans](https://marketplace.visualstudio.com/items?itemName=ASF.apache-netbeans-java), easy navigation to Micronaut-specific elements of your source code is provided via **Go to Symbol in Workspace**.
+When installed together with the [Language Server for Java by Apache NetBeans](https://marketplace.visualstudio.com/items?itemName=ASF.apache-netbeans-java) version 19 or higher, easy navigation to Micronaut-specific elements of your source code is provided via **Go to Symbol in Workspace**.
 
    ![Micronaut Source Code Navigaion](images/micronaut-navigation.png)
 
