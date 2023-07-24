@@ -21,7 +21,6 @@ suite("Start Testing Configuration", function() {
 
     const COMPARTMENT_OCID : string =  (process.env["TEST_DEPLOY_COMPARTMENT_OCID"] ? process.env["TEST_DEPLOY_COMPARTMENT_OCID"] : "ocid1.compartment.oc1..aaaaaaaa7thgaondgokuwyujlq4tosnpfaohdivlbbr64izsx5jxfxrezxca" );
 
-
     let selectedProfile = "";
     test("Check Default Config", async function() {
         let defaultConfigFile = ociAuthentication.getDefaultConfigFile();
@@ -57,10 +56,6 @@ suite("Start Testing Configuration", function() {
         assert.ok(vcns.length > 0, "Virual Networks Not Found");
 
     });
-
-
-
-
 
 
 });
