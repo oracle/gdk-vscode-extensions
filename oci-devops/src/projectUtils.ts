@@ -197,7 +197,7 @@ export async function getProjectBuildArtifactLocation(folder: ProjectFolder, sub
     } else {
         artifacts = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, folder.uri.toString(), opts);
     }
-    if (artifacts && artifacts.length === 1) {
+    if (artifacts && artifacts.length > 0) {
         const loc: vscode.Uri = vscode.Uri.parse(artifacts[0].location);
         return path.relative(projectPath, loc.path);
     }

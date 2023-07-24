@@ -3,7 +3,7 @@
   "displayName": "GCN Database Support",
   "description": "JDBC and database drivers for clouds supported by GCN",
   "license": "SEE LICENSE IN LICENSE.txt",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "preview": true,
   "publisher": "oracle-labs-graalvm",
   "author": {

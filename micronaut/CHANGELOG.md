@@ -1,5 +1,8 @@
 # Change Log
 
+# Version 0.5.20
+* 3rd party libraries updated
+
 # Version 0.5.19
 * Enable uppercase letters in Micronaut project name
 
