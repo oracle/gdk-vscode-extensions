@@ -3,7 +3,6 @@ import * as vscode from 'vscode';
 import { waitForStatup } from './extension.test';
 import * as ociAuthentication from '../../oci/ociAuthentication';
 import * as ociUtils from '../../oci/ociUtils';
-// import * as okeUtils from '../../oci/okeUtils';
 import * as vcnUtils from '../../oci/vcnUtils';
 import * as deployUtils from '../../oci/deployUtils';
 import * as projectUtils from '../../projectUtils';
@@ -43,7 +42,6 @@ suite("Test OCI Devops Tools Features", function() {
     const DEPLOY_PROJECT_NAME : string = (process.env["TEST_DEPLOY_PROJECT_NAME"] ? process.env["TEST_DEPLOY_PROJECT_NAME"] : "base-oci-template-test");
     const COMPARTMENT_OCID : string =  (process.env["TEST_DEPLOY_COMPARTMENT_OCID"] ? process.env["TEST_DEPLOY_COMPARTMENT_OCID"] : "ocid1.compartment.oc1..aaaaaaaa7thgaondgokuwyujlq4tosnpfaohdivlbbr64izsx5jxfxrezxca" );
     const ACTION_NAME = 'Deploy to OCI';
-    // const REGION_ID = "us-phoenix-1";
 
     let provider : ConfigFileAuthenticationDetailsProvider | undefined;
 
@@ -114,14 +112,14 @@ suite("Test OCI Devops Tools Features", function() {
     });
 
     
-    // test("Check build pipelines",  async function() {
-    //     assert.ok(provider, "Provider not authenticated");
-    //     assert.ok(projectId, "Project Id Not Found");
+    test("Check build pipelines",  async function() {
+        assert.ok(provider, "Provider not authenticated");
+        assert.ok(projectId, "Project Id Not Found");
         
-    //     let buildPipelines = await ociUtils.listBuildPipelines(provider, projectId);
-    //     assert.ok(buildPipelines.length > 0, "No Build Pipelines is created");
+        let buildPipelines = await ociUtils.listBuildPipelines(provider, projectId);
+        assert.ok(buildPipelines.length > 0, "No Build Pipelines is created");
                 
-    // });
+    });
 
     let codeRepositoryId : string | undefined;
     test("Check Code Repository", async function() {
@@ -221,7 +219,7 @@ suite("Test OCI Devops Tools Features", function() {
                 cluster_id: cluster.id,
                 secret_name: secretName
             });
-            assert(inlineContent, "setupCommandSpecArtifact: inlineContent Error");
+            assert(inlineContent, "setupCommandSpecArtifact: inline Content is undefined");
             const artifactName = `${repositoryName}_oke_deploy_docker_secret_setup_command`;
             const artifactDescription = `OKE deployment docker secret setup command specification artifact for devops project ${project} & repository ${repositoryName}`;
             const okeDeploySetupCommandArtifact = (await ociUtils.createOkeDeploySetupCommandArtifact(provider, projectId, inlineContent, artifactName, artifactDescription, {
@@ -245,7 +243,7 @@ suite("Test OCI Devops Tools Features", function() {
                 secret_name: secretName
             });
 
-            assert(inlineContent, "deployConfigArtifact: inlineContent Error");
+            assert(inlineContent, "deployConfigArtifact: inline Content is undefined");
             const jvm = image.endsWith('-jvm:${DOCKER_TAG}');
             const artifactName = `${repositoryName}_oke_deploy_${jvm ? 'jvm' : 'ni'}_configuration`;
             const artifactDescription = `OKE ${jvm ? 'jvm' : 'native'} deployment configuration artifact for devops project ${project.name} & repository ${repositoryName}`;
