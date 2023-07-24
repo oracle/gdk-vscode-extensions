@@ -137,7 +137,7 @@ suite("Test OCI Devops Tools Features", function() {
     test("Create Deployment pipeline", async function() {
 
         assert.ok(provider, "Provider not authenticated");
-        assert.ok(wf, "Workspace empty");
+        assert.ok(wf, "Workspace is empty");
         assert.ok(auth, "Not Authenticated");
         assert.ok(projectId, "Project Id Not Found");
         assert.ok(codeRepositoryId, "Code Repository Id Not Found");
@@ -150,9 +150,6 @@ suite("Test OCI Devops Tools Features", function() {
 
         const projectFolder = await projectUtils.getProjectFolder(wf[0]);
         assert.ok(projectFolder, "ProjectFolder Not Found");
-
-        // let cluster = await okeUtils.selectOkeCluster(provider, COMPARTMENT_OCID, REGION_ID );
-        // assert.ok(cluster && cluster !== null, "Default Cluster Not Selected");
 
         let clusters = await ociUtils.listClusters(provider, COMPARTMENT_OCID);
         assert.ok(clusters.length > 0, "No Cluster found in your Compartment");
@@ -186,7 +183,6 @@ suite("Test OCI Devops Tools Features", function() {
         assert.ok(subnet, " subnet is Undefined");
 
         let deployEnvironments = await ociUtils.listDeployEnvironments(provider, projectId);
-        // assert.ok(deployEnvironments.length>0, " deployEnvironments  Undefined");
 
         let existingDeployEnvironments = deployEnvironments.filter(env => {
             if (env.deployEnvironmentType === devops.models.OkeClusterDeployEnvironmentSummary.deployEnvironmentType) {
@@ -195,8 +191,6 @@ suite("Test OCI Devops Tools Features", function() {
             }
             return;
         });
-        // assert.ok(existingDeployEnvironments.length>0, " existingDeployEnvironments  Undefined");
-
 
         assert.ok(cluster.id, "Cluster Id is undefined");
         const okeClusterEnvironment = existingDeployEnvironments?.length ? existingDeployEnvironments[0] 
@@ -206,17 +200,19 @@ suite("Test OCI Devops Tools Features", function() {
         const secretName = `${repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')}-vscode-generated-ocirsecret`;
         
         const deployArtifacts = await ociUtils.listDeployArtifacts(provider, projectId);
-        assert.ok(deployArtifacts.length>0, " deployArtifacts  Undefined");
+        assert.ok(deployArtifacts.length>0, " Deployment Artifacts Not Found");
 
         let setupCommandSpecArtifact = deployArtifacts?.find(env => {
-            assert(cluster, "setupCommandSpecArtifact: Cluster is undefined");
+            assert(cluster, "Cluster is Not Found");
             return env.deployArtifactType === devops.models.DeployArtifact.DeployArtifactType.CommandSpec && env.freeformTags?.devops_tooling_oke_cluster === cluster.id;
         })?.id;
 
+        let extensionPath = vscode.extensions.getExtension("oracle-labs-graalvm.oci-devops")?.extensionPath;
+        assert.ok(extensionPath, "Extension Path Not Found");
+        let RESOURCES_FOLDER = path.join(extensionPath, 'resources', 'oci');
+
         if (!setupCommandSpecArtifact) {
-            let extPath = vscode.extensions.getExtension("oracle-labs-graalvm.oci-devops")?.extensionPath;
-            assert.ok(extPath, "setupCommandSpecArtifact: Path Not Found");
-            let RESOURCES_FOLDER = path.join(extPath, 'resources', 'oci');
+                
             let repoEndpoint = `${provider.getRegion().regionCode}.ocir.io`;
     
             const inlineContent = deployUtils.expandTemplate(RESOURCES_FOLDER, 'oke_docker_secret_setup.yaml', {
@@ -242,9 +238,7 @@ suite("Test OCI Devops Tools Features", function() {
         })?.id;
 
         if (!deployConfigArtifact) {
-            let extPath = vscode.extensions.getExtension("oracle-labs-graalvm.oci-devops")?.extensionPath;
-            assert.ok(extPath, "deployConfigArtifact: Path Not Found");
-            let RESOURCES_FOLDER = path.join(extPath, 'resources', 'oci');
+
             let inlineContent = deployUtils.expandTemplate(RESOURCES_FOLDER, 'oke_deploy_config.yaml', {
                 image_name: image,
                 app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
@@ -286,7 +280,6 @@ suite("Test OCI Devops Tools Features", function() {
             await ociUtils.updateCompartmentAccessPolicies(provider, COMPARTMENT_OCID, COMPARTMENT_OCID, subnet.compartmentID);
         } catch (error) {
             console.warn("Policies: ", error);
-            
         }
         
         let deployPipeline;
@@ -296,20 +289,20 @@ suite("Test OCI Devops Tools Features", function() {
                 defaultValue: 'latest'
             }], tags));
         } catch (error) {
-            console.warn("deployPipeline: ", error);
+            console.warn("Deployment Pipeline: ", error);
             
         }
-        
-        assert.ok(deployPipeline, "deployPipeline Not Exist at all");
+
+        assert.ok(deployPipeline, "deployPipeline Not Found");
 
         let setupSecretStage;
         try {
             setupSecretStage = await ociUtils.createSetupKubernetesDockerSecretStage(provider, deployPipeline.id, setupCommandSpecArtifact, subnet.id);
         } catch (error) {
-            console.warn("setupSecretStage: ", error);
-            
+            console.warn("setupSecretStage: ", error); 
         }
-        assert.ok(setupSecretStage, "setupSecretStage Not Exist at all");
+
+        assert.ok(setupSecretStage, "setupSecretStage Not Found");
 
         let deployStage = await ociUtils.createDeployToOkeStage(provider, deployPipeline.id, setupSecretStage.id, okeClusterEnvironment.id, deployConfigArtifact);
         assert.ok(deployStage, "deployStage Not Exist at all");
