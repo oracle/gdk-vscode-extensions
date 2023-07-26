@@ -1,64 +1,72 @@
-# GraalVM Tools for Micronaut - Micronaut Productivity
+# GraalVM Tools for Micronaut® &mdash; Micronaut Productivity
 
-GraalVM Tools for Micronaut is an IDE for developing [Micronaut framework](https://micronaut.io/) applications within VS Code. The [Micronaut framework](https://micronaut.io/) is a lightweight reactive framework that provides a solid foundation for building cloud native Java microservices and you can use [Micronaut Data](https://micronaut-projects.github.io/micronaut-data/latest/guide/) to easily connect to databases and execute type-safe queries that support intuiative [Finder methods][Title](https://micronaut-projects.github.io/micronaut-data/latest/guide/#querying).
+## Overview
+GraalVM Tools for Micronaut is a powerful extension for using [GraalVM](https://www.oracle.com/java/graalvm/) to develop [Micronaut framework](https://micronaut.io/) applications within VS Code.
+Micronaut framework is a lightweight reactive framework that provides a solid foundation for building cloud native Java microservices.
 
-Click on the `Install` button in the banner above, or from within the `Extensions`side-bar, within VS Code, by searching for ` GraalVM Tools for Micronaut`.
+## Features
+- Create a new Gradle/Maven Micronaut application
+- Run your Micronaut application
+- Debug your Micronaut application
+- Package your Micronaut application as a JAR file
+- Create a native executable from your Micronaut application
+- Build a container image from your Micronaut application and deploy it to a container registry
+- Deploy your application to Oracle Cloud Infrastructure
+- Connect to an Oracle Autonomous Database
 
-You can also find the [extension listed on the VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut).
+## Requirements
+- VS Code (version 1.76.0 or later).
+- A Java Development Kit (JDK) installation (JDK 17 or later).
+[Oracle GraalVM](https://www.oracle.com/java/graalvm/) is a fast and efficient JDK from Oracle.
+- The [Extension Pack for Java from Microsoft](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack).
+VS Code will prompt you to install the extension when you open a Micronaut project (for more information, see [Java in VS Code](https://code.visualstudio.com/docs/languages/java)).
+- [Apache NetBeans Language Server for Java](https://marketplace.visualstudio.com/items?itemName=ASF.apache-netbeans-java).
 
-Please read the instructions on [Setting up Your Java Environment](#setting-up-your-java-environment) to work with Micronaut.
+## Installing the Extension
+Install by clicking **Install** on the banner above, or from the Extensions side bar in VS Code, by searching for "GraalVM Tools for Micronaut".
 
-The following are some of the ways that this extension can boost your Java and Micronaut productivity:
+You can also find the extension listed on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut).
 
-* [Create a New Micronaut Project](#create-a-new-micronaut-project)✨
-* [Source Code Completion](#source-code-completion)
-* [Navigate Micronaut Source Code](#navigate-micronaut-source-code)
-* [Run Micronaut Applications](#run-micronaut-applications) 
-* [Live Reloading of Applications](#live-reloading-of-applications)
-* [Debug Micronaut Applications](#debug-micronaut-applications)
-* [Package Micronaut Applications](#package-micronaut-applications)
-* [Create Native Executables from Micronaut Applications](#create-native-executables-from-micronaut-applications)
-* [Build Docker Images and Deploy Micronaut Applications to a Docker Registry](#build-docker-images-and-deploy-micronaut-applications-to-a-docker-registry)
-* [Deploying an Application to Oracle's Cloud](#deploying-an-application-to-oracles-cloud)
-* [Connect to an Oracle Autonomous Database](#connect-to-an-oracle-autonomous-database)
-* [Create Entity & Repository Classes From an Existing Database Schema](#create-entity-classes-from-an-existing-database-schema)
-
-## Setting up Your Java Environment
-
-This extension requires a Java installaiton. [Oracle GraalVM](https://www.graalvm.org/downloads/) is a fast and efficient JDK from Oracle that you can [download here](https://www.graalvm.org/downloads/).
-
-You will also need to install the [Extension Pack for Java from Microsoft](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack), which will VS Code will suggest you install when you open your Micronaut project (see [Java in VS Code](https://code.visualstudio.com/docs/languages/java) for more information).
-
-In in order to get support for code completion in your Micronaut YAML configuraiton file you will also need to install the [Apache NetBeans Language Server for Java](https://marketplace.visualstudio.com/items?itemName=ASF.apache-netbeans-java).
-
-The Micronaut Tools page opens as soon as the extension is installed. This can also be opened using the Command Palette command **Micronaut: Show Micronaut Tools Page**.
+The Micronaut Tools page opens as soon as the extension is installed.
+You can also open this page using the Command Palette command **Micronaut: Show Micronaut Tools Page**.
 
  ![Micronaut Tools Page](images/micronaut_tools_page.png)
 
- On this page you have links to documentation on Micronaut and the tooling, on GraalVM Native Image and much more.
+## Using the Extension
+Use the extension to
 
-## Create a New Micronaut Project
+* [Create a New Micronaut Project](#create-a-new-micronaut-project)✨
+* [View Suggested Source Code Completions](#source-code-completion)
+* [Navigate Micronaut Source Code](#navigate-micronaut-source-code)
+* [Run your Micronaut Application](#run-micronaut-applications) 
+* [Live Reloading of Applications](#live-reloading-of-applications)
+* [Debug your Micronaut Application](#debug-micronaut-applications)
+* [Package your Micronaut Application](#package-micronaut-applications)
+* [Create a Native Executable from your Micronaut Application](#create-native-executables-from-micronaut-applications)
+* [Build a Container Image and Deploy your Micronaut Application to a Container Registry](#build-docker-images-and-deploy-micronaut-applications-to-a-docker-registry)
+* [Deploy your Application to Oracle Cloud Infrastructure](#deploying-an-application-to-oracles-cloud)
+* [Connect to an Oracle Autonomous Database](#connect-to-an-oracle-autonomous-database)
+* [Create Entity and Repository Classes From your Existing Database Schema](#create-entity-classes-from-an-existing-database-schema)
 
-The GraalVM Tools for Micronaut extension enables the [Micronaut Launch](https://micronaut.io/launch/) application that enables you to create Micronaut projects directly in VS Code.
-It supports generating Micronaut applications, CLI applications, and other types of applications.
+### Create a New Micronaut Project
 
-To create a new project, go to  **View**, **Command Palette**, search for "micronaut" and invoke the **Micronaut: Create Micronaut Project** command.
+To create a new project, select **Command Palette** from the **View** menu. 
+Enter "micronaut" and invoke the **Micronaut: Create Micronaut Project** command.
 The wizard will prompt you to:
 
-  * pick the application type
-  * pick the Micronaut version
-  * pick the Java version
-  * provide a project name
-  * provide a base package name
-  * pick the project language (Java, Kotlin, or Groovy)
-  * pick the project features:
+- Pick the Micronaut version
+- Pick the application type
+- Pick the Java version
+- Enter a project name (or use the default "demo")
+- Enter a base package name (or use the default "com.example")
+- Pick the project language (Java, Kotlin, or Groovy)
+- Pick the project features:
+  ![Micronaut Project Features](images/micronaut-project-features_view.png)
+- Pick the build tool (Gradle or Maven)
+- Pick the test framework (JUnit, Spock, or Kotlintest)
+- Select the destination directory
 
-    ![Micronaut Project Features](images/micronaut-project-features_view.png)
-
-  * pick the build tool (Maven or Gradle)
-  * pick the test framework (JUnit, Spock, or Kotlintest)
-
-Finally, you are asked to select the destination directory on your local disk and whether to open the created project in a new window or add it to the current workspace.
+Finally, select whether to open the new project in a new window or add it to the current workspace.
 
 The GUI part of the Micronaut extension adds a new view to the Explorer activity, which shows Micronaut projects in the current workspace.
 
