@@ -1,8 +1,8 @@
 {
 	"name": "micronaut",
-	"displayName": "Micronaut Launch",
-	"description": "A lightweight extension to generate Micronaut projects.",
-	"version": "0.6.0",
+	"displayName": "GraalVM Tools for Micronaut®",
+	"description": "Micronaut support for VS Code",
+	"version": "0.5.20",
 	"preview": true,
 	"license": "SEE LICENSE IN LICENSE.txt",
 	"publisher": "oracle-labs-graalvm",
@@ -25,8 +25,11 @@
 		"Other"
 	],
 	"keywords": [
+		"graalvm",
 		"micronaut",
-		"java"
+    "native image",
+		"microservices",
+    "java"
 	],
 	"activationEvents": [
 	],
