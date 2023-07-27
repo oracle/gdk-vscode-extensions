@@ -5,22 +5,26 @@ GraalVM Tools for Micronaut is a powerful extension for using [GraalVM](https://
 Micronaut framework is a lightweight reactive framework that provides a solid foundation for building cloud native Java microservices.
 
 ## Features
-- Create a new Gradle/Maven Micronaut application
-- Run your Micronaut application
-- Debug your Micronaut application
-- Package your Micronaut application as a JAR file
-- Create a native executable from your Micronaut application
-- Build a container image from your Micronaut application and deploy it to a container registry
-- Deploy your application to Oracle Cloud Infrastructure
-- Connect to an Oracle Autonomous Database
+* [Create a New Micronaut Project](#create-a-new-micronaut-project)✨
+* [View Suggested Code Completions](#view-suggested-code-completions)
+* [Navigate Micronaut Source Code](#navigate-micronaut-source-code)
+* [Run your Micronaut Application](#run-your-micronaut-application) 
+* [Live Reloading of Applications](#live-reloading-of-applications)
+* [Debug your Micronaut Application](#debug-your-micronaut-application)
+* [Package your Micronaut Application](#package-your-micronaut-application)
+* [Create a Native Executable from your Micronaut Application](#create-a-native-executable-from-your-micronaut-application)
+* [Build a Container Image and Deploy your Micronaut Application to a Container Registry](#build-docker-images-and-deploy-micronaut-applications-to-a-docker-registry)
+* [Deploy your Application to Oracle Cloud Infrastructure](#deploying-an-application-to-oracles-cloud)
+* [Connect to an Oracle Autonomous Database](#connect-to-an-oracle-autonomous-database)
+* [Create Entity and Repository Classes From your Existing Database Schema](#create-entity-classes-from-an-existing-database-schema)
 
 ## Requirements
 - VS Code (version 1.76.0 or later).
-- A Java Development Kit (JDK) installation (JDK 17 or later).
-[Oracle GraalVM](https://www.oracle.com/java/graalvm/) is a fast and efficient JDK from Oracle.
 - The [Extension Pack for Java from Microsoft](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack).
 VS Code will prompt you to install the extension when you open a Micronaut project (for more information, see [Java in VS Code](https://code.visualstudio.com/docs/languages/java)).
 - [Apache NetBeans Language Server for Java](https://marketplace.visualstudio.com/items?itemName=ASF.apache-netbeans-java).
+- (Optional.) The A Java Development Kit (JDK) installation (JDK 17 or later).
+[Oracle GraalVM](https://www.oracle.com/java/graalvm/) is a fast and efficient JDK from Oracle.
 
 ## Installing the Extension
 Click **Install** on the banner above, or from the Extensions side bar in VS Code, by searching for "GraalVM Tools for Micronaut".
@@ -32,21 +36,7 @@ You can also open this page using the Command Palette command **Micronaut: Show 
 
  ![Micronaut Tools Page](images/micronaut_tools_page.png)
 
-## Using the Extension
-Use the extension to
-
-* [Create a New Micronaut Project](#create-a-new-micronaut-project)✨
-* [View Suggested Code Completions](#view-suggested-code-completions)
-* [Navigate Micronaut Source Code](#navigate-micronaut-source-code)
-* [Run your Micronaut Application](#run-your-micronaut-application) 
-* [Live Reloading of Applications](#live-reloading-of-applications)
-* [Debug your Micronaut Application](#debug-micronaut-applications)
-* [Package your Micronaut Application](#package-micronaut-applications)
-* [Create a Native Executable from your Micronaut Application](#create-native-executables-from-micronaut-applications)
-* [Build a Container Image and Deploy your Micronaut Application to a Container Registry](#build-docker-images-and-deploy-micronaut-applications-to-a-docker-registry)
-* [Deploy your Application to Oracle Cloud Infrastructure](#deploying-an-application-to-oracles-cloud)
-* [Connect to an Oracle Autonomous Database](#connect-to-an-oracle-autonomous-database)
-* [Create Entity and Repository Classes From your Existing Database Schema](#create-entity-classes-from-an-existing-database-schema)
+## Usage
 
 ### Create a New Micronaut Project
 
@@ -88,16 +78,16 @@ Run the **Go to Symbol in Workspace** command using Ctrl+T (Cmd+T on macOS) and 
 
 ![Navigate Micronaut Source Code](images/micronaut-navigation.png)
 
-## Run Your Micronaut Application
+### Run Your Micronaut Application
 
 **TODO** : Show how you can run micronaut applications from within source code using the code lense
 **TODO** : Show how you can run micronaut apps using the run set up in the side bar
 
-## Live Reloading of Applications
+### Live Reloading of Applications
 
 **TODO** : Show how we work with the live reloading of mn apps when built (using gradle). This is supported by the code lense
 
-## Debug Micronaut Applications
+### Debug your Micronaut Application
 
 **TODO** : Show how to debug an application using the code lense
 **TODO** : Show how to set up a debug config and debug the application from the Debug panel in side bar
@@ -109,68 +99,54 @@ To debug a Micronaut application, first create a launch configuration:
 3. Select the **Java+** environment.
 4. Start debugging. Press `F5` or navigate to **Run**, then **Start Debugging**.
 
-## Package Micronaut Applications
+### Package your Micronaut Application
 
-Packaging a Micronaut application into a runnable JAR can be done in different ways. 
+To package your application as a runnable JAR file, follow these steps:
 
-For user's convenience, there is a quick command available: 
+1. Select **Command Palette** from the **View** menu.
+Enter "micronaut" and invoke the **Micronaut: Build...** command.
 
-1. Go to **View**, **Command Palette**, and invoke the **Micronaut: Build...** quick action.
+2. Select the **compile** build goal from a list of available goals.
 
-   ![Micronaut Build Commands](images/micronaut-build-commands.png)
+    ![Micronaut Build Commands](images/micronaut-build-commands.png)
 
-2. Select the **compile** build target from a list of available ones to compile the source code of the application.
+3. When the compilation completes, invoke the **Micronaut: Build...** command again.
+This time, select the **package** goal, which will package your application into a JAR file.
 
-3. When compilation completes, invoke the **Micronaut: Build...** quick action again, and select **package** target, which will package the compiled code into a distributive format.
+### Create a Native Executable from your Micronaut Application
 
-Alternatively, open the entry-point class of your Micronaut application, find its `main` method, and click **Run Main** above.
- 
-Lastly, you can package and run your application at the same time calling the Maven or  Gradle jobs explicitly from the command line.
+If you have installed Oracle GraalVM, you can use GraalVM Native Image create a native executable from your application.
+GraalVM Native Image creates an executable file with all the application classes, dependent library classes, dependent JDK classes, and a snapshot of the application heap. 
+Whilst building a native executable can take some time, the benefits include a dramatic reduction in startup time and reduced overall memory consumption.
 
-   * If your project is built with Maven, it will run the `./mvnw mn:run` job.
+> Note: The time to build an executable depends on application size and complexity.
 
-   * If your project is built with Gradle, it will run the `./gradlew run` job.
+To create a native executable, follow these steps:
 
-## Create Native Executables from Micronaut Applications
+1. Select **Command Palette** from the **View** menu.
+Enter "micronaut" and invoke the **Micronaut: Build...** command.
 
-The Micronaut support for VS Code in combination with [GraalVM Tools for Java extension](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graalvm) opens many more possibilities for Java developers. Thanks to the tight integration with [GraalVM Native Image](../../../reference-manual/native-image/README.md), you can compile a Micronaut application ahead-of-time turning it into a native executable. 
+2. Select the **compile** build goal from a list of available goals.
 
-When you have GraalVM installed with the Native Image support in VS Code (see [GraalVM Installation and Setup in VS Code](../graalvm/README.md#graalvm-installation-wizard), the following quick actions become available:
-* **Micronaut: Build ...** - build a Micronaut project with the user-selected targets
-* **Micronaut: Build Native Image** - build a native executable from a Micronaut project
+    ![Micronaut Build Commands](images/micronaut-build-commands.png)
 
-**TODO** : Instructions here are out of date. We don't want to show how to do this through the GraalVM extension. Just have a working GraalVM installation available with native image. Can refer to the GraalVM docs for how to do this.
+3. When the compilation completes, invoke the **Micronaut: Build...** command again.
+This time, select the **nativeImage** goal, which creates a native executable from your application.
 
-To build a native executable of your Micronaut application:
+    * If your application is built with Maven, the goal runs the command `mvnw package -Dpackaging=native-image.
+    The resulting native executable will in the _/target/native-image/_ directory.
 
-1. Ensure you [installed GraalVM and made it the default runtime and debug environment](../graalvm/README.md#graalvm-installation-wizard).
+    * If your application is built with Gradle, the goal runs the command `gradlew nativeCompile`.
+    The resulting native executable will in the _/build/native/nativeCompile/_ directory.
 
-2. Add the Native Image component to GraalVM.
-
-3. Go to **View**, **Command Palette**, and invoke the **Micronaut: Build...** quick action.
-
-   ![Micronaut Build Commands](images/micronaut-build-commands.png)
-
-4. Select the **nativeImage** build target from a list of available ones.
-
-   * If your project is built with Maven, it will run the `mvnw package -Dpackaging=native-image` job. A native executable will be built into the `/target/native-image/` directory.
-
-   * If your project is built with Gradle, it will run the `gradlew nativeCompile` job. A native executable will be written to the `/build/native/nativeCompile/` directory.
-
-Alternatively, you could invoke the **Micronaut: Build Native Image** quick action directly.
-
-GraalVM Native Image creates an executable file with all the application classes, dependent library classes, dependent JDK classes, and a snapshot of the application heap. Whilst building a native executable can take some time, the benefits include a dramatic reduction in startup time and reduced overall memory consumption.
-
-> Note: The time to build an executable depends on application size and complexity and may take some time on low powered machines.
-
-To run your Micronaut application as a native executable, open **Terminal**, **New Terminal** and execute: 
+To run your Micronaut application as a native executable, open a terminal by selecting **New Terminal** from the **Terminal**, then run the following command: 
 
 * If you used Maven: `./target/executable`
 * If you used Gradle: `./build/native/nativeCompile/executable`
 
-For more information, visit the [Micronaut documentation](https://guides.micronaut.io/micronaut-creating-first-graal-app/guide/index.html#creatingGraalImage) about how to create a Hello World Micronaut GraalVM application.
+For more information, visit the [Micronaut documentation](https://guides.micronaut.io/latest/micronaut-creating-first-graal-app.html).
 
-### Windows Users 
+#### Windows Users 
 
 For Micronaut users targeting GraalVM Native Image for their Micronaut applications, the extension provides a dedicated **x64 command prompt using Microsoft Developer Tools**. 
 You can check it by invoking the **Micronaut: Build Native Image** task from Command Palette. 
