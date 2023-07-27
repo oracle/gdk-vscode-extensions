@@ -52,9 +52,10 @@ function convertToDBConnectionInfo(dbNode: unknown): [DatabaseConnectionInfo] | 
 function registerDatabase(databaseInfo: DatabaseConnectionInfo) {
     const userId: string = databaseInfo.userName;
     const dataSource: string = databaseInfo.dataSource;
+    const tnsAdmin : string = databaseInfo.tnsAdmin.replace(/\\/g, "\\\\");
     const info = {
         userId,
-        url: `jdbc:oracle:thin:@${dataSource}?TNS_ADMIN=\"${databaseInfo.tnsAdmin}\"`,
+        url: `jdbc:oracle:thin:@${dataSource}?TNS_ADMIN=\"${tnsAdmin}\"`,
         password: readPassword(databaseInfo),
         driver: "oracle.jdbc.OracleDriver",
         schema: userId.toUpperCase(),
