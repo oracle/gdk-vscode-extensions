@@ -209,13 +209,13 @@ A particular Docker Registry can be configured in the build, see the [Micronaut 
 
 ## Extension Settings
 
-**TODO** : Confirm that these are the only settings.
 **TODO** : Describe what the effect of these settings are. They currently aren't described.
 
 The GraalVM Tools for Micronaut extension contributes the following settings in VS Code:
 
 * __micronaut.home__ - the optional path to the Micronaut CLI installation
 * __micronaut.showWelcomePage__ - show the Micronaut Tools Page on extension activation
+* __micronaut.launchUrl__ - Optional Micronaut Launch URL (e.g. 'https://launch.micronaut.io')
 
 ## Micronaut Commands
 
