@@ -23,7 +23,7 @@ VS Code will prompt you to install the extension when you open a Micronaut proje
 - [Apache NetBeans Language Server for Java](https://marketplace.visualstudio.com/items?itemName=ASF.apache-netbeans-java).
 
 ## Installing the Extension
-Install by clicking **Install** on the banner above, or from the Extensions side bar in VS Code, by searching for "GraalVM Tools for Micronaut".
+Click **Install** on the banner above, or from the Extensions side bar in VS Code, by searching for "GraalVM Tools for Micronaut".
 
 You can also find the extension listed on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut).
 
@@ -36,9 +36,9 @@ You can also open this page using the Command Palette command **Micronaut: Show 
 Use the extension to
 
 * [Create a New Micronaut Project](#create-a-new-micronaut-project)✨
-* [View Suggested Source Code Completions](#source-code-completion)
+* [View Suggested Code Completions](#view-suggested-code-completions)
 * [Navigate Micronaut Source Code](#navigate-micronaut-source-code)
-* [Run your Micronaut Application](#run-micronaut-applications) 
+* [Run your Micronaut Application](#run-your-micronaut-application) 
 * [Live Reloading of Applications](#live-reloading-of-applications)
 * [Debug your Micronaut Application](#debug-micronaut-applications)
 * [Package your Micronaut Application](#package-micronaut-applications)
@@ -50,7 +50,7 @@ Use the extension to
 
 ### Create a New Micronaut Project
 
-To create a new project, select **Command Palette** from the **View** menu. 
+To create a new project, select **Command Palette** from the **View** menu.
 Enter "micronaut" and invoke the **Micronaut: Create Micronaut Project** command.
 The wizard will prompt you to:
 
@@ -60,7 +60,7 @@ The wizard will prompt you to:
 - Enter a project name (or use the default "demo")
 - Enter a base package name (or use the default "com.example")
 - Pick the project language (Java, Kotlin, or Groovy)
-- Pick the project features:
+- Pick the project features
   ![Micronaut Project Features](images/micronaut-project-features_view.png)
 - Pick the build tool (Gradle or Maven)
 - Pick the test framework (JUnit, Spock, or Kotlintest)
@@ -68,26 +68,29 @@ The wizard will prompt you to:
 
 Finally, select whether to open the new project in a new window or add it to the current workspace.
 
-The GUI part of the Micronaut extension adds a new view to the Explorer activity, which shows Micronaut projects in the current workspace.
+The extension adds a new view to the Explorer container: it displays Micronaut projects in the current workspace.
 
-Besides the project creation wizard, you can use the console CLI.
-If you provide a path to the [Micronaut CLI installation](https://micronaut-projects.github.io/micronaut-starter/latest/guide/#installation), you can create a project using the `mn` executable.
+### View Suggested Code Completions
 
-## Source Code Completion
+The extension suggests code completions for your YAML configuration files.
+(The available configuration properties and their values are collected by scanning your source code and the Micronaut libraries.)
 
-## Navigate Micronaut Source Code
+The extension also provides code completion for your Java source code via the [Extension Pack for Java from Microsoft](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack).
+This gives you all the IDE features that you would expect from [Intellisense](https://code.visualstudio.com/docs/editor/intellisense), as well as automatically highlighting errors as you type.
 
-When installed together with the [Language Server for Java by Apache NetBeans](https://marketplace.visualstudio.com/items?itemName=ASF.apache-netbeans-java) version 19 or higher, easy navigation to Micronaut-specific elements of your source code is provided via **Go to Symbol in Workspace**.
+### Navigate Micronaut Source Code
 
-   ![Micronaut Source Code Navigaion](images/micronaut-navigation.png)
+You can easily navigate to Micronaut-specific elements of your source code via the **Go to Symbol in Workspace** command.
 
-Invoke **Go to Symbol in Workspace** with Ctrl+T (Cmd+T on Mac) and type the prefix:
-  * `@/` to show all defined request mappings
-  * `@+` to show all defined beans
+Run the **Go to Symbol in Workspace** command using Ctrl+T (Cmd+T on macOS) and enter the prefix:
+* `@/` to show all defined request mappings
+* `@+` to show all defined beans
 
-## Run Micronaut Applications
+![Navigate Micronaut Source Code](images/micronaut-navigation.png)
 
-**TODO** : Show how you can run micronaut appls from within source code using the code lense
+## Run Your Micronaut Application
+
+**TODO** : Show how you can run micronaut applications from within source code using the code lense
 **TODO** : Show how you can run micronaut apps using the run set up in the side bar
 
 ## Live Reloading of Applications
@@ -97,7 +100,7 @@ Invoke **Go to Symbol in Workspace** with Ctrl+T (Cmd+T on Mac) and type the pre
 ## Debug Micronaut Applications
 
 **TODO** : Show how to debug an application using the code lense
-**TODO** : Show how to set up a debug config and debug the application from theDebug pannel in side bar
+**TODO** : Show how to set up a debug config and debug the application from the Debug panel in side bar
 
 To debug a Micronaut application, first create a launch configuration:
 
@@ -160,7 +163,7 @@ GraalVM Native Image creates an executable file with all the application classes
 
 > Note: The time to build an executable depends on application size and complexity and may take some time on low powered machines.
 
-To run your Micronaut application as a native executable, open **Terminal**, **New Teminal** and execute: 
+To run your Micronaut application as a native executable, open **Terminal**, **New Terminal** and execute: 
 
 * If you used Maven: `./target/executable`
 * If you used Gradle: `./build/native/nativeCompile/executable`
@@ -191,18 +194,18 @@ A particular Docker Registry can be configured in the build, see the [Micronaut 
 
 ## Deploying an Application to Oracle's Cloud
 
-**TODO** : Short intor the OCI DevOps extension and a link to install it. List the benefits and what it can do: Deply Spring Boot, GCN and Java apps to the OCI DevOps service for building. For GCN and Spring Boot apps it will set up build and deployment pipelines that will create containers for you apps and deploy them to an OKE cluster. Include an animated GIF screenshot of the deployment targets?
+**TODO** : Short intro the OCI DevOps extension and a link to install it. List the benefits and what it can do: Deploy Spring Boot, GCN and Java apps to the OCI DevOps service for building. For GCN and Spring Boot apps it will set up build and deployment pipelines that will create containers for you apps and deploy them to an OKE cluster. Include an animated GIF screenshot of the deployment targets?
 
 ## Connect to an Oracle Autonomous Database
 
-**TODO** : Desribe the feature that allows you to create a DB Connection to an ATP instance in OCI. Show updating connection properties. Describe that the password for the DB is stored in the secure platform specific system, keychain on OSX for example, so that you aren't prompted repeatedly to enter passwords.
+**TODO** : Describe the feature that allows you to create a DB Connection to an ATP instance in OCI. Show updating connection properties. Describe that the password for the DB is stored in the secure platform specific system, keychain on OSX for example, so that you aren't prompted repeatedly to enter passwords.
 **TODO** : Show how to manage DB connections.
 
 ## Create Entity & Repository Classes From an Existing Database Schema
 
 **TODO** : Show how you can use the New from Micronaut Template action to create an entity class from an existing table in DB that you are connected to.
 **TODO** : Show how can use the New from Micronaut Template action to create a repository class from an existing table in DB that you are connected to.
-**TODO** : Show how you can run this locally, tlaking to a remote DB.
+**TODO** : Show how you can run this locally, talking to a remote DB.
 
 ## Extension Settings
 
