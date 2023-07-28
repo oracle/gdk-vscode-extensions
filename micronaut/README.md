@@ -148,7 +148,7 @@ To run your Micronaut application as a native executable, open a terminal by sel
 
 For more information, see the [Micronaut documentation](https://guides.micronaut.io/latest/micronaut-creating-first-graal-app.html).
 
-> **Note**: If you are using VS Code on the Windows platform, invoke the **Micronaut: Build Native Image** command from Command Palette. 
+> **Note**: If you are using VS Code on the Windows platform, invoke the **Micronaut: Build Native Image** command from the Command Palette. 
 
 ### Build a Container Image and Deploy Your Micronaut Application to a Container Registry
 
@@ -195,7 +195,9 @@ The extension contributes the following settings:
 
 ## Micronaut Commands
 
-Invoke the Micronaut commands from **View**, **Command Palette** (Command Palette can be also opened by pressing F1, or the `Ctrl+Shift+P` hot keys combination for Linux, and `Command+Shift+P` for macOS), then search for "Micronaut". 
+Invoke the Micronaut commands from the Command Palette, then search for "Micronaut".
+To open the Command Palette, select **Command Palette** from the **View** menu.
+The Command Palette can be also opened by pressing F1, or `Ctrl+Shift+P` (`Command+Shift+P` for macOS). 
 The following commands are available for Micronaut project development:
 
 **TODO** This is out of date.
