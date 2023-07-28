@@ -1,7 +1,7 @@
 {
 	"name": "micronaut",
-	"displayName": "GraalVM Tools for Micronaut®",
-	"description": "Micronaut support for VS Code",
+	"displayName": "GraalVM Tools for Micronaut&reg;",
+	"description": "Use Micronaut in VS Code — Create, Run, Debug, and Deploy Micronaut Applications",
 	"version": "0.5.20",
 	"preview": true,
 	"license": "SEE LICENSE IN LICENSE.txt",
