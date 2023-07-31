@@ -80,7 +80,7 @@ export async function createProjectBase(options : CreateOptions, targetLocation 
         fs.mkdirSync(targetLocation, { recursive: true });
     }
 
-    await writeProjectContents(options,new NodeFileHandler(vscode.Uri.file(targetLocation)).writeFile());
+    await writeProjectContents(options,new NodeFileHandler(vscode.Uri.file(targetLocation)));
 
     const uri = vscode.Uri.file(targetLocation);
     handleNewGCNProject(uri);
@@ -166,7 +166,7 @@ async function getJavaVMs(): Promise<JavaVMType[]> {
 /**
  * A Node.js implementation of FileHandler abstract class.
  */
-class NodeFileHandler extends FileHandler{
+export class NodeFileHandler extends FileHandler{
 
     constructor(locationUri:vscode.Uri){
         super(locationUri);
