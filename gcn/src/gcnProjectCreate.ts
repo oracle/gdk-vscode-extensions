@@ -166,7 +166,7 @@ async function getJavaVMs(): Promise<JavaVMType[]> {
 /**
  * A Node.js implementation of FileHandler abstract class.
  */
-class NodeFileHandler extends FileHandler{
+export class NodeFileHandler extends FileHandler{
 
     constructor(locationUri:vscode.Uri){
         super(locationUri);

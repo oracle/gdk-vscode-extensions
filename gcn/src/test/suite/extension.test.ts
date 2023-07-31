@@ -13,6 +13,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as Common from '../../common';
+import { NodeFileHandler } from '../../gcnProjectCreate';
 
 /**
  * Searches value inside an array of ValueAndLabel
@@ -106,27 +107,10 @@ suite('Extension Test Suite', function() {
                 if (!fs.existsSync(projFolder)) {
                         fs.mkdirSync(projFolder, { recursive: true });
                     }
-                await Common.writeProjectContents(options, fileHandler(projFolder));
+                await Common.writeProjectContents(options, new NodeFileHandler(vscode.Uri.file(projFolder)));
 
                 fs.rmdirSync(projFolder, {recursive:true});
         });
 
-        function fileHandler(location:string){
-
-                return (pathName: any, bytes: any, _isBinary: any, isExecutable: any) => {
-                    const p : string = pathName.$as('string');
-                    const exe : boolean = isExecutable.$as('boolean');
-                    const data = bytes.$as(Int8Array).buffer;
-            
-                    const dir = path.dirname(p);
-            
-                    const view = new Uint8Array(data);
-            
-                    if (dir && dir !== '.') {
-                        fs.mkdirSync(path.join(location, dir), { recursive : true });
-                    }
-                    fs.writeFileSync(path.join(location, p), view, { mode : exe ? 0o777 : 0o666 });
-                };
-            }
 
 });
