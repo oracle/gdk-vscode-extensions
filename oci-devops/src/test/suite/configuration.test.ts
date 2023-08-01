@@ -30,7 +30,7 @@ suite("Start Testing Configuration", function() {
         assert.ok(profiles.length > 0, "No Profile Found");
 
 
-        let selectedProfile = getProfile(profiles);
+        selectedProfile = getProfile(profiles);
         assert.ok(selectedProfile !== "", "No Profile Selected for testing");
 
     });
