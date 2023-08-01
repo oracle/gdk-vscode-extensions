@@ -1,0 +1,315 @@
+{
+	"name": "micronaut-gcn-tools",
+	"displayName": "Micronaut & Graal Cloud Native Tools",
+	"description": "Micronaut and Graal Cloud Native project support for VS Code",
+	"version": "0.5.20",
+	"preview": true,
+	"license": "SEE LICENSE IN LICENSE.txt",
+	"publisher": "oracle-labs-graalvm",
+	"author": {
+		"name": "Oracle Labs"
+	},
+	"icon": "images/GraalVM_icon_rgb.png",
+	"galleryBanner": {
+		"color": "#000000",
+		"theme": "dark"
+	},
+	"bugs": {
+		"url": "https://github.com/graalvm/vscode-extensions/issues"
+	},
+	"engines": {
+		"vscode": "^1.76.0"
+	},
+	"categories": [
+		"Programming Languages",
+		"Other"
+	],
+	"keywords": [
+		"micronaut",
+		"graal cloud native",
+		"gcn",
+		"native image",
+		"microservices",
+		"java"
+	],
+	"activationEvents": [
+		"workspaceContains:**/micronaut-cli.yml"
+	],
+	"main": "./dist/extension.js",
+	"contributes": {
+		"configuration": {
+			"type": "object",
+			"title": "Micronaut & GCN Tools",
+			"properties": {
+				"micronaut-gcn.showWelcomePage": {
+					"type": "boolean",
+					"default": true,
+					"description": "Show Micronaut & GCN Tools page on extension activation"
+				}
+			}
+		},
+		"commands": [
+			{
+				"command": "extension.micronaut-gcn.showWelcomePage",
+				"title": "Show Micronaut & GCN Tools Page",
+				"category": "Micronaut & GCN Tools"
+			},
+			{
+				"command": "extension.micronaut-gcn.build",
+				"title": "Build ...",
+				"category": "Micronaut & GCN Tools"
+			},
+			{
+				"command": "extension.micronaut-gcn.deploy",
+				"title": "Deploy ...",
+				"category": "Micronaut & GCN Tools"
+			},
+			{
+				"command": "extension.micronaut-gcn.buildNativeImage",
+				"title": "Build Native Image",
+				"category": "Micronaut & GCN Tools"
+			},
+			{
+				"command": "extension.micronaut-gcn.kubernetes.createDeploy",
+				"title": "Create Kubernetes Deployment Resource",
+				"category": "Micronaut & GCN Tools"
+			},
+			{
+				"command": "extension.micronaut-gcn.kubernetes.deploy",
+				"title": "Deploy to Kubernetes",
+				"category": "Micronaut & GCN Tools"
+			},
+			{
+				"command": "extension.micronaut-gcn.kubernetes.createService",
+				"title": "Create Kubernetes Service Resource",
+				"category": "Micronaut & GCN Tools"
+			},
+			{
+				"command": "extension.micronaut-gcn.kubernetes.run",
+				"title": "Run in Kubernetes",
+				"category": "Micronaut & GCN Tools"
+			},
+			{
+				"command": "extension.micronaut-gcn.navigation.goToDefinition",
+				"title": "%extension.micronaut-gcn.navigation.goToDefinition.title%",
+				"icon": "$(go-to-file)",
+				"category": "Micronaut & GCN Tools"
+			},
+			{
+				"command": "extension.micronaut-gcn.navigation.openInBrowser",
+				"title": "%extension.micronaut-gcn.navigation.openInBrowser.title%",
+				"icon": "$(link-external)",
+				"category": "Micronaut & GCN Tools"
+			},
+			{
+				"command": "extension.micronaut-gcn.navigation.composeRestQuery",
+				"title": "%extension.micronaut-gcn.navigation.composeRestQuery.title%",
+				"icon": "$(export)",
+				"category": "Micronaut & GCN Tools"
+			},
+			{
+				"command": "extension.micronaut-gcn.navigation.editTargetAddress",
+				"title": "%extension.micronaut-gcn.navigation.editTargetAddress.title%",
+				"icon": "$(location)",
+				"category": "Micronaut & GCN Tools"
+			},
+			{
+				"command": "extension.micronaut-gcn.navigation.searchBeans",
+				"title": "%extension.micronaut-gcn.navigation.searchBeans.title%",
+				"icon": "$(search)",
+				"category": "Micronaut & GCN Tools"
+			},
+			{
+				"command": "extension.micronaut-gcn.navigation.searchEndpoints",
+				"title": "%extension.micronaut-gcn.navigation.searchEndpoints.title%",
+				"icon": "$(search)",
+				"category": "Micronaut & GCN Tools"
+			}
+		],
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "extension-micronaut-gcn",
+					"title": "%extension.micronaut-gcn.navigation.view.title%",
+					"icon": "images/GraalVM_icon_rgb_small.png"
+				}
+			]
+		},
+		"views": {
+			"extension-micronaut-gcn": [
+				{
+					"id": "extension-micronaut-gcn-beans",
+					"name": "%extension.micronaut-gcn.navigation.beansView.title%",
+					"icon": "images/GraalVM_icon_rgb_small.png"
+				},
+				{
+					"id": "extension-micronaut-gcn-endpoints",
+					"name": "%extension.micronaut-gcn.navigation.endpointsView.title%",
+					"icon": "images/GraalVM_icon_rgb_small.png"
+				}
+			]
+		},
+		"viewsWelcome": [
+			{
+				"view": "extension-micronaut-gcn-beans",
+				"contents": "%extension.micronaut-gcn.navigation.welcomeView.noFolders.content%",
+				"when": "workspaceFolderCount == 0"
+			},
+			{
+				"view": "extension-micronaut-gcn-beans",
+				"contents": "%extension.micronaut-gcn.navigation.welcomeView.loadingView.content%",
+				"when": "workspaceFolderCount > 0"
+			},
+			{
+				"view": "extension-micronaut-gcn-endpoints",
+				"contents": "%extension.micronaut-gcn.navigation.welcomeView.noFolders.content%",
+				"when": "workspaceFolderCount == 0"
+			},
+			{
+				"view": "extension-micronaut-gcn-endpoints",
+				"contents": "%extension.micronaut-gcn.navigation.welcomeView.loadingView.content%",
+				"when": "workspaceFolderCount > 0"
+			}
+		],
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "extension.micronaut-gcn.build",
+					"when": "micronautProjectExists && javaHomeSet"
+				},
+				{
+					"command": "extension.micronaut-gcn.deploy",
+					"when": "micronautProjectExists && javaHomeSet"
+				},
+				{
+					"command": "extension.micronaut-gcn.buildNativeImage",
+					"when": "micronautProjectExists && javaHomeSet"
+				},
+				{
+					"command": "extension.micronaut-gcn.kubernetes.createDeploy",
+					"when": "kubectl.available"
+				},
+				{
+					"command": "extension.micronaut-gcn.kubernetes.deploy",
+					"when": "kubectl.available"
+				},
+				{
+					"command": "extension.micronaut-gcn.kubernetes.createService",
+					"when": "kubectl.available"
+				},
+				{
+					"command": "extension.micronaut-gcn.kubernetes.run",
+					"when": "kubectl.available && graalVMExt.available"
+				},
+				{
+					"command": "extension.micronaut-gcn.navigation.goToDefinition",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-gcn.navigation.composeRestQuery",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-gcn.navigation.openInBrowser",
+					"when": "false"
+				}
+			],
+			"view/title": [
+				{
+					"command": "extension.micronaut-gcn.navigation.editTargetAddress",
+					"when": "view == extension-micronaut-gcn-endpoints && extension.micronaut-gcn.navigation.endpointsInitialized",
+					"group": "navigation@3"
+				},
+				{
+					"command": "extension.micronaut-gcn.navigation.searchBeans",
+					"when": "view == extension-micronaut-gcn-beans && extension.micronaut-gcn.navigation.beansInitialized",
+					"group": "navigation@7"
+				},
+				{
+					"command": "extension.micronaut-gcn.navigation.searchEndpoints",
+					"when": "view == extension-micronaut-gcn-endpoints && extension.micronaut-gcn.navigation.endpointsInitialized",
+					"group": "navigation@7"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "extension.micronaut-gcn.navigation.goToDefinition",
+					"when": "viewItem == extension.micronaut-gcn.navigation.BeanNode || viewItem == extension.micronaut-gcn.navigation.EndpointNodeGET || viewItem == extension.micronaut-gcn.navigation.EndpointNodePOST || viewItem == extension.micronaut-gcn.navigation.EndpointNodeUNKNOWN",
+					"group": "context@1"
+				},
+				{
+					"command": "extension.micronaut-gcn.navigation.composeRestQuery",
+					"when": "viewItem == extension.micronaut-gcn.navigation.EndpointNodeGET || viewItem == extension.micronaut-gcn.navigation.EndpointNodePOST",
+					"group": "inline@1"
+				},
+				{
+					"command": "extension.micronaut-gcn.navigation.composeRestQuery",
+					"when": "viewItem == extension.micronaut-gcn.navigation.EndpointNodeGET || viewItem == extension.micronaut-gcn.navigation.EndpointNodePOST",
+					"group": "context@2"
+				},
+				{
+					"command": "extension.micronaut-gcn.navigation.openInBrowser",
+					"when": "viewItem == extension.micronaut-gcn.navigation.EndpointNodeGET",
+					"group": "inline@2"
+				},
+				{
+					"command": "extension.micronaut-gcn.navigation.openInBrowser",
+					"when": "viewItem == extension.micronaut-gcn.navigation.EndpointNodeGET",
+					"group": "context@3"
+				}
+			]
+		}
+	},
+	"vsce": {
+	  "baseImagesUrl": "https://github.com/graalvm/vscode-extensions/raw/master/micronaut-gcn-tools"
+	},
+	"config": {
+		"winBuildPath": "..\\node_modules\\.bin\\vsce",
+		"unixBuildPath": "../node_modules/.bin/vsce",
+		"buildCmd": "package --allow-star-activation --allow-missing-repository --no-update-package-json"
+	},
+	"scripts": {
+		"vscode:prepublish": "webpack --mode production",
+		"compile": "webpack --mode development",
+		"info": "webpack --display-modules",
+		"watch": "webpack --mode development --watch",
+		"test-compile": "tsc -p ./",
+		"prebuild": "npm install",
+		"build": "cross-os build",
+		"lint": "eslint src --ext ts"
+	},
+	"cross-os": {
+		"build": {
+			"linux": "$npm_package_config_unixBuildPath $npm_package_config_buildCmd `[ -z ${BUILD_NUMBER} ] && echo \"${npm_package_version}\" || echo \"${npm_package_version}-${BUILD_NUMBER}\"`",
+			"darwin": "$npm_package_config_unixBuildPath $npm_package_config_buildCmd `[ -z ${BUILD_NUMBER} ] && echo \"${npm_package_version}\" || echo \"${npm_package_version}-${BUILD_NUMBER}\"`",
+			"win32": "%npm_package_config_winBuildPath% %npm_package_config_buildCmd%"
+		}
+	},
+	"dependencies": {
+		"@vscode/l10n": "^0.0.10",
+		"jdk-utils": "^0.4.4",
+		"mustache": "^4.2.0",
+		"vscode-kubernetes-tools-api": "^1.3.0"
+	},
+	"devDependencies": {
+		"@vscode/l10n-dev": "^0.0.18",
+		"@types/glob": "^7.1.1",
+		"@types/mustache": "^4.2.2",
+		"@types/node": "^14.16.0",
+		"@types/vscode": "^1.76.0",
+		"@typescript-eslint/eslint-plugin": "^5.54.1",
+		"@typescript-eslint/parser": "^5.54.1",
+		"ajv": "^8.12.0",
+		"cross-os": "^1.5.0",
+		"eslint": "^8.35.0",
+		"eslint-webpack-plugin": "^4.0.0",
+		"glob": "^7.1.4",
+		"ts-loader": "^9.4.2",
+		"typescript": "^4.9.5",
+		"webpack": "^5.76.0",
+		"webpack-cli": "^5.0.1"
+	},
+	"extensionDependencies": [
+		"asf.apache-netbeans-java"
+	]
+}
