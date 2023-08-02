@@ -13,7 +13,7 @@ import * as logUtils from './../logUtils';
 export function activate(context: vscode.ExtensionContext) {
     logUtils.logInfo('[extension] Activating extension');
 
-	context.subscriptions.push(vscode.commands.registerCommand('gcn.createGcnProject', () => gcnProjectCreate.createProject()));
+	context.subscriptions.push(vscode.commands.registerCommand('gcn.createGcnProject', () => gcnProjectCreate.createProject(context)));
 
     logUtils.logInfo('[extension] Extension successfully activated');
 }

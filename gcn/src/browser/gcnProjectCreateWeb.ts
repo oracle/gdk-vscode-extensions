@@ -18,7 +18,7 @@ import {
 } from '../common';
 
 
-export async function createProject(): Promise<void> {
+export async function createProject(context: vscode.ExtensionContext): Promise<void> {
     var options: CreateOptions | undefined;
     options = await initialize().then(async () => {
         let javaVMs = await getJavaVMs();
@@ -49,10 +49,10 @@ export async function createProject(): Promise<void> {
     if (!targetLocation) {
         return;
     }
-    return createProjectBase(options, targetLocation);    
+    return createProjectBase(context, options, targetLocation);
 }
 
-export async function createProjectBase(options : CreateOptions, targetLocation : string): Promise<void> {
+export async function createProjectBase(context: vscode.ExtensionContext, options : CreateOptions, targetLocation : string): Promise<void> {
 
     let targetLocationUri = vscode.Uri.file(targetLocation);
 
@@ -60,7 +60,7 @@ export async function createProjectBase(options : CreateOptions, targetLocation 
     
     await writeProjectContents(options,new WebFileHandler(targetLocationUri));
 
-    handleNewGCNProject(targetLocationUri);
+    handleNewGCNProject(context, targetLocationUri);
 }
 
 async function selectLocation(options: CreateOptions) {
