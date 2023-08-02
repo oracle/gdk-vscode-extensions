@@ -10,7 +10,7 @@ import * as actions from './actions';
 import * as restQueries from './restQueries';
 import * as symbols from './symbols';
 import * as views from './views';
-import * as logUtils from '../logUtils';
+import * as logUtils from '../../../common/lib/logUtils';
 
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.languages.registerCodeLensProvider({ language: 'java' }, new CodeLensProvider()));

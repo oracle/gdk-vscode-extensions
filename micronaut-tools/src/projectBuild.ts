@@ -10,7 +10,7 @@ import * as cp from 'child_process';
 import * as path from 'path';
 import { createReadStream } from 'fs';
 import { createInterface } from 'readline';
-import { getJavaHome, findExecutable } from "./utils";
+import { findExecutable, getJavaHome } from '../../common/lib/utils';
 
 const MICRONAUT: string = 'Micronaut';
 const NATIVE_IMAGE: string = 'native-image';

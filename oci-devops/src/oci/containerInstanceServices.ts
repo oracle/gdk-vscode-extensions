@@ -11,7 +11,7 @@ import * as core from "oci-core";
 import * as containerinstances from 'oci-containerinstances';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
-import * as logUtils from '../logUtils';
+import * as logUtils from '../../../common/lib/logUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociDialogs from './ociDialogs';

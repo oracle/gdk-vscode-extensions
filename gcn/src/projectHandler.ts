@@ -6,7 +6,7 @@
  */
 
 import * as vscode from 'vscode';
-import { checkExtensions } from './utils';
+import { checkGCNExtensions } from '../../common/lib/dialogs';
 
 
 const OPEN_IN_NEW_WINDOW = 'Open in New Window';
@@ -26,7 +26,7 @@ export async function handleNewGCNProject(context: vscode.ExtensionContext, uri:
             await vscode.commands.executeCommand('vscode.openFolder', uri, true);
         } else if (value === ADD_TO_CURRENT_WORKSPACE) {
             vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, undefined, { uri });
-            checkExtensions(context);
+            checkGCNExtensions(context);
         }
     } else if (vscode.window.activeTextEditor) {
         const value = await vscode.window.showInformationMessage('New GCN project created', OPEN_IN_NEW_WINDOW, OPEN_IN_CURRENT_WINDOW);

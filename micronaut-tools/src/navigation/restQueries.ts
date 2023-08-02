@@ -6,7 +6,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as logUtils from '../logUtils';
+import * as logUtils from '../../../common/lib/logUtils';
 import * as nodes from './nodes';
 import * as symbols from './symbols';
 import * as targetAddress from './targetAddress';

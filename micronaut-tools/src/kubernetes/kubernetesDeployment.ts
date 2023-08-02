@@ -8,7 +8,7 @@
 import * as vscode from 'vscode';
 import { createWrapper, createContent, createNewFile } from "./kubernetesUtil";
 import * as kubernetes from 'vscode-kubernetes-tools-api';
-import { MultiStepInput } from "../utils";
+import { MultiStepInput } from "../../../common/lib/dialogs";
 
 const LOCAL = "<local>";
 const NO_SECRET = "<public repository>";

@@ -10,7 +10,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as jdkUtils from 'jdk-utils';
 import * as dialogs from "./dialogs";
-import { getJavaVersion } from './graalvmUtils';
+import { getJavaVersion } from '../../common/lib/utils';
 import {handleNewGCNProject} from './projectHandler';
 import {
     initialize,

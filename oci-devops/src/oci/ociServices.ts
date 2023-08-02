@@ -12,7 +12,7 @@ import * as model from '../model';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
 import * as servicesView from '../servicesView';
-import * as logUtils from '../logUtils';
+import * as logUtils from '../../../common/lib/logUtils';
 import * as ociContext from './ociContext';
 import * as dataSupport from './dataSupport';
 import * as ociNodes from './ociNodes';
@@ -26,6 +26,7 @@ import * as artifactServices from './artifactServices';
 import * as containerServices from './containerServices';
 import * as knowledgeBaseServices from './knowledgeBaseServices';
 import * as containerInstanceServices from './containerInstanceServices';
+import { QuickPickObject } from '../../../common/lib/dialogs';
 
 
 export const DATA_NAME = 'services';
@@ -292,7 +293,7 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
     }
 
     async addContent() {
-        const choices: dialogs.QuickPickObject[] = [];
+        const choices: QuickPickObject[] = [];
         for (const service of this.services) {
             const serviceContent = service.getAddContentChoices();
             if (serviceContent) {

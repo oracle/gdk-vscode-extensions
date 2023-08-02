@@ -20,6 +20,7 @@ const config = {
 
     entry: {
         extension: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
+        "gcn.ui.api": "./lib/gcn.ui.api.js"
     },
     output: { // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
         path: path.resolve(__dirname, 'dist'),
@@ -52,11 +53,12 @@ const config = {
             use: [{
                 loader: 'ts-loader'
             }]
-        }]
+        }],
+        noParse: path.resolve(__dirname, 'lib', 'gcn.ui.api.js')
     },
     plugins: [
         new ESLintPlugin({extensions: ['ts']})
-    ],
+    ]
 };
 const devConf = {
     target: 'node', // vscode extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
@@ -69,6 +71,7 @@ const devConf = {
         filename: '[name].js',
         libraryTarget: "commonjs2",
         devtoolModuleFilenameTemplate: "../[resource-path]",
+        clean: true,
     },
     devtool: 'source-map',
     externals: {

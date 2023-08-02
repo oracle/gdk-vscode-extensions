@@ -12,7 +12,7 @@ import * as model from '../model';
 import * as gitUtils from '../gitUtils';
 import * as folderStorage from '../folderStorage';
 import * as dialogs from '../dialogs';
-import * as logUtils from '../logUtils';
+import * as logUtils from '../../../common/lib/logUtils';
 import * as devopsServices from '../devopsServices';
 import * as ociServices from './ociServices';
 import * as ociAuthentication from './ociAuthentication';

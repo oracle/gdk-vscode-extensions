@@ -13,7 +13,9 @@ import * as https from 'https';
 import * as path from 'path';
 import * as decompress from 'decompress';
 import * as jdkUtils from 'jdk-utils';
-import { getMicronautHome, getMicronautLaunchURL, getJavaHome, getJavaVersion, checkExtensions, simpleProgress, MultiStepInput } from "./utils";
+import { getMicronautHome, getMicronautLaunchURL } from './utils';
+import { getJavaHome, getJavaVersion } from "../../common/lib/utils";
+import { checkGCNExtensions, simpleProgress, MultiStepInput } from "../../common/lib/dialogs";
 
 const HTTP_PROTOCOL: string = 'http://';
 const HTTPS_PROTOCOL: string = 'https://';
@@ -88,7 +90,7 @@ export async function createProject(context: vscode.ExtensionContext) {
                     await vscode.commands.executeCommand('vscode.openFolder', uri, true);
                 } else if (value === ADD_TO_CURRENT_WORKSPACE) {
                     vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, undefined, { uri });
-                    checkExtensions(context);
+                    checkGCNExtensions(context);
                 }
             } else if (vscode.window.activeTextEditor) {
                 const value = await vscode.window.showInformationMessage('New Micronaut project created', OPEN_IN_NEW_WINDOW, OPEN_IN_CURRENT_WINDOW);

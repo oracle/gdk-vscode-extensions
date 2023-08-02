@@ -14,7 +14,7 @@ import * as devopsServices from '../devopsServices';
 import * as dialogs from '../dialogs';
 import * as model from '../model';
 import * as projectUtils from '../projectUtils';
-import * as logUtils from '../logUtils';
+import * as logUtils from '../../../common/lib/logUtils';
 import * as folderStorage from '../folderStorage';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociUtils from './ociUtils';

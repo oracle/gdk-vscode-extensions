@@ -7,7 +7,8 @@
 
 import * as vscode from 'vscode';
 import * as dialogs from "./dialogs";
-import { logInfo } from './logUtils';
+import { logInfo } from '../../common/lib/logUtils';
+import { MultiStepInput } from '../../common/lib/dialogs';
 
 require('../lib/gcn.ui.api');
 
@@ -311,10 +312,10 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 	
     async function collectInputs(): Promise<State | undefined> {
 		const state = {} as Partial<State>;
-        return await dialogs.MultiStepInput.run(input => pickMicronautVersion(input, state)) ? state as State : undefined;
+        return await MultiStepInput.run(input => pickMicronautVersion(input, state)) ? state as State : undefined;
 	}
 
-	async function pickMicronautVersion(input: dialogs.MultiStepInput, state: Partial<State>) {
+	async function pickMicronautVersion(input: MultiStepInput, state: Partial<State>) {
         const selected: any = await input.showQuickPick({
 			title,
 			step: 1,
@@ -325,10 +326,10 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 			shouldResume: () => Promise.resolve(false)
         });
         state.micronautVersion = selected;
-		return (input: dialogs.MultiStepInput) => pickApplicationType(input, state);
+		return (input: MultiStepInput) => pickApplicationType(input, state);
 	}
 
-    async function pickApplicationType(input: dialogs.MultiStepInput, state: Partial<State>) {
+    async function pickApplicationType(input: MultiStepInput, state: Partial<State>) {
         const choices : ValueAndLabel[] = state.micronautVersion ? await getApplicationTypes() : [];
 		const selected: any = await input.showQuickPick({
 			title,
@@ -340,10 +341,10 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 			shouldResume: () => Promise.resolve(false)
         });
         state.applicationType = selected;
-		return (input: dialogs.MultiStepInput) => pickJavaVersion(input, state);
+		return (input: MultiStepInput) => pickJavaVersion(input, state);
 	}
 
-    async function pickJavaVersion(input: dialogs.MultiStepInput, state: Partial<State>) {
+    async function pickJavaVersion(input: MultiStepInput, state: Partial<State>) {
         const supportedVersions = state.micronautVersion ? getJavaVersions() : [];
 
 
@@ -408,10 +409,10 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
             vscode.window.showInformationMessage(`Java version not selected. The project will target Java ${defVersion}. Adjust the setting in the generated project file(s).`);
             state.javaVersion.target = defVersion;
         }
-		return (input: dialogs.MultiStepInput) => projectName(input, state);
+		return (input: MultiStepInput) => projectName(input, state);
 	}
 
-	async function projectName(input: dialogs.MultiStepInput, state: Partial<State>) {
+	async function projectName(input: MultiStepInput, state: Partial<State>) {
 		state.projectName = await input.showInputBox({
 			title,
 			step: 4,
@@ -422,10 +423,10 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 			validate: (value: string) => Promise.resolve((/^[A-Za-z0-9_]([A-Za-z0-9_]|-(?!-))*[A-Za-z0-9_]?$/.test(value)) ? undefined : 'Name cannot start and end with "-" (hyphen), have "--" (sequential hyphen), and can only consist of ASCII letter, digit, "_" (underscore) or "-" (hyphen) characters'),
 			shouldResume: () => Promise.resolve(false)
 		});
-		return (input: dialogs.MultiStepInput) => basePackage(input, state);
+		return (input: MultiStepInput) => basePackage(input, state);
 	}
 
-	async function basePackage(input: dialogs.MultiStepInput, state: Partial<State>) {
+	async function basePackage(input: MultiStepInput, state: Partial<State>) {
 		state.basePackage = await input.showInputBox({
 			title,
 			step: 5,
@@ -435,10 +436,10 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 			validate: (value: string) => Promise.resolve((/^[a-z_][a-z0-9_]*(\.[a-z0-9_]+)*$/.test(value)) ? undefined : 'Invalid base package'),
 			shouldResume: () => Promise.resolve(false)
 		});
-		return (input: dialogs.MultiStepInput) => pickServices(input, state);
+		return (input: MultiStepInput) => pickServices(input, state);
 	}
 
-	async function pickServices(input: dialogs.MultiStepInput, state: Partial<State>) {
+	async function pickServices(input: MultiStepInput, state: Partial<State>) {
         const choices = state.micronautVersion && state.applicationType && state.javaVersion ? getServices() : [];
 		const selected: any = await input.showQuickPick({
 			title,
@@ -451,10 +452,10 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 			shouldResume: () => Promise.resolve(false)
         });
         state.services = selected;
-		return (input: dialogs.MultiStepInput) => pickFeatures(input, state);
+		return (input: MultiStepInput) => pickFeatures(input, state);
 	}
 
-    async function pickFeatures(input: dialogs.MultiStepInput, state: Partial<State>) {
+    async function pickFeatures(input: MultiStepInput, state: Partial<State>) {
         const choices = state.micronautVersion && state.applicationType && state.javaVersion ? getFeatures() : [];
 		const selected: any = await input.showQuickPick({
 			title,
@@ -467,10 +468,10 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 			shouldResume: () => Promise.resolve(false)
         });
         state.features = selected;
-        return (input: dialogs.MultiStepInput) => pickBuildTool(input, state);
+        return (input: MultiStepInput) => pickBuildTool(input, state);
     }
 
-	async function pickBuildTool(input: dialogs.MultiStepInput, state: Partial<State>) {
+	async function pickBuildTool(input: MultiStepInput, state: Partial<State>) {
         const choices = getBuildTools();
 		const selected: any = await input.showQuickPick({
 			title,
@@ -482,10 +483,10 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 			shouldResume: () => Promise.resolve(false)
         });
         state.buildTool = selected;
-		return (input: dialogs.MultiStepInput) => pickTestFramework(input, state);
+		return (input: MultiStepInput) => pickTestFramework(input, state);
 	}
 
-	async function pickTestFramework(input: dialogs.MultiStepInput, state: Partial<State>) {
+	async function pickTestFramework(input: MultiStepInput, state: Partial<State>) {
         const choices = getTestFrameworks();
 		const selected: any = await input.showQuickPick({
 			title,
@@ -497,10 +498,10 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 			shouldResume: () => Promise.resolve(false)
         });
         state.testFramework = selected;
-        return (input: dialogs.MultiStepInput) => pickCloud(input, state);
+        return (input: MultiStepInput) => pickCloud(input, state);
 	}
 
-    async function pickCloud(input: dialogs.MultiStepInput, state: Partial<State>) {
+    async function pickCloud(input: MultiStepInput, state: Partial<State>) {
         const choices = getClouds() || [];
 		const selected: any = await input.showQuickPick({
 			title,
@@ -513,7 +514,7 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 			shouldResume: () => Promise.resolve(false)
         });
         state.clouds = selected;
-        return (input: dialogs.MultiStepInput) => selectSampleCode(input, state);
+        return (input: MultiStepInput) => selectSampleCode(input, state);
     }
 
     const sampleYesNo : ValueAndLabel[] = [
@@ -527,7 +528,7 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
         }
     ];
 
-    async function selectSampleCode(input: dialogs.MultiStepInput, state: Partial<State>) {
+    async function selectSampleCode(input: MultiStepInput, state: Partial<State>) {
 		const selected: any = await input.showQuickPick({
 			title,
 			step: 11,

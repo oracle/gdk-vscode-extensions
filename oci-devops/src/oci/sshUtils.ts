@@ -14,7 +14,7 @@ import * as which from 'which';
 import * as common from 'oci-common';
 import * as dialogs from '../dialogs';
 import * as ociUtils from './ociUtils';
-import { logError, logInfo } from '../logUtils';
+import { logError, logInfo } from '../../../common/lib/logUtils';
 
 // Windows 'chmod' equivalent
 const icacls_exe = 'icacls';

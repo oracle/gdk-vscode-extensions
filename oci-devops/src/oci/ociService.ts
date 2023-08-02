@@ -10,6 +10,7 @@ import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
 import * as ociContext from './ociContext';
 import * as dataSupport from './dataSupport';
+import { QuickPickObject } from '../../../common/lib/dialogs';
 
 
 export abstract class Service implements dataSupport.DataProducer {
@@ -33,7 +34,7 @@ export abstract class Service implements dataSupport.DataProducer {
         this.dataChanged = dataChanged;
     }
 
-    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
+    getAddContentChoices(): QuickPickObject[] | undefined {
         return undefined;
     }
 

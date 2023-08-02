@@ -6,7 +6,8 @@
  */
 
 import * as vscode from 'vscode';
-import { micronautProjectExists, checkExtensions } from "./utils";
+import { micronautProjectExists } from "../../common/lib/utils";
+import { checkGCNExtensions } from "../../common/lib/dialogs";
 import { creatorInit, createProject } from './projectCreate';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -16,7 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
 	creatorInit();
 	micronautProjectExists().then(exists => {
 		if (exists) {
-			checkExtensions(context);
+			checkGCNExtensions(context);
 		}
 	});
 }

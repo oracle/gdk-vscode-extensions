@@ -3,13 +3,14 @@
 		"@vscode/vsce": "^2.15.0"
 	},
 	"scripts": {
-		"prebuild": "npm install",
-		"build": "npm run build:micronaut && npm run build:micronaut-tools && npm run build:oci-devops && npm run build:gcn && npm run build:graal-cloud-native-pack",
-		"build:micronaut-tools": "cd micronaut-tools; npm run build",
-		"build:micronaut": "cd micronaut; npm run build",
-		"build:gcn": "cd gcn; npm run build",
-		"build:oci-devops": "cd oci-devops; npm run build",
-		"build:graal-cloud-native-pack": "cd graal-cloud-native-pack; npm run build",
+		"prebuild": "npm install && npm run build:common",
+		"build": " npm run build:gcn & npm run build:micronaut & npm run build:micronaut-tools & npm run build:oci-devops && npm run build:graal-cloud-native-pack",
+		"build:micronaut-tools": "cd micronaut-tools && npm run build",
+		"build:micronaut": "cd micronaut && npm run build",
+		"build:gcn": "cd gcn && npm run build",
+		"build:oci-devops": "cd oci-devops && npm run build",
+		"build:graal-cloud-native-pack": "cd graal-cloud-native-pack && npm run build",
+		"build:common": "cd common && npm run build",
 
 		"tests": "npm run tests:gcn",
 		"tests:gcn": "cd gcn; npm install; npm run compile; npm run test-compile; xvfb-run -a npm run test"

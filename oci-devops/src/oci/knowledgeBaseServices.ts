@@ -10,7 +10,7 @@ import * as common from 'oci-common';
 import * as adm from 'oci-adm';
 import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
-import * as logUtils from '../logUtils';
+import * as logUtils from '../../../common/lib/logUtils';
 import * as persistenceUtils from '../persistenceUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
@@ -22,6 +22,7 @@ import * as ociDialogs from './ociDialogs';
 import * as ociAuthentication from './ociAuthentication';
 import * as path from 'path';
 import * as ociFeatures from './ociFeatures';
+import { QuickPickObject, sortQuickPickObjectsByName } from '../../../common/lib/dialogs';
 
 
 export const DATA_NAME = 'knowledgeBases';
@@ -354,9 +355,9 @@ async function selectAuditKnowledgeBase(oci: ociContext.Context): Promise<string
         if (existing.length === 1) {
             return existing[0].id;
         }
-        const choices: dialogs.QuickPickObject[] = [];
+        const choices: QuickPickObject[] = [];
         for (const knowledgeBase of existing) {
-            choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${knowledgeBase.displayName}`, undefined, undefined, knowledgeBase));
+            choices.push(new QuickPickObject(`$(${ICON}) ${knowledgeBase.displayName}`, undefined, undefined, knowledgeBase));
         }
         // TODO: provide a possibility to create a new knowledge base
         // TODO: provide a possibility to select knowledge bases from different compartments
@@ -427,11 +428,11 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
             }
         }
     }
-    const existingContentChoices: dialogs.QuickPickObject[] = [];
+    const existingContentChoices: QuickPickObject[] = [];
     for (let i = 0; i < knowledgeBases.length; i++) {
-        existingContentChoices.push(new dialogs.QuickPickObject(`$(${ICON}) ${knowledgeBases[i].displayName}`, undefined, descriptionExists ? descriptions[i] : undefined, knowledgeBases[i]));
+        existingContentChoices.push(new QuickPickObject(`$(${ICON}) ${knowledgeBases[i].displayName}`, undefined, descriptionExists ? descriptions[i] : undefined, knowledgeBases[i]));
     }
-    dialogs.sortQuickPickObjectsByName(existingContentChoices);
+    sortQuickPickObjectsByName(existingContentChoices);
     let existingContentMultiSelect;
     if (existingContentChoices.length > 1) {
         const multiSelectExisting = async (): Promise<KnowledgeBase[] | undefined> => {
@@ -450,11 +451,11 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
                 return undefined;
             }
         };
-        existingContentMultiSelect = new dialogs.QuickPickObject('$(arrow-small-right) Add multiple existing knowledge bases...', undefined, undefined, multiSelectExisting);
+        existingContentMultiSelect = new QuickPickObject('$(arrow-small-right) Add multiple existing knowledge bases...', undefined, undefined, multiSelectExisting);
     }
     // TODO: provide a possibility to create a new knowledge base
     // TODO: provide a possibility to select knowledge bases from different compartments
-    const choices: dialogs.QuickPickObject[] = [];
+    const choices: QuickPickObject[] = [];
     if (existingContentChoices.length) {
         choices.push(...existingContentChoices);
         if (existingContentMultiSelect) {
@@ -502,9 +503,9 @@ class Service extends ociService.Service {
         }
     }
 
-    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
+    getAddContentChoices(): QuickPickObject[] | undefined {
         return ociFeatures.NON_PIPELINE_RESOURCES_ENABLED ? [
-            new dialogs.QuickPickObject(`$(${ICON}) Add Knowledge Base`, undefined, 'Add an existing knowledge base', () => this.addContent())
+            new QuickPickObject(`$(${ICON}) Add Knowledge Base`, undefined, 'Add an existing knowledge base', () => this.addContent())
         ] : undefined;
     }
 

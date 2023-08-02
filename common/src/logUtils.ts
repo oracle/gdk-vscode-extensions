@@ -7,9 +7,12 @@
 
 import * as vscode from 'vscode';
 
-
-const EXT_OUTPUT = 'Graal Cloud Native Tools';
-const LOG_OUTPUT = vscode.window.createOutputChannel(EXT_OUTPUT);
+let LOG_OUTPUT: vscode.OutputChannel;
+export function registerExtensionForLogging(context: vscode.ExtensionContext) {
+    if (!LOG_OUTPUT) {
+        LOG_OUTPUT = vscode.window.createOutputChannel(context.extension.packageJSON.displayName);
+    }
+}
 
 export function logInfo(record: string) {
     logRecord('info', record);
@@ -24,5 +27,6 @@ export function logError(record: string) {
 }
 
 export function logRecord(category: string, record: string) {
+    if (!LOG_OUTPUT) { throw new Error("Extension isn't registered for logging."); }
     LOG_OUTPUT.appendLine(`[${new Date().toISOString()}] [${category}] ${record}`);
 }

@@ -11,8 +11,9 @@ import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
 import * as gitUtils from '../gitUtils';
 import * as graalvmUtils from '../graalvmUtils';
+import { QuickPickObject, sortQuickPickObjectsByName } from '../../../common/lib/dialogs';
 import * as servicesView from '../servicesView';
-import * as logUtils from '../logUtils';
+import * as logUtils from '../../../common/lib/logUtils';
 import * as persistenceUtils from '../persistenceUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
@@ -212,11 +213,11 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
             }
         }
     }
-    const existingContentChoices: dialogs.QuickPickObject[] = [];
+    const existingContentChoices: QuickPickObject[] = [];
     for (let i = 0; i < pipelines.length; i++) {
-        existingContentChoices.push(new dialogs.QuickPickObject(`$(${ICON}) ${pipelines[i].displayName}`, undefined, descriptions[i], pipelines[i]));
+        existingContentChoices.push(new QuickPickObject(`$(${ICON}) ${pipelines[i].displayName}`, undefined, descriptions[i], pipelines[i]));
     }
-    dialogs.sortQuickPickObjectsByName(existingContentChoices);
+    sortQuickPickObjectsByName(existingContentChoices);
     let existingContentMultiSelect;
     if (existingContentChoices.length > 1) {
         const multiSelectExisting = async (): Promise<BuildPipeline[] | undefined> => {
@@ -235,12 +236,12 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
                 return undefined;
             }
         };
-        existingContentMultiSelect = new dialogs.QuickPickObject('$(arrow-small-right) Add multiple existing pipelines...', undefined, undefined, multiSelectExisting);
+        existingContentMultiSelect = new QuickPickObject('$(arrow-small-right) Add multiple existing pipelines...', undefined, undefined, multiSelectExisting);
     }
     // TODO: provide a possibility to create a new pipeline
     // TODO: display pipelines for the repository and for the project
     // TODO: provide a possibility to select pipelines from different projects / compartments
-    const choices: dialogs.QuickPickObject[] = [];
+    const choices: QuickPickObject[] = [];
     if (existingContentChoices.length) {
         choices.push(...existingContentChoices);
         if (existingContentMultiSelect) {
@@ -285,9 +286,9 @@ class Service extends ociService.Service {
         }
     }
 
-    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
+    getAddContentChoices(): QuickPickObject[] | undefined {
         return [
-            new dialogs.QuickPickObject(`$(${ICON}) Add Build Pipeline`, undefined, 'Add an existing build pipeline', () => this.addContent())
+            new QuickPickObject(`$(${ICON}) Add Build Pipeline`, undefined, 'Add an existing build pipeline', () => this.addContent())
         ];
     }
 

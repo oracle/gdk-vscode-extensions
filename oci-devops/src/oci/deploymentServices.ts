@@ -12,7 +12,7 @@ import * as nodes from '../nodes';
 import * as dialogs from '../dialogs';
 import * as kubernetesUtils from "../kubernetesUtils";
 import * as projectUtils from '../projectUtils';
-import * as logUtils from '../logUtils';
+import * as logUtils from '../../../common/lib/logUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociService from './ociService';
@@ -24,6 +24,7 @@ import * as okeUtils from './okeUtils';
 import * as ociFeatures from './ociFeatures';
 import * as vcnUtils from './vcnUtils';
 import * as k8s from 'vscode-kubernetes-tools-api';
+import { QuickPickObject, sortQuickPickObjectsByName } from '../../../common/lib/dialogs';
 
 
 export const DATA_NAME = 'deploymentPipelines';
@@ -175,11 +176,11 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         });
     }
     const existingBuildPipelines = (await listBuildPipelines(oci))?.filter(item => 'oci' === item.freeformTags?.devops_tooling_docker_image);
-    const choices: dialogs.QuickPickObject[] = [];
+    const choices: QuickPickObject[] = [];
     if (existingBuildPipelines) {
         for (const pipeline of existingBuildPipelines) {
             if (ociFeatures.NI_PIPELINES_ENABLED || !pipeline.displayName?.includes('Native Executable')) {
-                choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${pipeline.displayName}`, undefined, pipeline.description, pipeline.id));
+                choices.push(new QuickPickObject(`$(${ICON}) ${pipeline.displayName}`, undefined, pipeline.description, pipeline.id));
             }
         }
     }
@@ -521,11 +522,11 @@ async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode
     }
     // TODO: display pipelines for the repository and for the project
     // TODO: provide a possibility to select pipelines from different projects / compartments
-    const existingContentChoices: dialogs.QuickPickObject[] = [];
+    const existingContentChoices: QuickPickObject[] = [];
     for (let i = 0; i < pipelines.length; i++) {
-        existingContentChoices.push(new dialogs.QuickPickObject(`$(${ICON}) ${pipelines[i].displayName}`, undefined, descriptions[i], pipelines[i]));
+        existingContentChoices.push(new QuickPickObject(`$(${ICON}) ${pipelines[i].displayName}`, undefined, descriptions[i], pipelines[i]));
     }
-    dialogs.sortQuickPickObjectsByName(existingContentChoices);
+    sortQuickPickObjectsByName(existingContentChoices);
     let existingContentMultiSelect;
     if (existingContentChoices.length > 1) {
         const multiSelectExisting = async (): Promise<DeploymentPipeline[] | undefined> => {
@@ -544,25 +545,25 @@ async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode
                 return undefined;
             }
         };
-        existingContentMultiSelect = new dialogs.QuickPickObject('$(arrow-small-right) Add multiple existing pipelines...', undefined, undefined, multiSelectExisting);
+        existingContentMultiSelect = new QuickPickObject('$(arrow-small-right) Add multiple existing pipelines...', undefined, undefined, multiSelectExisting);
     }
     // TODO: don't offer to create the pipeline if already created
     // NOTE: pipelines may be created for various OKE clusters from various compartments, which makes it more complicated
-    const newContentChoices: dialogs.QuickPickObject[] = [];
+    const newContentChoices: QuickPickObject[] = [];
     const newDeployment = async (): Promise<DeploymentPipeline[] | undefined> => {
         return createOkeDeploymentPipelines(oci, folder);
     };
-    newContentChoices.push(new dialogs.QuickPickObject(`$(add) New Deployment to OKE`, undefined, 'Create and setup new pipeline to deploy built container with native executable or JVM to OKE', newDeployment));
-    const choices: dialogs.QuickPickObject[] = [];
+    newContentChoices.push(new QuickPickObject(`$(add) New Deployment to OKE`, undefined, 'Create and setup new pipeline to deploy built container with native executable or JVM to OKE', newDeployment));
+    const choices: QuickPickObject[] = [];
     if (newContentChoices.length) {
         if (existingContentChoices.length) {
-            choices.push(dialogs.QuickPickObject.separator('Create New'));
+            choices.push(QuickPickObject.separator('Create New'));
         }
         choices.push(...newContentChoices);
     }
     if (existingContentChoices.length) {
         if (newContentChoices.length) {
-            choices.push(dialogs.QuickPickObject.separator('Add Existing'));
+            choices.push(QuickPickObject.separator('Add Existing'));
         }
         choices.push(...existingContentChoices);
         if (existingContentMultiSelect) {
@@ -607,9 +608,9 @@ class Service extends ociService.Service {
         }
     }
 
-    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
+    getAddContentChoices(): QuickPickObject[] | undefined {
         return [
-            new dialogs.QuickPickObject(`$(${ICON}) Add Deployment Pipeline`, undefined, 'Add an existing deployment pipeline, or create a new one', () => this.addContent())
+            new QuickPickObject(`$(${ICON}) Add Deployment Pipeline`, undefined, 'Add an existing deployment pipeline, or create a new one', () => this.addContent())
         ];
     }
 

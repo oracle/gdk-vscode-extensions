@@ -17,6 +17,7 @@ import * as ociServices from './ociServices';
 import * as dataSupport from './dataSupport';
 import * as ociNodes from './ociNodes';
 import * as ociFeatures from './ociFeatures';
+import { QuickPickObject, sortQuickPickObjectsByName } from '../../../common/lib/dialogs';
 
 
 export const DATA_NAME = 'artifactRepositories';
@@ -116,11 +117,11 @@ async function selectArtifactRepositories(oci: ociContext.Context, ignore: Artif
             }
         }
     }
-    const existingContentChoices: dialogs.QuickPickObject[] = [];
+    const existingContentChoices: QuickPickObject[] = [];
     for (let i = 0; i < artifactRepositories.length; i++) {
-        existingContentChoices.push(new dialogs.QuickPickObject(`$(${ICON}) ${artifactRepositories[i].displayName}`, undefined, descriptions[i], artifactRepositories[i]));
+        existingContentChoices.push(new QuickPickObject(`$(${ICON}) ${artifactRepositories[i].displayName}`, undefined, descriptions[i], artifactRepositories[i]));
     }
-    dialogs.sortQuickPickObjectsByName(existingContentChoices);
+    sortQuickPickObjectsByName(existingContentChoices);
     let existingContentMultiSelect;
     if (existingContentChoices.length > 1) {
         const multiSelectExisting = async (): Promise<ArtifactRepository[] | undefined> => {
@@ -139,11 +140,11 @@ async function selectArtifactRepositories(oci: ociContext.Context, ignore: Artif
                 return undefined;
             }
         };
-        existingContentMultiSelect = new dialogs.QuickPickObject('$(arrow-small-right) Add multiple existing artifact repositories...', undefined, undefined, multiSelectExisting);
+        existingContentMultiSelect = new QuickPickObject('$(arrow-small-right) Add multiple existing artifact repositories...', undefined, undefined, multiSelectExisting);
     }
     // TODO: provide a possibility to create a new artifact repository
     // TODO: provide a possibility to select artifact repositories from different compartments
-    const choices: dialogs.QuickPickObject[] = [];
+    const choices: QuickPickObject[] = [];
     if (existingContentChoices.length) {
         choices.push(...existingContentChoices);
         if (existingContentMultiSelect) {
@@ -188,9 +189,9 @@ export class Service extends ociService.Service {
         }
     }
 
-    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
+    getAddContentChoices(): QuickPickObject[] | undefined {
         return ociFeatures.NON_PIPELINE_RESOURCES_ENABLED ? [
-            new dialogs.QuickPickObject(`$(${ICON}) Add Artifact Repository`, undefined, 'Add an existing artifact repository', () => this.addContent())
+            new QuickPickObject(`$(${ICON}) Add Artifact Repository`, undefined, 'Add an existing artifact repository', () => this.addContent())
         ] : undefined;
     }
 
