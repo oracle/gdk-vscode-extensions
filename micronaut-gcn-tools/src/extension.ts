@@ -12,6 +12,7 @@ import { builderInit, build } from './projectBuild';
 import { createDeployment } from './kubernetes/kubernetesDeployment';
 import { deployProject } from './kubernetes/kubernetesDeploy';
 import { runProject, createService } from './kubernetes/kubernetesRun';
+import { createExternalMicronaut, createExternalGCN } from './projectCreate';
 import * as symbols from './navigation/symbols';
 import * as workspaceFolders from './navigation/workspaceFolders';
 import * as views from './navigation/views';
@@ -33,6 +34,12 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-gcn.showWelcomePage', () => {
 		WelcomePanel.createOrShow(context);
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-gcn.createMicronautProject', () => {
+		createExternalMicronaut();
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-gcn.createGcnProject', () => {
+		createExternalGCN();
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-gcn.build', (goal?: string) => {
 		build(goal, 'build');
