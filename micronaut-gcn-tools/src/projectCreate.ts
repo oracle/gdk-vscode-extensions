@@ -8,9 +8,9 @@
 import * as vscode from 'vscode';
 
 
-const EXTENSION_ID_MICRONAUT = 'oracle-labs-graalvm.micronaut-launch';
+const EXTENSION_ID_MICRONAUT = 'oracle-labs-graalvm.micronaut';
 const EXTENSION_NAME_MICRONAUT = 'Micronaut Launch';
-const COMMAND_PROJECT_CREATE_MICRONAUT = 'extension.micronaut-launch.createProject';
+const COMMAND_PROJECT_CREATE_MICRONAUT = 'extension.micronaut.createProject';
 const EXTENSION_ID_GCN = 'oracle-labs-graalvm.gcn';
 const EXTENSION_NAME_GCN = 'Graal Cloud Native Tools';
 const COMMAND_PROJECT_CREATE_GCN = 'gcn.createGcnProject';

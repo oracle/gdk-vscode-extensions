@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import { creatorInit, createProject } from './projectCreate';
 
 export function activate(context: vscode.ExtensionContext) {
-	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-launch.createProject', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut.createProject', () => {
 		createProject(context);
 	}));
 	creatorInit();

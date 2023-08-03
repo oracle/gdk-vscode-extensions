@@ -1,5 +1,5 @@
 {
-	"name": "micronaut-launch",
+	"name": "micronaut",
 	"displayName": "Micronaut Launch",
 	"description": "A lightweight extension to generate Micronaut projects.",
 	"version": "0.5.20",
@@ -51,7 +51,7 @@
 		},
 		"commands": [
 			{
-				"command": "extension.micronaut-launch.createProject",
+				"command": "extension.micronaut.createProject",
 				"title": "Create Micronaut Project",
 				"category": "Micronaut Launch"
 			}
