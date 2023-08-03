@@ -80,24 +80,43 @@ Run the **Go to Symbol in Workspace** command using Ctrl+T (Cmd+T on macOS) and 
 
 ### Run Your Micronaut Application
 
-**TODO** : Show how you can run micronaut applications from within source code using the code lense
-**TODO** : Show how you can run micronaut apps using the run set up in the side bar
+The easiest way to run your Micronaut application is to open the application's main class in editor and click on the **Run** code len that appears above the main method.
+
+![Run Micronaut Application](images/run_main_method.png)
+
+Alternatively, you can either select the **Run and Debug** (Ctrl+Shift+D) activity bar item and (without the **launch.json** file created) click on the **Run and Debug** button,
+or you can navigate to the **Run** menu item and then select **Run Without Debugging** Ctrl+F5. If a request to select debugger appears, select **Java**. The selected debugger
+will run out-of-box by automatically finding the main class and generating a default launch configuration in memory to launch your application.
+
+![Select Debugger in Run and Debug Activity](images/run_debug_activity.png)
+
+To customize and persist your launch configuration, select the **create a launch.json file** link in the **Run and Debug** view. For more details on how to create the launch.json, read [Launch configurations](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations); for more details on configuration options for Java, you can read [Configuration options](https://code.visualstudio.com/docs/java/java-debugging#_configuration-options).
 
 ### Live Reloading of Applications
 
-**TODO** : Show how we work with the live reloading of mn apps when built (using gradle). This is supported by the code lense
+One of the nice Micronaut features is an ability to automatically recompile and restart the application (or its parts) when changes to the source files are detected.
+To run your Micronaut application with the automatic restarts enabled, open the application's main class in editor and click on the **Run with Micronaut Continuous Mode** code len that appears above the main method.
+
+![Run Micronaut Application in Continuous Mode](images/run-continuous.png)
+
+Alternatively, you can select the **Run and Debug** (Ctrl+Shift+D) activity bar item and select the **create a launch.json file** link. Within the created **launch.json** file,
+add a new configuration, make sure to set the **JDT_LAUNCHWRAP_MICRONAUT_CONTINUOUS** environment variable to **true**, then select the newly added configuration in the **Run and Debug** view, and finally click on the **Run** icon or press Ctrl+F5.
+
+![Select Launch Configuration to Run Micronaut Application in Continuous Mode](images/run-continuous-config.png)
 
 ### Debug Your Micronaut Application
 
-**TODO** : Show how to debug an application using the code lense
-**TODO** : Show how to set up a debug config and debug the application from the Debug panel in side bar
+The easiest way to start debugging your Micronaut application is to open the application's main class in editor and click on the **Debug** code len that appears above the main method.
 
-To debug a Micronaut application, first create a launch configuration:
+![Debug Micronaut Application](images/debug_main_method.png)
 
-1. Open the file to be debugged or run.
-2. Switch to the Debug view by clicking the bug icon in the left-hand side panel. The newly opened window will suggest you create a _launch.json_ file.
-3. Select the **Java+** environment.
-4. Start debugging. Press `F5` or navigate to **Run**, then **Start Debugging**.
+Alternatively, you can either select the **Run and Debug** (Ctrl+Shift+D) activity bar item and (without the **launch.json** file created) click on the **Run and Debug** button,
+or you can navigate to the **Run** menu item and then select **Start Debugging** F5. If a request to select debugger appears, select **Java**. The selected debugger
+will run out-of-box by automatically finding the main class and generating a default launch configuration in memory to launch your applicationin in debug mode.
+
+![Select Debugger in Run and Debug Activity](images/run_debug_activity.png)
+
+To customize and persist your launch configuration, select the **create a launch.json file** link in the **Run and Debug** view. For more details on how to create the launch.json, read [Launch configurations](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations); for more details on configuration options for Java, you can read [Configuration options](https://code.visualstudio.com/docs/java/java-debugging#_configuration-options).
 
 ### Package Your Micronaut Application
 
