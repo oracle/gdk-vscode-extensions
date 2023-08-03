@@ -33,27 +33,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ================================================================================
 
-Mustache
-
-The MIT License
-
-Copyright (c) 2009 Chris Wanstrath (Ruby)
-Copyright (c) 2010-2014 Jan Lehnardt (JavaScript)
-Copyright (c) 2010-2015 The mustache.js community
-
-
-================================================================================
-
-vscode-kubernetes-tools-api
-
-MIT License
-
-VS Code Kubernetes Tools API
-
-Copyright (c) Microsoft Corporation. All rights reserved.
-
-================================================================================
-
 decompress
 
 decompress (https://www.npmjs.com/package/decompress)  v. 4.2.1

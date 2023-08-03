@@ -1,4 +1,4 @@
-# GraalVM Tools for Micronaut
+# Micronaut Launch
 
 * [Extension Installation](#extension-installation)
 * [Extension Settings](#extension-settings)
@@ -193,11 +193,17 @@ GraalVM Tools for Micronaut provides all of the necessary tooling for a complete
 
   ![Quick commands for Kubernetes deployments](images/create_k8s_deployment.png)
 
-### Feedback
+## Provide Feedback or Seek Help
 
 * [Request a feature](https://github.com/graalvm/vscode-extensions/issues/new?labels=enhancement)
 * [File a bug](https://github.com/graalvm/vscode-extensions/issues/new?labels=bug)
 
-### Privacy Policy
+## Contributing
 
-Read the [Oracle Privacy Policy](https://www.oracle.com/legal/privacy/privacy-policy.html) to learn more.
+To submit pull requests to vscode-extensions, you need to sign the [Oracle Contributor Agreement](http://www.oracle.com/technetwork/community/oca-486395.html).
+
+Project members with write access to the repository will determine and assign an appropriate [Assignee](https://help.github.com/articles/assigning-issues-and-pull-requests-to-other-github-users/) for the pull request. The assignee will work with the pull request owner to address any issues and then merge the pull request.
+
+## Release Notes
+
+Refer to [CHANGELOG](CHANGELOG.md)

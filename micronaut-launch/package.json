@@ -1,7 +1,7 @@
 {
-	"name": "micronaut",
-	"displayName": "GraalVM Tools for Micronaut",
-	"description": "Micronaut support for VS Code",
+	"name": "micronaut-launch",
+	"displayName": "Micronaut Launch",
+	"description": "A lightweight extension to generate Micronaut projects.",
 	"version": "0.5.20",
 	"preview": true,
 	"license": "SEE LICENSE IN LICENSE.txt",
@@ -9,7 +9,7 @@
 	"author": {
 		"name": "Oracle Labs"
 	},
-	"icon": "images/GraalVM_icon_rgb.png",
+	"icon": "images/micronaut.png",
 	"galleryBanner": {
 		"color": "#000000",
 		"theme": "dark"
@@ -25,24 +25,17 @@
 		"Other"
 	],
 	"keywords": [
-		"native image",
-		"microservices",
+		"micronaut",
 		"java"
 	],
 	"activationEvents": [
-		"workspaceContains:**/micronaut-cli.yml"
 	],
 	"main": "./dist/extension.js",
 	"contributes": {
 		"configuration": {
 			"type": "object",
-			"title": "Micronaut",
+			"title": "Micronaut Launch",
 			"properties": {
-				"micronaut.showWelcomePage": {
-					"type": "boolean",
-					"default": true,
-					"description": "Show Micornaut Tools page on extension activation"
-				},
 				"micronaut.home": {
 					"type": "string",
 					"default": "",
@@ -58,86 +51,18 @@
 		},
 		"commands": [
 			{
-				"command": "extension.micronaut.showWelcomePage",
-				"title": "Show Micronaut Tools Page",
-				"category": "Micronaut"
-			},
-			{
-				"command": "extension.micronaut.createProject",
+				"command": "extension.micronaut-launch.createProject",
 				"title": "Create Micronaut Project",
-				"category": "Micronaut"
-			},
-			{
-				"command": "extension.micronaut.build",
-				"title": "Build ...",
-				"category": "Micronaut"
-			},
-			{
-				"command": "extension.micronaut.deploy",
-				"title": "Deploy ...",
-				"category": "Micronaut"
-			},
-			{
-				"command": "extension.micronaut.buildNativeImage",
-				"title": "Build Native Image",
-				"category": "Micronaut"
-			},
-			{
-				"command": "extension.micronaut.kubernetes.createDeploy",
-				"title": "Create Kubernetes Deployment Resource",
-				"category": "Micronaut"
-			},
-			{
-				"command": "extension.micronaut.kubernetes.deploy",
-				"title": "Deploy to Kubernetes",
-				"category": "Micronaut"
-			},
-			{
-				"command": "extension.micronaut.kubernetes.createService",
-				"title": "Create Kubernetes Service Resource",
-				"category": "Micronaut"
-			},
-			{
-				"command": "extension.micronaut.kubernetes.run",
-				"title": "Run in Kubernetes",
-				"category": "Micronaut"
+				"category": "Micronaut Launch"
 			}
 		],
 		"menus": {
 			"commandPalette": [
-				{
-					"command": "extension.micronaut.build",
-					"when": "micronautProjectExists && javaHomeSet"
-				},
-				{
-					"command": "extension.micronaut.deploy",
-					"when": "micronautProjectExists && javaHomeSet"
-				},
-				{
-					"command": "extension.micronaut.buildNativeImage",
-					"when": "micronautProjectExists && javaHomeSet"
-				},
-				{
-					"command": "extension.micronaut.kubernetes.createDeploy",
-					"when": "kubectl.available"
-				},
-				{
-					"command": "extension.micronaut.kubernetes.deploy",
-					"when": "kubectl.available"
-				},
-				{
-					"command": "extension.micronaut.kubernetes.createService",
-					"when": "kubectl.available"
-				},
-				{
-					"command": "extension.micronaut.kubernetes.run",
-					"when": "kubectl.available && graalVMExt.available"
-				}
 			]
 		}
 	},
 	"vsce": {
-	  "baseImagesUrl": "https://github.com/graalvm/vscode-extensions/raw/master/micronaut"
+	  "baseImagesUrl": "https://github.com/graalvm/vscode-extensions/raw/master/micronaut-launch"
 	},
 	"config": {
 		"winBuildPath": "..\\node_modules\\.bin\\vsce",
@@ -163,14 +88,11 @@
 	},
 	"dependencies": {
 		"decompress": "^4.2.1",
-		"jdk-utils": "^0.4.4",
-		"mustache": "^4.2.0",
-		"vscode-kubernetes-tools-api": "^1.3.0"
+		"jdk-utils": "^0.4.4"
 	},
 	"devDependencies": {
 		"@types/decompress": "^4.2.4",
 		"@types/glob": "^7.1.1",
-		"@types/mustache": "^4.2.2",
 		"@types/node": "^14.16.0",
 		"@types/vscode": "^1.76.0",
 		"@typescript-eslint/eslint-plugin": "^5.54.1",

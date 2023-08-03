@@ -288,7 +288,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
                 query += `&features=${feature.name}`;
             });
             
-            const url = state.micronautVersion.serviceUrl + CREATE + "/" + state.applicationType?.name + "/com.example.project" + query
+            const url = state.micronautVersion.serviceUrl + CREATE + "/" + state.applicationType?.name + "/com.example.project" + query;
             const status = await getProjectStatus(url);
             if (status?.success === true) {
                 let messageErr : string = status.data?.message ? status.data?.message + ": ": "";
