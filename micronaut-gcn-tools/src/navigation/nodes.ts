@@ -53,13 +53,13 @@ export class BaseNode extends vscode.TreeItem {
     public removeFromParent(treeChanged?: TreeChanged): boolean {
         const parent = this.parent;
         if (parent) {
+            this.parent = undefined;
             if (parent.removeChild(this)) {
                 if (treeChanged) {
                     treeChanged(parent);
                 }
                 return true;
             }
-            this.parent = undefined;
         }
         return false;
     }
