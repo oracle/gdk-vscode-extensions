@@ -162,7 +162,8 @@ For more information, see the [Micronaut documentation](https://guides.micronaut
 
 ### Build a Container Image and Deploy Your Micronaut Application to a Container Registry
 
-You can build a container image of your Micronaut application, or create a container image of an executable created by GraalVM Native Image. You can then deploy the container image.
+You can build a container image of your Micronaut application, or create a container image of an executable created by GraalVM Native Image.
+You can then deploy the container image.
 
 To build and deploy a container image of your application, follow these steps:
 
@@ -184,13 +185,60 @@ To configure your application's container registry, see the [Micronaut Deploying
 
 ### Connect to an Oracle Autonomous Database
 
-**TODO** : Describe the feature that allows you to create a DB Connection to an ATP instance in OCI. Show updating connection properties. Describe that the password for the DB is stored in the secure platform specific system, keychain on OSX for example, so that you aren't prompted repeatedly to enter passwords.
+[comment]: <> (Adapted from https://ol-confluence.us.oracle.com/display/GCN/Documentation+for+Database+Features)
+
+**Prerequisites:**
+* An Oracle Cloud Infrastructure (OCI) account.
+* The [GCN Database Support](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn-database-drivers) extension. 
+(This adds a **DATABASES** view to the Explorer Panel.)
+
+To create a new connection to an Oracle Autonomous Database, follow the steps below:
+
+1. Expand the **DATABASES** view in the Explorer panel and click **Add Oracle Autonomous DB**.
+If there are existing databases in the view, you can skip to step **6**.
+2. From the list of compartments, select the compartment that contains your database.
+3. From the list of databases, select your database.
+4. Enter the username for the database.
+5. Enter the password for the database.
+The database will be added to the **DATABASES** view in the Explorer panel.
+6. Select the database in the view, then right-click. 
+Select **Connect to Database** from the menu.
+
+To change the properties of a database connection, select the database in the **DATABASES** view, right-click and then select **Properties** from the menu.
+> **Note**: Disconnect from the database before attempting to change its properties. You cannot change the properties of a _connected_ database. 
+
+To select a database as the _Default Connection_, select the database in the **DATABASES** view, right-click and then select **Set as Default Connection** from the menu.
+
+**TODO** : Describe that the password for the DB is stored in the secure platform specific system, keychain on OSX for example, so that you aren't prompted repeatedly to enter passwords.
+
 **TODO** : Show how to manage DB connections.
 
 ### Create Entity and Repository Classes From an Existing Database Schema
 
-**TODO** : Show how you can use the New from Micronaut Template action to create an entity class from an existing table in DB that you are connected to.
-**TODO** : Show how can use the New from Micronaut Template action to create a repository class from an existing table in DB that you are connected to.
+[comment]: <> (Adapted from https://ol-confluence.us.oracle.com/display/GCN/Documentation+for+Database+Features)
+
+**Prerequisites:**
+* You have created a connection to a database with an existing schema. 
+(See above.)
+* You have selected the database as the _Default Connection_.
+(See above.)
+
+To create entity classes, follow these steps:
+1. Create a new Micronaut project in VS Code (or open an existing one).
+2. Create a new Java package in your project, for example, `com.example.micronaut.entities`.
+3. Right-click the package name and select **New From Template...** from the menu.
+4. When prompted, select **Micronaut**, then **Micronaut Data Entity Classes from Database**.
+5. From the list of tables, select the tables for which you want to create corresponding entities. 
+6. Click **Enter**.
+
+To create repository classes, follow these steps:
+1. Create a new Micronaut project in VS Code (or open an existing one).
+2. Create a new Java package in your project, for example, `com.example.micronaut.repositories`.
+3. Right-click the package name and select **New From Template...** from the menu.
+4. When prompted, select **Micronaut**, then **Micronaut Data Repository Interfaces from Entity**.
+5. From the list of entities, select the entities for which you want to create corresponding repositories. 
+6. Click **Enter**.
+
 **TODO** : Show how you can run this locally, talking to a remote DB.
 
 ## Extension Settings
