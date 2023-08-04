@@ -34,6 +34,8 @@ You can also find the extension listed on the [VS Code Marketplace](https://mark
 The Micronaut Tools page opens as soon as the extension is installed.
 You can also open this page using the Command Palette command **Micronaut: Show Micronaut Tools Page**.
 
+It is recommended to install [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which contains this and all other extensions for Graal Cloud Native development.
+
  ![Micronaut Tools Page](images/micronaut_tools_page.png)
 
 ## Usage
@@ -175,13 +177,24 @@ Enter "micronaut" and invoke the **Micronaut: Deploy ...** command.
     - To deploy a containerized native executable, select the **dockerPushNative** goal.
 
 
-To configure your application's container registry, see the [Micronaut Deploying Application](https://micronaut-projects.github.io/micronaut-maven-plugin/latest/examples/deploy.html) documentation.
-
-**TODO** What is the equivalent Gradle documentation?
+To configure your application's container registry, see the [Micronaut Deploying Application](https://micronaut-projects.github.io/micronaut-maven-plugin/latest/examples/deploy.html) Maven documentation or [Gradle Plugin Documentation](https://micronaut-projects.github.io/micronaut-gradle-plugin/latest/). 
 
 ### Deploy Your Application to Oracle Cloud Infrastructure
 
-**TODO** : Short intro the OCI DevOps extension and a link to install it. List the benefits and what it can do: Deploy Spring Boot, GCN and Java apps to the OCI DevOps service for building. For GCN and Spring Boot apps it will set up build and deployment pipelines that will create containers for you apps and deploy them to an OKE cluster. Include an animated GIF screenshot of the deployment targets?
+Micronaut extension is part of [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which also provides [OCI DevOps Tools extension](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops). This extension simplifies deployment and build of not only Micronaut application in Oracle Cloud Infrastructure.
+It is recommended to install OCI DevOps Extension when working with OCI. Supported technologies are:
+   1. Micronaut
+   2. Graal Cloud Native
+   3. Spring Boot
+
+   * Gradle or Maven projects.
+
+When used OCI DevOps extension provisions build and deployment pipelines for these projects including build of:
+   1. OCI Native Executable Container - docker container with application compiled in GraalVM native image
+   2. OCI JVM container - docker container with application built into Jar files
+
+It also provisions OKE cluster to run these containers in Kubernetes service.
+Read [Using OCI DevOps Tools Extensions in VS Code](https://www.graal.cloud/gcn/get-started/using-gcn-vscode-tools/) to see all the support for OCI DevOps available in VSCode.
 
 ### Connect to an Oracle Autonomous Database
 
@@ -245,11 +258,10 @@ To create repository classes, follow these steps:
 
 The extension contributes the following settings:
 
-**TODO** These need more explanation. Why are they optional?
-
-* __micronaut.home__ - the optional path to the Micronaut CLI installation -> specify local Micronaut CLI installation to be used
-* __micronaut.showWelcomePage__ - show the Micronaut Tools Page on extension activation
-* __micronaut.launchUrl__ - Optional Micronaut Launch URL (e.g. 'https://launch.micronaut.io') -> specifies additional Micronaut version source for project creation
+* __micronaut.home__ - the optional path to the Micronaut CLI installation -> specify local Micronaut CLI installation to be used in addition to default used https://micronaut.io/launch/, eg. `/usr/me/micronaut-cli-4.0.1`
+ ![Micronaut CLI Set](images/micronaut-cli-setting.png)
+* __micronaut.showWelcomePage__ - show the Micronaut Tools Page on extension activation when set to True.
+* __micronaut.launchUrl__ - Optional Micronaut Launch URL (e.g. 'https://launch.micronaut.io') -> specify additional Micronaut launch service for project creation in addition to default https://micronaut.io/launch/
 
 ## Micronaut Commands
 
