@@ -126,7 +126,7 @@ export abstract class SymbolNode<T extends symbols.Symbol> extends BaseNode {
 
 export class BeanNode extends SymbolNode<symbols.Bean> {
 
-    private static readonly CONTEXT = 'extension.micronaut-gcn.navigation.BeanNode';
+    private static readonly CONTEXT = 'extension.micronaut-tools.navigation.BeanNode';
     private static readonly ICON = 'json';
 
     private constructor(name: string, detail: string | undefined, tooltip: string | undefined, bean: symbols.Bean) {
@@ -149,7 +149,7 @@ export class BeanNode extends SymbolNode<symbols.Bean> {
 
 export class EndpointNode extends SymbolNode<symbols.Endpoint> {
 
-    private static readonly CONTEXT = 'extension.micronaut-gcn.navigation.EndpointNode';
+    private static readonly CONTEXT = 'extension.micronaut-tools.navigation.EndpointNode';
     private static readonly ICON = 'link';
 
     private constructor(name: string, detail: string | undefined, tooltip: string | undefined, endpoint: symbols.Endpoint) {
@@ -165,7 +165,7 @@ export class EndpointNode extends SymbolNode<symbols.Endpoint> {
 
 export class BeansFolderNode extends BaseNode {
 
-    private static readonly CONTEXT = 'extension.micronaut-gcn.navigation.FolderNode';
+    private static readonly CONTEXT = 'extension.micronaut-tools.navigation.FolderNode';
     private static readonly SUBJECT = vscode.l10n.t('beans');
 
     private readonly folderData: workspaceFolders.FolderData;
@@ -202,7 +202,7 @@ export class BeansFolderNode extends BaseNode {
 
 export class EndpointsFolderNode extends BaseNode {
 
-    private static readonly CONTEXT = 'extension.micronaut-gcn.navigation.FolderNode';
+    private static readonly CONTEXT = 'extension.micronaut-tools.navigation.FolderNode';
     private static readonly SUBJECT = vscode.l10n.t('endpoints');
 
     private readonly folderData: workspaceFolders.FolderData;

@@ -12,9 +12,9 @@ import * as symbols from './symbols';
 import * as targetAddress from './targetAddress';
 
 
-export const COMMAND_GO_TO_DEFINITION = 'extension.micronaut-gcn.navigation.goToDefinition';
+export const COMMAND_GO_TO_DEFINITION = 'extension.micronaut-tools.navigation.goToDefinition';
 export const COMMAND_NAME_GO_TO_DEFINITION = vscode.l10n.t('Go to Symbol');
-const COMMAND_OPEN_IN_BROWSER = 'extension.micronaut-gcn.navigation.openInBrowser';
+const COMMAND_OPEN_IN_BROWSER = 'extension.micronaut-tools.navigation.openInBrowser';
 const COMMAND_NAME_OPEN_IN_BROWSER = vscode.l10n.t('Open in Browser');
 
 export function initialize(context: vscode.ExtensionContext) {

@@ -62,7 +62,7 @@ export async function createService(context: vscode.ExtensionContext) {
     const deployment = await findResourceFileByKind('Deployment');
     if (!deployment) {
         askToExecCommand(
-            'extension.micronaut-gcn.createDeploy',
+            'extension.micronaut-tools.createDeploy',
             'Deployment file is not present. Would you like to create it?');
         return;
     }

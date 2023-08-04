@@ -29,40 +29,40 @@ export function activate(context: vscode.ExtensionContext) {
 	targetAddress.initialize(context);
 	restQueries.initialize(context);
 
-	if (vscode.workspace.getConfiguration().get<boolean>('micronaut-gcn.showWelcomePage')) {
+	if (vscode.workspace.getConfiguration().get<boolean>('micronaut-tools.showWelcomePage')) {
 		WelcomePanel.createOrShow(context);
 	}
-	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-gcn.showWelcomePage', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.showWelcomePage', () => {
 		WelcomePanel.createOrShow(context);
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-gcn.createMicronautProject', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.createMicronautProject', () => {
 		createExternalMicronaut();
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-gcn.createGcnProject', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.createGcnProject', () => {
 		createExternalGCN();
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-gcn.build', (goal?: string) => {
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.build', (goal?: string) => {
 		build(goal, 'build');
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-gcn.deploy', (goal?: string) => {
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.deploy', (goal?: string) => {
 		build(goal, 'deploy');
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-gcn.buildNativeImage', () => {
-		vscode.commands.executeCommand('extension.micronaut-gcn.build', 'nativeImage');
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.buildNativeImage', () => {
+		vscode.commands.executeCommand('extension.micronaut-tools.build', 'nativeImage');
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-gcn.kubernetes.createDeploy', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.kubernetes.createDeploy', () => {
 		createDeployment(context);
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-gcn.kubernetes.deploy', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.kubernetes.deploy', () => {
 		deployProject();
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-gcn.kubernetes.createService', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.kubernetes.createService', () => {
 		createService(context);
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-gcn.kubernetes.run', () => {
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.kubernetes.run', () => {
 		runProject();
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-gcn.oci.register', (ociNode) => {
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.oci.register', (ociNode) => {
 		let id: string = ociNode.adbInstanceNodeProperties.adbInstanceID;
 		let name: string = ociNode.adbInstanceNodeProperties.adbInstanceDisplayName;
 		let info = {id, name};

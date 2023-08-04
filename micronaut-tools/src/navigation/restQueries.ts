@@ -13,11 +13,11 @@ import * as targetAddress from './targetAddress';
 import * as settings from './settings';
 
 
-const COMMAND_COMPOSE_REST_QUERY = 'extension.micronaut-gcn.navigation.composeRestQuery';
+const COMMAND_COMPOSE_REST_QUERY = 'extension.micronaut-tools.navigation.composeRestQuery';
 const COMMAND_NAME_COMPOSE_REST_QUERY = vscode.l10n.t('Compose REST Query');
-const COMMAND_DONT_SUGGEST_CLIENT_EXT = 'extension.micronaut-gcn.navigation.dontSuggestClientExt';
+const COMMAND_DONT_SUGGEST_CLIENT_EXT = 'extension.micronaut-tools.navigation.dontSuggestClientExt';
 
-const SETTING_DONT_SUGGEST_CLIENT_EXT_KEY = 'extension.micronaut-gcn.navigation.targetAddress';
+const SETTING_DONT_SUGGEST_CLIENT_EXT_KEY = 'extension.micronaut-tools.navigation.targetAddress';
 const SETTING_DONT_SUGGEST_CLIENT_EXT_DEFAULT = false;
 const dontSuggestClientExt = new settings.BooleanSetting(SETTING_DONT_SUGGEST_CLIENT_EXT_KEY, SETTING_DONT_SUGGEST_CLIENT_EXT_DEFAULT, true);
 const RECOMMENDED_EXT_CLIENT = 'humao.rest-client';

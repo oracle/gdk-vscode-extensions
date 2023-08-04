@@ -43,7 +43,7 @@ export async function collectInfo(appName: string, debug?: boolean): Promise<Run
     const deploymentFile = await findResourceFileByKind('Deployment');
     if (!deploymentFile) {
         askToExecCommand(
-            'extension.micronaut-gcn.createServiceResource',
+            'extension.micronaut-tools.createServiceResource',
             'Deployment file is not present. Would you like to create it?');
         return Promise.reject();
     }

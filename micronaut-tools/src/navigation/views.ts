@@ -10,11 +10,11 @@ import * as nodes from './nodes';
 import * as workspaceFolders from './workspaceFolders';
 
 
-const VIEW_BEANS = 'extension-micronaut-gcn-beans';
-const VIEW_ENDPOINTS = 'extension-micronaut-gcn-endpoints';
+const VIEW_BEANS = 'extension-micronaut-tools-beans';
+const VIEW_ENDPOINTS = 'extension-micronaut-tools-endpoints';
 
-const COMMAND_SEARCH_FILTER_BEANS = 'extension.micronaut-gcn.navigation.searchBeans';
-const COMMAND_SEARCH_FILTER_ENDPOINTS = 'extension.micronaut-gcn.navigation.searchEndpoints';
+const COMMAND_SEARCH_FILTER_BEANS = 'extension.micronaut-tools.navigation.searchBeans';
+const COMMAND_SEARCH_FILTER_ENDPOINTS = 'extension.micronaut-tools.navigation.searchEndpoints';
 
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_SEARCH_FILTER_BEANS, () => {

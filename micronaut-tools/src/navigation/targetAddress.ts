@@ -10,10 +10,10 @@ import * as settings from './settings';
 import * as symbols from './symbols';
 
 
-const COMMAND_EDIT_TARGET_ADDRESS = 'extension.micronaut-gcn.navigation.editTargetAddress';
+const COMMAND_EDIT_TARGET_ADDRESS = 'extension.micronaut-tools.navigation.editTargetAddress';
 const COMMAND_NAME_EDIT_TARGET_ADDRESS = vscode.l10n.t('Edit Target Application Address');
 
-const SETTING_TARGET_ADDRESS_KEY = 'extension.micronaut-gcn.navigation.targetAddress';
+const SETTING_TARGET_ADDRESS_KEY = 'extension.micronaut-tools.navigation.targetAddress';
 const SETTING_TARGET_ADDRESS_DEFAULT = 'http://localhost:8080';
 const targetAddress = new settings.StringSetting(SETTING_TARGET_ADDRESS_KEY, SETTING_TARGET_ADDRESS_DEFAULT, false);
 

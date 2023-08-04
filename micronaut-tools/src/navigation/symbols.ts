@@ -9,16 +9,16 @@ import * as vscode from 'vscode';
 import * as logUtils from '../logUtils';
 
 
-// const COMMAND_RELOAD_BEANS = 'extension.micronaut-gcn.navigation.reloadBeans';
-// const COMMAND_RELOAD_BEANS_PROGRESS = 'extension.micronaut-gcn.navigation.reloadBeansProgress';
-// const COMMAND_RELOAD_ENDPOINTS = 'extension.micronaut-gcn.navigation.reloadEndpoints';
-// const COMMAND_RELOAD_ENDPOINTS_PROGRESS = 'extension.micronaut-gcn.navigation.reloadEndpointsProgress';
-const COMMAND_RELOAD_ALL = 'extension.micronaut-gcn.navigation.reloadAll';
+// const COMMAND_RELOAD_BEANS = 'extension.micronaut-tools.navigation.reloadBeans';
+// const COMMAND_RELOAD_BEANS_PROGRESS = 'extension.micronaut-tools.navigation.reloadBeansProgress';
+// const COMMAND_RELOAD_ENDPOINTS = 'extension.micronaut-tools.navigation.reloadEndpoints';
+// const COMMAND_RELOAD_ENDPOINTS_PROGRESS = 'extension.micronaut-tools.navigation.reloadEndpointsProgress';
+const COMMAND_RELOAD_ALL = 'extension.micronaut-tools.navigation.reloadAll';
 
-const CONTEXT_RELOADING_BEANS = 'extension.micronaut-gcn.navigation.reloadingBeans';
-const CONTEXT_BEANS_INITIALIZED = 'extension.micronaut-gcn.navigation.beansInitialized';
-const CONTEXT_RELOADING_ENDPOINTS = 'extension.micronaut-gcn.navigation.reloadingEndpoints';
-const CONTEXT_ENDPOINTS_INITIALIZED = 'extension.micronaut-gcn.navigation.endpointsInitialized';
+const CONTEXT_RELOADING_BEANS = 'extension.micronaut-tools.navigation.reloadingBeans';
+const CONTEXT_BEANS_INITIALIZED = 'extension.micronaut-tools.navigation.beansInitialized';
+const CONTEXT_RELOADING_ENDPOINTS = 'extension.micronaut-tools.navigation.reloadingEndpoints';
+const CONTEXT_ENDPOINTS_INITIALIZED = 'extension.micronaut-tools.navigation.endpointsInitialized';
 
 const COMMAND_NBLS_ADD_EVENT_LISTENER = 'nbls.addEventListener';
 const PARAM_EVENT_TYPE_SCAN_FINSIHED = 'nbls.scanFinished';
