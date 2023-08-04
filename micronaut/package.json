@@ -1,8 +1,8 @@
 {
 	"name": "micronaut",
-	"displayName": "GraalVM Tools for Micronaut&reg;",
+	"displayName": "Micronaut&reg; Launch",
 	"description": "Use Micronaut in VS Code — Create, Run, Debug, and Deploy Micronaut Applications",
-	"version": "0.5.20",
+	"version": "0.6.0",
 	"preview": true,
 	"license": "SEE LICENSE IN LICENSE.txt",
 	"publisher": "oracle-labs-graalvm",
