@@ -2,7 +2,7 @@
 	"name": "micronaut-tools",
 	"displayName": "Micronaut Tools",
 	"description": "Micronaut and Graal Cloud Native project support for VS Code",
-	"version": "0.5.20",
+	"version": "0.6.0",
 	"preview": true,
 	"license": "SEE LICENSE IN LICENSE.txt",
 	"publisher": "oracle-labs-graalvm",

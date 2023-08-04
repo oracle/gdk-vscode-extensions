@@ -2,7 +2,7 @@
 	"name": "micronaut",
 	"displayName": "Micronaut Launch",
 	"description": "A lightweight extension to generate Micronaut projects.",
-	"version": "0.5.20",
+	"version": "0.6.0",
 	"preview": true,
 	"license": "SEE LICENSE IN LICENSE.txt",
 	"publisher": "oracle-labs-graalvm",
