@@ -9,10 +9,6 @@ import * as vscode from 'vscode';
 import * as logUtils from '../logUtils';
 
 
-// const COMMAND_RELOAD_BEANS = 'extension.micronaut-tools.navigation.reloadBeans';
-// const COMMAND_RELOAD_BEANS_PROGRESS = 'extension.micronaut-tools.navigation.reloadBeansProgress';
-// const COMMAND_RELOAD_ENDPOINTS = 'extension.micronaut-tools.navigation.reloadEndpoints';
-// const COMMAND_RELOAD_ENDPOINTS_PROGRESS = 'extension.micronaut-tools.navigation.reloadEndpointsProgress';
 const COMMAND_RELOAD_ALL = 'extension.micronaut-tools.navigation.reloadAll';
 
 const CONTEXT_RELOADING_BEANS = 'extension.micronaut-tools.navigation.reloadingBeans';
@@ -27,18 +23,6 @@ const PREFIX_BEANS = '@+';
 const PREFIX_ENDPOINTS = '@/';
 
 export function initialize(context: vscode.ExtensionContext) {
-    // context.subscriptions.push(vscode.commands.registerCommand(COMMAND_RELOAD_BEANS, () => {
-    //     reloadBeans();
-	// }));
-    // context.subscriptions.push(vscode.commands.registerCommand(COMMAND_RELOAD_BEANS_PROGRESS, () => {
-    //     // NOTE: display progress?
-	// }));
-    // context.subscriptions.push(vscode.commands.registerCommand(COMMAND_RELOAD_ENDPOINTS, () => {
-    //     reloadEndpoints();
-	// }));
-    // context.subscriptions.push(vscode.commands.registerCommand(COMMAND_RELOAD_ENDPOINTS_PROGRESS, () => {
-    //     // NOTE: display progress?
-	// }));
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_RELOAD_ALL, () => {
         reloadAll();
 	}));
@@ -122,18 +106,14 @@ export class Events {
     }
 
     notifyUpdating(kind: string[]) {
-        if (this.onUpdatingListeners.length) {
-            for (const listener of this.onUpdatingListeners) {
-                listener(kind);
-            }
+        for (const listener of this.onUpdatingListeners) {
+            listener(kind);
         }
     }
     
     notifyUpdated(kind: string[], beans: Bean[], endpoints: Endpoint[]) {
-        if (this.onUpdatedListeners.length) {
-            for (const listener of this.onUpdatedListeners) {
-                listener(kind, beans, endpoints);
-            }
+        for (const listener of this.onUpdatedListeners) {
+            listener(kind, beans, endpoints);
         }
     }
 

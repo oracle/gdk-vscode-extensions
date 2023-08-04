@@ -34,16 +34,9 @@ export function initialize(context: vscode.ExtensionContext) {
 }
 
 async function revealInEditor(symbol: symbols.Symbol): Promise<vscode.TextEditor> {
-    const file = symbol.uri.fsPath;
-    return new Promise(resolve => {
-        vscode.workspace.openTextDocument(file).then(document => {
-            vscode.window.showTextDocument(document, { preview: false }).then(editor => {
-                const range = new vscode.Range(symbol.startPos, symbol.endPos);
-                editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
-                editor.selection = new vscode.Selection(symbol.startPos, symbol.endPos);
-                resolve(editor);
-            });
-        });
+    return vscode.window.showTextDocument(symbol.uri, {
+        preview: false,
+        selection: new vscode.Range(symbol.startPos, symbol.endPos)
     });
 }
 

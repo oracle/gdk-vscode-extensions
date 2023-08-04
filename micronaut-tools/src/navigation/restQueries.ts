@@ -15,9 +15,8 @@ import * as settings from './settings';
 
 const COMMAND_COMPOSE_REST_QUERY = 'extension.micronaut-tools.navigation.composeRestQuery';
 const COMMAND_NAME_COMPOSE_REST_QUERY = vscode.l10n.t('Compose REST Query');
-const COMMAND_DONT_SUGGEST_CLIENT_EXT = 'extension.micronaut-tools.navigation.dontSuggestClientExt';
 
-const SETTING_DONT_SUGGEST_CLIENT_EXT_KEY = 'extension.micronaut-tools.navigation.targetAddress';
+const SETTING_DONT_SUGGEST_CLIENT_EXT_KEY = 'extension.micronaut-tools.navigation.dontSuggestClientExt';
 const SETTING_DONT_SUGGEST_CLIENT_EXT_DEFAULT = false;
 const dontSuggestClientExt = new settings.BooleanSetting(SETTING_DONT_SUGGEST_CLIENT_EXT_KEY, SETTING_DONT_SUGGEST_CLIENT_EXT_DEFAULT, true);
 const RECOMMENDED_EXT_CLIENT = 'humao.rest-client';
@@ -26,19 +25,16 @@ const SUPPORTED_EXT_CLIENTS = [ RECOMMENDED_EXT_CLIENT ];
 
 export function initialize(context: vscode.ExtensionContext) {
     dontSuggestClientExt.initialize(context);
-    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_DONT_SUGGEST_CLIENT_EXT, () => {
-        dontSuggestClientExt.set(context, true);
-	}));
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_COMPOSE_REST_QUERY, (node: nodes.EndpointNode) => {
         if (node) {
             const symbol = node.getSymbol();
-            composeRestQuery(symbol);
+            composeRestQuery(symbol, context);
         }
 	}));
     logUtils.logInfo('[restQueries] Initialized');
 }
 
-async function composeRestQuery(endpoint: symbols.Endpoint) {
+async function composeRestQuery(endpoint: symbols.Endpoint, context: vscode.ExtensionContext) {
     const query = await createRestQuery(endpoint);
     if (query) {
         const document = await getDocument();
@@ -54,7 +50,7 @@ async function composeRestQuery(endpoint: symbols.Endpoint) {
             editor.revealRange(new vscode.Range(existingPos, existingPos));
             editor.selection = new vscode.Selection(existingPos, existingPos);
         }
-        checkExternalExt();
+        checkExternalExt(context);
     }
 }
 
@@ -71,7 +67,7 @@ async function createRestQuery(endpoint: symbols.Endpoint): Promise<string | und
 
 let externalExtChecked: boolean = false;
 
-async function checkExternalExt() {
+async function checkExternalExt(context: vscode.ExtensionContext) {
     if (!dontSuggestClientExt.get() && !externalExtChecked) {
         externalExtChecked = true;
         for (const extension of vscode.extensions.all) {
@@ -87,7 +83,7 @@ async function checkExternalExt() {
         if (choice === installOption) {
             vscode.commands.executeCommand('workbench.extensions.installExtension', RECOMMENDED_EXT_CLIENT);
         } else if (choice === dnsaOption) {
-            vscode.commands.executeCommand(COMMAND_DONT_SUGGEST_CLIENT_EXT);
+            dontSuggestClientExt.set(context, true);
         }
     }
 }

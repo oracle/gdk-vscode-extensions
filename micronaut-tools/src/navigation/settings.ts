@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 
 
+// Represents a persistent global/workspace boolean setting, also sets a runtime context value
 export class BooleanSetting {
 
     private readonly key: string;
@@ -45,6 +46,7 @@ export class BooleanSetting {
 
 }
 
+// Represents a persistent global/workspace string setting, also sets a runtime context value
 export class StringSetting {
 
     private readonly key: string;
