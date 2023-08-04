@@ -1,4 +1,4 @@
-# Micronaut Launch
+# GraalVM Tools for Micronaut
 
 * [Extension Installation](#extension-installation)
 * [Extension Settings](#extension-settings)
@@ -47,7 +47,7 @@ The entrypoint to the Micronaut extension is the Micronaut Tools page which open
 
 The GraalVM Tools for Micronaut extension contributes the following settings in VS Code:
 * __micronaut.home__ - the optional path to the Micronaut CLI installation
-* __micronaut.showWelcomePage__ - show the Micronaut Tools Page on extension activation
+* __micronaut-tools.showWelcomePage__ - show the Micronaut Tools Page on extension activation
 
 ## Micronaut Commands
 

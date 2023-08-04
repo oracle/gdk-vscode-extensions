@@ -5,7 +5,7 @@
 **/.vscode-test/
 **/*.vsix
 **/.vscode-test-web
-package-lock.json
+/package-lock.json
 /mxbuild
 /.project
 .DS_Store

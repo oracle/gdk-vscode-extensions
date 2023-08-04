@@ -66,7 +66,7 @@ export class WelcomePanel {
 		this._panel.webview.onDidReceiveMessage(
 			message => {
 				if (message.command === 'showWelcomePage') {
-					vscode.workspace.getConfiguration().update('micronaut.showWelcomePage', message.value, true);
+					vscode.workspace.getConfiguration().update('micronaut-tools.showWelcomePage', message.value, true);
 				}
 			},
 			undefined,
@@ -78,7 +78,7 @@ export class WelcomePanel {
 		const templatePath = path.join(context.extensionPath, WelcomePanel.webviewsFolder, 'welcome.html');
 		this._panel.webview.html = mustache.render(fs.readFileSync(templatePath).toString(), {
 		cspSource: this._panel.webview.cspSource,
-			showWelcomePage: vscode.workspace.getConfiguration().get<boolean>('micronaut.showWelcomePage') ? 'checked' : '',
+			showWelcomePage: vscode.workspace.getConfiguration().get<boolean>('micronaut-tools.showWelcomePage') ? 'checked' : '',
 			cssUri: this._panel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, WelcomePanel.webviewsFolder, 'styles', 'welcome.css'))),
 			jsUri: this._panel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, WelcomePanel.webviewsFolder, 'scripts', 'welcome.js')))
 		});
