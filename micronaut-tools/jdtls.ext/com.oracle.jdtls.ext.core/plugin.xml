@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+    <extension point="org.eclipse.jdt.ls.core.delegateCommandHandler">
+        <delegateCommandHandler class="com.oracle.jdtls.ext.core.CommandHandler">
+            <command id="micronaut.java.completion"/>
+            <command id="micronaut.java.codeLens"/>
+            <command id="micronaut.java.project.type"/>
+        </delegateCommandHandler>
+    </extension>
+</plugin>

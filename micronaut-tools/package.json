@@ -37,7 +37,10 @@
 	],
 	"main": "./dist/extension.js",
 	"contributes": {
-		"configuration": {
+		"javaExtensions": [
+			"./server/com.oracle.jdtls.ext.core-0.1.0.jar"
+		  ],
+ 		"configuration": {
 			"type": "object",
 			"title": "Micronaut Tools",
 			"properties": {
@@ -45,7 +48,13 @@
 					"type": "boolean",
 					"default": true,
 					"description": "Show Micronaut Tools page on extension activation"
-				}
+				},
+				"micronaut.jdt.buildsystemExecution": {
+					"type": "boolean",
+					"default": true,
+					"description": "Use build system (Maven or Gradle) to run or debug applications.",
+					"scope": "window"
+				  }
 			}
 		},
 		"commands": [
@@ -269,13 +278,14 @@
 		"buildCmd": "package --allow-star-activation --allow-missing-repository --no-update-package-json"
 	},
 	"scripts": {
-		"vscode:prepublish": "webpack --mode production",
+		"vscode:prepublish": "npm run build-server && webpack --mode production",
 		"compile": "webpack --mode development",
 		"info": "webpack --display-modules",
 		"watch": "webpack --mode development --watch",
 		"test-compile": "tsc -p ./",
 		"prebuild": "npm install",
-		"build": "cross-os build",
+		"build": "npm run build-server && cross-os build",
+		"build-server": "node scripts/buildJdtlsExt.js",
 		"lint": "eslint src --ext ts"
 	},
 	"cross-os": {
@@ -287,12 +297,14 @@
 	},
 	"dependencies": {
 		"@vscode/l10n": "^0.0.10",
+		"fs-extra": "^10.1.0",
 		"jdk-utils": "^0.4.4",
 		"mustache": "^4.2.0",
 		"vscode-kubernetes-tools-api": "^1.3.0"
 	},
 	"devDependencies": {
 		"@vscode/l10n-dev": "^0.0.29",
+		"@types/fs-extra": "^9.0.13",
 		"@types/glob": "^7.1.1",
 		"@types/mustache": "^4.2.2",
 		"@types/node": "^14.16.0",

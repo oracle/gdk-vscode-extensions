@@ -20,6 +20,7 @@ import * as actions from './navigation/actions';
 import * as targetAddress from './navigation/targetAddress';
 import * as restQueries from './navigation/restQueries';
 import * as kubernetes from 'vscode-kubernetes-tools-api';
+import * as launcher from './launcher/extension';
 
 export function activate(context: vscode.ExtensionContext) {
 	symbols.initialize(context);
@@ -75,6 +76,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		vscode.commands.executeCommand('setContext', 'graalVMExt.available', true);
 	}
+	launcher.activateLauncher(context);
 	micronautProjectExists().then(exists => {
 		if (exists) {
 			vscode.commands.executeCommand('setContext', 'micronautProjectExists', true);
