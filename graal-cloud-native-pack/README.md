@@ -27,6 +27,7 @@ The extension pack also bundles support for using Oracle Cloud Infrastructure's 
 * [GCN Database Support](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn-database-drivers) - an extension that delivers JDBC drivers supported by Oracle GCN, that are used by the Apache NetBeans Language Server.
 * [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops) - an extension that provides support for Oracle Cloud Infrastructure’s DevOps service in VS Code with the creation of build and deployment pipelines along with source code management that makes it easy to transition from local development to cloud-based development and deployment.
 * [Micronaut](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) - an extension that provides a launcher for Micronaut projects.
+* [Micronaut Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) - an extension that provides Micronaut and Graal Cloud Native project support.
 
 ### Feedback
 
