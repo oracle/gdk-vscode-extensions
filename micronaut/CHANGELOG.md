@@ -1,8 +1,5 @@
 # Change Log
 
-# Version 0.5.21
-* Ask users to install the recommended extensions
-
 # Version 0.5.20
 * 3rd party libraries updated
 
