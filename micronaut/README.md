@@ -270,10 +270,16 @@ To open the Command Palette, select **Command Palette** from the **View** menu.
 The Command Palette can be also opened by pressing F1, or `Ctrl+Shift+P` (`Command+Shift+P` for macOS). 
 The following commands are available for Micronaut project development:
 
-**TODO** This is out of date.
-
-* **Micronaut: Show Micronaut Tools Page**: show the Micronaut Tools Page
+* **Micronaut: Show Micronaut Tools Page**: show the Micronaut Tools Page with basic info on this extension
 * **Micronaut: Create Micronaut Project** create a Micronaut project based on [project creation wizard](https://micronaut.io/launch)
+* **Micronaut: Build Native Image** build GraalVM native image executable for given project
+* **Micronaut: Build ...** offers several the most important build tasks/targets wrapped as predefined commands for Micronaut projects
+* **Micronaut: Deploy ...** deploys either JVM container or Native executable container into Container registry. Container registry MUST be configured in docker toolchain on the machine from which deployment is initiated. See your docker tools documentation.
+* **Micronaut: Create Kubernetes Deployment Resource** create Kubernetes deployment resource for given application
+* **Micronaut: Create Kubernetes Service Resource**  create Kubernetes service resource for given application
+* **Micronaut: Deploy to Kubernetes** deploy to running Kubernetes services. The service must be configured in Kubernetes tools (kubectl) on the machine from which deployment is initiated. See your Kubernetes tools documentation.
+* **Micronaut: Run in Kubernetes**  run already deployed application in Kubernetes service. Command performs port forwarding at the end and running application can be accessed from browser on your machine.
+
 
   ![Micronaut VS Code Commands](images/micronaut-vs-code-commands.png)
 
