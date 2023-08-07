@@ -51,6 +51,7 @@
         "oracle-labs-graalvm.gcn",
         "oracle-labs-graalvm.gcn-database-drivers",
         "oracle-labs-graalvm.oci-devops",
-        "oracle-labs-graalvm.micronaut"
+        "oracle-labs-graalvm.micronaut",
+        "oracle-labs-graalvm.micronaut-tools"
     ]
 }
