@@ -1,8 +1,8 @@
-# GraalVM Tools for Micronaut&reg; &mdash; Micronaut Productivity
+# Micronaut&reg; Launch
 
 ## Overview
-GraalVM Tools for Micronaut is a powerful extension for using [GraalVM](https://www.oracle.com/java/graalvm/) to develop [Micronaut framework](https://micronaut.io/) applications within VS Code.
-Micronaut framework is a lightweight reactive framework that provides a solid foundation for building cloud native Java microservices.
+Micronaut Launch is a powerful extension for using [GraalVM](https://www.oracle.com/java/graalvm/) to develop [Micronaut framework](https://micronaut.io/) applications within VS Code.
+The Micronaut framework is a lightweight reactive framework that provides a solid foundation for building cloud native Java microservices.
 
 ## Features
 * [Create a New Micronaut Project](#create-a-new-micronaut-project)✨
@@ -22,37 +22,34 @@ Micronaut framework is a lightweight reactive framework that provides a solid fo
 - VS Code (version 1.76.0 or later).
 - The [Extension Pack for Java from Microsoft](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack).
 VS Code will prompt you to install the extension when you open a Micronaut project (for more information, see [Java in VS Code](https://code.visualstudio.com/docs/languages/java)).
-- [Apache NetBeans Language Server for Java](https://marketplace.visualstudio.com/items?itemName=ASF.apache-netbeans-java).
 - (Optional.) The A Java Development Kit (JDK) installation (JDK 17 or later).
 [Oracle GraalVM](https://www.oracle.com/java/graalvm/) is a fast and efficient JDK from Oracle.
 
 ## Installing the Extension
-Click **Install** on the banner above, or from the Extensions side bar in VS Code, by searching for "GraalVM Tools for Micronaut".
+Click **Install** on the banner above, or from the Extensions side bar in VS Code, by searching for "Micronaut Launch".
 
 You can also find the extension listed on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut).
 
 The Micronaut Tools page opens as soon as the extension is installed.
 You can also open this page using the Command Palette command **Micronaut: Show Micronaut Tools Page**.
 
-It is recommended to install [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which contains this and all other extensions for Graal Cloud Native development.
-
- ![Micronaut Tools Page](images/micronaut_tools_page.png)
+> Note: This extension is part of the [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack). We recommend you install the Graal Cloud Native Extension pack as it provides additional extensions for Micronaut development, including the [GCN Database Support](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn-database-drivers) extension.
 
 ## Usage
 
 ### Create a New Micronaut Project
 
-To create a new project, select **Command Palette** from the **View** menu.
+To quickly create a new project, select **Command Palette** from the **View** menu.
 Enter "micronaut" and invoke the **Micronaut: Create Micronaut Project** command.
 The wizard will prompt you to:
 
 - Pick the Micronaut version
-- Pick the application type
-- Pick the Java version
+- Pick the application type (for more information, see [Creating a Project](https://docs.micronaut.io/latest/guide/#createProject))
+- Pick the Java version (from the list of Java installations found on your system)
 - Enter a project name (or use the default "demo")
 - Enter a base package name (or use the default "com.example")
-- Pick the project language (Java, Kotlin, or Groovy)
-- Pick the project features
+- Pick the project language (you can build an application using Java, Groovy, or Kotlin)
+- Pick the project features (some of which are listed below)
   ![Micronaut Project Features](images/micronaut-project-features_view.png)
 - Pick the build tool (Gradle or Maven)
 - Pick the test framework (JUnit, Spock, or Kotlintest)
@@ -176,25 +173,22 @@ Enter "micronaut" and invoke the **Micronaut: Deploy ...** command.
     - To deploy a containerized Micronaut application, select the **dockerPush** goal.
     - To deploy a containerized native executable, select the **dockerPushNative** goal.
 
-
-To configure your application's container registry, see the [Micronaut Deploying Application](https://micronaut-projects.github.io/micronaut-maven-plugin/latest/examples/deploy.html) Maven documentation or [Gradle Plugin Documentation](https://micronaut-projects.github.io/micronaut-gradle-plugin/latest/). 
+To configure your application's container registry, see the documentation for [Micronaut Maven Plugin](https://micronaut-projects.github.io/micronaut-maven-plugin/latest/)/[Micronaut Gradle Plugin](https://micronaut-projects.github.io/micronaut-gradle-plugin/latest/). 
 
 ### Deploy Your Application to Oracle Cloud Infrastructure
 
-Micronaut extension is part of [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which also provides [OCI DevOps Tools extension](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops). This extension simplifies deployment and build of not only Micronaut application in Oracle Cloud Infrastructure.
-It is recommended to install OCI DevOps Extension when working with OCI. Supported technologies are:
-   1. Micronaut
-   2. Graal Cloud Native
-   3. Spring Boot
+**Prerequisites:**
+* An Oracle Cloud Infrastructure (OCI) account.
+* The [OCI DevOps Tools extension](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops) (part of the [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack)).
 
-   * Gradle or Maven projects.
+The OCI DevOps Tools extension provisions build and deployment pipelines for:
+* An OCI native executable container: a containerized native executable
+* An OCI Java container: a containerized Micronaut application
 
-When used OCI DevOps extension provisions build and deployment pipelines for these projects including build of:
-   1. OCI Native Executable Container - docker container with application compiled in GraalVM native image
-   2. OCI JVM container - docker container with application built into Jar files
+It can also provision a cluster to run your container on Oracle's [Container Engine for Kubernetes](https://docs.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm).
+For more information about using the OCI DevOps Tools Extension, see [Using OCI DevOps Tools Extensions in VS Code](https://www.graal.cloud/gcn/get-started/using-gcn-vscode-tools/).
 
-It also provisions OKE cluster to run these containers in Kubernetes service.
-Read [Using OCI DevOps Tools Extensions in VS Code](https://www.graal.cloud/gcn/get-started/using-gcn-vscode-tools/) to see all the support for OCI DevOps available in VSCode.
+[comment]: <This should reference Micronaut, or OCI, not GCN> 
 
 ### Connect to an Oracle Autonomous Database
 
@@ -202,7 +196,7 @@ Read [Using OCI DevOps Tools Extensions in VS Code](https://www.graal.cloud/gcn/
 
 **Prerequisites:**
 * An Oracle Cloud Infrastructure (OCI) account.
-* The [GCN Database Support](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn-database-drivers) extension. 
+* The [GCN Database Support](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn-database-drivers) extension (part of the [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack)). 
 (This adds a **DATABASES** view to the Explorer Panel.)
 
 To create a new connection to an Oracle Autonomous Database, follow the steps below:
@@ -258,44 +252,50 @@ To create repository classes, follow these steps:
 
 The extension contributes the following settings:
 
-* __micronaut.home__ - the optional path to the Micronaut CLI installation -> specify local Micronaut CLI installation to be used in addition to default used https://micronaut.io/launch/, eg. `/usr/me/micronaut-cli-4.0.1`
+* __micronaut.home__ - the optional path to your local [Micronaut Launch](https://micronaut-projects.github.io/micronaut-starter/latest/guide/index.html#introduction) Command Line Interface (CLI).
+Specify the local Micronaut CLI installation to be used in addition to the default [Micronaut Launch web interface](https://micronaut.io/launch/), for example, _/usr/me/micronaut-cli-4.0.1_.
  ![Micronaut CLI Set](images/micronaut-cli-setting.png)
-* __micronaut.showWelcomePage__ - show the Micronaut Tools Page on extension activation when set to True.
-* __micronaut.launchUrl__ - Optional Micronaut Launch URL (e.g. 'https://launch.micronaut.io') -> specify additional Micronaut launch service for project creation in addition to default https://micronaut.io/launch/
+* __micronaut.showWelcomePage__ - when set to `True`, show the Micronaut Tools page on extension activation.
+* __micronaut.launchUrl__ - Optional URL for the Micronaut Launch web interface (for example, `https://launch.micronaut.io`).
+Specify a URL for the Micronaut Launch web interface in addition to the default (`https://micronaut.io/launch/`).
 
 ## Micronaut Commands
 
 Invoke the Micronaut commands from the Command Palette, then search for "Micronaut".
 To open the Command Palette, select **Command Palette** from the **View** menu.
-The Command Palette can be also opened by pressing F1, or `Ctrl+Shift+P` (`Command+Shift+P` for macOS). 
+
 The following commands are available for Micronaut project development:
 
-* **Micronaut: Show Micronaut Tools Page**: show the Micronaut Tools Page with basic info on this extension
-* **Micronaut: Create Micronaut Project** create a Micronaut project based on [project creation wizard](https://micronaut.io/launch)
-* **Micronaut: Build Native Image** build GraalVM native image executable for given project
-* **Micronaut: Build ...** offers several the most important build tasks/targets wrapped as predefined commands for Micronaut projects
-* **Micronaut: Deploy ...** deploys either JVM container or Native executable container into Container registry. Container registry MUST be configured in docker toolchain on the machine from which deployment is initiated. See your docker tools documentation.
-* **Micronaut: Create Kubernetes Deployment Resource** create Kubernetes deployment resource for given application
-* **Micronaut: Create Kubernetes Service Resource**  create Kubernetes service resource for given application
-* **Micronaut: Deploy to Kubernetes** deploy to running Kubernetes services. The service must be configured in Kubernetes tools (kubectl) on the machine from which deployment is initiated. See your Kubernetes tools documentation.
-* **Micronaut: Run in Kubernetes**  run already deployed application in Kubernetes service. Command performs port forwarding at the end and running application can be accessed from browser on your machine.
-
+* **Micronaut: Show Micronaut Tools Page**: show the Micronaut Tools page with basic information describing this extension
+* **Micronaut: Create Micronaut Project**: create a Micronaut project
+* **Micronaut: Build Native Executable**: build a native executable of your application using GraalVM native image
+* **Micronaut: Build ...**: offers several the most important build tasks/targets wrapped as predefined commands for your Micronaut project
+* **Micronaut: Deploy ...**: deploys either a JVM container or native executable container into Container registry.
+Container registry MUST be configured in docker toolchain on the machine from which deployment is initiated.
+See your docker tools documentation.
+* **Micronaut: Create Kubernetes Deployment Resource**: create a Kubernetes deployment resource for your application
+* **Micronaut: Create Kubernetes Service Resource**: create a Kubernetes service resource for your application
+* **Micronaut: Deploy to Kubernetes**: deploy to running Kubernetes services. The service must be configured in Kubernetes tools (kubectl) on the machine from which deployment is initiated.
+See your Kubernetes tools documentation.
+* **Micronaut: Run in Kubernetes**:  run already deployed application in Kubernetes service.
+Command performs port forwarding at the end and running application can be accessed from browser on your machine.
 
   ![Micronaut VS Code Commands](images/micronaut-vs-code-commands.png)
 
-### Feedback
+## Feedback
 
-If you have suggestions for new features, or if you have found a bug or issue, we would love to hear from you. Use the links below to do so:
+If you have suggestions for new features, or if you have found a bug or issue, we would love to hear from you. Use the links below:
 
 * [Request a feature](https://github.com/graalvm/vscode-extensions/issues/new?labels=enhancement)
 * [File a bug](https://github.com/graalvm/vscode-extensions/issues/new?labels=bug)
 
 ## Contributing
 
-To submit pull requests to vscode-extensions, you need to sign the [Oracle Contributor Agreement](http://www.oracle.com/technetwork/community/oca-486395.html).
+To submit pull requests to vscode-extensions, first sign the [Oracle Contributor Agreement](http://www.oracle.com/technetwork/community/oca-486395.html).
 
-Project members with write access to the repository will determine and assign an appropriate [Assignee](https://help.github.com/articles/assigning-issues-and-pull-requests-to-other-github-users/) for the pull request. The assignee will work with the pull request owner to address any issues and then merge the pull request.
+Project members with write access to the repository will identify and assign an appropriate [Assignee](https://help.github.com/articles/assigning-issues-and-pull-requests-to-other-github-users/) for the pull request.
+The assignee will work with the pull request owner to address any issues and then merge the pull request.
 
 ## Release Notes
 
-Refer to [CHANGELOG](CHANGELOG.md)
+Refer to [CHANGELOG](CHANGELOG.md).
