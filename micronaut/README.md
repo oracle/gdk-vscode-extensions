@@ -167,7 +167,7 @@ You can then deploy the container image.
 To build and deploy a container image of your application, follow these steps:
 
 1. Select **Command Palette** from the **View** menu.
-Enter "micronaut" and invoke the **Micronaut: Deploy ...** command.
+Enter "micronaut" and invoke the **Micronaut: Deploy...** command.
 
 2. Select select one of the goals from the list:
     - To deploy a containerized Micronaut application, select the **dockerPush** goal.
@@ -269,8 +269,8 @@ The following commands are available for Micronaut project development:
 * **Micronaut: Show Micronaut Tools Page**: show the Micronaut Tools page with basic information describing this extension
 * **Micronaut: Create Micronaut Project**: create a Micronaut project
 * **Micronaut: Build Native Executable**: build a native executable of your application using GraalVM native image
-* **Micronaut: Build ...**: offers several the most important build tasks/targets wrapped as predefined commands for your Micronaut project
-* **Micronaut: Deploy ...**: deploys either a JVM container or native executable container into Container registry.
+* **Micronaut: Build...**: offers several the most important build tasks/targets wrapped as predefined commands for your Micronaut project
+* **Micronaut: Deploy...**: deploys either a JVM container or native executable container into Container registry.
 Container registry MUST be configured in docker toolchain on the machine from which deployment is initiated.
 See your docker tools documentation.
 * **Micronaut: Create Kubernetes Deployment Resource**: create a Kubernetes deployment resource for your application
