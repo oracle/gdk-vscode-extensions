@@ -1,3 +1,7 @@
+/**
+ * This is an init script, which configures the Exec-class tasks to invoke the specified Main class,
+ * use a specified application params, JVM params and JVM debug settings.
+ */
 package com.oracle.jdtls.ext.core;
 
 import java.util.List;

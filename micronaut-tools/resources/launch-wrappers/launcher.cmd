@@ -1,3 +1,9 @@
+rem
+rem  Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+rem  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+rem 
+rem  Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+rem 
 @echo off
 
 if NOT "%JDT_LAUNCHWRAP_PROJECT_LAUNCHER%" == "" (
