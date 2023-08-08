@@ -31,9 +31,9 @@ The wizard can generate different types of Graal Cloud Native applications and s
 You now have a new Graal Cloud Native application, complete with example code showing you how to start using [Graal Cloud Native](https://graal.cloud/).
 
 ## <a name='gcn-extension-pack'></a>Graal Cloud Native Extension Pack
-Graal Cloud Native extension is part of [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which is recommended to install. The extension pack provides also following support:
-1. Oracle Cloud Infrastructure DevOps integration to provision build pipelines for GCN or Micronaut projects. GraalVM Native Image builds are provisioned automatically for GCN and Micronaut projects.
-2. Database integration and database development support for Oracle Autonomous Database and MySQL server
+Graal Cloud Native extension is part of the [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which is recommended to install. The extension pack provides also following support:
+1. Oracle Cloud Infrastructure DevOps integration to provision build pipelines for Graal Cloud Native or Micronaut projects. GraalVM Native Image builds are provisioned automatically.
+2. Database integration and database development support for the Oracle Autonomous Database and MySQL server
 3. Micronaut support
 
 ## <a name='provide-feedback-or-seek-help'></a>Provide Feedback or Seek Help
