@@ -29,6 +29,7 @@
 		"java"
 	],
 	"activationEvents": [
+		"workspaceContains:**/micronaut-cli.yml"
 	],
 	"main": "./dist/extension.js",
 	"contributes": {

@@ -25,6 +25,9 @@
 		"graal",
 		"native image"
 	],
+	"activationEvents": [
+		"workspaceContains:**/micronaut-cli.yml"
+	],
 	"main": "./dist/extension",
 	"browser": "./dist/webExtension",
 	"contributes": {

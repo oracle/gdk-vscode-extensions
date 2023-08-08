@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import { micronautProjectExists, checkExtensions } from "./utils";
 import { creatorInit, createProject } from './projectCreate';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -13,7 +14,11 @@ export function activate(context: vscode.ExtensionContext) {
 		createProject(context);
 	}));
 	creatorInit();
-	// TODO: set up the notification to suggest installing tools/pack ext. for a new micronaut project
+	micronautProjectExists().then(exists => {
+		if (exists) {
+			checkExtensions(context);
+		}
+	});
 }
 
 export function deactivate() {}

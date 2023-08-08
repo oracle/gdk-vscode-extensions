@@ -60,10 +60,10 @@ export async function createProject(context: vscode.ExtensionContext): Promise<v
     if (!targetLocation) {
         return;
     }
-    return createProjectBase(options, targetLocation);
+    return createProjectBase(context, options, targetLocation);
 }
 
-export async function createProjectBase(options : CreateOptions, targetLocation : string): Promise<void> {
+export async function createProjectBase(context: vscode.ExtensionContext, options : CreateOptions, targetLocation : string): Promise<void> {
 
     if (fs.existsSync(targetLocation)) {
         if (!fs.statSync(targetLocation).isDirectory()) {
@@ -83,7 +83,7 @@ export async function createProjectBase(options : CreateOptions, targetLocation 
     await writeProjectContents(options,new NodeFileHandler(vscode.Uri.file(targetLocation)));
 
     const uri = vscode.Uri.file(targetLocation);
-    handleNewGCNProject(uri);
+    handleNewGCNProject(context, uri);
 }
 
 async function selectLocation(context: vscode.ExtensionContext, options: CreateOptions) {

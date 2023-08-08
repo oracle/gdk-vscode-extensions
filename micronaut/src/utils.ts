@@ -10,6 +10,8 @@ import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
+const MICRONAUT_DO_NOT_SHOW_RECOMMENDATION = 'micronaut.doNotShowRecommendation';
+
 export async function micronautProjectExists(): Promise<boolean> {
 	return (await vscode.workspace.findFiles('**/micronaut-cli.yml', '**/node_modules/**')).length > 0;
 }
@@ -39,6 +41,19 @@ export function getMicronautLaunchURL(): string {
 	return micronautLaunchURL;
 }
 
+export async function checkExtensions(context: vscode.ExtensionContext) {
+	if (!context.globalState.get(MICRONAUT_DO_NOT_SHOW_RECOMMENDATION) && !vscode.extensions.getExtension('oracle-labs-graalvm.graal-cloud-native-pack')) {
+		const INSTALL_OPTION = 'Install';
+		const DO_NOT_ASK_OPTION = 'Do not ask again';
+		const option = await vscode.window.showInformationMessage(`Do you want to install the 'Graal Cloud Native Extensions Pack' recommended for work with Micronaut / Graal Cloud Native projects?`, INSTALL_OPTION, DO_NOT_ASK_OPTION);
+		if (option === INSTALL_OPTION) {
+			await vscode.commands.executeCommand('workbench.extensions.installExtension', 'oracle-labs-graalvm.graal-cloud-native-pack');
+		} else if (option === DO_NOT_ASK_OPTION) {
+			context.globalState.update(MICRONAUT_DO_NOT_SHOW_RECOMMENDATION, true);
+		}
+	}
+}
+
 export function getJavaHome(): string {
 	let javaHome: string = vscode.workspace.getConfiguration('graalvm').get('home') as string;
 	if (javaHome) {
@@ -49,9 +64,11 @@ export function getJavaHome(): string {
 		return javaHome;
 	}
 	const javaRuntimes = vscode.workspace.getConfiguration('java').get('configuration.runtimes') as any[];
-	for (const runtime of javaRuntimes) {
-		if (runtime && typeof runtime === 'object' && runtime.path && runtime.default) {
-			return runtime.path;
+	if (javaRuntimes) {
+		for (const runtime of javaRuntimes) {
+			if (runtime && typeof runtime === 'object' && runtime.path && runtime.default) {
+				return runtime.path;
+			}
 		}
 	}
 	javaHome = vscode.workspace.getConfiguration('java').get('home') as string;
