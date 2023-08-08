@@ -133,6 +133,12 @@
 				"title": "%extension.micronaut-tools.navigation.searchEndpoints.title%",
 				"icon": "$(search)",
 				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.launch.continuous",
+				"title": "%extension.micronaut-tools.launch.continuous.title%",
+				"icon": "$(run)",
+				"category": "Micronaut Tools"
 			}
 		],
 		"viewsContainers": {

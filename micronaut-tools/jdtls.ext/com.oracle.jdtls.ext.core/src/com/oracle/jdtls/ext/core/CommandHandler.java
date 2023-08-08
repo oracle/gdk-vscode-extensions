@@ -1,6 +1,8 @@
-/**
- * This is an init script, which configures the Exec-class tasks to invoke the specified Main class,
- * use a specified application params, JVM params and JVM debug settings.
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 package com.oracle.jdtls.ext.core;
 
@@ -16,9 +18,9 @@ public class CommandHandler implements IDelegateCommandHandler {
     public Object executeCommand(String commandId, List<Object> arguments, IProgressMonitor monitor) throws Exception {
          if (!StringUtils.isBlank(commandId)) {
             switch (commandId) {
-                case "micronaut.java.codeLens":
+                case "extension.micronaut-tools.java.codeLens":
                     return JavaCodeLens.collect(arguments, monitor);
-                case "micronaut.java.project.type":
+                case "extension.micronaut-tools.java.project.type":
                     // see FindProjectTypeParams & FindProjectTypeResult.
                     return JavaCodeLens.findProjectType(arguments, monitor);
                 default:

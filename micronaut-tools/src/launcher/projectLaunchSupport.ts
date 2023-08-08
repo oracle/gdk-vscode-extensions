@@ -44,7 +44,7 @@ export async function resolveConfigurationAsync(folder: vscode.Uri | undefined, 
         mainClass: config?.mainClass,
         location: uri?.toString()
     };
-    const { type, projectDir, root, container } = await utils.executeJavaWorkspaceCommand('micronaut.java.project.type', arg);
+    const { type, projectDir, root, container } = await utils.executeJavaWorkspaceCommand('extension.micronaut-tools.java.project.type', arg);
 
     // support just maven and gradle projects.
     if (!root) {

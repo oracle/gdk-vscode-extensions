@@ -84,7 +84,7 @@ public final class JavaCodeLens {
                     if (isMicronautProject(javaProject, monitor)) {
                         Location loc = JDTUtils.toLocation(method);
                         if (loc != null) {
-                            lenses.add(new CodeLens(loc.getRange(), new Command("Run with Micronaut Continuous Mode", "micronaut.launch.continuous", Arrays.asList(getProjectType(javaProject), getProjectURI(javaProject), true)), null));
+                            lenses.add(new CodeLens(loc.getRange(), new Command("Run with Micronaut Continuous Mode", "extension.micronaut-tools.launch.continuous", Arrays.asList(getProjectURI(javaProject), true)), null));
                         }
                     }
                 }
