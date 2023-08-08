@@ -1,0 +1,11 @@
+**/target
+agent
+server
+
+# Ignore NB IDE custom files
+buildagent/nbactions.xml
+buildagent/nb-configuration.xml
+buildagent/nbproject
+
+# Ignore POM processing byproducts
+buildagent/dependency-reduced-pom.xml
