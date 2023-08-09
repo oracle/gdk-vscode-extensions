@@ -473,6 +473,10 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
             featureList.push(...list);
         }
     }
+    if (s.buildTool.value === 'MAVEN' && !featureList.includes('graalvm')) {
+        // automatically add for maven projects:
+        featureList.push('graalvm');
+    }
 
     return {
         micronautVersion: { 
