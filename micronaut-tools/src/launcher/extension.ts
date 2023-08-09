@@ -7,9 +7,9 @@
 
 import * as vscode from 'vscode';
 import { launch } from './launch';
+import { lspServerReady } from './utils';
 import { ProjectDebugConfigurationProvider } from './projectLaunchSupport';
 
-const JAVA_LANGUAGE_SUPPORT: string = "redhat.java";
 const EXECUTE_WORKSPACE_COMMAND: string = 'java.execute.workspaceCommand';
 const JAVA_CODE_LENS_COMMAND: string = 'extension.micronaut-tools.java.codeLens';
 const LAUNCH_COMMAND: string = 'extension.micronaut-tools.launch.continuous';
@@ -19,18 +19,6 @@ export function activateLauncher(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(LAUNCH_COMMAND, (uriString: string, _noDebug: boolean) => 
         launch(context.extensionPath, uriString, _noDebug)));
     context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('java', new ProjectDebugConfigurationProvider(context)));
-}
-
-async function lspServerReady(): Promise<boolean> {
-    const javaLanguageSupport: vscode.Extension<any> | undefined = vscode.extensions.getExtension(JAVA_LANGUAGE_SUPPORT);
-    if (!javaLanguageSupport) {
-        return false;
-    }
-    if (!javaLanguageSupport.isActive) {
-        await javaLanguageSupport.activate();
-    }
-    await javaLanguageSupport.exports.serverReady();
-    return true;
 }
 
 class CodeLensesProvider implements vscode.CodeLensProvider {
