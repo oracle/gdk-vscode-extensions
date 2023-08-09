@@ -1,0 +1,6 @@
+{
+    "projects": [
+        "./jdtls.ext/com.oracle.jdtls.ext.core"
+    ],
+   "targetPlatform": "./jdtls.ext/com.oracle.jdtls.ext.target/com.oracle.jdtls.ext.tp.target"
+}
