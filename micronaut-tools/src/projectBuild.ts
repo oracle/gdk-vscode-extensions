@@ -209,14 +209,14 @@ function getAvailableMavenGoals(): Goals {
     const buildGoals: vscode.QuickPickItem[] = [
         { label: 'clean', detail: 'Cleans the project' },
         { label: 'compile', detail: 'Compiles the source code of the project' },
-        { label: 'package', detail: 'Packages the compiled code in its distributable format' },
-        { label: 'nativeImage', detail: 'Packages the compiled code as a GraalVM native image'},
-        { label: 'dockerBuild', detail: 'Builds a Docker image with the application artifacts'},
-        { label: 'dockerBuildNative', detail: 'Builds a Docker image with a GraalVM native image inside'}
+        { label: 'package', detail: 'Packages the compiled code as a JAR file' },
+        { label: 'nativeImage', detail: 'Creates a native executable from your Micronaut application'},
+        { label: 'dockerBuild', detail: 'Builds a container image of your Micronaut application'},
+        { label: 'dockerBuildNative', detail: 'Builds a container image of your Micronaut native executable'}
     ];
     const deployGoals: vscode.QuickPickItem[] = [
-        { label: 'dockerPush', detail: 'Pushes a Docker Image' },
-        { label: 'dockerPushNative', detail: 'Pushes a Native Docker Image using GraalVM' }
+        { label: 'dockerPush', detail: 'Pushes a container image of your Micronaut application' },
+        { label: 'dockerPushNative', detail: 'Pushes a container image of your Micronaut native executable' }
     ];
     return { build: buildGoals, deploy: deployGoals };
 }

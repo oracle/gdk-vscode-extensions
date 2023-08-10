@@ -33,7 +33,7 @@ export async function createDeployment(context: vscode.ExtensionContext) {
           const projectInfo = await wrapper.getProjectInfo();
           progress.report({ message: 'Retrieving Namespaces' });
           const namespaces = await namespacesPromise;
-          progress.report({ message: 'Retrieving Docker Secret Resources' });
+          progress.report({ message: 'Retrieving Container Secret Resources' });
 
           return [projectInfo, await secretsPromise, namespaces];  
         }
@@ -71,7 +71,7 @@ export async function createDeployment(context: vscode.ExtensionContext) {
 			title,
 			step: 1,
 			totalSteps: totalSteps(state),
-			placeholder: 'Pick Docker Repository',
+			placeholder: 'Pick Container Repository',
 			items: getDockerRegistries(),
 			activeItems: {label: "local", value: LOCAL},
             validate: () => Promise.resolve(undefined),
@@ -121,7 +121,7 @@ export async function createDeployment(context: vscode.ExtensionContext) {
 			title,
 			step: 4,
 			totalSteps: totalSteps(state),
-            placeholder: `Select Docker Registry Secret for ${state.imageName}`,
+            placeholder: `Select Container Registry Secret for ${state.imageName}`,
             items: secrets,
 			shouldResume: () => Promise.resolve(false)
         });
