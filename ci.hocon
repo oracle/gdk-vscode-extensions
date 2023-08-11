@@ -8,6 +8,16 @@ common : {
   }
 }
 
+linux_jdk17 : {
+  capabilities : [linux, amd64],
+  downloads: {
+    JAVA_HOME: { name: "graalvm-ee", version: "java17", platformspecific: true }
+  },
+  environment: {
+    PATH: "${JAVA_HOME}/bin:${PATH}"
+  }
+}
+  
 linux : ${common} {
   packages: {
     nodejs : ">=14.16.0"
@@ -75,5 +85,5 @@ vscodeTestsDaily : ${vscodeTestsCommon} {
 builds += [
   ${linux-amd64} ${vscodeRunTests} { name: "gate-vscode-tests" },
   ${linux-amd64} ${vscodeTestsDaily} { name: "daily-vscode-tests" },
-  ${linux-amd64} ${vscodeBuildGate} { name: "gate-vscode-build" }
+  ${linux-amd64} ${linux_jdk17} ${vscodeBuildGate} { name: "gate-vscode-build" }
 ]
