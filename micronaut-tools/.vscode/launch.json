@@ -6,6 +6,14 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"type": "java",
+			"name": "Attach to Plugin",
+			"request": "attach",
+			"hostName": "localhost",
+			"port": 1044,
+			"projectName": "com.oracle.jdtls.ext.core"
+        },
+		{
 			"name": "Run Extension",
 			"type": "extensionHost",
 			"request": "launch",
@@ -13,6 +21,9 @@
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}"
 			],
+			"env": {
+				"DEBUG_VSCODE_JAVA":"true"
+            },
 			"outFiles": [
 				"${workspaceFolder}/out/**/*.js",
 				"${workspaceFolder}/dist/**/*.js"
