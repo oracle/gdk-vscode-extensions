@@ -79,10 +79,10 @@ To run your Micronaut application in this mode, view the `Application` class in 
 
 Alternatively, select **Run and Debug** in the activity bar and click **create a launch.json file**.
 When prompted, select **Java** as the debugger.
-Add a new configuration named "Continuous Application" to the _launch.json_ file and set the value of the its `JDT_LAUNCHWRAP_MICRONAUT_CONTINUOUS` environment variable to `true` (as shown below).
-Select the newly added configuration in the **Run and Debug** view, and finally click **Run**.
-
+A configuration that will be labeled with "Continuous" will be created for your Micronaut application main class(es), similar to this example:
 ![Select Launch Configuration to Run Micronaut Application in Continuous Mode](images/run-continuous-config.png)
+
+Select the newly added configuration in the **Run and Debug** view, and finally click **Run**.
 
 ### Debug Your Micronaut Application
 
@@ -237,6 +237,7 @@ To create repository classes, follow these steps:
 The extension contributes the following settings:
 
 * __micronaut-tools.showWelcomePage__ - when set to `True`, show the Micronaut Tools page on extension activation.
+* __micronaut-tools.jdt.buildsystemExecution__ - if set to `true` (default), enables enhanced Run support for Micronaut applications.
 
 ## Micronaut Commands
 
@@ -262,6 +263,12 @@ Command performs port forwarding at the end and running application can be acces
 * **Micronaut Tools: Search/Filter Endpoints**:  **TODO**: JS
 
   ![Micronaut VS Code Commands](images/micronaut-vs-code-commands.png)
+
+## Troubleshooting
+This extension modifies Run for **Java** environment so that the application is launched using the build system (Gradle, Maven). In some scenarios the support may not support all customizations necessary for the user project and has to be turned off.
+
+To enable or disable the enhanced Run feature, navigate to `File - Preferences - Settings`, locate `Micronaut Tools` extension section and turn on/off the `Use build system to run or debug applications`. The relevant setting (in JSON format) is `micronaut-tools.buildsystemExecution`
+
 
 ## Feedback
 
