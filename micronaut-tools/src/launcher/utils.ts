@@ -3,6 +3,11 @@ import * as vscode from 'vscode';
 
 export const JAVA_LANGUAGE_SUPPORT: string = "redhat.java";
 
+export interface IMainClassOption {
+    readonly mainClass: string;
+    readonly projectName?: string;
+    readonly filePath?: string;
+}
 export async function executeJavaWorkspaceCommand(command : string, ...args : any[]) : Promise<any> {
     return executeJavaExtensionCommand('java.execute.workspaceCommand', command, ...args);
 }

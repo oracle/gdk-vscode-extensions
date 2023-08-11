@@ -8,7 +8,7 @@
 import * as vscode from 'vscode';
 import { launch } from './launch';
 import { lspServerReady } from './utils';
-import { ProjectDebugConfigurationProvider } from './projectLaunchSupport';
+import { ProjectDebugConfigurationProvider, InitialMicronautContinuousConfigurationProvider } from './projectLaunchSupport';
 
 const EXECUTE_WORKSPACE_COMMAND: string = 'java.execute.workspaceCommand';
 const JAVA_CODE_LENS_COMMAND: string = 'extension.micronaut-tools.java.codeLens';
@@ -19,6 +19,7 @@ export function activateLauncher(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(LAUNCH_COMMAND, (uriString: string, _noDebug: boolean) => 
         launch(context.extensionPath, uriString, _noDebug)));
     context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('java', new ProjectDebugConfigurationProvider(context)));
+    context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('java', new InitialMicronautContinuousConfigurationProvider(), vscode.DebugConfigurationProviderTriggerKind.Initial));
 }
 
 class CodeLensesProvider implements vscode.CodeLensProvider {
