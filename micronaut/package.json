@@ -1,7 +1,7 @@
 {
 	"name": "micronaut",
 	"displayName": "Micronaut&reg; Launch",
-	"description": "Use Micronaut in VS Code — Create, Run, Debug, and Deploy Micronaut Applications",
+	"description": "A lightweight extension to create Micronaut projects.",
 	"version": "0.6.0",
 	"preview": true,
 	"license": "SEE LICENSE IN LICENSE.txt",
@@ -27,7 +27,7 @@
 	"keywords": [
 		"graalvm",
 		"micronaut",
-    "native image",
+    	"native image",
 		"microservices",
     "java"
 	],
