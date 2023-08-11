@@ -22,7 +22,7 @@ export class ProjectDebugConfigurationProvider implements DebugConfigurationProv
     }
 
     public resolveDebugConfigurationWithSubstitutedVariables(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {        
-        if (vscode.workspace.getConfiguration('micronaut.jdt').get('buildsystemExecution') !== true) {
+        if (vscode.workspace.getConfiguration('micronaut-tools').get('buildsystemExecution') !== true) {
             return config;
         }
         if (config?.type !== 'java' || config?.request !== 'launch') {

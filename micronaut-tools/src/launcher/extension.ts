@@ -23,7 +23,7 @@ export function activateLauncher(context: vscode.ExtensionContext) {
 
 class CodeLensesProvider implements vscode.CodeLensProvider {
     async provideCodeLenses(document: vscode.TextDocument, _token: vscode.CancellationToken): Promise<vscode.CodeLens[]> {
-        if (vscode.workspace.getConfiguration('micronaut.jdt').get('buildsystemExecution') !== true) {
+        if (vscode.workspace.getConfiguration('micronaut-tools').get('buildsystemExecution') !== true) {
             return [];
         }
         if (await lspServerReady()) {        
