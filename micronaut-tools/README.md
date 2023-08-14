@@ -43,7 +43,7 @@ The extension suggests code completions for your YAML configuration files.
 (The available configuration properties and their values are collected by scanning your source code and the Micronaut libraries.)
 
 The extension also provides code completion for your Java source code via the [Extension Pack for Java from Microsoft](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack).
-This gives you all the IDE features that you would expect from [Intellisense](https://code.visualstudio.com/docs/editor/intellisense), as well as automatically highlighting errors as you type.
+This gives you all the IDE features that you would expect from [IntelliSense](https://code.visualstudio.com/docs/editor/intellisense), as well as automatically highlighting errors as you type.
 
 ### Navigate Micronaut Source Code
 
@@ -110,7 +110,7 @@ This time, select the **package** goal, which will package your application into
 
 [comment]: <> (Why does this not use the **Micronaut Tools: Build Native Image** command?)
 
-If you have installed Oracle GraalVM, you can use GraalVM Native Image create a native executable from your application.
+If you have installed Oracle GraalVM, you can use GraalVM Native Image to create a native executable from your application.
 GraalVM Native Image creates an executable file with all the application classes, dependent library classes, dependent JDK classes, and a snapshot of the application heap. 
 Whilst building a native executable can take some time, the benefits include a dramatic reduction in startup time and reduced overall memory consumption.
 
@@ -236,12 +236,12 @@ To create repository classes, follow these steps:
 
 The extension contributes the following settings:
 
-* __micronaut-tools.showWelcomePage__ - when set to `True`, show the Micronaut Tools page on extension activation.
+* __micronaut-tools.showWelcomePage__ - when set to `true` (default), show the Micronaut Tools page on extension activation.
 * __micronaut-tools.jdt.buildsystemExecution__ - if set to `true` (default), enables enhanced Run support for Micronaut applications.
 
 ## Micronaut Commands
 
-Invoke the Micronaut commands from the Command Palette, then search for "Micronaut".
+Invoke the Micronaut commands from the Command Palette, then search for "Micronaut Tools".
 To open the Command Palette, select **Command Palette** from the **View** menu.
 
 The following commands are available for Micronaut project development:
