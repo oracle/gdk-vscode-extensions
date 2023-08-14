@@ -73,7 +73,7 @@
 					"default": true,
 					"description": "Show Micronaut Tools page on extension activation"
 				},
-				"micronaut.jdt.buildsystemExecution": {
+				"micronaut-tools.buildsystemExecution": {
 					"type": "boolean",
 					"default": true,
 					"description": "Use build system (Maven or Gradle) to run or debug applications.",

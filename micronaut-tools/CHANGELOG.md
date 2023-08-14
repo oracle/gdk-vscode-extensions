@@ -1,5 +1,9 @@
 # Change Log
 
+# Version 0.5.21
+* Java application are launched or debugged with the help of the build system: build system plugins can setup the environment. Maven and Gradle are supported.
+* Support for "Continuous" run mode for Micronaut applications
+
 # Version 0.5.20
 * 3rd party libraries updated
 
