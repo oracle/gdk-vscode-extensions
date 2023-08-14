@@ -39,7 +39,31 @@
 	"contributes": {
 		"javaExtensions": [
 			"./server/com.oracle.jdtls.ext.core-0.1.0.jar"
-		  ],
+		],
+		"debuggers": [
+			{
+				"type": "micronaut",
+				"label": "Micronaut",
+				"languages": [
+				  "java"
+				],
+				"configurationSnippets": [
+					{
+						"label": "Micronaut: Launch Program - Continuous",
+						"description": "%micronaut.debugger.snippet.launch.description%",
+						"body": {
+						  "type": "java",
+						  "name": "Launch Micronaut Program - Continuous",
+						  "request": "launch",
+						  "mainClass": "",
+						  "env": {
+								"JDT_LAUNCHWRAP_MICRONAUT_CONTINUOUS": true
+						   }
+						}
+					}
+				]
+			}
+		],
  		"configuration": {
 			"type": "object",
 			"title": "Micronaut Tools",
