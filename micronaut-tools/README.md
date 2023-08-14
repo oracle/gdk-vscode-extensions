@@ -56,10 +56,32 @@ Run the **Go to Symbol in Workspace** command using Ctrl+T (Cmd+T on macOS) and 
 ![Navigate Micronaut Source Code](images/micronaut-navigation.png)
 
 ### View Defined Beans and Endpoints
-**TODO**: JS
+All beans and request mappings defined by a Micronaut or GCN application can be displayed in the Beans and Endpoints views of the Micronaut Tools activity.
+
+The items of these views can be searched/filtered using a dedicated action available in the view captions, or invoked using the Ctrl+F shortcut.
+
+Clicking a node in one of these views navigates to the corresponding source code similar to the Go to Symbol in Workspace command. This can be also invoked using a dedicated context menu action:
+* **Go to Symbol** to open the bean or request mapping source code
+
+Request mapping nodes in the Endpoints view provide two additional actions:
+* **Open in Browser** to open the GET endpoint in a web browser
+* **Compose REST Query** to insert the corresponding GET or POST query into a dedicated text document. See the following section Compose REST Queries for details.
+
+For endpoints containing parameters a dialog is opened to provide concrete values before opening in a browser or generating a REST query. Tip: type a parameter value and submit by Enter to move to another parameter.
+
+The base address of the running Micronaut or GCN application is by default configured to `http://localhost:8080` and can be customized using the Edit Target Application Address action in the Endpoints view caption.
+
+![Beans and Endpoints views](images/beans_endpoints_view.png)
+
 
 ### Compose REST Queries
-**TODO**: JS
+To easily debug and test the application REST API, the Endpoints view provides a smooth integration with a third party extension [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client).
+
+To start composing a REST query, invoke the Compose REST Query action for a GET or POST endpoint. A dedicated text document is opened and the corresponding query is inserted. Use the REST Client features to invoke and process the query.
+
+Note: If the REST Client extension is not installed when invoking the Compose REST Query action, a notification is displayed offering to quick install it.
+
+![Compose REST Query](images/compose_rest_query.png)
 
 ### Run Your Micronaut Application
 
@@ -258,9 +280,9 @@ See your docker tools documentation.
 See your Kubernetes tools documentation.
 * **Micronaut Tools: Run in Kubernetes**:  run already deployed application in Kubernetes service.
 Command performs port forwarding at the end and running application can be accessed from browser on your machine.
-* **Micronaut Tools: Edit Target Application Address**: **TODO**: JS
-* **Micronaut Tools: Search/Filter Beans**: **TODO**: JS
-* **Micronaut Tools: Search/Filter Endpoints**:  **TODO**: JS
+* **Micronaut Tools: Edit Target Application Address**: Customization of the base address of the running Micronaut or GCN application, default is `http://localhost:8080`
+* **Micronaut Tools: Search/Filter Beans**: Search or filter the items of the Beans view
+* **Micronaut Tools: Search/Filter Endpoints**:  Search or filter the items of the Endpoints view
 
   ![Micronaut VS Code Commands](images/micronaut-vs-code-commands.png)
 
