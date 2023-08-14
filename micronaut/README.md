@@ -39,8 +39,6 @@ The wizard will prompt you to:
 
 Finally, select whether to open the new project in a new window or add it to the current workspace.
 
-The extension adds a new view to the Explorer container: it displays Micronaut projects in the current workspace.
-
 ## Extension Settings
 
 The extension contributes the following settings:
