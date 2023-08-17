@@ -64,8 +64,8 @@ class CodeLensProvider implements vscode.CodeLensProvider {
                 for (const endpoint of endpoints) {
                     try {
                         const name: string = endpoint.name;
-                        const startPos: vscode.Position = new vscode.Position(endpoint.selectionRange?.start?.line, endpoint.selectionRange?.start?.character);
-                        const endPos: vscode.Position = new vscode.Position(endpoint.selectionRange?.end?.line, endpoint.selectionRange?.end?.character);
+                        const startPos: vscode.Position = new vscode.Position(endpoint.range?.start?.line, endpoint.range?.start?.character);
+                        const endPos: vscode.Position = new vscode.Position(endpoint.range?.end?.line, endpoint.range?.end?.character);
                         newEndpoints.push(new symbols.Endpoint(name, uri, startPos, endPos));
                     } catch (err) {
                         logUtils.logWarning(`[symbols] readDocumentEndpoints - failed to read endpoint: ${err}`);
