@@ -27,6 +27,7 @@ import * as sshUtils from './sshUtils';
 import * as okeUtils from './okeUtils';
 import * as ociFeatures from './ociFeatures';
 import * as vcnUtils from './vcnUtils';
+import { DEFAULT_GRAALVM_VERSION, DEFAULT_JAVA_VERSION } from '../graalvmUtils';
 
 const CREATE_ACTION_NAME = 'Create OCI DevOps Project';
 const ADD_ACTION_NAME = 'Add Folder(s) to OCI DevOps Project';
@@ -852,6 +853,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                     if (bypassArtifacts) {
                         logUtils.logInfo(`[deploy] Creating ${FAT_JAR_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const devbuildTemplate = expandTemplate(resourcesPath, 'devbuild_spec_no_output_artifacts.yaml', {
+                            default_graalvm_version: DEFAULT_GRAALVM_VERSION,
+                            default_java_version: DEFAULT_JAVA_VERSION,
                             project_build_command: project_devbuild_command,
                             project_artifact_location: project_devbuild_artifact_location,
                             artifact_repository_id: artifactRepository,
@@ -864,6 +867,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                     } else {
                         logUtils.logInfo(`[deploy] Creating ${FAT_JAR_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const devbuildTemplate = expandTemplate(resourcesPath, devbuildspec_template, {
+                            default_graalvm_version: DEFAULT_GRAALVM_VERSION,
+                            default_java_version: DEFAULT_JAVA_VERSION,
                             project_build_command: project_devbuild_command,
                             project_artifact_location: project_devbuild_artifact_location,
                             deploy_artifact_name: devbuildArtifactName
@@ -953,7 +958,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             logUtils.logInfo(`[deploy] Creating build pipeline for ${FAT_JAR_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             const pipelineName = `${repositoryNamePrefix}${devbuildPipelineName}`;
                             folderData.devbuildPipeline = false;
-                            folderData.devbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, devbuildPipelineDescription, {
+                            folderData.devbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, devbuildPipelineDescription, [
+                                { name: 'GRAALVM_VERSION', defaultValue: DEFAULT_GRAALVM_VERSION, description: 'Major GraalVM version number, e.g. 22 for 22.2.0 release'},
+                                { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'}
+                            ], {
                                 'devops_tooling_deployID': deployData.tag,
                                 'devops_tooling_codeRepoID': codeRepository.id,
                                 'devops_tooling_codeRepoPrefix': repositoryNamePrefix
@@ -1050,6 +1058,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                     if (bypassArtifacts) {
                         logUtils.logInfo(`[deploy] Creating ${NI_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const nibuildTemplate = expandTemplate(resourcesPath, 'nibuild_spec_no_output_artifacts.yaml', {
+                            default_graalvm_version: DEFAULT_GRAALVM_VERSION,
+                            default_java_version: DEFAULT_JAVA_VERSION,
                             project_build_command: project_build_native_executable_command,
                             project_artifact_location: project_native_executable_artifact_location,
                             artifact_repository_id: artifactRepository,
@@ -1062,6 +1072,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                     } else {
                         logUtils.logInfo(`[deploy] Creating ${NI_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const nibuildTemplate = expandTemplate(resourcesPath, nibuildspec_template, {
+                            default_graalvm_version: DEFAULT_GRAALVM_VERSION,
+                            default_java_version: DEFAULT_JAVA_VERSION,
                             project_build_command: project_build_native_executable_command,
                             project_artifact_location: project_native_executable_artifact_location,
                             deploy_artifact_name: nibuildArtifactName
@@ -1151,7 +1163,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             logUtils.logInfo(`[deploy] Creating build pipeline for ${NI_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             const pipelineName = `${repositoryNamePrefix}${nibuildPipelineName}`;
                             folderData.nibuildPipeline = false;
-                            folderData.nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, nibuildPipelineDescription, {
+                            folderData.nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, nibuildPipelineDescription, [
+                                { name: 'GRAALVM_VERSION', defaultValue: DEFAULT_GRAALVM_VERSION, description: 'Major GraalVM version number, e.g. 22 for 22.2.0 release'},
+                                { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'}
+                            ], {
                                 'devops_tooling_deployID': deployData.tag,
                                 'devops_tooling_codeRepoID': codeRepository.id,
                                 'devops_tooling_codeRepoPrefix': repositoryNamePrefix
@@ -1378,6 +1393,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 const docker_nibuildArtifactName = `${repositoryName}_${subName}_native_docker_image`;
                                 logUtils.logInfo(`[deploy] Creating ${subName} ${NI_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 const docker_nibuildTemplate = expandTemplate(resourcesPath, docker_nibuildspec_template, {
+                                    default_graalvm_version: DEFAULT_GRAALVM_VERSION,
+                                    default_java_version: DEFAULT_JAVA_VERSION,
                                     project_build_command: project_build_native_executable_command,
                                     project_artifact_location: project_native_executable_artifact_location,
                                     deploy_artifact_name: docker_nibuildArtifactName,
@@ -1475,7 +1492,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                         logUtils.logInfo(`[deploy] Creating build pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         const pipelineName = `${repositoryNamePrefix}${docker_nibuildPipelineName}`;
                                         subData.docker_nibuildPipeline = false;
-                                        subData.docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_nibuildPipelineDescription, {
+                                        subData.docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_nibuildPipelineDescription, [
+                                            { name: 'GRAALVM_VERSION', defaultValue: DEFAULT_GRAALVM_VERSION, description: 'Major GraalVM version number, e.g. 22 for 22.2.0 release'},
+                                            { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'}
+                                        ], {
                                             'devops_tooling_deployID': deployData.tag,
                                             'devops_tooling_codeRepoID': codeRepository.id,
                                             'devops_tooling_codeRepoPrefix': repositoryNamePrefix,
@@ -1807,6 +1827,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     const docker_jvmbuildArtifactName = `${repositoryName}_${subName}_jvm_docker_image`;
                                     logUtils.logInfo(`[deploy] Creating ${subName} ${JVM_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     const docker_jvmbuildTemplate = expandTemplate(resourcesPath, docker_jvmbuildspec_template, {
+                                        default_graalvm_version: DEFAULT_GRAALVM_VERSION,
+                                        default_java_version: DEFAULT_JAVA_VERSION,
                                         project_build_command: project_devbuild_command,
                                         project_artifact_location: project_devbuild_artifact_location,
                                         deploy_artifact_name: docker_jvmbuildArtifactName,
@@ -1902,7 +1924,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             logUtils.logInfo(`[deploy] Creating build pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                             const pipelineName = `${repositoryNamePrefix}${docker_jvmbuildPipelineName}`;
                                             subData.docker_jvmbuildPipeline = false;
-                                            subData.docker_jvmbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_jvmbuildPipelineDescription, {
+                                            subData.docker_jvmbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_jvmbuildPipelineDescription, [
+                                                { name: 'GRAALVM_VERSION', defaultValue: DEFAULT_GRAALVM_VERSION, description: 'Major GraalVM version number, e.g. 22 for 22.2.0 release'},
+                                                { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'}
+                                            ], {
                                                 'devops_tooling_deployID': deployData.tag,
                                                 'devops_tooling_codeRepoID': codeRepository.id,
                                                 'devops_tooling_codeRepoPrefix': repositoryNamePrefix,
@@ -2227,6 +2252,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         const docker_nibuildArtifactName = `${repositoryName}_native_docker_image`;
                         logUtils.logInfo(`[deploy] Creating ${NI_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const docker_nibuildTemplate = expandTemplate(resourcesPath, docker_nibuildspec_template, {
+                            default_graalvm_version: DEFAULT_GRAALVM_VERSION,
+                            default_java_version: DEFAULT_JAVA_VERSION,
                             project_build_command: project_build_native_executable_command,
                             project_artifact_location: project_native_executable_artifact_location,
                             deploy_artifact_name: docker_nibuildArtifactName,
@@ -2322,7 +2349,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 logUtils.logInfo(`[deploy] Creating build pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 const pipelineName = `${repositoryNamePrefix}${docker_nibuildPipelineName}`;
                                 folderData.docker_nibuildPipeline = false;
-                                folderData.docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_nibuildPipelineDescription, {
+                                folderData.docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_nibuildPipelineDescription, [
+                                    { name: 'GRAALVM_VERSION', defaultValue: DEFAULT_GRAALVM_VERSION, description: 'Major GraalVM version number, e.g. 22 for 22.2.0 release'},
+                                    { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'}
+                                ], {
                                     'devops_tooling_deployID': deployData.tag,
                                     'devops_tooling_codeRepoID': codeRepository.id,
                                     'devops_tooling_codeRepoPrefix': repositoryNamePrefix,
@@ -2642,6 +2672,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         const docker_jvmbuildArtifactName = `${repositoryName}_jvm_docker_image`;
                         logUtils.logInfo(`[deploy] Creating ${JVM_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const docker_jvmbuildTemplate = expandTemplate(resourcesPath, docker_jvmbuildspec_template, {
+                            default_graalvm_version: DEFAULT_GRAALVM_VERSION,
+                            default_java_version: DEFAULT_JAVA_VERSION,
                             project_build_command: project_devbuild_command,
                             project_artifact_location: project_devbuild_artifact_location,
                             deploy_artifact_name: docker_jvmbuildArtifactName,
@@ -2737,7 +2769,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 logUtils.logInfo(`[deploy] Creating build pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 const pipelineName = `${repositoryNamePrefix}${docker_jvmbuildPipelineName}`;
                                 folderData.docker_jvmbuildPipeline = false;
-                                folderData.docker_jvmbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_jvmbuildPipelineDescription, {
+                                folderData.docker_jvmbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_jvmbuildPipelineDescription, [
+                                    { name: 'GRAALVM_VERSION', defaultValue: DEFAULT_GRAALVM_VERSION, description: 'Major GraalVM version number, e.g. 22 for 22.2.0 release'},
+                                    { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'}
+                                ], {
                                     'devops_tooling_deployID': deployData.tag,
                                     'devops_tooling_codeRepoID': codeRepository.id,
                                     'devops_tooling_codeRepoPrefix': repositoryNamePrefix,
