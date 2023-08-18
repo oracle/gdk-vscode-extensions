@@ -14,8 +14,8 @@ import * as workspaceFolders from './workspaceFolders';
 const VIEW_BEANS = 'extension-micronaut-tools-beans';
 const VIEW_ENDPOINTS = 'extension-micronaut-tools-endpoints';
 
-export const COMMAND_SEARCH_FILTER_BEANS = 'extension.micronaut-tools.navigation.searchBeans';
-export const COMMAND_SEARCH_FILTER_ENDPOINTS = 'extension.micronaut-tools.navigation.searchEndpoints';
+const COMMAND_SEARCH_FILTER_BEANS = 'extension.micronaut-tools.navigation.searchBeans';
+const COMMAND_SEARCH_FILTER_ENDPOINTS = 'extension.micronaut-tools.navigation.searchEndpoints';
 export const COMMAND_REVEAL_IN_ENDPOINTS = 'extension.micronaut-tools.navigation.revealInEndpoints';
 export const COMMAND_NAME_REVEAL_IN_ENDPOINTS = vscode.l10n.t('Reveal in Endpoints');
 
