@@ -14,8 +14,8 @@ import * as targetAddress from './targetAddress';
 
 export const COMMAND_GO_TO_DEFINITION = 'extension.micronaut-tools.navigation.goToDefinition';
 export const COMMAND_NAME_GO_TO_DEFINITION = vscode.l10n.t('Go to Symbol');
-const COMMAND_OPEN_IN_BROWSER = 'extension.micronaut-tools.navigation.openInBrowser';
-const COMMAND_NAME_OPEN_IN_BROWSER = vscode.l10n.t('Open in Browser');
+export const COMMAND_OPEN_IN_BROWSER = 'extension.micronaut-tools.navigation.openInBrowser';
+export const COMMAND_NAME_OPEN_IN_BROWSER = vscode.l10n.t('Open in Browser');
 
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_GO_TO_DEFINITION, (node: nodes.SymbolNode<symbols.Symbol>) => {
@@ -24,10 +24,12 @@ export function initialize(context: vscode.ExtensionContext) {
             revealInEditor(symbol);
         }
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_OPEN_IN_BROWSER, (node: nodes.EndpointNode) => {
-        if (node) {
-            const symbol = node.getSymbol();
+    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_OPEN_IN_BROWSER, (nodeOrSymbol: nodes.EndpointNode | symbols.Endpoint) => {
+        if (nodeOrSymbol instanceof nodes.EndpointNode) {
+            const symbol = nodeOrSymbol.getSymbol();
             openInBrowser(symbol);
+        } else if (nodeOrSymbol instanceof symbols.Endpoint) {
+            openInBrowser(nodeOrSymbol);
         }
 	}));
     logUtils.logInfo('[actions] Initialized');

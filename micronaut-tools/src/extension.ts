@@ -19,6 +19,7 @@ import * as views from './navigation/views';
 import * as actions from './navigation/actions';
 import * as targetAddress from './navigation/targetAddress';
 import * as restQueries from './navigation/restQueries';
+import * as codeLens from './navigation/codeLens';
 import * as kubernetes from 'vscode-kubernetes-tools-api';
 import * as launcher from './launcher/extension';
 
@@ -29,6 +30,7 @@ export function activate(context: vscode.ExtensionContext) {
 	actions.initialize(context);
 	targetAddress.initialize(context);
 	restQueries.initialize(context);
+	codeLens.initialize(context);
 
 	if (vscode.workspace.getConfiguration().get<boolean>('micronaut-tools.showWelcomePage')) {
 		WelcomePanel.createOrShow(context);

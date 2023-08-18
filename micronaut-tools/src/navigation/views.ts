@@ -7,6 +7,7 @@
 
 import * as vscode from 'vscode';
 import * as nodes from './nodes';
+import * as symbols from './symbols';
 import * as workspaceFolders from './workspaceFolders';
 
 
@@ -15,6 +16,8 @@ const VIEW_ENDPOINTS = 'extension-micronaut-tools-endpoints';
 
 const COMMAND_SEARCH_FILTER_BEANS = 'extension.micronaut-tools.navigation.searchBeans';
 const COMMAND_SEARCH_FILTER_ENDPOINTS = 'extension.micronaut-tools.navigation.searchEndpoints';
+export const COMMAND_REVEAL_IN_ENDPOINTS = 'extension.micronaut-tools.navigation.revealInEndpoints';
+export const COMMAND_NAME_REVEAL_IN_ENDPOINTS = vscode.l10n.t('Reveal in Endpoints');
 
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_SEARCH_FILTER_BEANS, () => {
@@ -22,6 +25,11 @@ export function initialize(context: vscode.ExtensionContext) {
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_SEARCH_FILTER_ENDPOINTS, () => {
         searchFilterView(VIEW_ENDPOINTS);
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_REVEAL_IN_ENDPOINTS, (symbol: symbols.Endpoint) => {
+        if (symbol) {
+            revealIn(VIEW_ENDPOINTS, symbol);
+        }
 	}));
     workspaceFolders.onUpdated((added, removed, current) => {
         beansNodeProvider.dataChanged(added, removed, current);
@@ -32,6 +40,16 @@ export function initialize(context: vscode.ExtensionContext) {
 async function searchFilterView(viewID: string) {
     await vscode.commands.executeCommand(`${viewID}.focus`);
     await vscode.commands.executeCommand('list.find');
+}
+
+async function revealIn(viewID: string, symbol: symbols.Symbol) {
+    await vscode.commands.executeCommand(`${viewID}.focus`);
+    const provider = viewID === VIEW_ENDPOINTS ? endpointsNodeProvider : viewID === VIEW_BEANS ? beansNodeProvider : undefined;
+    const treeView = viewID === VIEW_ENDPOINTS ? endpointsTreeView : viewID === VIEW_BEANS ? beansTreeView : undefined;
+    const item = provider?.getTreeItemBySymbol(symbol);
+    if (item && treeView) {
+        treeView.reveal(item, { focus: true });
+    }
 }
 
 abstract class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
@@ -58,7 +76,7 @@ abstract class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> 
         return element;
 	}
 
-	getChildren(element?: vscode.TreeItem): vscode.ProviderResult<vscode.TreeItem[]> {
+	getChildren(element?: vscode.TreeItem): vscode.TreeItem[] {
         if (!element) {
             return this.roots.length === 1 ? this.roots[0].getChildren() || [] : this.roots; // collapse single root node
         } else {
@@ -66,10 +84,22 @@ abstract class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> 
         }
 	}
 
-    getParent?(element: vscode.TreeItem): vscode.ProviderResult<vscode.TreeItem> {
+    getParent?(element: vscode.TreeItem): vscode.TreeItem | undefined {
         return (element as nodes.BaseNode).parent;
     }
 
+    getTreeItemBySymbol(symbol: symbols.Symbol, element?: vscode.TreeItem): vscode.TreeItem | undefined {
+        for (const e of this.getChildren(element)) {
+            if (e instanceof nodes.SymbolNode && symbol.def.localeCompare((e as nodes.SymbolNode<symbols.Symbol>).getSymbol().def) === 0) {
+                return this.getTreeItem(e);
+            }
+            const nested = this.getTreeItemBySymbol(symbol, e);
+            if (nested) {
+                return nested;
+            }
+        }
+        return undefined;
+    }
 }
 
 class BeansNodeProvider extends NodeProvider {

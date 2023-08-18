@@ -20,7 +20,7 @@ const COMMAND_NBLS_ADD_EVENT_LISTENER = 'nbls.addEventListener';
 const PARAM_EVENT_TYPE_SCAN_FINSIHED = 'nbls.scanFinished';
 const COMMAND_NBLS_WORKSPACE_SYMBOLS = 'nbls.workspace.symbols';
 const PREFIX_BEANS = '@+';
-const PREFIX_ENDPOINTS = '@/';
+export const PREFIX_ENDPOINTS = '@/';
 
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_RELOAD_ALL, () => {

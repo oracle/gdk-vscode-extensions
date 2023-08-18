@@ -13,8 +13,8 @@ import * as targetAddress from './targetAddress';
 import * as settings from './settings';
 
 
-const COMMAND_COMPOSE_REST_QUERY = 'extension.micronaut-tools.navigation.composeRestQuery';
-const COMMAND_NAME_COMPOSE_REST_QUERY = vscode.l10n.t('Compose REST Query');
+export const COMMAND_COMPOSE_REST_QUERY = 'extension.micronaut-tools.navigation.composeRestQuery';
+export const COMMAND_NAME_COMPOSE_REST_QUERY = vscode.l10n.t('Compose REST Query');
 
 const SETTING_DONT_SUGGEST_CLIENT_EXT_KEY = 'extension.micronaut-tools.navigation.dontSuggestClientExt';
 const SETTING_DONT_SUGGEST_CLIENT_EXT_DEFAULT = false;
@@ -25,10 +25,12 @@ const SUPPORTED_EXT_CLIENTS = [ RECOMMENDED_EXT_CLIENT ];
 
 export function initialize(context: vscode.ExtensionContext) {
     dontSuggestClientExt.initialize(context);
-    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_COMPOSE_REST_QUERY, (node: nodes.EndpointNode) => {
-        if (node) {
-            const symbol = node.getSymbol();
+    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_COMPOSE_REST_QUERY, (nodeOrSymbol: nodes.EndpointNode | symbols.Endpoint) => {
+        if (nodeOrSymbol instanceof nodes.EndpointNode) {
+            const symbol = nodeOrSymbol.getSymbol();
             composeRestQuery(symbol, context);
+        } else if (nodeOrSymbol instanceof symbols.Endpoint) {
+            composeRestQuery(nodeOrSymbol, context);
         }
 	}));
     logUtils.logInfo('[restQueries] Initialized');
