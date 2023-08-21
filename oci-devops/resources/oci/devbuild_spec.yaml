@@ -34,8 +34,8 @@ steps:
     name: "Install GraalVM EE - JDK"
     timeoutInSeconds: 300
     command: |
-      if [ ! -n "${GRAALVM_VERSION}" ]; then export GRAALVM_VERSION=22; fi
-      if [ ! -n "${JAVA_VERSION}" ]; then export JAVA_VERSION=17; fi
+      if [ ! -n "${GRAALVM_VERSION}" ]; then export GRAALVM_VERSION={{{default_graalvm_version}}}; fi
+      if [ ! -n "${JAVA_VERSION}" ]; then export JAVA_VERSION={{{default_java_version}}}; fi
       echo "GraalVM Version: ${GRAALVM_VERSION}, Java Version: ${JAVA_VERSION}"
       if [ "${GRAALVM_VERSION}" -ge 23 ]; then
         echo "yum -y install graalvm-${JAVA_VERSION}-jdk";

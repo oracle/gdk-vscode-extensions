@@ -1532,12 +1532,15 @@ export async function updateCodeRepository(authenticationDetailsProvider: common
     });
 }
 
-export async function createBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, displayName: string, description?: string, tags?: { [key:string]: string }): Promise<devops.models.BuildPipeline> {
+export async function createBuildPipeline(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, displayName: string, description?: string, params: { name: string; defaultValue: string, description: string }[] = [], tags?: { [key:string]: string }): Promise<devops.models.BuildPipeline> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const requestDetails: devops.models.CreateBuildPipelineDetails = {
         displayName: displayName,
         description: description,
-        projectId: projectID
+        projectId: projectID,
+        buildPipelineParameters: {
+            items: params
+        }
     };
     if (tags) {
         requestDetails.freeformTags = tags;

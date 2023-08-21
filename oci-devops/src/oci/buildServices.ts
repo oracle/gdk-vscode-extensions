@@ -407,30 +407,28 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
                 }
                 const buildName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
                 const useLocalGvmVersion: boolean = persistenceUtils.getWorkspaceConfiguration().get('useLocalGraalvmVersion', false);
-                const params: { name: string; value: string }[] | undefined = useLocalGvmVersion ? [] : undefined;
-                let msg: string;
+                const params: { name: string; value: string }[] = [];
+                let localGvmVersion: string[] | undefined;
                 if (useLocalGvmVersion) {
                     logUtils.logInfo('[build] Using local active GraalVM version for the build');
                     // TODO: might reflect Java version from a non-GraalVM Java installation
-                    const localGvmVersion = await graalvmUtils.getActiveGVMVersion();
+                    localGvmVersion = await graalvmUtils.getActiveGVMVersion();
                     if (localGvmVersion) {
-                        const targetGvmVersion = graalvmUtils.getBuildRunGVMVersion(localGvmVersion);
-                        const gvmParams = graalvmUtils.getGVMBuildRunParameters(targetGvmVersion);
-                        if (params && gvmParams) {
-                            params.push(...gvmParams);
-                        }
                         if (localGvmVersion[1].endsWith('-dev')) {
                             logUtils.logInfo(`[build] Local active GraalVM devbuild detected: ${localGvmVersion[1]}, using stable release for the build`);
                         }
-                        msg = `Starting build "${buildName}" using GraalVM ${targetGvmVersion[1]}, Java ${targetGvmVersion[0]}`;
                     } else {
-                        logUtils.logInfo('[build] No local active GraalVM detected, fallback to GraalVM defined in the build spec for the build');
-                        msg = `Starting build "${buildName}"`;
+                        logUtils.logInfo('[build] No local active GraalVM detected, fallback to the latest stable GraalVM version for the build');
                     }
                 } else {
-                    logUtils.logInfo('[build] Using GraalVM defined in the build spec for the build');
-                    msg = `Starting build "${buildName}"`;
+                    logUtils.logInfo('[build] Using the latest stable GraalVM version for the build');
                 }
+                const targetGvmVersion = graalvmUtils.getBuildRunGVMVersion(localGvmVersion);
+                const gvmParams = graalvmUtils.getGVMBuildRunParameters(targetGvmVersion);
+                if (gvmParams) {
+                    params.push(...gvmParams);
+                }
+                const msg = `Starting build "${buildName}" using GraalVM ${targetGvmVersion[1]}, Java ${targetGvmVersion[0]}`;
                 logUtils.logInfo(`[build] ${msg}`);
                 vscode.window.withProgress({
                     location: vscode.ProgressLocation.Notification,
