@@ -1,5 +1,6 @@
 .vscode/**
 .vscode-test/**
+node_modules/**
 out/test/**
 src/**
 .gitignore
@@ -9,6 +10,7 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 
+jdtls.ext
 scripts
 buildagent
 # Ignore output of code sign
