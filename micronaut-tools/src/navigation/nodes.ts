@@ -165,7 +165,7 @@ export class EndpointNode extends SymbolNode<symbols.Endpoint> {
 
 export class BeansFolderNode extends BaseNode {
 
-    private static readonly CONTEXT = 'extension.micronaut-tools.navigation.FolderNode';
+    private static readonly CONTEXT = 'extension.micronaut-tools.navigation.BeansFolderNode';
     private static readonly SUBJECT = vscode.l10n.t('beans');
 
     private readonly folderData: workspaceFolders.FolderData;
@@ -202,7 +202,7 @@ export class BeansFolderNode extends BaseNode {
 
 export class EndpointsFolderNode extends BaseNode {
 
-    private static readonly CONTEXT = 'extension.micronaut-tools.navigation.FolderNode';
+    private static readonly CONTEXT = 'extension.micronaut-tools.navigation.EndpointsFolderNode';
     private static readonly SUBJECT = vscode.l10n.t('endpoints');
 
     private readonly folderData: workspaceFolders.FolderData;
