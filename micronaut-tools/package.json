@@ -78,7 +78,13 @@
 					"default": true,
 					"description": "Use build system (Maven or Gradle) to run or debug applications.",
 					"scope": "window"
-				  }
+				},
+				"micronaut-tools.targetApplicationAddress": {
+					"type": "string",
+					"default": "http://localhost:8080",
+					"description": "Default Micronaut or Graal Cloud Native application address",
+					"scope": "resource"
+				}
 			}
 		},
 		"commands": [
@@ -141,8 +147,14 @@
 				"category": "Micronaut Tools"
 			},
 			{
-				"command": "extension.micronaut-tools.navigation.editTargetAddress",
-				"title": "%extension.micronaut-tools.navigation.editTargetAddress.title%",
+				"command": "extension.micronaut-tools.navigation.editTargetAddressGlobal",
+				"title": "%extension.micronaut-tools.navigation.editTargetAddressGlobal.title%",
+				"icon": "$(location)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.editTargetAddressFolder",
+				"title": "%extension.micronaut-tools.navigation.editTargetAddressFolder.title%",
 				"icon": "$(location)",
 				"category": "Micronaut Tools"
 			},
@@ -251,12 +263,28 @@
 				{
 					"command": "extension.micronaut-tools.navigation.openInBrowser",
 					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editTargetAddressGlobal",
+					"when": "workspaceFolderCount > 0"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editTargetAddressFolder",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.searchBeans",
+					"when": "extension.micronaut-tools.navigation.beansInitialized"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.searchEndpoints",
+					"when": "extension.micronaut-tools.navigation.endpointsInitialized"
 				}
 			],
 			"view/title": [
 				{
-					"command": "extension.micronaut-tools.navigation.editTargetAddress",
-					"when": "view == extension-micronaut-tools-endpoints && extension.micronaut-tools.navigation.endpointsInitialized",
+					"command": "extension.micronaut-tools.navigation.editTargetAddressGlobal",
+					"when": "workspaceFolderCount == 1 && view == extension-micronaut-tools-endpoints",
 					"group": "navigation@3"
 				},
 				{
@@ -277,13 +305,23 @@
 					"group": "context@1"
 				},
 				{
+					"command": "extension.micronaut-tools.navigation.editTargetAddressFolder",
+					"when": "workspaceFolderCount > 1 && extension.micronaut-tools.navigation.endpointsInitialized && viewItem == extension.micronaut-tools.navigation.EndpointsFolderNode",
+					"group": "inline@1"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editTargetAddressFolder",
+					"when": "workspaceFolderCount > 1 && extension.micronaut-tools.navigation.endpointsInitialized && viewItem == extension.micronaut-tools.navigation.EndpointsFolderNode",
+					"group": "context@1"
+				},
+				{
 					"command": "extension.micronaut-tools.navigation.composeRestQuery",
-					"when": "viewItem == extension.micronaut-tools.navigation.EndpointNodeGET || viewItem == extension.micronaut-tools.navigation.EndpointNodePOST",
+					"when": "viewItem == extension.micronaut-tools.navigation.EndpointNodeGET || viewItem == extension.micronaut-tools.navigation.EndpointNodePOST || viewItem == extension.micronaut-tools.navigation.EndpointNodePATCH || viewItem == extension.micronaut-tools.navigation.EndpointNodePUT || viewItem == extension.micronaut-tools.navigation.EndpointNodeDELETE",
 					"group": "inline@1"
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.composeRestQuery",
-					"when": "viewItem == extension.micronaut-tools.navigation.EndpointNodeGET || viewItem == extension.micronaut-tools.navigation.EndpointNodePOST",
+					"when": "viewItem == extension.micronaut-tools.navigation.EndpointNodeGET || viewItem == extension.micronaut-tools.navigation.EndpointNodePOST || viewItem == extension.micronaut-tools.navigation.EndpointNodePATCH || viewItem == extension.micronaut-tools.navigation.EndpointNodePUT || viewItem == extension.micronaut-tools.navigation.EndpointNodeDELETE",
 					"group": "context@2"
 				},
 				{

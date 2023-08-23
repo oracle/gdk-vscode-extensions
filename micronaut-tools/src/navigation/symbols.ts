@@ -48,6 +48,10 @@ export class Endpoint extends Symbol {
 
     static TYPE_GET = 'GET';
     static TYPE_POST = 'POST';
+    static TYPE_PATCH = 'PATCH';
+    static TYPE_PUT = 'PUT';
+    static TYPE_DELETE = 'DELETE';
+    static TYPE_ERROR = 'ERROR';
     static TYPE_UNKNOWN = 'UNKNOWN';
 
     readonly name: string;
@@ -71,6 +75,18 @@ export class Endpoint extends Symbol {
         }
         if (def.endsWith(' -- POST')) {
             return Endpoint.TYPE_POST;
+        }
+        if (def.endsWith(' -- PATCH')) {
+            return Endpoint.TYPE_PATCH;
+        }
+        if (def.endsWith(' -- PUT')) {
+            return Endpoint.TYPE_PUT;
+        }
+        if (def.endsWith(' -- DELETE')) {
+            return Endpoint.TYPE_DELETE;
+        }
+        if (def.endsWith(' -- ERROR')) {
+            return Endpoint.TYPE_ERROR;
         }
         return Endpoint.TYPE_UNKNOWN;
     }
