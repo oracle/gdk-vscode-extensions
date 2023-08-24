@@ -1,4 +1,4 @@
-# Graal Cloud Native Tools
+# Graal Cloud Native Launcher
 
 [Graal Cloud Native](https://graal.cloud/) is a cloud-agnostic development framework, built on top of
 [Micronaut](https://micronaut.io/). Using Graal Cloud Native you can write once and then run the same code on multiple cloud platforms.
@@ -13,7 +13,7 @@ The wizard can generate different types of Graal Cloud Native applications and s
 
 1. Go to **View**, **Command Palette**, search for "Graal Cloud Native", and invoke the **Graal Cloud Native: Create New Project** command.
 
-    ![Create New Proct Action](images/gcn-vscode-actions.png)
+    ![Create New Project Action](images/gcn-vscode-actions.png)
 
 2. Follow the command prompts to generate a new Maven or Gradle project. For example, to create a simple Java-based Graal Cloud Native application:
     - Select the Micronaut version

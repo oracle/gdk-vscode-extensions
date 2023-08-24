@@ -1,5 +1,8 @@
 # Change Log
 
+## Version 0.9.4
+* Extension display name changed to 'Graal Cloud Native Launcher'
+
 ## Version 0.9.3
 * Fixed: GCN wizard timing issue which resulted in missing files in generated project under some circumstances
 * Update of GCN Launcher in extension
