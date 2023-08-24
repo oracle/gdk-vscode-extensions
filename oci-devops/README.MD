@@ -9,6 +9,8 @@ OCI DevOps Tools extension for VS Code provides features and tools to move and h
 * Deploys the built project containers to an Oracle Kubernetes Engine (OKE)
 * Performs audits for vulnerabilities in Java project's third-party libraries
 
+For the best experience it is recommended to install the [Graal Cloud Native Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which contains this extension and others.
+
 ## Supported Java Projects
 * Micronaut (use [GraalVM Tools for Micronaut](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extension to create a new Micronaut project)
 * Graal Cloud Native (use [Graal Cloud Native Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn) extension to create a new GCN project)
