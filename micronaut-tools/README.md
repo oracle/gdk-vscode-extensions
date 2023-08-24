@@ -65,11 +65,13 @@ Clicking a node in one of these views navigates to the corresponding source code
 
 Request mapping nodes in the Endpoints view provide two additional actions:
 * **Open in Browser** to open the GET endpoint in a web browser
-* **Compose REST Query** to insert the corresponding GET or POST query into a dedicated text document. See the following section Compose REST Queries for details.
+* **Compose REST Query** to insert the corresponding query into a dedicated text document. See the following section Compose REST Queries for details.
+
+Similar actions are available also in the code editor as Code Lens actions.
 
 For endpoints containing parameters a dialog is opened to provide concrete values before opening in a browser or generating a REST query. Tip: type a parameter value and submit by Enter to move to another parameter.
 
-The base address of the running Micronaut or GCN application is by default configured to `http://localhost:8080` and can be customized using the Edit Target Application Address action in the Endpoints view caption.
+The base address of the running Micronaut or GCN application is by default configured to `http://localhost:8080` and can be customized using the Edit Target Application Address action in the Endpoints view caption or next to a folder node in case multiple folders are opened in the workspace.
 
 ![Beans and Endpoints views](images/beans_endpoints_view.png)
 
@@ -77,7 +79,7 @@ The base address of the running Micronaut or GCN application is by default confi
 ### Compose REST Queries
 To easily debug and test the application REST API, the Endpoints view provides a smooth integration with a third party extension [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client).
 
-To start composing a REST query, invoke the Compose REST Query action for a GET or POST endpoint. A dedicated text document is opened and the corresponding query is inserted. Use the REST Client features to invoke and process the query.
+To start composing a REST query, invoke the Compose REST Query action for an endpoint either from the Endpoints view or using the corresponding Code Lens action in code editor. A dedicated text document is opened and the corresponding query is inserted. Use the REST Client features to invoke and process the query.
 
 Note: If the REST Client extension is not installed when invoking the Compose REST Query action, a notification is displayed offering to quick install it.
 
@@ -260,6 +262,7 @@ The extension contributes the following settings:
 
 * __micronaut-tools.showWelcomePage__ - when set to `true` (default), show the Micronaut Tools page on extension activation.
 * __micronaut-tools.jdt.buildsystemExecution__ - if set to `true` (default), enables enhanced Run support for Micronaut applications.
+* __micronaut-tools.targetApplicationAddress__ - default Micronaut or Graal Cloud Native application address, by default configured to `http://localhost:8080` (to be customized in `settings.json` in project folder).
 
 ## Micronaut Commands
 
@@ -283,8 +286,6 @@ Command performs port forwarding at the end and running application can be acces
 * **Micronaut Tools: Edit Target Application Address**: Customization of the base address of the running Micronaut or GCN application, default is `http://localhost:8080`
 * **Micronaut Tools: Search/Filter Beans**: Search or filter the items of the Beans view
 * **Micronaut Tools: Search/Filter Endpoints**:  Search or filter the items of the Endpoints view
-
-  ![Micronaut VS Code Commands](images/micronaut-vs-code-commands.png)
 
 ## Troubleshooting
 This extension modifies Run for **Java** environment so that the application is launched using the build system (Gradle, Maven). In some scenarios the support may not support all customizations necessary for the user project and has to be turned off.
