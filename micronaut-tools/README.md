@@ -43,7 +43,7 @@ The extension suggests code completions for your YAML configuration files.
 (The available configuration properties and their values are collected by scanning your source code and the Micronaut libraries.)
 
 The extension also provides code completion for your Java source code via the [Extension Pack for Java from Microsoft](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack).
-This gives you all the IDE features that you would expect from [Intellisense](https://code.visualstudio.com/docs/editor/intellisense), as well as automatically highlighting errors as you type.
+This gives you all the IDE features that you would expect from [IntelliSense](https://code.visualstudio.com/docs/editor/intellisense), as well as automatically highlighting errors as you type.
 
 ### Navigate Micronaut Source Code
 
@@ -56,10 +56,34 @@ Run the **Go to Symbol in Workspace** command using Ctrl+T (Cmd+T on macOS) and 
 ![Navigate Micronaut Source Code](images/micronaut-navigation.png)
 
 ### View Defined Beans and Endpoints
-**TODO**: JS
+All beans and request mappings defined by a Micronaut or GCN application can be displayed in the Beans and Endpoints views of the Micronaut Tools activity.
+
+The items of these views can be searched/filtered using a dedicated action available in the view captions, or invoked using the Ctrl+F shortcut.
+
+Clicking a node in one of these views navigates to the corresponding source code similar to the Go to Symbol in Workspace command. This can be also invoked using a dedicated context menu action:
+* **Go to Symbol** to open the bean or request mapping source code
+
+Request mapping nodes in the Endpoints view provide two additional actions:
+* **Open in Browser** to open the GET endpoint in a web browser
+* **Compose REST Query** to insert the corresponding query into a dedicated text document. See the following section Compose REST Queries for details.
+
+Similar actions are available also in the code editor as Code Lens actions.
+
+For endpoints containing parameters a dialog is opened to provide concrete values before opening in a browser or generating a REST query. Tip: type a parameter value and submit by Enter to move to another parameter.
+
+The base address of the running Micronaut or GCN application is by default configured to `http://localhost:8080` and can be customized using the Edit Target Application Address action in the Endpoints view caption or next to a folder node in case multiple folders are opened in the workspace.
+
+![Beans and Endpoints views](images/beans_endpoints_view.png)
+
 
 ### Compose REST Queries
-**TODO**: JS
+To easily debug and test the application REST API, the Endpoints view provides a smooth integration with a third party extension [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client).
+
+To start composing a REST query, invoke the Compose REST Query action for an endpoint either from the Endpoints view or using the corresponding Code Lens action in code editor. A dedicated text document is opened and the corresponding query is inserted. Use the REST Client features to invoke and process the query.
+
+Note: If the REST Client extension is not installed when invoking the Compose REST Query action, a notification is displayed offering to quick install it.
+
+![Compose REST Query](images/compose_rest_query.png)
 
 ### Run Your Micronaut Application
 
@@ -110,7 +134,7 @@ This time, select the **package** goal, which will package your application into
 
 [comment]: <> (Why does this not use the **Micronaut Tools: Build Native Image** command?)
 
-If you have installed Oracle GraalVM, you can use GraalVM Native Image create a native executable from your application.
+If you have installed Oracle GraalVM, you can use GraalVM Native Image to create a native executable from your application.
 GraalVM Native Image creates an executable file with all the application classes, dependent library classes, dependent JDK classes, and a snapshot of the application heap. 
 Whilst building a native executable can take some time, the benefits include a dramatic reduction in startup time and reduced overall memory consumption.
 
@@ -236,12 +260,13 @@ To create repository classes, follow these steps:
 
 The extension contributes the following settings:
 
-* __micronaut-tools.showWelcomePage__ - when set to `True`, show the Micronaut Tools page on extension activation.
+* __micronaut-tools.showWelcomePage__ - when set to `true` (default), show the Micronaut Tools page on extension activation.
 * __micronaut-tools.jdt.buildsystemExecution__ - if set to `true` (default), enables enhanced Run support for Micronaut applications.
+* __micronaut-tools.targetApplicationAddress__ - default Micronaut or Graal Cloud Native application address, by default configured to `http://localhost:8080` (to be customized in `settings.json` in project folder).
 
 ## Micronaut Commands
 
-Invoke the Micronaut commands from the Command Palette, then search for "Micronaut".
+Invoke the Micronaut commands from the Command Palette, then search for "Micronaut Tools".
 To open the Command Palette, select **Command Palette** from the **View** menu.
 
 The following commands are available for Micronaut project development:
@@ -258,11 +283,9 @@ See your docker tools documentation.
 See your Kubernetes tools documentation.
 * **Micronaut Tools: Run in Kubernetes**:  run already deployed application in Kubernetes service.
 Command performs port forwarding at the end and running application can be accessed from browser on your machine.
-* **Micronaut Tools: Edit Target Application Address**: **TODO**: JS
-* **Micronaut Tools: Search/Filter Beans**: **TODO**: JS
-* **Micronaut Tools: Search/Filter Endpoints**:  **TODO**: JS
-
-  ![Micronaut VS Code Commands](images/micronaut-vs-code-commands.png)
+* **Micronaut Tools: Edit Target Application Address**: Customization of the base address of the running Micronaut or GCN application, default is `http://localhost:8080`
+* **Micronaut Tools: Search/Filter Beans**: Search or filter the items of the Beans view
+* **Micronaut Tools: Search/Filter Endpoints**:  Search or filter the items of the Endpoints view
 
 ## Troubleshooting
 This extension modifies Run for **Java** environment so that the application is launched using the build system (Gradle, Maven). In some scenarios the support may not support all customizations necessary for the user project and has to be turned off.
