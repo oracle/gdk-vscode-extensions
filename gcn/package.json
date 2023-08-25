@@ -1,8 +1,8 @@
 {
 	"name": "gcn",
-	"displayName": "Graal Cloud Native Tools",
-	"description": "Oracle Graal Cloud Native Support",
-	"version": "0.9.3",
+	"displayName": "Graal Cloud Native Launcher",
+	"description": "Oracle Graal Cloud Native Project Wizard",
+	"version": "0.9.4",
 	"license": "SEE LICENSE IN LICENSE.txt",
 	"publisher": "oracle-labs-graalvm",
 	"author": {
