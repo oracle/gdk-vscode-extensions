@@ -1,8 +1,11 @@
 # Change Log
 
-# Version 0.5.21
+# Version 0.6.0
 * Java application are launched or debugged with the help of the build system: build system plugins can setup the environment. Maven and Gradle are supported.
 * Support for "Continuous" run mode for Micronaut applications
+* Oracle Autonomous JDBC driver included
+* MySQL JDBC driver included
+* Depends on Micronaut Launch and GCN Launcher extensions
 
 # Version 0.5.20
 * 3rd party libraries updated
