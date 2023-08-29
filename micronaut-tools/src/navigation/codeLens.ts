@@ -32,25 +32,29 @@ class CodeLensProvider implements vscode.CodeLensProvider {
 
     async provideCodeLenses(document: vscode.TextDocument, _token: vscode.CancellationToken): Promise<vscode.CodeLens[]> {
         const lenses = [];
-        const endpoints = await this.readDocumentEndpoints(document.uri);
-        if (endpoints) {
-            for (const endpoint of endpoints) {
-                const range = new vscode.Range(endpoint.startPos, endpoint.endPos);
-                lenses.push(new vscode.CodeLens(range, {
-                    title: actions.COMMAND_NAME_OPEN_IN_BROWSER,
-                    command: actions.COMMAND_OPEN_IN_BROWSER,
-                    arguments: [ endpoint ]
-                }));
-                lenses.push(new vscode.CodeLens(range, {
-                    title: restQueries.COMMAND_NAME_COMPOSE_REST_QUERY,
-                    command: restQueries.COMMAND_COMPOSE_REST_QUERY,
-                    arguments: [ endpoint ]
-                }));
-                lenses.push(new vscode.CodeLens(range, {
-                    title: views.COMMAND_NAME_REVEAL_IN_ENDPOINTS,
-                    command: views.COMMAND_REVEAL_IN_ENDPOINTS,
-                    arguments: [ endpoint ]
-                }));
+        if (symbols.endpointsInitialized) {
+            const endpoints = await this.readDocumentEndpoints(document.uri);
+            if (endpoints) {
+                for (const endpoint of endpoints) {
+                    const range = new vscode.Range(endpoint.startPos, endpoint.endPos);
+                    if (endpoint.type === symbols.Endpoint.TYPE_GET) {
+                        lenses.push(new vscode.CodeLens(range, {
+                            title: actions.COMMAND_NAME_OPEN_IN_BROWSER,
+                            command: actions.COMMAND_OPEN_IN_BROWSER,
+                            arguments: [ endpoint ]
+                        }));
+                    }
+                    lenses.push(new vscode.CodeLens(range, {
+                        title: restQueries.COMMAND_NAME_COMPOSE_REST_QUERY,
+                        command: restQueries.COMMAND_COMPOSE_REST_QUERY,
+                        arguments: [ endpoint ]
+                    }));
+                    lenses.push(new vscode.CodeLens(range, {
+                        title: views.COMMAND_NAME_REVEAL_IN_ENDPOINTS,
+                        command: views.COMMAND_REVEAL_IN_ENDPOINTS,
+                        arguments: [ endpoint ]
+                    }));
+                }
             }
         }
         return lenses;
