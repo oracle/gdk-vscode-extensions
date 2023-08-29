@@ -175,6 +175,11 @@
 				"title": "%extension.micronaut-tools.launch.continuous.title%",
 				"icon": "$(run)",
 				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.database.register",
+				"title": "Register Database for Micronaut/GCN",
+				"category": "Micronaut Tools"
 			}
 		],
 		"viewsContainers": {
@@ -279,6 +284,10 @@
 				{
 					"command": "extension.micronaut-tools.navigation.searchEndpoints",
 					"when": "extension.micronaut-tools.navigation.endpointsInitialized"
+				},
+				{
+					"command": "extension.micronaut-tools.database.register",
+					"when": "odt.extension.enabled"
 				}
 			],
 			"view/title": [
@@ -333,6 +342,11 @@
 					"command": "extension.micronaut-tools.navigation.openInBrowser",
 					"when": "viewItem == extension.micronaut-tools.navigation.EndpointNodeGET",
 					"group": "context@3"
+				},
+				{
+					"command": "extension.micronaut-tools.database.register",
+					"when": "view == oracleDBObjectExplorer && viewItem =~ /Connection/ && dbAddConnectionPresent",
+					"group": "connection_3@1"
 				}
 			]
 		}

@@ -22,6 +22,7 @@ import * as restQueries from './navigation/restQueries';
 import * as codeLens from './navigation/codeLens';
 import * as kubernetes from 'vscode-kubernetes-tools-api';
 import * as launcher from './launcher/extension';
+import * as dbSupport from './database/dbsupport';
 
 export function activate(context: vscode.ExtensionContext) {
 	symbols.initialize(context);
@@ -71,6 +72,9 @@ export function activate(context: vscode.ExtensionContext) {
 		let info = {id, name};
 		vscode.commands.executeCommand('nbls:Tools:org.netbeans.modules.cloud.oracle.actions.DownloadWalletAction', info);
 	}));
+
+	dbSupport.activate(context);
+
 	const graalVmExt = vscode.extensions.getExtension('oracle-labs-graalvm.graalvm');
 	if (graalVmExt) {
 		if (!graalVmExt.isActive) {
@@ -96,4 +100,6 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 }
 
-export function deactivate() {}
+export function deactivate() {
+	dbSupport.deactivate();
+}
