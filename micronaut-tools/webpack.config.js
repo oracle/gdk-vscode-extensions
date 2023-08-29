@@ -3,6 +3,8 @@
 'use strict';
 
 const path = require('path');
+const maven = require('maven');
+const CopyPlugin = require("copy-webpack-plugin");
 const webpack = require('webpack');
 const ESLintPlugin = require('eslint-webpack-plugin');
 
@@ -36,6 +38,22 @@ const config = {
         }]
     },
     plugins: [
+        {
+            apply: (compiler) => {
+                compiler.hooks.beforeCompile.tapPromise('MavenPlugin', (compilation) => {
+                    const mvn = maven.create({ cwd: '../nbcode-gcn-database' });
+                    return mvn.execute(['clean', 'install'], {'skipTests': true});}
+                );
+            }
+        },
+        new CopyPlugin({
+            patterns: [
+                {
+                    from: "../nbcode-gcn-database/nbcode-gcn-database-drivers/target/nbm/netbeans/nbcodegraalvm/",
+                    to: "../nbcode/graalvmextra/"
+                }
+            ],
+        }),
         new ESLintPlugin({extensions: ['ts']})
     ],
 };

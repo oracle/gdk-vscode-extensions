@@ -2,6 +2,9 @@
 agent
 server
 
+# Ignore built database drivers
+nbcode
+
 # Ignore NB IDE custom files
 buildagent/nbactions.xml
 buildagent/nb-configuration.xml

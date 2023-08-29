@@ -175,6 +175,11 @@
 				"title": "%extension.micronaut-tools.launch.continuous.title%",
 				"icon": "$(run)",
 				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.database.register",
+				"title": "Register Database for Micronaut/GCN",
+				"category": "Micronaut Tools"
 			}
 		],
 		"viewsContainers": {
@@ -279,6 +284,10 @@
 				{
 					"command": "extension.micronaut-tools.navigation.searchEndpoints",
 					"when": "extension.micronaut-tools.navigation.endpointsInitialized"
+				},
+				{
+					"command": "extension.micronaut-tools.database.register",
+					"when": "odt.extension.enabled"
 				}
 			],
 			"view/title": [
@@ -333,6 +342,11 @@
 					"command": "extension.micronaut-tools.navigation.openInBrowser",
 					"when": "viewItem == extension.micronaut-tools.navigation.EndpointNodeGET",
 					"group": "context@3"
+				},
+				{
+					"command": "extension.micronaut-tools.database.register",
+					"when": "view == oracleDBObjectExplorer && viewItem =~ /Connection/ && dbAddConnectionPresent",
+					"group": "connection_3@1"
 				}
 			]
 		}
@@ -380,10 +394,12 @@
 		"@typescript-eslint/eslint-plugin": "^5.54.1",
 		"@typescript-eslint/parser": "^5.54.1",
 		"ajv": "^8.12.0",
+		"copy-webpack-plugin": "^10.2.4",
 		"cross-os": "^1.5.0",
 		"eslint": "^8.35.0",
 		"eslint-webpack-plugin": "^4.0.0",
 		"glob": "^7.1.4",
+		"maven": "^5.0.0",
 		"ts-loader": "^9.4.2",
 		"typescript": "^4.9.5",
 		"webpack": "^5.76.0",
