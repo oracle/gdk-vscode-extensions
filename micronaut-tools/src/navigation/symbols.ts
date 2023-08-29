@@ -104,7 +104,7 @@ const beans: Bean[] = [];
 const endpoints: Endpoint[] = [];
 
 let beansInitialized: boolean = false;
-let endpointsInitialized: boolean = false;
+export let endpointsInitialized: boolean = false;
 
 export type OnUpdating = (kind: string[]) => void;
 export type OnUpdated = (kind: string[], beans: Bean[], endpoints: Endpoint[]) => void;
@@ -194,6 +194,7 @@ async function reload(kind: string[]) {
         if (isEndpointKind(kind)) {
             await vscode.commands.executeCommand('setContext', CONTEXT_RELOADING_ENDPOINTS, false);
             if (!endpointsInitialized) {
+                endpointsInitialized = true;
                 await vscode.commands.executeCommand('setContext', CONTEXT_ENDPOINTS_INITIALIZED, true);
             }
         }
