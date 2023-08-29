@@ -1,8 +1,15 @@
-{
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+ */
+
+ {
   "name": "gcn-database-drivers",
   "displayName": "GCN Database Support",
   "description": "JDBC and database drivers for clouds supported by GCN",
-  "license": "SEE LICENSE IN LICENSE.txt",
+  "license": "UPL-1.0",
   "version": "0.9.1",
   "preview": true,
   "publisher": "oracle-labs-graalvm",

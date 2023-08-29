@@ -1,10 +1,17 @@
-{
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+ */
+
+ {
 	"name": "micronaut",
 	"displayName": "Micronaut&reg; Launch",
 	"description": "A lightweight extension to create Micronaut projects.",
 	"version": "0.6.0",
 	"preview": true,
-	"license": "SEE LICENSE IN LICENSE.txt",
+	"license": "UPL-1.0",
 	"publisher": "oracle-labs-graalvm",
 	"author": {
 		"name": "Oracle Labs"
