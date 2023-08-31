@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+ */
+
 import * as path from 'path';
 import * as cp from 'child_process';
 import * as fs from 'fs';
@@ -23,10 +30,10 @@ async function getNBLSExtensionVersion() : Promise<string> {
 
     // Fetch the page
     const response = await fetch(extensionUrl);
-    const data = await response.text()
+    const data = await response.text();
     
     // extract version number
-    let version : string = data.split(EXTENSION_PREFIX)[1].split(".vsix")[0]
+    let version : string = data.split(EXTENSION_PREFIX)[1].split(".vsix")[0];
     return version;
 }
 
