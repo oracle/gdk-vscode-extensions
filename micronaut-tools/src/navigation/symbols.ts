@@ -151,7 +151,15 @@ export async function reloadAll() {
     return reload([ Bean.KIND, Endpoint.KIND ]);
 }
 
+let reloadInProgress = false;
+const toReload = new Set<string>();
+
 async function reload(kind: string[]) {
+    if (reloadInProgress) {
+        kind.forEach(toReload.add, kind);
+        return;
+    }
+    reloadInProgress = true;
     if (isBeanKind(kind)) {
         await vscode.commands.executeCommand('setContext', CONTEXT_RELOADING_BEANS, true);
     }
@@ -197,6 +205,10 @@ async function reload(kind: string[]) {
                 endpointsInitialized = true;
                 await vscode.commands.executeCommand('setContext', CONTEXT_ENDPOINTS_INITIALIZED, true);
             }
+        }
+        reloadInProgress = false;
+        if (toReload.size > 0) {
+            reload([...toReload]);
         }
     }, 1);
 }
