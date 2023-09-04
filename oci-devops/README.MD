@@ -42,6 +42,7 @@ Many tools used to work on Java projects, such as Git, Maven, Gradle, `kubectl`,
 
 ### Configure OCI
 * [Create Oracle Cloud account](https://www.oracle.com/cloud/free/), free tier is supported
+* [Setup an API Key](https://docs.oracle.com/iaas/Content/API/Concepts/apisigningkey.htm#two) for accessing the Oracle Cloud
 * [Create .oci/config](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm) cloud access configuration file
 * [Install OCI CLI](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/cliconcepts.htm) needed for the OKE local access
 
