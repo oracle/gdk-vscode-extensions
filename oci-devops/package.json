@@ -335,11 +335,6 @@
 				"command": "oci.devops.deleteContainerInstance",
 				"title": "Delete Current Container Instance",
 				"category": "OCI DevOps"
-			},
-			{
-				"command": "gcn.createGcnProject",
-				"title": "Create New Project",
-				"category": "Graal Cloud Native"
 			}
 		],
 		"viewsWelcome": [
