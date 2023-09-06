@@ -242,6 +242,10 @@
 					"when": "micronautProjectExists && javaHomeSet"
 				},
 				{
+					"command": "extension.micronaut-tools.launch.continuous",
+					"when": "micronautProjectExists && javaHomeSet"
+				},
+				{
 					"command": "extension.micronaut-tools.kubernetes.createDeploy",
 					"when": "kubectl.available"
 				},
