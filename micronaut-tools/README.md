@@ -134,8 +134,6 @@ This time, select the **package** goal, which will package your application into
 
 ### Create a Native Executable from Your Micronaut Application
 
-[comment]: <> (Why does this not use the **Micronaut Tools: Build Native Image** command?)
-
 If you have installed Oracle GraalVM, you can use GraalVM Native Image to create a native executable from your application.
 GraalVM Native Image creates an executable file with all the application classes, dependent library classes, dependent JDK classes, and a snapshot of the application heap. 
 Whilst building a native executable can take some time, the benefits include a dramatic reduction in startup time and reduced overall memory consumption.
@@ -198,11 +196,7 @@ The OCI DevOps Tools extension provisions build and deployment pipelines for:
 It can also provision a cluster to run your container on Oracle's [Container Engine for Kubernetes](https://docs.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm).
 For more information about using the OCI DevOps Tools Extension, see [Using OCI DevOps Tools Extensions in VS Code](https://www.graal.cloud/gcn/get-started/using-gcn-vscode-tools/).
 
-[comment]: <This should reference Micronaut, or OCI, not GCN> 
-
 ### Connect to an Oracle Autonomous Database
-
-[comment]: <> (Adapted from https://ol-confluence.us.oracle.com/display/GCN/Documentation+for+Database+Features)
 
 **Prerequisites:**
 * An Oracle Cloud Infrastructure (OCI) account.
@@ -226,13 +220,7 @@ To change the properties of a database connection, select the database in the **
 
 To select a database as the _Default Connection_, select the database in the **DATABASES** view, right-click and then select **Set as Default Connection** from the menu.
 
-**TODO** : Describe that the password for the DB is stored in the secure platform specific system, keychain on OSX for example, so that you aren't prompted repeatedly to enter passwords.
-
-**TODO** : Show how to manage DB connections.
-
 ### Create Entity and Repository Classes From an Existing Database Schema
-
-[comment]: <> (Adapted from https://ol-confluence.us.oracle.com/display/GCN/Documentation+for+Database+Features)
 
 **Prerequisites:**
 * You have created a connection to a database with an existing schema. 
@@ -255,8 +243,6 @@ To create repository classes, follow these steps:
 4. When prompted, select **Micronaut**, then **Micronaut Data Repository Interfaces from Entity**.
 5. From the list of entities, select the entities for which you want to create corresponding repositories. 
 6. Click **Enter**.
-
-**TODO** : Show how you can run this locally, talking to a remote DB.
 
 ## Extension Settings
 
