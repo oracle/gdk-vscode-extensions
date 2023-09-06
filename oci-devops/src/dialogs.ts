@@ -230,7 +230,7 @@ export async function confirmDeployToOCI(): Promise<boolean> {
 	const confirm = 'Confirm';
 	const confirmPermanently = 'Confirm Permanently';
 	const cancel = 'Cancel';
-	const msg = 'Local sources will be pushed to a remote OCI code repository. Read [the documentation](https://graal-cloud-staging.us.oracle.com/getting-started/setting-oci-devops-pipeline-in-vscode/#6-deploy-to-oci) for more details. Confirm to proceed:';
+	const msg = 'Local sources will be pushed to a remote OCI code repository. Read [the documentation](https://www.graal.cloud/gcn/get-started/setting-oci-devops-pipeline-in-vscode/#6-deploy-to-oci) for more details. Confirm to proceed:';
 	const choice = await vscode.window.showInformationMessage(msg, confirm, confirmPermanently, cancel);
 	if (!choice || choice === cancel) {
 		return false;
