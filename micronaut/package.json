@@ -1,6 +1,6 @@
 {
 	"name": "micronaut",
-	"displayName": "Micronaut&reg; Launch",
+	"displayName": "Micronaut® Launch",
 	"description": "A lightweight extension to create Micronaut projects.",
 	"version": "0.6.0",
 	"preview": true,

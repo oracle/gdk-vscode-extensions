@@ -1,4 +1,4 @@
-# Micronaut&reg; Tools
+# Micronaut® Tools
 
 ## Overview
 Micronaut Tools is a powerful extension for using [GraalVM](https://www.oracle.com/java/graalvm/) to develop [Micronaut framework](https://micronaut.io/) and [Graal Cloud Native](https://graal.cloud/) applications within VS Code.

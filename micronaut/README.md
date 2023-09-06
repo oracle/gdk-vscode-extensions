@@ -1,4 +1,4 @@
-# Micronaut&reg; Launch
+# Micronaut® Launch
 
 ## Overview
 Micronaut Launch is a lightweight extension for creating [Micronaut framework](https://micronaut.io/) applications within VS Code.
