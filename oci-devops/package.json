@@ -900,7 +900,7 @@
 		"buildCmd": "package --allow-star-activation --allow-missing-repository --no-update-package-json"
 	},
 	"scripts": {
-		"vscode:prepublish": "set NODE_OPTIONS='--max-old-space-size=8192' webpack --mode production",
+		"vscode:prepublish": "NODE_OPTIONS='--max-old-space-size=8192' webpack --mode production",
 		"compile": "webpack --mode development",
 		"info": "webpack --display-modules",
 		"watch": "webpack --mode development --watch",
