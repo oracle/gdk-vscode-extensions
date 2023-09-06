@@ -18,7 +18,7 @@ require('../lib/gcn.ui.api');
  /**
   * Number of fixed steps. Update whenever steps in selectCreateOptions change
   */
- const fixedSteps = 9;
+ const fixedSteps = 11;
  
 /**
  * Common type for list item display. Value is the code/id, label is the user-facing label, description goes to QuickPickItem.detail.
@@ -48,9 +48,10 @@ interface State {
     buildTool: ValueAndLabel;
     testFramework: ValueAndLabel;
     featureCategories: ValueAndLabel[];
-    features: Map<string, ValueAndLabel[]>;
+    features: ValueAndLabel[];
     clouds: ValueAndLabel[];
     target?: string;
+    exampleCode: boolean;
 }
 
 /**
@@ -70,6 +71,7 @@ export interface CreateOptions {
     clouds?: string[];
 
     target?: string;
+    exampleCode? : boolean;
 }
 
 /**
@@ -129,14 +131,14 @@ export async function writeProjectContents(options: CreateOptions, fileHandler:F
         'JAVA', // options.language,
         options.javaVersion,
         'gcn-vscode-extension',
-        true,
+        options.exampleCode === undefined ? true : options.exampleCode,
         fileHandler.writeFile()
     );
 
     await Promise.all(fileHandler.fileHandlerPromises);
 
-   } catch (err) {
-    dialogs.showErrorMessage(`Project generation failed`, err);
+   } catch (err : any) {
+    dialogs.showErrorMessage(`Project generation failed: ${err.getMessage().$as('string')}`);
     throw err;
    }
 }
@@ -233,6 +235,40 @@ function getServices(): ValueAndLabel[] {
     return ret;
 }
 
+function getFeatures(): ValueAndLabel[] {
+    let features = gcnApi.features();
+    let categories = features.keySet().toArray();
+    let res = [];
+    
+    for (let i = 0; i < categories.length; i++) {
+        let category = categories[i];
+        let featuresArr = features.get(category).toArray();
+
+        const categoryName = category.$as('string');
+        let separator = true;
+        for (let k = 0; k < featuresArr.length; k++) {
+            let value = featuresArr[k];
+            const tested = value.isGcnTested().$as('boolean');
+            if (tested) {
+                if (separator) {
+                    res.push({
+                        label: categoryName,
+                        value: categoryName,
+                        kind: vscode.QuickPickItemKind.Separator
+                    });
+                    separator = false;
+                }
+                res.push({
+                    label: value.getTitle().$as('string'),
+                    value: value.getName().$as('string'),
+                    detail: value.getDescription().$as('string'),
+                });
+            }
+        }
+    }
+    return res;
+}
+
 export function getMicronautVersions() : { label : string }[] {
     return [ { label : gcnApi.micronautVersion().$as('string') as string }];
 }
@@ -242,11 +278,14 @@ function findSelection(from: ValueAndLabel[], selected: ValueAndLabel[] | ValueA
     return sel && sel.length > 0 ? sel[0] : undefined;
 }
 
-function findSelectedItems(from: ValueAndLabel[], selected: ValueAndLabel[] | ValueAndLabel | undefined) {
+function findSelectedItems(from: ValueAndLabel[], selected: ValueAndLabel[] | ValueAndLabel | undefined, defaultSelection? : string) {
     const ret : ValueAndLabel[]= [];
     if (!selected) {
-        if (from[0]?.label === 'OCI') {
-            ret.push(from[0]);
+        for (let item of from) {
+            if (item.value === defaultSelection) {
+                ret.push(item);
+                break;
+            }
         }
         return ret;
     }
@@ -405,14 +444,30 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 			shouldResume: () => Promise.resolve(false)
         });
         state.services = selected;
-		return (input: dialogs.MultiStepInput) => pickBuildTool(input, state);
+		return (input: dialogs.MultiStepInput) => pickFeatures(input, state);
 	}
+
+    async function pickFeatures(input: dialogs.MultiStepInput, state: Partial<State>) {
+        const choices = state.micronautVersion && state.applicationType && state.javaVersion ? getFeatures() : [];
+		const selected: any = await input.showQuickPick({
+			title,
+			step: 7,
+			totalSteps: totalSteps(state),
+            placeholder: 'Pick features',
+            items: choices,
+            activeItems: findSelectedItems(choices, state.features, 'graalvm'),
+            canSelectMany: true,
+			shouldResume: () => Promise.resolve(false)
+        });
+        state.features = selected;
+        return (input: dialogs.MultiStepInput) => pickBuildTool(input, state);
+    }
 
 	async function pickBuildTool(input: dialogs.MultiStepInput, state: Partial<State>) {
         const choices = getBuildTools();
 		const selected: any = await input.showQuickPick({
 			title,
-			step: 7,
+			step: 8,
 			totalSteps: totalSteps(state),
             placeholder: 'Pick build tool',
             items: choices,
@@ -427,7 +482,7 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
         const choices = getTestFrameworks();
 		const selected: any = await input.showQuickPick({
 			title,
-			step: 8,
+			step: 9,
 			totalSteps: totalSteps(state),
             placeholder: 'Pick test framework',
             items: choices,
@@ -442,15 +497,41 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
         const choices = getClouds() || [];
 		const selected: any = await input.showQuickPick({
 			title,
-			step: 9,
+			step: 10,
 			totalSteps: totalSteps(state),
             placeholder: 'Pick Cloud Provider(s) to use',
             items: choices,
-            activeItems: findSelectedItems(choices, state.clouds),
+            activeItems: findSelectedItems(choices, state.clouds, 'OCI'),
             canSelectMany: true,
 			shouldResume: () => Promise.resolve(false)
         });
         state.clouds = selected;
+        return (input: dialogs.MultiStepInput) => selectSampleCode(input, state);
+    }
+
+    const sampleYesNo : ValueAndLabel[] = [
+        {
+            value: 'yes',
+            label: 'Yes'
+        },
+        {
+            value: 'no',
+            label: 'No'
+        }
+    ];
+
+    async function selectSampleCode(input: dialogs.MultiStepInput, state: Partial<State>) {
+		const selected: any = await input.showQuickPick({
+			title,
+			step: 11,
+			totalSteps: totalSteps(state),
+            placeholder: 'Generate sample code',
+            items: sampleYesNo,
+            activeItems: state.exampleCode === false ? sampleYesNo[1] : sampleYesNo[0],
+            canSelectMany: false,
+			shouldResume: () => Promise.resolve(false)
+        });
+        state.exampleCode = selected === sampleYesNo[0];
         return undefined;
     }
 
@@ -459,20 +540,14 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
         return undefined;
     }
     
-    function values(vals: ValueAndLabel[] | undefined) {
+    function values(vals?: ValueAndLabel[] | undefined) : string[] | undefined {
         if (!vals || vals.length === 0) {
             return undefined;
         }
         return vals.map((v) => v.value);
     }
     
-    const featureList: string[] = [];
-    for (const cat of s.featureCategories || []) {
-        const list = values(s.features?.get(cat.value));
-        if (list) {
-            featureList.push(...list);
-        }
-    }
+    const featureList: string[] = values(s.features) || [];
     if (s.buildTool.value === 'MAVEN' && !featureList.includes('graalvm')) {
         // automatically add for maven projects:
         featureList.push('graalvm');
@@ -494,7 +569,8 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 
         clouds: values(s.clouds),
         services: values(s.services),
-        features: featureList.length > 0 ? featureList : undefined
+        features: featureList.length > 0 ? featureList : undefined,
+        exampleCode: s.exampleCode
     };
 }
 
