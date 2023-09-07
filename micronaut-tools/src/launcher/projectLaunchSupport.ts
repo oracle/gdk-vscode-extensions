@@ -12,7 +12,7 @@ import * as utils from './utils';
 
 export class InitialMicronautContinuousConfigurationProvider implements DebugConfigurationProvider {
     provideDebugConfigurations(folder: vscode.WorkspaceFolder | undefined, token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration[]> {
-        if (vscode.workspace.getConfiguration('micronaut.jdt').get('buildsystemExecution') !== true) {
+        if (vscode.workspace.getConfiguration('micronaut-tools').get('buildsystemExecution') !== true) {
             return [];
         }
         return this.doProvideDebugConfigurations(folder, token);
