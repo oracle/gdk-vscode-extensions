@@ -8,7 +8,7 @@
 import * as vscode from 'vscode';
 
 
-const OUTPUT_NAME = 'GraalVM Tools For Micronaut/GCN'; // Extension name cannot be translated
+const OUTPUT_NAME = 'Micronaut Tools'; // Extension name cannot be translated
 const LOG_OUTPUT = vscode.window.createOutputChannel(OUTPUT_NAME);
 
 export function logInfo(record: string) {
