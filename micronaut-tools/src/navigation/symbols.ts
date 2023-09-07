@@ -156,7 +156,7 @@ const toReload = new Set<string>();
 
 async function reload(kind: string[]) {
     if (reloadInProgress) {
-        kind.forEach(toReload.add, kind);
+        kind.forEach(toReload.add, toReload);
         return;
     }
     reloadInProgress = true;
@@ -208,7 +208,9 @@ async function reload(kind: string[]) {
         }
         reloadInProgress = false;
         if (toReload.size > 0) {
-            reload([...toReload]);
+            const kinds = [...toReload];
+            toReload.clear();
+            reload(kinds);
         }
     }, 1);
 }
