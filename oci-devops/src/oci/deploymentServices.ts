@@ -37,7 +37,7 @@ type DeploymentPipeline = {
     lastDeployment?: string;
 };
 
-type RunOnDeployment = (resolve: Function, deploymentName: string, kubectl: k8s.KubectlV1) => void
+type RunOnDeployment = (resolve: Function, deploymentName: string, kubectl: k8s.KubectlV1) => void;
 
 let RESOURCES_FOLDER: string;
 
@@ -909,13 +909,13 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                 vscode.window.showErrorMessage(`Reject`);
                 return Promise.reject();
             }).catch((err) => {
-                vscode.window.showErrorMessage(`Unable to get debug port from running pod's environment: ${err}`)
+                vscode.window.showErrorMessage(`Unable to get debug port from running pod's environment: ${err}`);
                 return -1;
             });
 
             if (localDebugPort === -1) {
                 this.redeployWithDebugPortOpened(kubectl, deploymentName);
-                vscode.window.showWarningMessage(`Deployment wll be restarted with debugger enabled. Try again later.`)
+                vscode.window.showWarningMessage(`Deployment wll be restarted with debugger enabled. Try again later.`);
             }
 
             await vscode.commands.executeCommand('setContext', 'oci.devops.portForward', true);
