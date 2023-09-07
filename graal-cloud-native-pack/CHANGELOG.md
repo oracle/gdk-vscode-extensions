@@ -1,5 +1,8 @@
 # Change Log
 
+## Version 0.0.4
+* Database Drivers extension removed
+
 ## Version 0.0.3
 * Micronaut extension added
 * Documentation updated

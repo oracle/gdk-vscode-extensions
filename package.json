@@ -4,8 +4,7 @@
 	},
 	"scripts": {
 		"prebuild": "npm install",
-		"build": "npm run build:micronaut && npm run build:micronaut-tools && npm run build:gcn-database && npm run build:oci-devops && npm run build:gcn && npm run build:graal-cloud-native-pack",
-		"build:gcn-database": "cd gcn-database-drivers; npm run build",
+		"build": "npm run build:micronaut && npm run build:micronaut-tools && npm run build:oci-devops && npm run build:gcn && npm run build:graal-cloud-native-pack",
 		"build:micronaut-tools": "cd micronaut-tools; npm run build",
 		"build:micronaut": "cd micronaut; npm run build",
 		"build:gcn": "cd gcn; npm run build",

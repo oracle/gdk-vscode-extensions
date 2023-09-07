@@ -22,6 +22,7 @@ The wizard can generate different types of Graal Cloud Native applications and s
     - Provide a name for the project
     - Provide a base package
     - Pick the Graal Cloud Native services to be included in the project
+    - Pick Features to be included in the project. E.g. when Database was selected in Services step then in this step pick Oracle Cloud Autonomous Transaction Processing (ATP) feature which will add necassary dependencies to access Autonomous DB.
     - Select a build tool: Maven or Gradle
     - Select a unit test framework: JUnit, Spock, or Kotest
     - Select cloud providers to support: Oracle Cloud Infrastructure and/or Amazon Web Services; Note: you need to select OCI if you want OCI DevOps support
@@ -33,8 +34,7 @@ You now have a new Graal Cloud Native application, complete with example code sh
 ## <a name='gcn-extension-pack'></a>Graal Cloud Native Extension Pack
 Graal Cloud Native extension is part of the [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which is recommended to install. The extension pack provides also following support:
 1. Oracle Cloud Infrastructure DevOps integration to provision build pipelines for Graal Cloud Native or Micronaut projects. GraalVM Native Image builds are provisioned automatically.
-2. Database integration and database development support for the Oracle Autonomous Database and MySQL server
-3. Micronaut support
+2. Micronaut development support including Micronaut project wizard, REST Explorer and database drivers for Oracle DB and MySQL databases.
 
 ## <a name='provide-feedback-or-seek-help'></a>Provide Feedback or Seek Help
 
