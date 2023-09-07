@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,6 +51,11 @@ public class LauncherDelegate {
     public Map<String, String> getEnvironment() {
         return environment;
     }
+    
+    void clear() {
+        cmdLine = new ArrayList<>();
+        parts = new ArrayList<>();
+    }
 
     public void setEnvironment(Map<String, String> environment) {
         this.environment = environment;
@@ -59,8 +65,8 @@ public class LauncherDelegate {
         return environment.getOrDefault(key, def);
     }
     
-    protected void addCommand(String s) {
-        cmdLine.add(s);
+    protected void addCommand(String... s) {
+        cmdLine.addAll(Arrays.asList(s));
     }
     
     protected void addQuotedPart(String s) {
@@ -142,7 +148,7 @@ public class LauncherDelegate {
     }
 
     public Path getProjectRootDirectory() {
-        return projectRootDirectory;
+        return projectRootDirectory == null ? getProjectDirectory() : projectRootDirectory;
     }
 
     public LauncherDelegate setProjectRootDirectory(Path projectRootDirectory) {

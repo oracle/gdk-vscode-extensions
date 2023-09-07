@@ -62,6 +62,21 @@
 						}
 					}
 				]
+			},
+			{
+				"type": "java",
+				"label": "Java",
+				"configurationAttributes": {
+					"launch": {
+						"properties": {
+							"build-maven-dependencies": {
+							  "type": "boolean",
+							  "description": "Build dependencies before run",
+							  "default": true
+							}
+						}
+					}
+				}
 			}
 		],
  		"configuration": {

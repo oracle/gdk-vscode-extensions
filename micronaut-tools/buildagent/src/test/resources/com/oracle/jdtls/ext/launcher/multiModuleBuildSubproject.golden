@@ -1,0 +1,5 @@
+-DskipTests
+--also-make
+--projects
+main
+install
