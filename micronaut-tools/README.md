@@ -35,7 +35,7 @@ You can also find the extension listed on the [VS Code Marketplace](https://mark
 The Micronaut Tools page opens as soon as the extension is installed.
 You can also open this page using the Command Palette command **Micronaut Tools: Show Micronaut Tools Page**.
 
-> Note: This extension is part of the [Graal Cloud Native Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack). We recommend you install the Graal Cloud Native Extensions Pack as it provides additional extensions for Micronaut development, including the [GCN Database Support](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn-database-drivers) extension.
+> Note: This extension is part of the [Graal Cloud Native Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack). We recommend you install the Graal Cloud Native Extensions Pack as it provides additional extensions for Micronaut development, including the [Micronaut Launch](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extension.
 
 ## Usage
 
@@ -200,8 +200,6 @@ For more information about using the OCI DevOps Tools Extension, see [Using OCI 
 
 **Prerequisites:**
 * An Oracle Cloud Infrastructure (OCI) account.
-* The [GCN Database Support](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn-database-drivers) extension (part of the [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack)). 
-(This adds a **DATABASES** view to the Explorer Panel.)
 
 To create a new connection to an Oracle Autonomous Database, follow the steps below:
 
