@@ -9,9 +9,9 @@ import * as vscode from 'vscode';
 import { checkExtensions } from './utils';
 
 
-const OPEN_IN_NEW_WINDOW = 'Open in new window';
-const OPEN_IN_CURRENT_WINDOW = 'Open in current window';
-const ADD_TO_CURRENT_WORKSPACE = 'Add to current workspace';
+const OPEN_IN_NEW_WINDOW = 'Open in New Window';
+const OPEN_IN_CURRENT_WINDOW = 'Open in Current Window';
+const ADD_TO_CURRENT_WORKSPACE = 'Add to Current Workspace';
 
 /**
  * Handles the creation of a new GCN project.

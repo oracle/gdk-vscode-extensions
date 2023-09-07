@@ -24,9 +24,9 @@ const SELECT_OPTIONS: string = '/select-options';
 const FEATURES: string = '/features';
 const VERSIONS: string = '/versions';
 const CREATE: string = '/create';
-const OPEN_IN_NEW_WINDOW = 'Open in new window';
-const OPEN_IN_CURRENT_WINDOW: string = 'Open in current window';
-const ADD_TO_CURRENT_WORKSPACE = 'Add to current workspace';
+const OPEN_IN_NEW_WINDOW = 'Open in New Window';
+const OPEN_IN_CURRENT_WINDOW: string = 'Open in Current Window';
+const ADD_TO_CURRENT_WORKSPACE = 'Add to Current Workspace';
 const LAST_PROJECT_PARENTDIR: string = 'lastCreateProjectParentDirs';
 
 let cliMNVersion: {label: string; serviceUrl: string; description: string} | undefined;
