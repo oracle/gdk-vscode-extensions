@@ -220,6 +220,10 @@ To change the properties of a database connection, select the database in the **
 
 To select a database as the _Default Connection_, select the database in the **DATABASES** view, right-click and then select **Set as Default Connection** from the menu.
 
+Database Password is stored in OS specific safe storage - macOS keychain, KDE Wallet, GNOME/Keyring, Windows Data Protection API.
+For Debug / Run of micronaut application, VSCode creates temporary file with Micronaut properties incl. Database Username and Password.
+This temporary file is readable only by user running VSCode and is deleted as soon as debugging session ends.
+
 ### Create Entity and Repository Classes From an Existing Database Schema
 
 **Prerequisites:**
