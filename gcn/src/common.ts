@@ -7,6 +7,7 @@
 
 import * as vscode from 'vscode';
 import * as dialogs from "./dialogs";
+import { logInfo } from './logUtils';
 
 require('../lib/gcn.ui.api');
 
@@ -248,7 +249,10 @@ function getFeatures(): ValueAndLabel[] {
         let separator = true;
         for (let k = 0; k < featuresArr.length; k++) {
             let value = featuresArr[k];
+            const preview = value.isPreview().$as('boolean');
+            const community = value.isCommunity().$as('boolean');
             const tested = value.isGcnTested().$as('boolean');
+            logInfo(`Feature: ${value.getTitle().$as('string')}, preview: ${preview}, community: ${community}, tested: ${tested}`);
             if (tested) {
                 if (separator) {
                     res.push({
@@ -373,9 +377,12 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
             } else {
                 v = '';
             }
-            items.push(
-                {label: n, value: item.path, description: item.active ? '(active)' : undefined, target: v }
-            );
+            let jdk = {label: n, value: item.path, description: item.active ? '(active)' : undefined, target: v };
+            if (item.active) {
+                items.unshift(jdk);
+            } else {
+                items.push(jdk);
+            }
         });
         
         items.push({label: 'Other Java', value: '', target: '', description: '(manual configuration)'});
