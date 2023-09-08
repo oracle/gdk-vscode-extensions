@@ -10,7 +10,6 @@ package com.oracle.jdtls.ext.launcher;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -98,7 +97,7 @@ public class MavenLauncher extends LauncherDelegate {
     
     void configureVMArgs() {
         // JVM args:
-        for (String s : getVmArgs()) {
+        for (String s : getAllVmArgs()) {
             addQuotedPart(s);
         }
         // add classpath
@@ -136,12 +135,48 @@ public class MavenLauncher extends LauncherDelegate {
         
         pb.command(commands()).inheritIO();
         
-        System.err.println("Running: " + Arrays.asList(pb.command()));
+        System.err.println("Running: " + pb.command());
         return pb;
+    }
+    
+    /**
+     * Creates ProcessBuilder for maven compilation before run. It may return @code null
+     * to indicate no compilation step is necessary - this is for single-module projects
+     * where the target project is the reactor itself and the compilation happens automatically.
+     * 
+     * @return 
+     */
+    ProcessBuilder configureInstallBuilder() {
+        // simple projects
+        if (getProjectRootDirectory() == null || getProjectRootDirectory().equals(getProjectDirectory())) {
+            return null;
+        }
+        if (!Boolean.valueOf(env(LauncherBuilder.ORACLE_MAVEN_DEPENDENCIES, "true"))) {
+            return null;
+        }
+        ProcessBuilder b = createProcessBuilder();
+        b.directory(getProjectRootDirectory().toFile());
+        addCommand("-DskipTests", "--also-make");
+        addCommand("--projects", getProjectRootDirectory().relativize(getProjectDirectory()).toString());
+        addCommand("install");
+        
+        return b.command(commands()).inheritIO();
     }
     
     @Override
     public int execute() throws InterruptedException, IOException {
+        ProcessBuilder installBuilder = configureInstallBuilder();
+        if (installBuilder != null) {
+            System.err.println("Compiling before execution: " + installBuilder.command());
+            Process install = installBuilder.start();
+            int result = install.waitFor();
+            if (result != 0) {
+                // failed
+                return result;
+            }
+            clear();
+        }
+        
         Process p = configureProcessBuilder().start();
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override

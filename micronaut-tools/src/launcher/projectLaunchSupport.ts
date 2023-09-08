@@ -139,5 +139,8 @@ export async function resolveConfigurationAsync(folder: vscode.Uri | undefined, 
     config['env']['JDT_LAUNCHWRAP_PROJECT_ROOT'] = root;
     // full path to the launcher wrapper Java application, distributed with the extension.
     config['env']['JDT_LAUNCHWRAP_PROJECT_LAUNCHER'] = path.join(extensionPath, 'agent');
+    if (config['build-maven-dependencies'] !== undefined) {
+        config['env']['JDT_LAUNCHWRAP_MAVEN_DEPENDENCIES'] = config['build-maven-dependencies'] as string;
+    }
     return config;
 }

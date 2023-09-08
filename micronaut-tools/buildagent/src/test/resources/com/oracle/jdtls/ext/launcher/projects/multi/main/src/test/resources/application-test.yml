@@ -1,0 +1,10 @@
+flyway:
+  datasources:
+    default:
+      enabled: true
+datasources:
+  default:
+    schema-generate: NONE
+    dialect: MYSQL
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    db-type: mysql

@@ -63,7 +63,7 @@ public class GradleLauncher extends LauncherDelegate {
         }
         
         // JVM args:
-        for (String s : getVmArgs()) {
+        for (String s : getAllVmArgs()) {
             addQuotedPart(s);
         }
 

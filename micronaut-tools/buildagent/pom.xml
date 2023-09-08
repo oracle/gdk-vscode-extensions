@@ -73,6 +73,7 @@
                         <configuration>
                             <target>
                                 <chmod file="target/test-classes/com/oracle/jdtls/ext/launcher/projects/maven/mvnw" perm="755"/>
+                                <chmod file="target/test-classes/com/oracle/jdtls/ext/launcher/projects/multi/mvnw" perm="755"/>
                             </target>
                         </configuration>
                         <goals>

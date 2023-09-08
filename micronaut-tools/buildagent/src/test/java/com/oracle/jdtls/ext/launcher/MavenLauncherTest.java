@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -108,5 +109,32 @@ public class MavenLauncherTest {
         assertNotEquals(dir.resolve(wname).toString(), check.get(0));
 
         checkGoldenFile(check);
+    }
+    
+    @Test
+    public void multiModuleBuildSubproject() throws Exception {
+        Path p = Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().toURI()).resolve(Paths.get("com", "oracle", "jdtls", "ext", "launcher", "projects", "multi"));
+        Path dir = p.resolve("main");
+        LauncherBuilder bldr = builder();
+        bldr.addEnvironment(LauncherBuilder.ORACLE_ROOT_DIR, p.toString());
+        bldr.setProjectDir(dir);
+        MavenLauncher l = (MavenLauncher)bldr.build();
+        ProcessBuilder ib = l.configureInstallBuilder();
+        
+        assertEquals(p.toFile(), ib.directory());
+        List<String> commands = ib.command();
+        
+        checkGoldenFile(commands);
+    }
+
+    @Test
+    public void multiModuleBuildRootProject() throws Exception {
+        Path p = Paths.get(getClass().getProtectionDomain().getCodeSource().getLocation().toURI()).resolve(Paths.get("com", "oracle", "jdtls", "ext", "launcher", "projects", "multi"));
+        LauncherBuilder bldr = builder();
+        bldr.addEnvironment(LauncherBuilder.ORACLE_ROOT_DIR, p.toString());
+        bldr.setProjectDir(p);
+        
+        MavenLauncher l = (MavenLauncher)bldr.build();
+        assertNull(l.configureInstallBuilder());
     }
 }

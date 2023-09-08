@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +31,7 @@ public class LauncherBuilder {
     public static final String ORACLE_PROJECT_TYPE = "JDT_LAUNCHWRAP_PROJECT_TYPE";
     public static final String ORACLE_PROJECT_CONTAINER = "JDT_LAUNCHWRAP_PROJECT_CONTAINER";
     public static final String ORACLE_MICRONAUT_CONTINUOUS = "JDT_LAUNCHWRAP_MICRONAUT_CONTINUOUS";
+    public static final String ORACLE_MAVEN_DEPENDENCIES = "JDT_LAUNCHWRAP_MAVEN_DEPENDENCIES";
     
     private static final String JDWP_RUN = "-Xrunjdwp:";
     private static final String JDWP_AGENT = "-agentlib:jdwp=";
@@ -41,6 +43,13 @@ public class LauncherBuilder {
     private Map<String, String> environment;
     
     private boolean mainClass;
+    
+    void addEnvironment(String k, String v) {
+        if (environment == null) {
+            environment = new HashMap<>();
+        }
+        environment.put(k, v);
+    }
 
     public LauncherBuilder(LauncherDelegate launcher, List<String> args) {
         this.args = new ArrayList<>(args);
