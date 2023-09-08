@@ -95,9 +95,14 @@ public final class JavaCodeLens {
             IMavenProjectFacade facade = registry.getProject(javaProject.getProject());
             if (facade != null) {
                 MavenProject mvnProject = facade.getMavenProject(monitor);
-                Plugin plugin = mvnProject != null ? mvnProject.getPlugin("io.micronaut.build:micronaut-maven-plugin") : null;
-                if (plugin != null) {
-                    return true;
+                if (mvnProject != null) {
+                    Plugin plugin = mvnProject.getPlugin("io.micronaut.build:micronaut-maven-plugin");
+                    if (plugin == null) {
+                        plugin = mvnProject.getPlugin("io.micronaut.maven:micronaut-maven-plugin");
+                    }
+                    if (plugin != null) {
+                        return true;
+                    }
                 }
             }
             return false;
