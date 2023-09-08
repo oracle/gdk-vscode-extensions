@@ -82,6 +82,9 @@ export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<
         if (fs.existsSync(path.join(subprojects.length > 0 ? path.join(folder.uri.fsPath, 'app') : folder.uri.fsPath, 'src', 'main', 'resources', 'application.yml'))) {
             const projectType: ProjectType = infos[0].subprojects?.length ? 'GCN' : 'Micronaut';
             return Object.assign({}, folder, { projectType, buildSystem, subprojects });
+        } else if (fs.existsSync(path.join(folder.uri.fsPath, 'micronaut-cli.yml'))) {
+            const projectType: ProjectType = 'Micronaut';
+            return Object.assign({}, folder, { projectType, buildSystem, subprojects });
         } else if (fs.existsSync(path.join(subprojects.length > 0 ? path.join(folder.uri.fsPath, 'app') : folder.uri.fsPath, 'src', 'main', 'resources', 'application.properties'))) {
             const projectType: ProjectType = 'SpringBoot';
             return Object.assign({}, folder, { projectType, buildSystem, subprojects });
