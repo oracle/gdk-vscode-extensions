@@ -71,7 +71,9 @@ export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<
                 }
                 const resPath = path.join(u, 'src', 'main', 'resources');
                 if (fs.existsSync(path.join(resPath,  'application-oraclecloud.yml')) ||
-                    fs.existsSync(path.join(resPath, 'application-ec2.yml'))) {
+                    fs.existsSync(path.join(resPath,  'application-oraclecloud.properties')) ||
+                    fs.existsSync(path.join(resPath, 'application-ec2.yml')) ||
+                    fs.existsSync(path.join(resPath, 'application-ec2.properties'))) {
                     const projectType : ProjectType = 'GCN';
                     return Object.assign({}, folder, { projectType, buildSystem, subprojects });
                 }
