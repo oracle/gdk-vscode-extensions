@@ -47,19 +47,31 @@ export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<
         for(const sub of infos[0].subprojects) {
             const subInfos: any[] = await vscode.commands.executeCommand(GET_PROJECT_INFO, sub);
             if (subInfos?.length && subInfos[0]) {
-                let name: string = subInfos[0].displayName; // TODO: non deterministic displayName returned
-                let idx = name.lastIndexOf(path.sep);
+                let name: string = subInfos[0].projectDirectory;
+                if (name.endsWith('/')) {
+                    name = name.slice(0, name.length - 1);
+                }
+                if (name.startsWith(infos[0].projectDirectory)) {
+                    name = name.slice(infos[0].projectDirectory.length);
+                } else {
+                    const idx = name.lastIndexOf('/');
+                    if (idx >= 0) {
+                        name = name.slice(idx);
+                    }
+                }
+                let displayName: string = subInfos[0].displayName; // TODO: non deterministic displayName returned
+                let idx = displayName.lastIndexOf('/');
                 if (idx < 0) {
-                    idx = name.lastIndexOf(':');
+                    idx = displayName.lastIndexOf(':');
                 }
                 if (idx >= 0) {
-                    name = name.slice(idx + 1);
+                    displayName = displayName.slice(idx + 1);
                 }
-                idx = name.lastIndexOf('[');
+                idx = displayName.lastIndexOf('[');
                 if (idx >= 0) {
-                    name = name.slice(0, idx);
+                    displayName = displayName.slice(0, idx);
                 }
-                subprojects.push({ name: name.trim(), uri: sub } );
+                subprojects.push({ name, displayName: displayName.trim(), uri: sub } );
             }
         }
         // TODO: add better check for supported projects
@@ -276,7 +288,7 @@ export type BuildSystemType = 'Maven' | 'Gradle';
 
 export interface ProjectFolder extends vscode.WorkspaceFolder {
     readonly projectType: ProjectType;
-    readonly subprojects: {name: string; uri: string}[];
+    readonly subprojects: {name: string; displayName?: string; uri: string}[];
     readonly buildSystem?: BuildSystemType;
 }
 
