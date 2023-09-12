@@ -9,3 +9,5 @@ webpack.config.js
 **/tslint.json
 **/*.map
 **/*.ts
+testresources/**
+fixtures/**
