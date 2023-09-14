@@ -314,7 +314,8 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                         repo_endpoint: repoEndpoint,
                         region: oci.getProvider().getRegion().regionId,
                         cluster_id: cluster,
-                        secret_name: secretName
+                        secret_name: secretName,
+                        app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                     });
                     if (!inlineContent) {
                         resolve(undefined);
@@ -819,7 +820,6 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
                         dialogs.showErrorMessage(`Cannot find deployment '${deploymentName}' in the destination OKE cluster.`);
                         return;
                     }
-                    resolve(true);
                     vscode.window.withProgress({
                         location: vscode.ProgressLocation.Notification,
                         title: 'Starting port forwards and opening browser...',
@@ -842,7 +842,7 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
             const remotePort = 8080;
             const localPort = this.random(3000, 50000);
             
-            const result = kubectl.portForward(`deployments/${deploymentName}`, undefined, localPort, remotePort, { showInUI: { location: 'status-bar' } }); 
+            const result = await kubectl.portForward(`deployments/${deploymentName}`, undefined, localPort, remotePort, { showInUI: { location: 'status-bar' } });
             if (!result) {
                 resolve(false);
                 dialogs.showErrorMessage(`Cannot forward port for the '${deploymentName}' deployment.`);
@@ -852,7 +852,6 @@ class DeploymentPipelineNode extends nodes.ChangeableNode implements nodes.Remov
             resolve(true);
         };
         this.runOnDeployment(run);
-
     }
 
     debugInK8s() {

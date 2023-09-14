@@ -1257,7 +1257,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         repo_endpoint: `${provider.getRegion().regionCode}.ocir.io`,
                         region: provider.getRegion().regionId,
                         cluster_id: deployData.okeCluster.id,
-                        secret_name: folderData.secretName
+                        secret_name: folderData.secretName,
+                        app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                     });
                     if (!oke_deploySetupCommandInlineContent) {
                         resolve(`Failed to create OKE deployment setup secret command spec for ${repositoryName}`);
