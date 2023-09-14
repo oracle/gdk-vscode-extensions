@@ -827,8 +827,12 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
 
                 if (codeRepository.sshUrl) {
                     try {
-                        await sshUtils.checkSshConfigured(provider, codeRepository.sshUrl);
+                        if (!await sshUtils.checkSshConfigured(provider, codeRepository.sshUrl)) {
+                            resolve(`Failed to configure SSH for repository ${repositoryName} URL ${codeRepository.sshUrl}.`);
+                            return;
+                        }
                     } catch (err) {
+                        logUtils.logError(dialogs.getErrorMessage(`Failed to configure SSH for repository ${codeRepository.name} URL ${codeRepository.sshUrl}.`, err));
                         resolve(`Failed to configure SSH for repository ${repositoryName} URL ${codeRepository.sshUrl}.`);
                         return;
                     }
