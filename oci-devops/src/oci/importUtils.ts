@@ -148,8 +148,12 @@ export async function importFolders(getFromExisting: boolean): Promise<model.Imp
                 logUtils.logInfo(`[import] Cloning code repository '${repository.name}'`);
                 if (repository.sshUrl) { // TODO: https
                     try {
-                        await sshUtils.checkSshConfigured(provider, repository.sshUrl);
+                        if (!await sshUtils.checkSshConfigured(provider, repository.sshUrl)) {
+                            resolve(`Failed to configure SSH for repository ${repository.name} URL ${repository.sshUrl}.`);
+                            return;
+                        }
                     } catch (err) {
+                        logUtils.logError(dialogs.getErrorMessage(`Failed to configure SSH for repository ${repository.name} URL ${repository.sshUrl}.`, err));
                         resolve(`Failed to configure SSH for repository ${repository.name} URL ${repository.sshUrl}.`);
                         return;
                     }
