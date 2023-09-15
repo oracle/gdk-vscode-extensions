@@ -27,5 +27,8 @@ spec:
         image: {{{image_name}}}
         ports:
           - containerPort: 8080
+        env:
+        - name: MICRONAUT_ENVIRONMENTS
+          value: "oraclecloud"
       imagePullSecrets:
       - name: {{{secret_name}}}
