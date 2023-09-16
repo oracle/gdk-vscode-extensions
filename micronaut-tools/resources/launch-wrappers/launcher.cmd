@@ -5,7 +5,7 @@ rem  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 rem
 rem  Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 rem
-if %JDT_LAUNCHWRAP_PROJECT_LAUNCHER% == "" (
+if "%JDT_LAUNCHWRAP_PROJECT_LAUNCHER%" == "" (
     SET "DIR=%~dp0"
     SET "LAUNCHER_DIR=%DIR%..\..\agent"
 ) else (

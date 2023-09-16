@@ -6,10 +6,10 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 if [ -n "$JDT_LAUNCHWRAP_PROJECT_LAUNCHER" ] ; then
-    LAUNCHER_DIR=$JDT_LAUNCHWRAP_PROJECT_LAUNCHER
+    LAUNCHER_DIR="$JDT_LAUNCHWRAP_PROJECT_LAUNCHER"
 else 
     DIR="$(dirname "$(readlink -f "$0")")"
-    LAUNCHER_DIR=$DIR/../../agent
+    LAUNCHER_DIR="$DIR/../../agent"
 fi  
 export JAVACMD="$1"
 
