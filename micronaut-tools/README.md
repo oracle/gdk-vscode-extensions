@@ -283,6 +283,15 @@ This extension modifies Run for **Java** environment so that the application is 
 
 To enable or disable the enhanced Run feature, navigate to `File - Preferences - Settings`, locate `Micronaut Tools` extension section and turn on/off the `Use build system to run or debug applications`. The relevant setting (in JSON format) is `micronaut-tools.buildsystemExecution`
 
+Apache NetBeans Language Server for Java does not work on Linux and macOS when VSCode extensions directory contains space in path, e.g. `/User/great code/.vscode/extensions`. This extension depends on Apache NetBeans Lang Server. Extensions directory is where all VSCode extensions are installed. Default location is:
+* Windows `%USERPROFILE%\.vscode\extensions`
+* macOS `~/.vscode/extensions`
+* Linux `~/.vscode/extensions`
+
+This location can be changed to path without space:
+* Permanently by setting environment variable `VSCODE_EXTENSIONS` for OS shell (bash, zsh, sh,...) modifying corresponding profile file (`.bash_profile`, `.zshrc`,...). Or
+* Temporarily by launching VSCode from command line with switch `--extensions-dir`, e.g. `$ code --extensions-dir "/User/code_user/extensions_dir"`
+* It cannot be changed in VSCode Settings.
 
 ## Feedback
 
