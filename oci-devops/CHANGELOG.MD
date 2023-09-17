@@ -1,5 +1,10 @@
 # Change Log
 
+## Version 0.9.4
+* Fix OKE subsequent deployments from OCI DevOps pipeline failed
+* Fix space in path to handle oci\config and ssh config on Windows
+* Build spec updates to reflect project updates
+
 ## Version 0.9.3
 * Fixes to provision OCI DevOps build pipelines for Micronaut 4.0.x Gradle projects
 * 3rd party libraries updated
