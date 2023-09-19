@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as jdkUtils from 'jdk-utils';
-import * as dialogs from "./dialogs";
+import * as dialogs from '../../common/lib/dialogs';
 import { getJavaVersion } from '../../common/lib/utils';
 import {handleNewGCNProject} from './projectHandler';
 import {

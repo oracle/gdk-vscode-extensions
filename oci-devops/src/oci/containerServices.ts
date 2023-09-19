@@ -8,7 +8,7 @@
 import * as vscode from 'vscode';
 import * as artifacts from 'oci-artifacts';
 import * as nodes from '../nodes';
-import * as dialogs from '../dialogs';
+import * as dialogs from '../../../common/lib/dialogs';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociDialogs from './ociDialogs';
@@ -17,7 +17,6 @@ import * as ociServices  from './ociServices';
 import * as dataSupport from './dataSupport';
 import * as ociNodes from './ociNodes';
 import * as ociFeatures from './ociFeatures';
-import { QuickPickObject, sortQuickPickObjectsByName } from '../../../common/lib/dialogs';
 
 
 export const DATA_NAME = 'containerRepositories';
@@ -106,11 +105,11 @@ async function selectContainerRepositories(oci: ociContext.Context, ignore: Cont
             }
         }
     }
-    const existingContentChoices: QuickPickObject[] = [];
+    const existingContentChoices: dialogs.QuickPickObject[] = [];
     for (const containerRepository of containerRepositories) {
-        existingContentChoices.push(new QuickPickObject(`$(${ICON}) ${containerRepository.displayName}`, undefined, undefined, containerRepository));
+        existingContentChoices.push(new dialogs.QuickPickObject(`$(${ICON}) ${containerRepository.displayName}`, undefined, undefined, containerRepository));
     }
-    sortQuickPickObjectsByName(existingContentChoices);
+    dialogs.sortQuickPickObjectsByName(existingContentChoices);
     let existingContentMultiSelect;
     if (existingContentChoices.length > 1) {
         const multiSelectExisting = async (): Promise<ContainerRepository[] | undefined> => {
@@ -129,11 +128,11 @@ async function selectContainerRepositories(oci: ociContext.Context, ignore: Cont
                 return undefined;
             }
         };
-        existingContentMultiSelect = new QuickPickObject('$(arrow-small-right) Add multiple existing container repositories...', undefined, undefined, multiSelectExisting);
+        existingContentMultiSelect = new dialogs.QuickPickObject('$(arrow-small-right) Add multiple existing container repositories...', undefined, undefined, multiSelectExisting);
     }
     // TODO: provide a possibility to create a new container repository
     // TODO: provide a possibility to select container repositories from different compartments
-    const choices: QuickPickObject[] = [];
+    const choices: dialogs.QuickPickObject[] = [];
     if (existingContentChoices.length) {
         choices.push(...existingContentChoices);
         if (existingContentMultiSelect) {
@@ -178,9 +177,9 @@ class Service extends ociService.Service {
         }
     }
 
-    getAddContentChoices(): QuickPickObject[] | undefined {
+    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
         return ociFeatures.NON_PIPELINE_RESOURCES_ENABLED ? [
-            new QuickPickObject(`$(${ICON}) Add Container Repository`, undefined, 'Add an existing container repository', () => this.addContent())
+            new dialogs.QuickPickObject(`$(${ICON}) Add Container Repository`, undefined, 'Add an existing container repository', () => this.addContent())
         ] : undefined;
     }
 

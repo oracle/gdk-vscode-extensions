@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import * as devopsServices from './devopsServices';
 import * as servicesView from './servicesView';
 import * as dialogs from './dialogs';
+import { showErrorMessage } from '../../common/lib/dialogs';
 import * as folderStorage from './folderStorage';
 import * as undeployUtils from './oci/undeployUtils'; // TODO: include into CloudSupport API?
 import { DeployOptions } from './oci/deployUtils';
@@ -105,7 +106,7 @@ export async function deployFolders(workspaceState: vscode.Memento, addToExistin
             } else if (!Array.isArray(folders)) {
                 folders = [ folders ];
             } else if (folders.length === 0) {
-                dialogs.showErrorMessage('No folders available.');
+                showErrorMessage('No folders available.');
                 return;
             }
             for (const folder of folders) {
@@ -119,7 +120,7 @@ export async function deployFolders(workspaceState: vscode.Memento, addToExistin
                     });
                     supportedFolders.push(folder);
                 } catch (err) {
-                    dialogs.showErrorMessage(`Folder ${folder.folder.name} does not immediately contain a Java project, cannot create OCI DevOps project.`);
+                    showErrorMessage(`Folder ${folder.folder.name} does not immediately contain a Java project, cannot create OCI DevOps project.`);
                 }
             }
             if (!supportedFolders.length) {

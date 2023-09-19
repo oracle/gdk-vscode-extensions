@@ -12,7 +12,7 @@ import * as path from 'path';
 import * as os from 'os';
 import * as which from 'which';
 import * as common from 'oci-common';
-import * as dialogs from '../dialogs';
+import * as dialogs from '../../../common/lib/dialogs';
 import * as ociUtils from './ociUtils';
 import { logError, logInfo } from '../../../common/lib/logUtils';
 

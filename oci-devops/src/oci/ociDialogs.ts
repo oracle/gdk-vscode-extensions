@@ -7,11 +7,10 @@
 
 import * as vscode from 'vscode';
 import * as common from 'oci-common';
-import * as dialogs from '../dialogs';
+import * as dialogs from '../../../common/lib/dialogs';
 import * as dockerUtils from '../dockerUtils';
 import * as logUtils from '../../../common/lib/logUtils';
 import * as ociUtils from './ociUtils';
-import { QuickPickObject, sortQuickPickObjectsByName } from '../../../common/lib/dialogs';
 
 export async function selectOciProfileFromList(profiles: string[], autoselect: boolean, actionName?: string): Promise<string | null | undefined> {
     if (!profiles.length) {
@@ -20,9 +19,9 @@ export async function selectOciProfileFromList(profiles: string[], autoselect: b
     if (autoselect && profiles.length === 1) {
         return profiles[0];
     }
-    const choices: QuickPickObject[] = [];
+    const choices: dialogs.QuickPickObject[] = [];
     for (const p of profiles) {
-        choices.push(new QuickPickObject(p, undefined, undefined));
+        choices.push(new dialogs.QuickPickObject(p, undefined, undefined));
     }
     const selected = await vscode.window.showQuickPick(choices, {
         title: actionName ? `${actionName}: Select OCI Profile` : undefined,
@@ -37,7 +36,7 @@ export async function selectOciProfileFromList(profiles: string[], autoselect: b
 export async function selectCompartment(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, actionName?: string, ignore?: string[]): Promise<{ ocid: string; name: string } | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
     // TODO: add root compartment
-    const choices: QuickPickObject[] | undefined = await vscode.window.withProgress({
+    const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: 'Reading available compartments...',
         cancellable: false
@@ -51,7 +50,7 @@ export async function selectCompartment(authenticationDetailsProvider: common.Co
                     for (const compartment of compartments) {
                         compartmentsMap[compartment.id] = compartment;
                     }
-                    const choices: QuickPickObject[] = [];
+                    const choices: dialogs.QuickPickObject[] = [];
                     for (const compartment of compartments) {
                         if (!ignore?.includes(compartment.id)) { // doesn't filter-out root compartment
                             let name = compartment.name;
@@ -61,14 +60,14 @@ export async function selectCompartment(authenticationDetailsProvider: common.Co
                                 parent = compartmentsMap[parent.compartmentId];
                             }
                             const description = compartment.description ? compartment.description : undefined;
-                            const choice = new QuickPickObject(name, description, undefined, { ocid: compartment.id, name: name });
+                            const choice = new dialogs.QuickPickObject(name, description, undefined, { ocid: compartment.id, name: name });
                             choices.push(choice);
                         }
                     }
-                    sortQuickPickObjectsByName(choices);
+                    dialogs.sortQuickPickObjectsByName(choices);
                     const tenancy = await ociUtils.getTenancy(authenticationDetailsProvider);
                     const rootCompartmentName = tenancy.name ? `${tenancy.name} (root)` : 'root';
-                    choices.unshift(new QuickPickObject(rootCompartmentName, `Root of the${tenancy.name ? ' ' + tenancy.name : ''} tenancy`, undefined, { ocid: tenancy.id, name: rootCompartmentName }));
+                    choices.unshift(new dialogs.QuickPickObject(rootCompartmentName, `Root of the${tenancy.name ? ' ' + tenancy.name : ''} tenancy`, undefined, { ocid: tenancy.id, name: rootCompartmentName }));
                     resolve(choices);
                 }
             }).catch(err => {
@@ -101,17 +100,17 @@ export async function selectCompartment(authenticationDetailsProvider: common.Co
 
 export async function selectDevOpsProject(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartment: { ocid: string; name?: string }, actionName?: string): Promise<{ ocid: string; name: string } | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
-    const choices: QuickPickObject[] | undefined = await vscode.window.withProgress({
+    const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: 'Reading available devops projects...',
         cancellable: false
     }, (_progress, _token) => {
         return new Promise(async resolve => {
             ociUtils.listDevOpsProjects(authenticationDetailsProvider, compartment.ocid).then(projects => {
-                const choices: QuickPickObject[] = [];
+                const choices: dialogs.QuickPickObject[] = [];
                 for (const project of projects) {
                     const description = project.description ? project.description : 'DevOps Project';
-                    const choice = new QuickPickObject(project.name, description, undefined, { ocid: project.id, name: project.name });
+                    const choice = new dialogs.QuickPickObject(project.name, description, undefined, { ocid: project.id, name: project.name });
                     choices.push(choice);
                 }
                 resolve(choices);
@@ -147,18 +146,18 @@ export async function selectDevOpsProjectFromList(authenticationDetailsProvider:
     if (!projects.length) {
         return null;
     }
-    const choices: QuickPickObject[] = await vscode.window.withProgress({
+    const choices: dialogs.QuickPickObject[] = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: 'Processing devops projects...',
         cancellable: false
     }, (_progress, _token) => {
         return new Promise(async resolve => {
-            const choices: QuickPickObject[] = [];
+            const choices: dialogs.QuickPickObject[] = [];
             for (const projectOCID of projects) {
                 try {
                     const project = await ociUtils.getDevopsProject(authenticationDetailsProvider, projectOCID);
                     const description = project.description ? project.description : 'DevOps Project';
-                    const choice = new QuickPickObject(project.name, description, undefined, { ocid: project.id, name: project.name, compartment: project.compartmentId });
+                    const choice = new dialogs.QuickPickObject(project.name, description, undefined, { ocid: project.id, name: project.name, compartment: project.compartmentId });
                     choices.push(choice);
                 } catch (err) {
                     logUtils.logError(dialogs.getErrorMessage('Failed to process devops project', err));
@@ -186,7 +185,7 @@ export async function selectDevOpsProjectFromList(authenticationDetailsProvider:
 
 export async function selectCodeRepositories(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, project: { ocid: string; name?: string }, autoselect: boolean, actionName?: string, ignore?: string[]): Promise<{ ocid: string; name: string; httpUrl: string | undefined; sshUrl: string | undefined }[] | undefined> {
     // TODO: rewrite to multistep or anything else displaying progress in QuickPick area
-    const choices: QuickPickObject[] | undefined = await vscode.window.withProgress({
+    const choices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: 'Reading available code repositories...',
         cancellable: false
@@ -196,14 +195,14 @@ export async function selectCodeRepositories(authenticationDetailsProvider: comm
                 if (!repositories) {
                     resolve(undefined);
                 } else {
-                    const choices: QuickPickObject[] = [];
+                    const choices: dialogs.QuickPickObject[] = [];
                     let idx = 0;
                     for (const repository of repositories) {
                         if (!ignore || !ignore.includes(repository.id)) {
                             if (repository.freeformTags?.devops_tooling_deployIncomplete !== 'true') {
                                 const name = repository.name ? repository.name : `CodeRepository${idx++}`;
                                 const description = repository.description ? repository.description : 'Code Repository';
-                                const choice = new QuickPickObject(name, description, undefined, { ocid: repository.id, name: name, httpUrl: repository.httpUrl, sshUrl: repository.sshUrl });
+                                const choice = new dialogs.QuickPickObject(name, description, undefined, { ocid: repository.id, name: name, httpUrl: repository.httpUrl, sshUrl: repository.sshUrl });
                                 choices.push(choice);
                             }
                         }

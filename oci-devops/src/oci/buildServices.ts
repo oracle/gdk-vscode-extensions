@@ -8,10 +8,10 @@
 import * as vscode from 'vscode';
 import * as devops from 'oci-devops';
 import * as nodes from '../nodes';
-import * as dialogs from '../dialogs';
+import { isRunBuildPipelineCustomShapeConfirmedPermanently, confirmRunBuildPipelineCustomShape } from '../dialogs';
+import * as dialogs from '../../../common/lib/dialogs';
 import * as gitUtils from '../gitUtils';
 import * as graalvmUtils from '../graalvmUtils';
-import { QuickPickObject, sortQuickPickObjectsByName } from '../../../common/lib/dialogs';
 import * as servicesView from '../servicesView';
 import * as logUtils from '../../../common/lib/logUtils';
 import * as persistenceUtils from '../persistenceUtils';
@@ -213,11 +213,11 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
             }
         }
     }
-    const existingContentChoices: QuickPickObject[] = [];
+    const existingContentChoices: dialogs.QuickPickObject[] = [];
     for (let i = 0; i < pipelines.length; i++) {
-        existingContentChoices.push(new QuickPickObject(`$(${ICON}) ${pipelines[i].displayName}`, undefined, descriptions[i], pipelines[i]));
+        existingContentChoices.push(new dialogs.QuickPickObject(`$(${ICON}) ${pipelines[i].displayName}`, undefined, descriptions[i], pipelines[i]));
     }
-    sortQuickPickObjectsByName(existingContentChoices);
+    dialogs.sortQuickPickObjectsByName(existingContentChoices);
     let existingContentMultiSelect;
     if (existingContentChoices.length > 1) {
         const multiSelectExisting = async (): Promise<BuildPipeline[] | undefined> => {
@@ -236,12 +236,12 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
                 return undefined;
             }
         };
-        existingContentMultiSelect = new QuickPickObject('$(arrow-small-right) Add multiple existing pipelines...', undefined, undefined, multiSelectExisting);
+        existingContentMultiSelect = new dialogs.QuickPickObject('$(arrow-small-right) Add multiple existing pipelines...', undefined, undefined, multiSelectExisting);
     }
     // TODO: provide a possibility to create a new pipeline
     // TODO: display pipelines for the repository and for the project
     // TODO: provide a possibility to select pipelines from different projects / compartments
-    const choices: QuickPickObject[] = [];
+    const choices: dialogs.QuickPickObject[] = [];
     if (existingContentChoices.length) {
         choices.push(...existingContentChoices);
         if (existingContentMultiSelect) {
@@ -286,9 +286,9 @@ class Service extends ociService.Service {
         }
     }
 
-    getAddContentChoices(): QuickPickObject[] | undefined {
+    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
         return [
-            new QuickPickObject(`$(${ICON}) Add Build Pipeline`, undefined, 'Add an existing build pipeline', () => this.addContent())
+            new dialogs.QuickPickObject(`$(${ICON}) Add Build Pipeline`, undefined, 'Add an existing build pipeline', () => this.addContent())
         ];
     }
 
@@ -438,8 +438,8 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
                 }, (_progress, _token) => {
                     return new Promise(async resolve => {
                         try {
-                            if (!dialogs.isRunBuildPipelineCustomShapeConfirmedPermanently() && await this.usesCustomRunnerShape()) {
-                                const confirm = await dialogs.confirmRunBuildPipelineCustomShape();
+                            if (!isRunBuildPipelineCustomShapeConfirmedPermanently() && await this.usesCustomRunnerShape()) {
+                                const confirm = await confirmRunBuildPipelineCustomShape();
                                 if (!confirm) {
                                     resolve(false);
                                     return;

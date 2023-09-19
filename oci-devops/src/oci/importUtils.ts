@@ -11,7 +11,8 @@ import * as devops from 'oci-devops';
 import * as model from '../model';
 import * as gitUtils from '../gitUtils';
 import * as folderStorage from '../folderStorage';
-import * as dialogs from '../dialogs';
+import { selectDirectory } from '../dialogs';
+import * as dialogs from '../../../common/lib/dialogs';
 import * as logUtils from '../../../common/lib/logUtils';
 import * as devopsServices from '../devopsServices';
 import * as ociServices from './ociServices';
@@ -125,7 +126,7 @@ export async function importFolders(getFromExisting: boolean): Promise<model.Imp
             }
         }
     }
-    const targetDirectory = await dialogs.selectDirectory(targetDirectories, actionName, 'Select Target Directory', 'Import Here');
+    const targetDirectory = await selectDirectory(targetDirectories, actionName, 'Select Target Directory', 'Import Here');
     if (!targetDirectory) {
         return undefined;
     }

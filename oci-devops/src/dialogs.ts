@@ -9,41 +9,9 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as devopsServices from './devopsServices';
 import * as model from './model';
-import * as logUtils from '../../common/lib/logUtils';
 import * as persistenceUtils from './persistenceUtils';
 import { CLOUD_SUPPORTS } from './extension';
 import { QuickPickObject } from '../../common/lib/dialogs';
-
-
-export async function openInBrowser(address: string): Promise<boolean> {
-	return vscode.env.openExternal(vscode.Uri.parse(address));
-}
-
-export function getErrorMessage(message: string | undefined, err?: any): string {
-	if (err) {   
-        if (err.message) {
-            message = message ? `${message}: ${err.message}` : err.message;
-        } else if (err.toString()) {
-            message = message ? `${message}: ${err.toString()}` : err.toString();
-        }
-    }
-	if (!message) {
-		message = 'Unknown error.';
-	} else if (!message.endsWith('.')) {
-        message = `${message}.`;
-    }
-    return message;
-}
-
-export function showErrorMessage(message: string | undefined, err?: any, ...items: string[]): Thenable<string | undefined> {
-    const msg = getErrorMessage(message, err);
-	logUtils.logError(msg);
-    return vscode.window.showErrorMessage(msg, ...items);
-}
-
-export function showError(err?: any, ...items: string[]): Thenable<string | undefined> {
-	return showErrorMessage(undefined, err, ...items);
-}
 
 export async function selectName(title: string, currentName: string | undefined, forbiddenNames?: string[]): Promise<string | undefined> {
 	if (!forbiddenNames) {

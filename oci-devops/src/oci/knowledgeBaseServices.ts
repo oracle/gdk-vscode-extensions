@@ -9,7 +9,8 @@ import * as vscode from 'vscode';
 import * as common from 'oci-common';
 import * as adm from 'oci-adm';
 import * as nodes from '../nodes';
-import * as dialogs from '../dialogs';
+import { selectFolder } from '../dialogs';
+import * as dialogs from '../../../common/lib/dialogs';
 import * as logUtils from '../../../common/lib/logUtils';
 import * as persistenceUtils from '../persistenceUtils';
 import * as ociUtils from './ociUtils';
@@ -22,7 +23,6 @@ import * as ociDialogs from './ociDialogs';
 import * as ociAuthentication from './ociAuthentication';
 import * as path from 'path';
 import * as ociFeatures from './ociFeatures';
-import { QuickPickObject, sortQuickPickObjectsByName } from '../../../common/lib/dialogs';
 
 
 export const DATA_NAME = 'knowledgeBases';
@@ -66,7 +66,7 @@ export function initialize(context: vscode.ExtensionContext) {
     }));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.projectAudit.execute_Global', () => {
         logUtils.logInfo(`[audit] Invoked Audit without folder context, selecting folder`);
-        dialogs.selectFolder(ACTION_NAME, 'Select folder for which to perform the audit', null).then(folder => {
+        selectFolder(ACTION_NAME, 'Select folder for which to perform the audit', null).then(folder => {
             if (folder) {
                 const uri = folder.folder.uri;
                 logUtils.logInfo(`[audit] Selected folder ${uri.fsPath}`);
@@ -355,9 +355,9 @@ async function selectAuditKnowledgeBase(oci: ociContext.Context): Promise<string
         if (existing.length === 1) {
             return existing[0].id;
         }
-        const choices: QuickPickObject[] = [];
+        const choices: dialogs.QuickPickObject[] = [];
         for (const knowledgeBase of existing) {
-            choices.push(new QuickPickObject(`$(${ICON}) ${knowledgeBase.displayName}`, undefined, undefined, knowledgeBase));
+            choices.push(new dialogs.QuickPickObject(`$(${ICON}) ${knowledgeBase.displayName}`, undefined, undefined, knowledgeBase));
         }
         // TODO: provide a possibility to create a new knowledge base
         // TODO: provide a possibility to select knowledge bases from different compartments
@@ -428,11 +428,11 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
             }
         }
     }
-    const existingContentChoices: QuickPickObject[] = [];
+    const existingContentChoices: dialogs.QuickPickObject[] = [];
     for (let i = 0; i < knowledgeBases.length; i++) {
-        existingContentChoices.push(new QuickPickObject(`$(${ICON}) ${knowledgeBases[i].displayName}`, undefined, descriptionExists ? descriptions[i] : undefined, knowledgeBases[i]));
+        existingContentChoices.push(new dialogs.QuickPickObject(`$(${ICON}) ${knowledgeBases[i].displayName}`, undefined, descriptionExists ? descriptions[i] : undefined, knowledgeBases[i]));
     }
-    sortQuickPickObjectsByName(existingContentChoices);
+    dialogs.sortQuickPickObjectsByName(existingContentChoices);
     let existingContentMultiSelect;
     if (existingContentChoices.length > 1) {
         const multiSelectExisting = async (): Promise<KnowledgeBase[] | undefined> => {
@@ -451,11 +451,11 @@ async function selectKnowledgeBases(oci: ociContext.Context, ignore?: KnowledgeB
                 return undefined;
             }
         };
-        existingContentMultiSelect = new QuickPickObject('$(arrow-small-right) Add multiple existing knowledge bases...', undefined, undefined, multiSelectExisting);
+        existingContentMultiSelect = new dialogs.QuickPickObject('$(arrow-small-right) Add multiple existing knowledge bases...', undefined, undefined, multiSelectExisting);
     }
     // TODO: provide a possibility to create a new knowledge base
     // TODO: provide a possibility to select knowledge bases from different compartments
-    const choices: QuickPickObject[] = [];
+    const choices: dialogs.QuickPickObject[] = [];
     if (existingContentChoices.length) {
         choices.push(...existingContentChoices);
         if (existingContentMultiSelect) {
@@ -503,9 +503,9 @@ class Service extends ociService.Service {
         }
     }
 
-    getAddContentChoices(): QuickPickObject[] | undefined {
+    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
         return ociFeatures.NON_PIPELINE_RESOURCES_ENABLED ? [
-            new QuickPickObject(`$(${ICON}) Add Knowledge Base`, undefined, 'Add an existing knowledge base', () => this.addContent())
+            new dialogs.QuickPickObject(`$(${ICON}) Add Knowledge Base`, undefined, 'Add an existing knowledge base', () => this.addContent())
         ] : undefined;
     }
 

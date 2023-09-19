@@ -11,7 +11,7 @@ import * as fs from 'fs';
 import * as identity from 'oci-identity';
 import * as devops from 'oci-devops';
 import * as devopsServices from '../devopsServices';
-import * as dialogs from '../dialogs';
+import * as dialogs from '../../../common/lib/dialogs';
 import * as model from '../model';
 import * as projectUtils from '../projectUtils';
 import * as logUtils from '../../../common/lib/logUtils';

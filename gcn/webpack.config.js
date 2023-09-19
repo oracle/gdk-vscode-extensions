@@ -20,7 +20,6 @@ const config = {
 
     entry: {
         extension: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
-        "gcn.ui.api": "./lib/gcn.ui.api.js"
     },
     output: { // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
         path: path.resolve(__dirname, 'dist'),
@@ -71,7 +70,6 @@ const devConf = {
         filename: '[name].js',
         libraryTarget: "commonjs2",
         devtoolModuleFilenameTemplate: "../[resource-path]",
-        clean: true,
     },
     devtool: 'source-map',
     externals: {

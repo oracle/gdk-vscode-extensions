@@ -7,17 +7,16 @@
 
 import * as vscode from 'vscode';
 import * as common from 'oci-common';
-import * as dialogs from '../dialogs';
+import * as dialogs from '../../../common/lib/dialogs';
 import * as ociUtils from './ociUtils';
 import * as ociDialogs from './ociDialogs';
 import * as ociFeatures from './ociFeatures';
-import { QuickPickObject } from '../../../common/lib/dialogs';
 
 
 const ACTION_NAME = 'Select OKE Cluster';
 
 export async function selectOkeCluster(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, region: string, autoSelect: boolean = false, compartmentName: string | undefined = undefined, allowSkip: boolean = false): Promise<{id: string; compartmentId: string; vcnID?: string} | null | undefined> {
-    const existingContentChoices: QuickPickObject[] | undefined = await vscode.window.withProgress({
+    const existingContentChoices: dialogs.QuickPickObject[] | undefined = await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: 'Reading available OKE clusters...',
         cancellable: false
@@ -31,11 +30,11 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
                 }
             }
             ociUtils.listClusters(authenticationDetailsProvider, compartmentID).then(clusters => {
-                const choices: QuickPickObject[] = [];
+                const choices: dialogs.QuickPickObject[] = [];
                 for (const cluster of clusters) {
                     if (cluster.name && cluster.id  && cluster.compartmentId) {
                         const description = `Kubernetes version: ${cluster.kubernetesVersion ? cluster.kubernetesVersion : 'unknown'}`;
-                        choices.push(new QuickPickObject(`$(globe) ${cluster.name}`, undefined, description, { id: cluster.id, compartmentId: cluster.compartmentId, vcnID: cluster.vcnId }));
+                        choices.push(new dialogs.QuickPickObject(`$(globe) ${cluster.name}`, undefined, description, { id: cluster.id, compartmentId: cluster.compartmentId, vcnID: cluster.vcnId }));
                     }
                 }
                 resolve(choices);
@@ -70,7 +69,7 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
         // TODO: display notification to wait for a while?
         return undefined;
     };
-    const newContentChoice: QuickPickObject = new QuickPickObject(`$(add) New OKE Cluster`, undefined, 'Create new OKE cluster in this compartment', newContent);
+    const newContentChoice: dialogs.QuickPickObject = new dialogs.QuickPickObject(`$(add) New OKE Cluster`, undefined, 'Create new OKE cluster in this compartment', newContent);
     
     const switchCompartment = async (): Promise<{id: string; compartmentId: string; vcnID?: string} | null | undefined> => {
         const compartment = await ociDialogs.selectCompartment(authenticationDetailsProvider, ACTION_NAME, [ compartmentID ]);
@@ -79,15 +78,15 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
         }
         return undefined;
     };
-    const switchCompartmentChoice: QuickPickObject = new QuickPickObject(`$(arrow-small-right) Change compartment...`, undefined, undefined, switchCompartment);
+    const switchCompartmentChoice: dialogs.QuickPickObject = new dialogs.QuickPickObject(`$(arrow-small-right) Change compartment...`, undefined, undefined, switchCompartment);
     
-    const choices: QuickPickObject[] = [];
+    const choices: dialogs.QuickPickObject[] = [];
     if (existingContentChoices?.length) {
-        choices.push(QuickPickObject.separator('Create New'));
+        choices.push(dialogs.QuickPickObject.separator('Create New'));
     }
     choices.push(newContentChoice);
     if (existingContentChoices?.length) {
-        choices.push(QuickPickObject.separator('Add Existing'));
+        choices.push(dialogs.QuickPickObject.separator('Add Existing'));
         choices.push(...existingContentChoices);
     }
     choices.push(switchCompartmentChoice);

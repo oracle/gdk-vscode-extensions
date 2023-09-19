@@ -9,7 +9,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as artifacts from 'oci-artifacts';
 import * as nodes from '../nodes';
-import * as dialogs from '../dialogs';
+import { showSaveFileDialog } from '../dialogs';
+import * as dialogs from '../../../common/lib/dialogs';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociService from './ociService';
@@ -17,7 +18,6 @@ import * as ociServices from './ociServices';
 import * as dataSupport from './dataSupport';
 import * as ociNodes from './ociNodes';
 import * as ociFeatures from './ociFeatures';
-import { QuickPickObject, sortQuickPickObjectsByName } from '../../../common/lib/dialogs';
 
 
 export const DATA_NAME = 'artifactRepositories';
@@ -117,11 +117,11 @@ async function selectArtifactRepositories(oci: ociContext.Context, ignore: Artif
             }
         }
     }
-    const existingContentChoices: QuickPickObject[] = [];
+    const existingContentChoices: dialogs.QuickPickObject[] = [];
     for (let i = 0; i < artifactRepositories.length; i++) {
-        existingContentChoices.push(new QuickPickObject(`$(${ICON}) ${artifactRepositories[i].displayName}`, undefined, descriptions[i], artifactRepositories[i]));
+        existingContentChoices.push(new dialogs.QuickPickObject(`$(${ICON}) ${artifactRepositories[i].displayName}`, undefined, descriptions[i], artifactRepositories[i]));
     }
-    sortQuickPickObjectsByName(existingContentChoices);
+    dialogs.sortQuickPickObjectsByName(existingContentChoices);
     let existingContentMultiSelect;
     if (existingContentChoices.length > 1) {
         const multiSelectExisting = async (): Promise<ArtifactRepository[] | undefined> => {
@@ -140,11 +140,11 @@ async function selectArtifactRepositories(oci: ociContext.Context, ignore: Artif
                 return undefined;
             }
         };
-        existingContentMultiSelect = new QuickPickObject('$(arrow-small-right) Add multiple existing artifact repositories...', undefined, undefined, multiSelectExisting);
+        existingContentMultiSelect = new dialogs.QuickPickObject('$(arrow-small-right) Add multiple existing artifact repositories...', undefined, undefined, multiSelectExisting);
     }
     // TODO: provide a possibility to create a new artifact repository
     // TODO: provide a possibility to select artifact repositories from different compartments
-    const choices: QuickPickObject[] = [];
+    const choices: dialogs.QuickPickObject[] = [];
     if (existingContentChoices.length) {
         choices.push(...existingContentChoices);
         if (existingContentMultiSelect) {
@@ -189,9 +189,9 @@ export class Service extends ociService.Service {
         }
     }
 
-    getAddContentChoices(): QuickPickObject[] | undefined {
+    getAddContentChoices(): dialogs.QuickPickObject[] | undefined {
         return ociFeatures.NON_PIPELINE_RESOURCES_ENABLED ? [
-            new QuickPickObject(`$(${ICON}) Add Artifact Repository`, undefined, 'Add an existing artifact repository', () => this.addContent())
+            new dialogs.QuickPickObject(`$(${ICON}) Add Artifact Repository`, undefined, 'Add an existing artifact repository', () => this.addContent())
         ] : undefined;
     }
 
@@ -355,7 +355,7 @@ export function downloadGenericArtifactContent(oci: ociContext.Context, artifact
         if (result instanceof Error) {
             dialogs.showError(result);
         } else {
-            dialogs.showSaveFileDialog('Save Artifact As', fileName, PERSISTENT_TARGET_KEY).then(fileUri => {
+            showSaveFileDialog('Save Artifact As', fileName, PERSISTENT_TARGET_KEY).then(fileUri => {
                 if (fileUri) {
                     vscode.window.withProgress({
                         location: vscode.ProgressLocation.Notification,

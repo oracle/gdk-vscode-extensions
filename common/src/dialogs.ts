@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as logUtils from './logUtils';
 
 const MICRONAUT_DO_NOT_SHOW_RECOMMENDATION = 'micronaut.doNotShowRecommendation';
 
@@ -22,6 +23,36 @@ export async function checkGCNExtensions(context: vscode.ExtensionContext) {
 			context.globalState.update(MICRONAUT_DO_NOT_SHOW_RECOMMENDATION, true);
 		}
 	}
+}
+
+export async function openInBrowser(address: string): Promise<boolean> {
+	return vscode.env.openExternal(vscode.Uri.parse(address));
+}
+
+export function getErrorMessage(message: string | undefined, err?: any): string {
+	if (err) {
+        if (err.message) {
+            message = message ? `${message}: ${err.message}` : err.message;
+        } else if (err.toString()) {
+            message = message ? `${message}: ${err.toString()}` : err.toString();
+        }
+    }
+	if (!message) {
+		message = 'Unknown error.';
+	} else if (!message.endsWith('.')) {
+        message = `${message}.`;
+    }
+    return message;
+}
+
+export function showErrorMessage(message: string | undefined, err?: any, ...items: string[]): Thenable<string | undefined> {
+    const msg = getErrorMessage(message, err);
+	logUtils.logError(msg);
+    return vscode.window.showErrorMessage(msg, ...items);
+}
+
+export function showError(err?: any, ...items: string[]): Thenable<string | undefined> {
+	return showErrorMessage(undefined, err, ...items);
 }
 
 export function simpleProgress<T>(message: string, task: () => Thenable<T>): Thenable<T> {
