@@ -49,9 +49,11 @@ export function getJavaHome(): string {
 		return javaHome;
 	}
 	const javaRuntimes = vscode.workspace.getConfiguration('java').get('configuration.runtimes') as any[];
-	for (const runtime of javaRuntimes) {
-		if (runtime && typeof runtime === 'object' && runtime.path && runtime.default) {
-			return runtime.path;
+	if (javaRuntimes) {
+		for (const runtime of javaRuntimes) {
+			if (runtime && typeof runtime === 'object' && runtime.path && runtime.default) {
+				return runtime.path;
+			}
 		}
 	}
 	javaHome = vscode.workspace.getConfiguration('java').get('home') as string;
