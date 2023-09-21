@@ -27,6 +27,17 @@ To install the extension into Visual Studio Code, take the following step:
 ```bash
 code --install-extension gcn/gcn-*.vsix
 ```
+## Contributing
+
+This project welcomes contributions from the community. Before submitting a pull request, please [review our contribution guide](./CONTRIBUTING.md)
+
+## Security
+
+Please consult the [security guide](./SECURITY.md) for our responsible security vulnerability disclosure process
+
 ## License
 
-Graal Cloud Native VS Code Extension are licensed under [The Universal Permissive License (UPL), Version 1.0](LICENSE)
+Copyright (c) 2023 Oracle and/or its affiliates.
+
+Released under the Universal Permissive License v1.0 as shown at
+<https://oss.oracle.com/licenses/upl/>.
