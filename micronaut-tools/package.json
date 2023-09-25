@@ -387,7 +387,7 @@
 	"config": {
 		"winBuildPath": "..\\node_modules\\.bin\\vsce",
 		"unixBuildPath": "../node_modules/.bin/vsce",
-		"buildCmd": "package --allow-star-activation --allow-missing-repository --no-update-package-json"
+		"buildCmd": "package --allow-star-activation --no-update-package-json"
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run build-server && webpack --mode production",
