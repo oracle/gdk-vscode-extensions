@@ -10,9 +10,14 @@
 		"name": "Oracle Labs"
 	},
 	"icon": "images/oracle-logo.png",
-	"bugs": {
-		"url": "https://github.com/graalvm/vscode-extensions/issues"
-	},
+    "homepage": "https://github.com/oracle/gcn-vscode-extensions/blob/main/oci-devops/README.md",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/oracle/gcn-vscode-extensions"
+    },
+    "bugs": {
+        "url": "https://github.com/oracle/gcn-vscode-extensions/issues"
+    },
 	"engines": {
 		"vscode": "^1.76.0"
 	},
@@ -892,7 +897,7 @@
 		}
 	},
 	"vsce": {
-		"baseImagesUrl": "https://github.com/graalvm/vscode-extensions/raw/master/gcn"
+		"baseImagesUrl": "https://github.com/oracle/gcn-vscode-extensions/raw/main/oci-devops"
 	},
 	"config": {
 		"winBuildPath": "..\\node_modules\\.bin\\vsce",

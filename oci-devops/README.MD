@@ -160,8 +160,8 @@ A detailed documentation on the OCI DevOps Tools extension is available [here](h
 
 ## Provide Feedback or Seek Help
 
-* [Request a feature](https://github.com/graalvm/vscode-extensions/issues/new?labels=enhancement)
-* [File a bug](https://github.com/graalvm/vscode-extensions/issues/new?labels=bug)
+* [Request a feature](https://github.com/oracle/gcn-vscode-extensions/issues/new?labels=enhancement)
+* [File a bug](https://github.com/oracle/gcn-vscode-extensions/issues/new?labels=bug)
 
 ## Contributing
 
