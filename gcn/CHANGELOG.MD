@@ -1,5 +1,8 @@
 # Change Log
 
+## Version 0.9.5
+* Open sourcing changes
+
 ## Version 0.9.4
 * Extension display name changed to 'Graal Cloud Native Launcher'
 

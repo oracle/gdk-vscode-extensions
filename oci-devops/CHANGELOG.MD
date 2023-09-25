@@ -1,5 +1,8 @@
 # Change Log
 
+## Version 0.9.5
+* Open sourcing changes
+
 ## Version 0.9.4
 * Fix OKE subsequent deployments from OCI DevOps pipeline failed
 * Fix space in path to handle oci\config and ssh config on Windows

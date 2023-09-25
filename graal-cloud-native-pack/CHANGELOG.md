@@ -1,5 +1,8 @@
 # Change Log
 
+## Version 0.0.5
+* Open sourcing changes
+
 ## Version 0.0.4
 * Database Drivers extension removed
 
