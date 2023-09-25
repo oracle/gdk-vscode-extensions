@@ -1,5 +1,8 @@
 # Change Log
 
+# Version 0.6.1
+* Open sourcing changes
+
 # Version 0.5.20
 * 3rd party libraries updated
 

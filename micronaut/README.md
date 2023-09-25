@@ -63,8 +63,8 @@ The following command is available for Micronaut project creation:
 
 If you have suggestions for new features, or if you have found a bug or issue, we would love to hear from you. Use the links below:
 
-* [Request a feature](https://github.com/graalvm/vscode-extensions/issues/new?labels=enhancement)
-* [File a bug](https://github.com/graalvm/vscode-extensions/issues/new?labels=bug)
+* [Request a feature](https://github.com/oracle/gcn-vscode-extensions/issues/new?labels=enhancement)
+* [File a bug](https://github.com/oracle/gcn-vscode-extensions/issues/new?labels=bug)
 
 ## Contributing
 

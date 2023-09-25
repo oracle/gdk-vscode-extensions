@@ -35,8 +35,8 @@ The extension pack also bundles support for using Oracle Cloud Infrastructure's 
 
 ### Feedback
 
-* [Request a feature](https://github.com/graalvm/vscode-extensions/issues/new?labels=enhancement)
-* [File a bug](https://github.com/graalvm/vscode-extensions/issues/new?labels=bug)
+* [Request a feature](https://github.com/oracle/gcn-vscode-extensions/issues/new?labels=enhancement)
+* [File a bug](https://github.com/oracle/gcn-vscode-extensions/issues/new?labels=bug)
 
 ### Privacy Policy
 

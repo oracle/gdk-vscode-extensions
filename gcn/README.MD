@@ -39,8 +39,8 @@ Graal Cloud Native extension is part of the [Graal Cloud Native Extension Pack](
 
 ## <a name='provide-feedback-or-seek-help'></a>Provide Feedback or Seek Help
 
-* [Request a feature](https://github.com/graalvm/vscode-extensions/issues/new?labels=enhancement)
-* [File a bug](https://github.com/graalvm/vscode-extensions/issues/new?labels=bug)
+* [Request a feature](https://github.com/oracle/gcn-vscode-extensions/issues/new?labels=enhancement)
+* [File a bug](https://github.com/oracle/gcn-vscode-extensions/issues/new?labels=bug)
 
 ### <a name='privacy-policy'></a>Privacy Policy
 

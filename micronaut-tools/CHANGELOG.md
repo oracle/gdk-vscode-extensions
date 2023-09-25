@@ -1,5 +1,10 @@
 # Change Log
 
+# Version 0.6.1
+* Fix in Java .properties files handling for Micronaut/GCN
+* Fix for command palette commands not displayed
+* Open sourcing changes
+
 # Version 0.6.0
 * Java application are launched or debugged with the help of the build system: build system plugins can setup the environment. Maven and Gradle are supported.
 * Support for "Continuous" run mode for Micronaut applications
