@@ -37,6 +37,12 @@
 	],
 	"main": "./dist/extension.js",
 	"contributes": {
+		"netbeans.documentSelectors": [
+			{
+				"language": "java-properties",
+				"pattern": "**/{application,bootstrap}*.properties"
+			}
+		],
 		"javaExtensions": [
 			"./server/com.oracle.jdtls.ext.core-0.1.0.jar"
 		],
