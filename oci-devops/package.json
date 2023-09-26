@@ -402,7 +402,7 @@
 			"commandPalette": [
 				{
 					"command": "oci.devops.undeployFromCloud",
-					"when": "oci.devops.serviceFoldersCount > 0"
+					"when": "oci.devops.undeployFromCloudEnabled && oci.devops.serviceFoldersCount > 0"
 				},
 				{
 					"command": "oci.devops.resumeDeployToCloud",
