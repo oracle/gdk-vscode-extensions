@@ -11,6 +11,7 @@ import * as model from './model';
 import * as nodes from './nodes';
 import * as dialogs from './dialogs';
 import * as importExportUtils from './importExportUtils';
+import * as persistenceUtils from './persistenceUtils';
 import { DeployOptions } from './oci/deployUtils';
 
 
@@ -88,6 +89,16 @@ export function initialize(context: vscode.ExtensionContext) {
         if (params[0]?.showReport) {
             (params[0] as nodes.ShowReportNode).showReport();
         }
+	}));
+
+    // Control enabling/disabling Delete Folder(s) from OCI DevOps Project action
+    async function updateUndeployEnabled() {
+        const enabled = persistenceUtils.getWorkspaceConfiguration().get<boolean>('undeployFromCloudEnabled') === true;
+        await vscode.commands.executeCommand('setContext', 'oci.devops.undeployFromCloudEnabled', enabled);
+    }
+    updateUndeployEnabled();
+    context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(() => {
+        updateUndeployEnabled();
 	}));
 
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.nodeProvider', () => {
