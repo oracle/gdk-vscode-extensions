@@ -42,6 +42,12 @@ const config = {
             'isomorphic-fetch': {
                 mainFields: ['main', 'module']
             }
+        },
+        fallback: {
+            "fs": false,
+            "os": false,
+            "path": false,
+            "child_process": false
         }
     },
     module: {
@@ -89,6 +95,12 @@ const devConf = {
         },
         symlinks: false,
         cacheWithContext: false,
+        fallback: {
+            "fs": false,
+            "os": false,
+            "path": false,
+            "child_process": false
+        }
     },
     module: {
         rules: [{

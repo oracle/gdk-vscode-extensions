@@ -12,10 +12,9 @@ import * as http from 'http';
 import * as https from 'https';
 import * as path from 'path';
 import * as decompress from 'decompress';
-import * as jdkUtils from 'jdk-utils';
 import { getMicronautHome, getMicronautLaunchURL } from './utils';
-import { getJavaHome, getJavaVersion } from "../../common/lib/utils";
-import { checkGCNExtensions, simpleProgress, MultiStepInput } from "../../common/lib/dialogs";
+import { getJavaHome, getJavaVMs } from "../../common/lib/utils";
+import { simpleProgress, MultiStepInput, handleNewGCNProject } from "../../common/lib/dialogs";
 
 const HTTP_PROTOCOL: string = 'http://';
 const HTTPS_PROTOCOL: string = 'https://';
@@ -26,9 +25,6 @@ const SELECT_OPTIONS: string = '/select-options';
 const FEATURES: string = '/features';
 const VERSIONS: string = '/versions';
 const CREATE: string = '/create';
-const OPEN_IN_NEW_WINDOW = 'Open in New Window';
-const OPEN_IN_CURRENT_WINDOW: string = 'Open in Current Window';
-const ADD_TO_CURRENT_WORKSPACE = 'Add to Current Workspace';
 const LAST_PROJECT_PARENTDIR: string = 'lastCreateProjectParentDirs';
 
 let cliMNVersion: {label: string; serviceUrl: string; description: string} | undefined;
@@ -84,64 +80,13 @@ export async function createProject(context: vscode.ExtensionContext) {
                 }
             }
             const uri = vscode.Uri.file(options.target);
-            if (vscode.workspace.workspaceFolders) {
-                const value = await vscode.window.showInformationMessage('New Micronaut project created', OPEN_IN_NEW_WINDOW, ADD_TO_CURRENT_WORKSPACE);
-                if (value === OPEN_IN_NEW_WINDOW) {
-                    await vscode.commands.executeCommand('vscode.openFolder', uri, true);
-                } else if (value === ADD_TO_CURRENT_WORKSPACE) {
-                    vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, undefined, { uri });
-                    checkGCNExtensions(context);
-                }
-            } else if (vscode.window.activeTextEditor) {
-                const value = await vscode.window.showInformationMessage('New Micronaut project created', OPEN_IN_NEW_WINDOW, OPEN_IN_CURRENT_WINDOW);
-                if (value) {
-                    await vscode.commands.executeCommand('vscode.openFolder', uri, OPEN_IN_NEW_WINDOW === value);
-                }
-            } else {
-                await vscode.commands.executeCommand('vscode.openFolder', uri, false);
-            }
+            handleNewGCNProject(context, uri, "Micronaut");
         }
     }
 }
 
 async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{url: string; args?: string[]; name: string; target: string; buildTool: string; java?: string} | undefined> {
-
-    const commands: string[] = await vscode.commands.getCommands();
-    const javaVMs: {name: string; path: string; active: boolean}[] = commands.includes('extension.graalvm.findGraalVMs') ? await simpleProgress("Obtaining GraalVMs...", () => vscode.commands.executeCommand('extension.graalvm.findGraalVMs') || []) : [];
-    const javaRuntimes = await jdkUtils.findRuntimes({checkJavac: true});
-    if (javaRuntimes.length) {
-        for (const runtime of javaRuntimes) {
-            if (runtime.hasJavac && !javaVMs.find(vm => path.normalize(vm.path) === path.normalize(runtime.homedir))) {
-                const version = await getJavaVersion(runtime.homedir);
-                if (version) {
-                    javaVMs.push({name: version, path: runtime.homedir, active: false});
-                }
-            }
-        }
-    }
-	const configJavaRuntimes = vscode.workspace.getConfiguration('java').get('configuration.runtimes', []) as any[];
-    if (configJavaRuntimes.length) {
-        for (const runtime of configJavaRuntimes) {
-            if (runtime && typeof runtime === 'object' && runtime.path && !javaVMs.find(vm => path.normalize(vm.path) === path.normalize(runtime.path))) {
-                const version = await getJavaVersion(runtime.path);
-                if (version) {
-                    javaVMs.push({name: version, path: runtime.path, active: runtime.default});
-                }
-            }
-        }
-    }
-    javaVMs.sort((a, b) => {
-        const nameA = a.name.toUpperCase();
-        const nameB = b.name.toUpperCase();
-        if (nameA < nameB) {
-          return -1;
-        }
-        if (nameA > nameB) {
-          return 1;
-        }
-        return 0;
-    });
-
+    const javaVMs = await getJavaVMs();
     interface State {
 		micronautVersion: {label: string; serviceUrl: string};
 		applicationType: {label: string; name: string};

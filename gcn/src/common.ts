@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import * as dialogs from '../../common/lib/dialogs';
 import { logInfo } from '../../common/lib/logUtils';
+import { JavaVMType } from '../../common/lib/types';
 
 require('../lib/gcn.ui.api');
 
@@ -74,15 +75,6 @@ export interface CreateOptions {
     target?: string;
     exampleCode? : boolean;
 }
-
-/**
- * Describes the shape of objects that hold information about javaVMs
- */
-export type JavaVMType = {
-    name: string; 
-    path: string; 
-    active: boolean;
-};
 
 /**
  * External variable filled by resolve()

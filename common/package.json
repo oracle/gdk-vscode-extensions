@@ -18,7 +18,8 @@
   "browser": {
     "child_process": false,
     "fs": false,
-    "path": false
+    "path": false,
+    "os": false
   },
   "devDependencies": {
     "@types/node": "^14.16.0",
@@ -30,6 +31,8 @@
   "dependencies": {
     "child_process": "^1.0.2",
     "fs": "^0.0.1-security",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "os":"^0.1.2",
+    "jdk-utils": "^0.4.4"
   }
 }

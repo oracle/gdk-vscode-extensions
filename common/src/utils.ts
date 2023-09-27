@@ -9,6 +9,8 @@ import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as jdkUtils from 'jdk-utils';
+import { JavaVMType } from './types';
 
 export function findExecutable(program: string, home: string): string | undefined {
     if (home) {
@@ -104,4 +106,44 @@ export function getJavaHome(): string {
 
 export async function micronautProjectExists(): Promise<boolean> {
 	return (await vscode.workspace.findFiles('**/micronaut-cli.yml', '**/node_modules/**')).length > 0;
+}
+
+export async function getJavaVMs(): Promise<JavaVMType[]> {
+    const commands: string[] = await vscode.commands.getCommands();
+    const javaVMs: JavaVMType[] = commands.includes('extension.graalvm.findGraalVMs') ? await vscode.commands.executeCommand('extension.graalvm.findGraalVMs') || [] : [];
+    const javaRuntimes = await jdkUtils.findRuntimes({checkJavac: true});
+    if (javaRuntimes.length) {
+        for (const runtime of javaRuntimes) {
+            if (runtime.hasJavac && !javaVMs.find(vm => path.normalize(vm.path) === path.normalize(runtime.homedir))) {
+                const version = await getJavaVersion(runtime.homedir);
+                if (version) {
+                    javaVMs.push({name: version, path: runtime.homedir, active: false});
+                }
+            }
+        }
+    }
+	const configJavaRuntimes = vscode.workspace.getConfiguration('java').get('configuration.runtimes', []) as any[];
+    if (configJavaRuntimes.length) {
+        for (const runtime of configJavaRuntimes) {
+            if (runtime && typeof runtime === 'object' && runtime.path && !javaVMs.find(vm => path.normalize(vm.path) === path.normalize(runtime.path))) {
+                const version = await getJavaVersion(runtime.path);
+                if (version) {
+                    javaVMs.push({name: version, path: runtime.path, active: runtime.default});
+                }
+            }
+        }
+    }
+    javaVMs.sort((a, b) => {
+        const nameA = a.name.toUpperCase();
+        const nameB = b.name.toUpperCase();
+        if (nameA < nameB) {
+          return -1;
+        }
+        if (nameA > nameB) {
+          return 1;
+        }
+        return 0;
+    });
+
+    return javaVMs;
 }

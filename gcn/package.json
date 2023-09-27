@@ -70,9 +70,6 @@
 			"win32": "%npm_package_config_winBuildPath% %npm_package_config_buildCmd%"
 		}
 	},
-	"dependencies": {
-		"jdk-utils": "^0.4.4"
-	},
 	"devDependencies": {
 		"@types/glob": "^8.0.1",
 		"@types/mocha": "^10.0.1",

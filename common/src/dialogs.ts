@@ -8,9 +8,39 @@
 import * as vscode from 'vscode';
 import * as logUtils from './logUtils';
 
-const MICRONAUT_DO_NOT_SHOW_RECOMMENDATION = 'micronaut.doNotShowRecommendation';
+export type ProjectType = "GCN" | "Micronaut";
+
+/**
+ * Handles the creation of a new GCN project.
+ *
+ * @param {vscode.Uri} uri - The URI of the newly created project.
+ * @param {ProjectType} projectType - Project type name.
+ * @returns {Promise<void>}
+ */
+export async function handleNewGCNProject(context: vscode.ExtensionContext, uri:vscode.Uri, projectType: ProjectType) {
+	const OPEN_IN_NEW_WINDOW = 'Open in New Window';
+	const OPEN_IN_CURRENT_WINDOW = 'Open in Current Window';
+	const ADD_TO_CURRENT_WORKSPACE = 'Add to Current Workspace';
+    if (vscode.workspace.workspaceFolders) {
+        const value = await vscode.window.showInformationMessage(`New ${projectType} project created`, OPEN_IN_NEW_WINDOW, ADD_TO_CURRENT_WORKSPACE);
+        if (value === OPEN_IN_NEW_WINDOW) {
+            await vscode.commands.executeCommand('vscode.openFolder', uri, true);
+        } else if (value === ADD_TO_CURRENT_WORKSPACE) {
+            vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, undefined, { uri });
+            checkGCNExtensions(context);
+        }
+    } else if (vscode.window.activeTextEditor) {
+        const value = await vscode.window.showInformationMessage(`New ${projectType} project created`, OPEN_IN_NEW_WINDOW, OPEN_IN_CURRENT_WINDOW);
+        if (value) {
+            await vscode.commands.executeCommand('vscode.openFolder', uri, OPEN_IN_NEW_WINDOW === value);
+        }
+    } else {
+        await vscode.commands.executeCommand('vscode.openFolder', uri, false);
+    }
+}
 
 export async function checkGCNExtensions(context: vscode.ExtensionContext) {
+	const MICRONAUT_DO_NOT_SHOW_RECOMMENDATION = 'micronaut.doNotShowRecommendation';
 	if (!context.globalState.get(MICRONAUT_DO_NOT_SHOW_RECOMMENDATION)
         && !vscode.extensions.getExtension('oracle-labs-graalvm.micronaut')
         && !vscode.extensions.getExtension('oracle-labs-graalvm.graal-cloud-native-pack')) {

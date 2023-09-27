@@ -24,7 +24,13 @@ const config = {
         vscode: "commonjs2 vscode" // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
     },
     resolve: { // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
-        extensions: ['.ts', '.js']
+        extensions: ['.ts', '.js'],
+        fallback: {
+            "fs": false,
+            "os": false,
+            "path": false,
+            "child_process": false
+        }
     },
     module: {
         rules: [{
@@ -58,7 +64,13 @@ const devConf = {
     resolve: { // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
         extensions: ['.ts', '.js'],
         symlinks: false,
-        cacheWithContext: false
+        cacheWithContext: false,
+        fallback: {
+            "fs": false,
+            "os": false,
+            "path": false,
+            "child_process": false
+        }
     },
     module: {
         rules: [{

@@ -30,13 +30,16 @@ Whenever you encounter a need to use code from another extension, find duplicate
 - Make sure to move the code to proper package or create suitable package for the code.
 - [Build](#building) the module with new code, this will allow you to access new code from the Extensions.
 - [Redirect all imports and usages](#usage) to the modules package.
-- Dependencies can be added to this module in _package.json_ but some (Node) modules has to be removed from browsing:
-```json
-  "browser": {
-    "child_process": false,
+- Dependencies can be added to this module in _package.json_ but some (Node) modules need to have fallback resolved in _webpack.config.js_ of extension using the code:
+```js
+resolve: {
+  fallback: {
     "fs": false,
-    "path": false
+    "os": false,
+    "path": false,
+    "child_process": false
   }
+}
 ```
 - Please include [description of shared functionality](#packages) here in this README for easy lookup.
 
