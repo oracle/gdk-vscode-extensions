@@ -163,7 +163,7 @@ function reportAuditResults(result : any) {
     if (!result.vulnerableCount) {
         vscode.window.showInformationMessage(`Vulnerability audit for project ${result.projectName} is done.\nNo vulnerability was found.`);
         return;
-    } else if (result.vulnerableCount > 1) {
+    } else if (result.vulnerableCount === 1) {
         vscode.window.showWarningMessage(`Vulnerability audit for project ${result.projectName} is done.\nOne vulnerability was found.\nThe vulnerability is listed in Problems window.`);
     } else {
         vscode.window.showWarningMessage(`Vulnerability audit for project ${result.projectName} is done.\n${result.vulnerableCount} vulnerabilities were found.\nThe vulnerability is listed in Problems window.`);
