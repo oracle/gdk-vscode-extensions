@@ -1,5 +1,5 @@
 # Description
-This module is intended to unify usage of code across multiple Extensions to avoid duplicate code and problems like bug fixes applied on code only in some Extensions.
+This module is intended to unify usage of code across multiple Oracle Labs Extensions to avoid duplicate code and problems like bug fixes applied on code only in some Extensions.
 
 # Usage
 This module has to built first to be used see [Building](#building).
