@@ -1,0 +1,45 @@
+{
+    "structure": {
+        "contains": [
+            {
+                "path": "./buildSrc",
+                "type": "directory"
+            },
+            {
+                "path": "./settings.gradle",
+                "type": "file"
+            },
+            {
+                "path": "./oci",
+                "type": "directory"
+            },
+            {
+                "path": "./gradlew",
+                "type": "file"
+            },
+            {
+                "path": "./lib",
+                "type": "directory"
+            }
+        ],
+        "-contains": [
+            {
+                "path": "./aws"
+            },
+            {
+                "path": "./src"
+            },
+            {
+                "path": "./pom.xml"
+            }
+        ]
+    },
+    "contents": {
+        "contains": [
+            {
+                "path": "./oci/src/main/java/com/example/Application.java",
+                "match": "oraclecloud"
+            }
+        ]
+    }
+}
