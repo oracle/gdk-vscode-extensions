@@ -113,6 +113,10 @@ describe('Extension UI tests', function() {
     await new Promise( f => setTimeout(f, 1000));
     await input.confirm();
 
+    // pick project features
+    await new Promise( f => setTimeout(f, 1000));
+    await input.confirm();
+
     // select build tool
     let picks_build : string[] | undefined = await waitForQuickPick(input, 10);
     assert.ok(picks_build !== undefined, "Build tool quickpick failed to show");
