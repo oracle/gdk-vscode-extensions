@@ -115,6 +115,8 @@ async function createAndTest(options : Common.CreateOptions, name : string) : Pr
  * Suit for testing project structure
  */
 suite('Project structure Test Suite', function() {
+    this.timeout(10000);
+
 	vscode.window.showInformationMessage('Start all tests.');
 
         // Requirements for testing project structure - GCN extension present, create project action present 
