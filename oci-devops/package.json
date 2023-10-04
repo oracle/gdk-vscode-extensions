@@ -10,14 +10,14 @@
 		"name": "Oracle Labs"
 	},
 	"icon": "images/oracle-logo.png",
-    "homepage": "https://github.com/oracle/gcn-vscode-extensions/blob/main/oci-devops/README.md",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/oracle/gcn-vscode-extensions"
-    },
-    "bugs": {
-        "url": "https://github.com/oracle/gcn-vscode-extensions/issues"
-    },
+	"homepage": "https://github.com/oracle/gcn-vscode-extensions/blob/main/oci-devops/README.md",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/oracle/gcn-vscode-extensions"
+	},
+	"bugs": {
+		"url": "https://github.com/oracle/gcn-vscode-extensions/issues"
+	},
 	"engines": {
 		"vscode": "^1.76.0"
 	},
@@ -912,8 +912,8 @@
 		"watch-tests": "tsc --outDir out --watch",
 		"test-clean": "rm -r out",
 		"test-compile": "tsc -p . --outDir out",
-		"test": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/test/runTest.js",
-		"test-ui": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/test/runTest-ui.js",
+		"test": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./node_modules/gcn-extension-tests/bin/main.js --runTest",
+		"test-ui": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./node_modules/gcn-extension-tests/bin/main.js --runTest-ui",
 		"prebuild": "npm install",
 		"build": "cross-os build",
 		"lint": "eslint src --ext ts"
@@ -955,9 +955,11 @@
 		"encoding": "^0.1.13",
 		"eslint": "^8.35.0",
 		"eslint-webpack-plugin": "^4.0.0",
+		"gcn-extension-tests": "^1.2.0",
 		"glob": "^8.1.0",
 		"global-agent": "^3.0.0",
 		"mocha": "^10.1.0",
+		"node-abort-controller": "^3.1.1",
 		"ts-loader": "^9.4.2",
 		"typescript": "^4.9.5",
 		"vscode-extension-tester": "^5.2.1",

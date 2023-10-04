@@ -37,9 +37,9 @@ export async function runTest() {
 			'oracle-labs-graalvm.graalvm',
 		];
 
-		// check for GCN Path
-		if ( process.env["GCN_VSIX_PATH"]) {
-			extensionList.push(process.env["GCN_VSIX_PATH"] as string);
+		// download additional extensions
+		if ( process.env["MOCHA_EXTENSION_LIST"]) {
+			extensionList.concat( process.env["MOCHA_EXTENSION_LIST"].split(",") );
 		}
 
 		for (let extensionId of extensionList) {

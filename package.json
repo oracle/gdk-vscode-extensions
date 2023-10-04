@@ -13,6 +13,7 @@
 
 		"tests": "npm run tests:gcn",
 		"tests:gcn": "cd gcn; npm install; npm run compile; npm run test-compile; xvfb-run -a npm run test",
+		"tests:oci-devops": "cd oci-devops; npm install; npm run compile; npm run test-compile; xvfb-run -a npm run test",
 
 		"tests-ui": "npm run tests-ui:gcn",
 		"tests-ui:gcn": "cd gcn; npm install; npm run compile; npm run test-compile; xvfb-run -a npm run test-ui"
