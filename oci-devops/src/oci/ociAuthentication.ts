@@ -8,7 +8,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as common from 'oci-common';
-import * as dialogs from '../dialogs';
+import * as dialogs from '../../../common/lib/dialogs';
 import * as dataSupport from './dataSupport';
 import * as ociDialogs from './ociDialogs';
 

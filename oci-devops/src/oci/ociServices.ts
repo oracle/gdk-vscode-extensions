@@ -10,9 +10,10 @@ import * as common from 'oci-common';
 import * as devopsServices from '../devopsServices';
 import * as model from '../model';
 import * as nodes from '../nodes';
-import * as dialogs from '../dialogs';
+import { selectFolder } from '../dialogs';
+import * as dialogs from '../../../common/lib/dialogs';
 import * as servicesView from '../servicesView';
-import * as logUtils from '../logUtils';
+import * as logUtils from '../../../common/lib/logUtils';
 import * as ociContext from './ociContext';
 import * as dataSupport from './dataSupport';
 import * as ociNodes from './ociNodes';
@@ -55,7 +56,7 @@ export function initialize(context: vscode.ExtensionContext) {
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.openCodeRepositoryInConsole_Global', () => {
-        dialogs.selectFolder('Open Folder Code Repository', 'Select folder', true).then(folder => {
+        selectFolder('Open Folder Code Repository', 'Select folder', true).then(folder => {
             if (folder === null) {
                 vscode.window.showWarningMessage('No folder added to an OCI DevOps project.');
             } else if (folder) {
@@ -94,7 +95,7 @@ export function initialize(context: vscode.ExtensionContext) {
             const address = `https://cloud.oracle.com/devops-project/projects/${projects[0]}`;
             ociNodes.openInConsole(address);
         } else {
-            dialogs.selectFolder('Open DevOps Project', 'Select folder', true).then(folder => {
+            selectFolder('Open DevOps Project', 'Select folder', true).then(folder => {
                 if (folder === null) {
                     vscode.window.showWarningMessage('No folder added to an OCI DevOps project.');
                 } else if (folder) {

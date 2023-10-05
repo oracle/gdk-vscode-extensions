@@ -9,8 +9,8 @@ import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as dialogs from './dialogs';
-import * as logUtils from './logUtils';
+import * as dialogs from '../../common/lib/dialogs';
+import * as logUtils from '../../common/lib/logUtils';
 
 function getGitAPI() {
     return vscode.extensions.getExtension('vscode.git')?.exports.getAPI(1);

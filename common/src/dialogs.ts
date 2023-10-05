@@ -6,129 +6,83 @@
  */
 
 import * as vscode from 'vscode';
-import * as cp from 'child_process';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as logUtils from './logUtils';
 
-export async function micronautProjectExists(): Promise<boolean> {
-	return (await vscode.workspace.findFiles('**/micronaut-cli.yml', '**/node_modules/**')).length > 0;
-}
+export type ProjectType = "GCN" | "Micronaut";
 
-export function getMicronautHome(): string {
-	let micronautHome: string = vscode.workspace.getConfiguration('micronaut').get('home') as string;
-	if (micronautHome) {
-		return micronautHome;
-	}
-	micronautHome = process.env['MICRONAUT_HOME'] as string;
-	return micronautHome;
-}
-
-export function getMicronautLaunchURL(): string {
-	let micronautLaunchURL: string = vscode.workspace.getConfiguration('micronaut').get('launchUrl') as string;
-	if (!micronautLaunchURL) {
-		micronautLaunchURL = process.env['MICRONAUT_LAUNCH_URL'] as string;
-	}
-	if (micronautLaunchURL) {
-		if (!micronautLaunchURL.startsWith('https://') && !micronautLaunchURL.startsWith('http://')) {
-			micronautLaunchURL = 'https://' + micronautLaunchURL;
-		}
-		if (micronautLaunchURL.endsWith('/')) {
-			return micronautLaunchURL.slice(0, micronautLaunchURL.length - 1);
-		}
-	}
-	return micronautLaunchURL;
-}
-
-export function getJavaHome(): string {
-	let javaHome: string = vscode.workspace.getConfiguration('graalvm').get('home') as string;
-	if (javaHome) {
-		return javaHome;
-	}
-	javaHome = process.env['GRAALVM_HOME'] as string;
-	if (javaHome) {
-		return javaHome;
-	}
-	const javaRuntimes = vscode.workspace.getConfiguration('java').get('configuration.runtimes') as any[];
-	if (javaRuntimes) {
-		for (const runtime of javaRuntimes) {
-			if (runtime && typeof runtime === 'object' && runtime.path && runtime.default) {
-				return runtime.path;
-			}
-		}
-	}
-	javaHome = vscode.workspace.getConfiguration('java').get('home') as string;
-	if (javaHome) {
-		return javaHome;
-	}
-	javaHome = process.env['JAVA_HOME'] as string;
-	return javaHome;
-}
-
-export async function getJavaVersion(homeFolder: string): Promise<string | undefined> {
-    return new Promise<string | undefined>(resolve => {
-        if (homeFolder && fs.existsSync(homeFolder)) {
-            const executable: string | undefined = findExecutable('java', homeFolder);
-            if (executable) {
-                cp.execFile(executable, ['-version'], { encoding: 'utf8' }, (_error, _stdout, stderr) => {
-                    if (stderr) {
-                        let javaVersion: string | undefined;
-                        let graalVMInfo: string | undefined;
-                        let javaVMInfo: string | undefined;
-                        stderr.split('\n').forEach((line: string) => {
-							const javaInfo: string[] | null = line.match(/version\s+"(\S+)"/);
-							const gvmInfo = line.match(/(GraalVM.*)\s+\(/);
-							const jvmInfo = line.match(/^(.*)\s+Runtime Environment/);
-							if (javaInfo && javaInfo.length > 1) {
-								javaVersion = javaInfo[1];
-							}
-							if (gvmInfo && gvmInfo.length > 1) {
-								graalVMInfo = gvmInfo[1];
-							}
-							if (jvmInfo && jvmInfo.length > 1) {
-								javaVMInfo = jvmInfo[1];
-							}
-                        });
-                        if (javaVersion && (javaVMInfo || graalVMInfo)) {
-							let majorVersion = javaVersion;
-                            if (majorVersion.startsWith('1.')) {
-                                majorVersion = majorVersion.slice(2);
-                            }
-                            let i = majorVersion.indexOf('.');
-                            if (i > -1) {
-                                majorVersion = majorVersion.slice(0, i);
-                            }
-                            resolve(graalVMInfo ? `${graalVMInfo}, Java ${majorVersion}` : `${javaVMInfo} ${javaVersion}, Java ${majorVersion}`);
-                        } else {
-                            resolve(undefined);
-                        }
-                    } else {
-                        resolve(undefined);
-                    }
-                });
-            } else {
-                resolve(undefined);
-            }
-        } else {
-            resolve(undefined);
+/**
+ * Handles the creation of a new GCN project.
+ *
+ * @param {vscode.Uri} uri - The URI of the newly created project.
+ * @param {ProjectType} projectType - Project type name.
+ * @returns {Promise<void>}
+ */
+export async function handleNewGCNProject(context: vscode.ExtensionContext, uri:vscode.Uri, projectType: ProjectType) {
+	const OPEN_IN_NEW_WINDOW = 'Open in New Window';
+	const OPEN_IN_CURRENT_WINDOW = 'Open in Current Window';
+	const ADD_TO_CURRENT_WORKSPACE = 'Add to Current Workspace';
+    if (vscode.workspace.workspaceFolders) {
+        const value = await vscode.window.showInformationMessage(`New ${projectType} project created`, OPEN_IN_NEW_WINDOW, ADD_TO_CURRENT_WORKSPACE);
+        if (value === OPEN_IN_NEW_WINDOW) {
+            await vscode.commands.executeCommand('vscode.openFolder', uri, true);
+        } else if (value === ADD_TO_CURRENT_WORKSPACE) {
+            vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, undefined, { uri });
+            checkGCNExtensions(context);
         }
-    });
+    } else if (vscode.window.activeTextEditor) {
+        const value = await vscode.window.showInformationMessage(`New ${projectType} project created`, OPEN_IN_NEW_WINDOW, OPEN_IN_CURRENT_WINDOW);
+        if (value) {
+            await vscode.commands.executeCommand('vscode.openFolder', uri, OPEN_IN_NEW_WINDOW === value);
+        }
+    } else {
+        await vscode.commands.executeCommand('vscode.openFolder', uri, false);
+    }
 }
 
-export function findExecutable(program: string, home: string): string | undefined {
-    if (home) {
-        let executablePath = path.join(home, 'bin', program);
-        if (process.platform === 'win32') {
-            if (fs.existsSync(executablePath + '.cmd')) {
-                return executablePath + '.cmd';
-            }
-            if (fs.existsSync(executablePath + '.exe')) {
-                return executablePath + '.exe';
-            }
-        } else if (fs.existsSync(executablePath)) {
-            return executablePath;
+export async function checkGCNExtensions(context: vscode.ExtensionContext) {
+	const MICRONAUT_DO_NOT_SHOW_RECOMMENDATION = 'micronaut.doNotShowRecommendation';
+	if (!context.globalState.get(MICRONAUT_DO_NOT_SHOW_RECOMMENDATION)
+        && !vscode.extensions.getExtension('oracle-labs-graalvm.micronaut')
+        && !vscode.extensions.getExtension('oracle-labs-graalvm.graal-cloud-native-pack')) {
+		const INSTALL_OPTION = 'Install';
+		const DO_NOT_ASK_OPTION = 'Do not Ask Again';
+		const option = await vscode.window.showInformationMessage(`Do you want to install the 'Graal Cloud Native Extensions Pack' recommended for work with Micronaut / Graal Cloud Native projects?`, INSTALL_OPTION, DO_NOT_ASK_OPTION);
+		if (option === INSTALL_OPTION) {
+			await vscode.commands.executeCommand('workbench.extensions.installExtension', 'oracle-labs-graalvm.graal-cloud-native-pack');
+		} else if (option === DO_NOT_ASK_OPTION) {
+			context.globalState.update(MICRONAUT_DO_NOT_SHOW_RECOMMENDATION, true);
+		}
+	}
+}
+
+export async function openInBrowser(address: string): Promise<boolean> {
+	return vscode.env.openExternal(vscode.Uri.parse(address));
+}
+
+export function getErrorMessage(message: string | undefined, err?: any): string {
+	if (err) {
+        if (err.message) {
+            message = message ? `${message}: ${err.message}` : err.message;
+        } else if (err.toString()) {
+            message = message ? `${message}: ${err.toString()}` : err.toString();
         }
     }
-    return undefined;
+	if (!message) {
+		message = 'Unknown error.';
+	} else if (!message.endsWith('.')) {
+        message = `${message}.`;
+    }
+    return message;
+}
+
+export function showErrorMessage(message: string | undefined, err?: any, ...items: string[]): Thenable<string | undefined> {
+    const msg = getErrorMessage(message, err);
+	logUtils.logError(msg);
+    return vscode.window.showErrorMessage(msg, ...items);
+}
+
+export function showError(err?: any, ...items: string[]): Thenable<string | undefined> {
+	return showErrorMessage(undefined, err, ...items);
 }
 
 export function simpleProgress<T>(message: string, task: () => Thenable<T>): Thenable<T> {
@@ -141,15 +95,33 @@ export function simpleProgress<T>(message: string, task: () => Thenable<T>): The
 	});
 }
 
+export class QuickPickObject implements vscode.QuickPickItem {
+    constructor(
+        public readonly label: string,
+        public readonly description : string | undefined,
+        public readonly detail: string | undefined,
+        public readonly object?: any
+    ) {}
+	static separator(label: string): QuickPickObject {
+		const separator = new QuickPickObject(label, undefined, undefined);
+		(separator as vscode.QuickPickItem).kind = vscode.QuickPickItemKind.Separator;
+		return separator;
+	}
+}
+
+export function sortQuickPickObjectsByName(objects: QuickPickObject[]) {
+	objects.sort((o1, o2) => o1.label.localeCompare(o2.label));
+}
+
 class InputFlowAction {
 	static back = new InputFlowAction();
 	static cancel = new InputFlowAction();
 	static resume = new InputFlowAction();
 }
 
-type InputStep = (input: MultiStepInput) => Thenable<InputStep | void>;
+export type InputStep = (input: MultiStepInput) => Thenable<InputStep | void>;
 
-interface QuickPickParameters<T extends vscode.QuickPickItem> {
+export interface QuickPickParameters<T extends vscode.QuickPickItem> {
 	title: string;
 	step: number;
 	totalSteps: number;
@@ -161,7 +133,7 @@ interface QuickPickParameters<T extends vscode.QuickPickItem> {
 	shouldResume: () => Thenable<boolean>;
 }
 
-interface InputBoxParameters {
+export interface InputBoxParameters {
 	title: string;
 	step: number;
 	totalSteps: number;
@@ -182,9 +154,11 @@ export class MultiStepInput {
 	private current?: vscode.QuickInput;
 	private steps: InputStep[] = [];
 
-	private async stepThrough(start: InputStep) {
+	private async stepThrough(start: InputStep) : Promise<boolean> {
 		let step: InputStep | void = start;
+		let ok : boolean = false;
 		while (step) {
+			ok = false;
 			this.steps.push(step);
 			if (this.current) {
 				this.current.enabled = false;
@@ -192,6 +166,7 @@ export class MultiStepInput {
 			}
 			try {
 				step = await step(this);
+				ok = true;
 			} catch (err) {
 				if (err === InputFlowAction.back) {
 					this.steps.pop();
@@ -208,6 +183,7 @@ export class MultiStepInput {
 		if (this.current) {
 			this.current.dispose();
 		}
+		return ok;
 	}
 
 	async showQuickPick<T extends vscode.QuickPickItem, P extends QuickPickParameters<T>>({ title, step, totalSteps, items, activeItems, placeholder, canSelectMany, buttons, shouldResume }: P) {
@@ -222,8 +198,10 @@ export class MultiStepInput {
 				input.items = items;
 				if (canSelectMany) {
 					input.canSelectMany = canSelectMany;
-				}
-				if (activeItems) {
+					if (activeItems) {
+						input.selectedItems = Array.isArray(activeItems) ? activeItems : [activeItems];
+					}
+				} else if (activeItems) {
 					input.activeItems = Array.isArray(activeItems) ? activeItems : [activeItems];
 				}
 				input.buttons = [
@@ -240,7 +218,13 @@ export class MultiStepInput {
 						}
 					}),
 					input.onDidAccept(() => {
-						resolve(canSelectMany ? input.selectedItems : input.selectedItems[0]);
+						if (canSelectMany) {
+							resolve(input.selectedItems);
+						 } else {
+							if (input?.selectedItems[0]) {
+								resolve(input.selectedItems[0]);
+							}
+						 }
 					}),
 					input.onDidHide(() => {
 						(async () => {

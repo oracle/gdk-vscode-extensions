@@ -9,8 +9,9 @@ import * as vscode from 'vscode';
 import * as common from 'oci-common';
 import * as adm from 'oci-adm';
 import * as nodes from '../nodes';
-import * as dialogs from '../dialogs';
-import * as logUtils from '../logUtils';
+import { selectFolder } from '../dialogs';
+import * as dialogs from '../../../common/lib/dialogs';
+import * as logUtils from '../../../common/lib/logUtils';
 import * as persistenceUtils from '../persistenceUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
@@ -65,7 +66,7 @@ export function initialize(context: vscode.ExtensionContext) {
     }));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.projectAudit.execute_Global', () => {
         logUtils.logInfo(`[audit] Invoked Audit without folder context, selecting folder`);
-        dialogs.selectFolder(ACTION_NAME, 'Select folder for which to perform the audit', null).then(folder => {
+        selectFolder(ACTION_NAME, 'Select folder for which to perform the audit', null).then(folder => {
             if (folder) {
                 const uri = folder.folder.uri;
                 logUtils.logInfo(`[audit] Selected folder ${uri.fsPath}`);

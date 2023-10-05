@@ -62,6 +62,7 @@ vscodeTestsCommon : ${vscodeCommon} {
   deploysArtifacts: true,
   python_version: 3,
   run : [
+    ["npm", "run", "build:common"],
     ["artifact_download", "vscode-extensions/tests_cache-linux-amd64", "tests_cache-linux-amd64.zip"],
     ["unzip", "-q", "tests_cache-linux-amd64.zip", ".vscode-test/*", "-d", "gcn"],
     ["chmod", "-R", "+x", "./gcn/.vscode-test"],

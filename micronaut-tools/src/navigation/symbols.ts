@@ -6,7 +6,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as logUtils from '../logUtils';
+import * as logUtils from '../../../common/lib/logUtils';
 
 
 const COMMAND_RELOAD_ALL = 'extension.micronaut-tools.navigation.reloadAll';
