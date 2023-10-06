@@ -41,6 +41,16 @@ resolve: {
   }
 }
 ```
+- Be aware that `tsc` command will pick _index.d.ts_ files from common package if included (this makes a raid condition on type resolution), to avoid this behavior you have to specify where it should pick the types from in _tsconfig.json_ file of extension using the type:
+```json
+"compilerOptions": {
+  ...
+  "baseUrl": ".",
+  "paths": {
+    "<type>": ["node_modules/@types/<type>"]
+  }
+}
+```
 - Please include [description of shared functionality](#packages) here in this README for easy lookup.
 
 # Packages
