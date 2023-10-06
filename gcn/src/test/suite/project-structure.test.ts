@@ -101,7 +101,6 @@ function compareStructures(projPath : string, comparable : any) : boolean {
  * @param name 
  */
 async function createAndTest(options : Common.CreateOptions, name : string) : Promise<void> {
-    createProject(options, name);
     const projFolder : string = await createProject(options, name);
     const jsonPath = path.resolve(__dirname, '../../../fixtures/project-structure/' + name + ".json");
     const jsonString = fs.readFileSync(jsonPath, 'utf-8');
