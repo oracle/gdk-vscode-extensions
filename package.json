@@ -12,6 +12,7 @@
 		"build:graal-cloud-native-pack": "cd graal-cloud-native-pack && npm run build",
 		"build:common": "cd common && npm run build",
 
+		"pretests": "npm run build:common",
 		"tests": "npm run tests:gcn",
 		"tests:gcn": "cd gcn; npm install; npm run compile; npm run test-compile; xvfb-run -a npm run test"
 	}
