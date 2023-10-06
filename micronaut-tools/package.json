@@ -51,6 +51,32 @@
 		"javaExtensions": [
 			"./server/com.oracle.jdtls.ext.core-0.1.0.jar"
 		],
+		"languages": [
+			{
+				"id": "mexp",
+				"aliases": [
+					"MicronautExpression"
+				],
+				"configuration": "./mexp-language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "mexp",
+				"scopeName": "source.mexp",
+				"path": "./syntaxes/mexp.tmLanguage.json"
+			},
+			{
+				"injectTo": [
+					"source.java"
+				],
+				"scopeName": "inline.mexp",
+				"path": "./syntaxes/mexp-injection.json",
+                "embeddedLanguages": {
+                    "meta.embedded.mexp": "mexp"
+                }
+			}
+		],
 		"debuggers": [
 			{
 				"type": "micronaut",
