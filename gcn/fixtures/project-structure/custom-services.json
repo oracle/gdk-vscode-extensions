@@ -1,0 +1,38 @@
+{
+    "structure": {
+        "contains": [
+            {
+                "path": "./buildSrc",
+                "type": "directory"
+            },
+            {
+                "path": "./oci/src/main/java/com/example/Application.java",
+                "type": "file"
+            },
+            {
+                "path": "./oci/src/main/java/com/example/LogController.java",
+                "type": "file"
+            },
+            {
+                "path": "./oci/src/main/java/com/example/OciEmailController.java",
+                "type": "file"
+            },
+            {
+                "path": "./oci/src/main/java/com/example/OciSessionProvider.java",
+                "type": "file"
+            },
+            {
+                "path": "./aws/src/main/java/com/example/Application.java",
+                "type": "file"
+            },
+            {
+                "path": "./aws/src/main/java/com/example/LogController.java",
+                "type": "file"
+            },
+            {
+                "path": "./aws/src/main/java/com/example/MailController.java",
+                "type": "file"
+            }
+        ]
+    }
+}
