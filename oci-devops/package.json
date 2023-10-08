@@ -955,7 +955,7 @@
 		"encoding": "^0.1.13",
 		"eslint": "^8.35.0",
 		"eslint-webpack-plugin": "^4.0.0",
-		"gcn-extension-tests": "^1.2.0",
+		"gcn-extension-tests": "^1.2.1",
 		"glob": "^8.1.0",
 		"global-agent": "^3.0.0",
 		"mocha": "^10.1.0",

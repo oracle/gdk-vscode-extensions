@@ -33,13 +33,12 @@ export async function runTest() {
 		const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
 
 		let extensionList : string[] = [
-			'oracle-labs-graalvm.graalvm-pack',
 			'oracle-labs-graalvm.graalvm',
 		];
 
 		// download additional extensions
 		if ( process.env["MOCHA_EXTENSION_LIST"]) {
-			extensionList.concat( process.env["MOCHA_EXTENSION_LIST"].split(",") );
+			extensionList = extensionList.concat( process.env["MOCHA_EXTENSION_LIST"].split(",") );
 		}
 
 		for (let extensionId of extensionList) {
