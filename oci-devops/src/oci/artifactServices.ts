@@ -9,7 +9,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as artifacts from 'oci-artifacts';
 import * as nodes from '../nodes';
-import * as dialogs from '../dialogs';
+import { showSaveFileDialog } from '../dialogs';
+import * as dialogs from '../../../common/lib/dialogs';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociService from './ociService';
@@ -354,7 +355,7 @@ export function downloadGenericArtifactContent(oci: ociContext.Context, artifact
         if (result instanceof Error) {
             dialogs.showError(result);
         } else {
-            dialogs.showSaveFileDialog('Save Artifact As', fileName, PERSISTENT_TARGET_KEY).then(fileUri => {
+            showSaveFileDialog('Save Artifact As', fileName, PERSISTENT_TARGET_KEY).then(fileUri => {
                 if (fileUri) {
                     vscode.window.withProgress({
                         location: vscode.ProgressLocation.Notification,

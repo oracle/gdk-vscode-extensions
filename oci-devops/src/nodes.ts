@@ -6,7 +6,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as dialogs from './dialogs';
+import * as dialogs from '../../common/lib/dialogs';
 
 
 export type TreeChanged = (treeItem?: vscode.TreeItem) => void;

@@ -6,10 +6,10 @@
  */
  
 import * as vscode from 'vscode';
-import { handleNewGCNProject } from '../projectHandler';
+import { handleNewGCNProject } from '../../../common/lib/dialogs';
+import { JavaVMType } from '../../../common/lib/types';
 import { 
     CreateOptions, 
-    JavaVMType, 
     getJavaVersions, 
     initialize, 
     selectCreateOptions, 
@@ -60,7 +60,7 @@ export async function createProjectBase(context: vscode.ExtensionContext, option
     
     await writeProjectContents(options,new WebFileHandler(targetLocationUri));
 
-    handleNewGCNProject(context, targetLocationUri);
+    handleNewGCNProject(context, targetLocationUri, "GCN");
 }
 
 async function selectLocation(options: CreateOptions) {

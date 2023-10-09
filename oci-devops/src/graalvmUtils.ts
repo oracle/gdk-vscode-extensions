@@ -6,7 +6,7 @@
  */
 
 import * as fs from 'fs';
-import * as path from 'path';
+import { findExecutable } from '../../common/lib/utils';
 import * as cp from 'child_process';
 import * as vscode from 'vscode';
 
@@ -68,23 +68,6 @@ export function getGVMBuildRunParameters(versions: string[]): { name: string; va
     return parameters;
 }
 
-function findExecutable(executable: string, graalVMHome: string): string | undefined {
-	if (graalVMHome) {
-        let executablePath = path.join(graalVMHome, 'bin', executable);
-        if (process.platform === 'win32') {
-            if (fs.existsSync(executablePath + '.cmd')) {
-                return executablePath + '.cmd';
-            }
-            if (fs.existsSync(executablePath + '.exe')) {
-                return executablePath + '.exe';
-            }
-        } else if (fs.existsSync(executablePath)) {
-            return executablePath;
-        }
-    }
-    return undefined;
-}
-
 function getActiveGVM(): string | undefined {
     const gvm = vscode.workspace.getConfiguration('graalvm').get('home');
     return gvm ? gvm as string : undefined;
@@ -141,71 +124,3 @@ async function getGraalVMVersions(homeFolder: string): Promise<string[] | undefi
         }
     });
 }
-
-export async function getJavaVersion(homeFolder: string): Promise<string | undefined> {
-    return new Promise<string | undefined>(resolve => {
-        if (homeFolder && fs.existsSync(homeFolder)) {
-            const executable: string | undefined = findExecutable('java', homeFolder);
-            if (executable) {
-                cp.execFile(executable, ['-version'], { encoding: 'utf8' }, (_error, _stdout, stderr) => {
-                    if (stderr) {
-                        let javaVersion: string | undefined;
-                        let graalVMInfo: string | undefined;
-                        let javaVMInfo: string | undefined;
-                        stderr.split('\n').forEach((line: string) => {
-							const javaInfo: string[] | null = line.match(/version\s+"(\S+)"/);
-							const gvmInfo = line.match(/(GraalVM.*)\s+\(/);
-							const jvmInfo = line.match(/^(.*)\s+Runtime Environment/);
-							if (javaInfo && javaInfo.length > 1) {
-								javaVersion = javaInfo[1];
-							}
-							if (gvmInfo && gvmInfo.length > 1) {
-								graalVMInfo = gvmInfo[1];
-							}
-							if (jvmInfo && jvmInfo.length > 1) {
-								javaVMInfo = jvmInfo[1];
-							}
-                        });
-                        if (javaVersion && (javaVMInfo || graalVMInfo)) {
-							let majorVersion = javaVersion;
-                            if (majorVersion.startsWith('1.')) {
-                                majorVersion = majorVersion.slice(2);
-                            }
-                            let i = majorVersion.indexOf('.');
-                            if (i > -1) {
-                                majorVersion = majorVersion.slice(0, i);
-                            }
-                            resolve(graalVMInfo ? `${graalVMInfo}, Java ${majorVersion}` : `${javaVMInfo} ${javaVersion}, Java ${majorVersion}`);
-                        } else {
-                            resolve(undefined);
-                        }
-                    } else {
-                        resolve(undefined);
-                    }
-                });
-            } else {
-                resolve(undefined);
-            }
-        } else {
-            resolve(undefined);
-        }
-    });
-}
-
-export function normalizeJavaVersion(version: string | undefined, supportedVersions: string[]): string {
-    if (!version) {
-        return '8';
-    }
-    if (!supportedVersions || supportedVersions.length === 0) {
-        return version;
-    }
-    let versionN = parseInt(version);
-    for (let supportedVersion of supportedVersions.reverse()) {
-        const supportedN = parseInt(supportedVersion);
-        if (versionN >= supportedN) {
-            return supportedVersion;
-        }
-    }
-    return '8';
-}
-

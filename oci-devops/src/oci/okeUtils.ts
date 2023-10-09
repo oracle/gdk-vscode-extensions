@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode';
 import * as common from 'oci-common';
-import * as dialogs from '../dialogs';
+import * as dialogs from '../../../common/lib/dialogs';
 import * as ociUtils from './ociUtils';
 import * as ociDialogs from './ociDialogs';
 import * as ociFeatures from './ociFeatures';

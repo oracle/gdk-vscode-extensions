@@ -6,7 +6,7 @@
  */
 
 import * as k8s from 'vscode-kubernetes-tools-api';
-import * as dialogs from './dialogs';
+import * as dialogs from '../../common/lib/dialogs';
 
 export async function getKubectlAPI(): Promise<k8s.KubectlV1 | undefined> {
     const kubectl = await k8s.extension.kubectl.v1;

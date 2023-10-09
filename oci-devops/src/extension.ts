@@ -10,12 +10,13 @@ import * as model from './model';
 import * as devopsServices from './devopsServices';
 import * as servicesView from './servicesView';
 import * as welcome from './welcome';
-import * as logUtils from './logUtils';
+import * as logUtils from '../../common/lib/logUtils';
 import * as persistenceUtils from './persistenceUtils';
 
 export const CLOUD_SUPPORTS: model.CloudSupport[] = [];
 
 export function activate(context: vscode.ExtensionContext) {
+	logUtils.registerExtensionForLogging(context);
 	logUtils.logInfo('[extension] Activating extension');
 
 	persistenceUtils.initialize(context);

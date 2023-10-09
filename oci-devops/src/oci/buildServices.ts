@@ -8,11 +8,12 @@
 import * as vscode from 'vscode';
 import * as devops from 'oci-devops';
 import * as nodes from '../nodes';
-import * as dialogs from '../dialogs';
+import { isRunBuildPipelineCustomShapeConfirmedPermanently, confirmRunBuildPipelineCustomShape } from '../dialogs';
+import * as dialogs from '../../../common/lib/dialogs';
 import * as gitUtils from '../gitUtils';
 import * as graalvmUtils from '../graalvmUtils';
 import * as servicesView from '../servicesView';
-import * as logUtils from '../logUtils';
+import * as logUtils from '../../../common/lib/logUtils';
 import * as persistenceUtils from '../persistenceUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
@@ -437,8 +438,8 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
                 }, (_progress, _token) => {
                     return new Promise(async resolve => {
                         try {
-                            if (!dialogs.isRunBuildPipelineCustomShapeConfirmedPermanently() && await this.usesCustomRunnerShape()) {
-                                const confirm = await dialogs.confirmRunBuildPipelineCustomShape();
+                            if (!isRunBuildPipelineCustomShapeConfirmedPermanently() && await this.usesCustomRunnerShape()) {
+                                const confirm = await confirmRunBuildPipelineCustomShape();
                                 if (!confirm) {
                                     resolve(false);
                                     return;

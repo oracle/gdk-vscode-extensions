@@ -5,6 +5,7 @@
 **/.vscode-test/
 **/*.vsix
 **/.vscode-test-web
+/common/lib
 /package-lock.json
 /mxbuild
 /.project
