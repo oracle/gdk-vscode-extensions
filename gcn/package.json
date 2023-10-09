@@ -75,9 +75,7 @@
 			"win32": "%npm_package_config_winBuildPath% %npm_package_config_buildCmd%"
 		}
 	},
-	"dependencies": {
-		"jdk-utils": "^0.4.4"
-	},
+
 	"devDependencies": {
 		"@types/glob": "^8.0.1",
 		"@types/mocha": "^10.0.1",
@@ -106,6 +104,9 @@
 		"webpack-cli": "^4.10.0",
 		"mocha-each": "^2.0.1",
 		"uuid": "^9.0.1"
+	},
+	"dependencies": {
+		"jdk-utils": "^0.4.4"
 	},
 	"extensionDependencies": []
 }
