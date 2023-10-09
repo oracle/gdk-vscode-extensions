@@ -40,5 +40,10 @@ The list of required extensions (the source of truth is in `src/test/runTest.js`
 - vscjava.vscode-java-debug
 - ms-kubernetes-tools.vscode-kubernetes-tool
 
+# Order of running tests
+If you would like to run `UI tests`, you need to run `normal tests` first to generate some projects UI tests work with. If you would like to add the projects manually, add them to `gcn/out/test/projects`.
+Right now these UI tests requires resources:
+- codelense.ui-test.ts
+
 # Run UI tests from the CLI/vscode UI
 UI tests allow for interactive extension testing from within vscode UI itself by controlling vscode with a chrome webdriver. Running `npm run test-ui` will start the tests. First run will download the latest vscode instance and chrome webdrive into `./test-resources` folder. Executing environment will share currently installed extensions.
