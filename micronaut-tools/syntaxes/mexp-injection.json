@@ -1,0 +1,26 @@
+{
+    "injectionSelector": "L:source.java string",
+    "scopeName": "inline.mexp",
+    "patterns": [
+        {
+            "begin": "#{",
+            "beginCaptures": {
+                "0": {
+                    "name": "punctuation.definition.mexp.begin"
+                }
+            },
+            "contentName": "meta.embedded.mexp",
+            "end": "}",
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.definition.mexp.end"
+                }
+            },
+            "patterns": [
+                {
+                    "include": "source.mexp"
+                }
+            ]
+        }
+    ]
+}
