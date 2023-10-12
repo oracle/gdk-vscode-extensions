@@ -7,17 +7,19 @@
 
 import * as vscode from 'vscode';
 import * as gcnProjectCreate from './gcnProjectCreateWeb';
-import * as logUtils from './../logUtils';
-import { checkExtensions, micronautProjectExists } from '../utils';
+import * as logUtils from '../../../common/lib/logUtils';
+import { micronautProjectExists } from '../../../common/lib/utils';
+import { checkGCNExtensions } from '../../../common/lib/dialogs';
 
 
 export function activate(context: vscode.ExtensionContext) {
+	logUtils.registerExtensionForLogging(context);
     logUtils.logInfo('[extension] Activating extension');
 
 	context.subscriptions.push(vscode.commands.registerCommand('gcn.createGcnProject', () => gcnProjectCreate.createProject(context)));
 	micronautProjectExists().then(exists => {
 		if (exists) {
-			checkExtensions(context);
+			checkGCNExtensions(context);
 		}
 	});
 

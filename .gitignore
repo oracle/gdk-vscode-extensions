@@ -5,6 +5,7 @@
 **/.vscode-test/
 **/*.vsix
 **/.vscode-test-web
+/common/lib
 /package-lock.json
 /mxbuild
 /.project
@@ -15,4 +16,5 @@
 /gcn-database-drivers/nbcode
 /nbcode-gcn-database/nbcode-gcn-database-drivers/target/
 /oci-devops/fixtures/base-oci-template/oci/bin/
-/oci-devops/test-resources/
+/*/test-resources/
+/*/mochawesome-report/

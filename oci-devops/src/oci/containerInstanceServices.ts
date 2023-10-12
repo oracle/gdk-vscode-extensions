@@ -10,8 +10,9 @@ import * as common from 'oci-common';
 import * as core from "oci-core";
 import * as containerinstances from 'oci-containerinstances';
 import * as nodes from '../nodes';
-import * as dialogs from '../dialogs';
-import * as logUtils from '../logUtils';
+import { selectFolder } from '../dialogs';
+import * as dialogs from '../../../common/lib/dialogs';
+import * as logUtils from '../../../common/lib/logUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociDialogs from './ociDialogs';
@@ -35,7 +36,7 @@ export function initialize(context: vscode.ExtensionContext) {
     }));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.showContainerInstanceLog', () => {
         logUtils.logInfo(`[containerinstance] Invoked Show Container Instance Log, selecting folder`);
-        dialogs.selectFolder('Show Container Instance Log', 'Select folder', true).then(folder => {
+        selectFolder('Show Container Instance Log', 'Select folder', true).then(folder => {
             if (folder) {
                 const uri = folder.folder.uri;
                 logUtils.logInfo(`[containerinstance] Selected folder ${uri.fsPath}`);
@@ -54,7 +55,7 @@ export function initialize(context: vscode.ExtensionContext) {
     }));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.deleteContainerInstance', () => {
         logUtils.logInfo(`[containerinstance] Invoked Delete Container Instance, selecting folder`);
-        dialogs.selectFolder('Delete Container Instance', 'Select folder', true).then(folder => {
+        selectFolder('Delete Container Instance', 'Select folder', true).then(folder => {
             if (folder) {
                 const uri = folder.folder.uri;
                 logUtils.logInfo(`[containerinstance] Selected folder ${uri.fsPath}`);

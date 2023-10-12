@@ -115,7 +115,7 @@ export abstract class SymbolNode<T extends symbols.Symbol> extends BaseNode {
             title: actions.COMMAND_NAME_GO_TO_DEFINITION,
             command: actions.COMMAND_GO_TO_DEFINITION,
             arguments: [ this ]
-        }
+        };
     }
 
     getSymbol(): T {

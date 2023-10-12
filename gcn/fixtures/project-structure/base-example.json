@@ -1,0 +1,47 @@
+{
+    "structure": {
+        "contains": [
+            {
+                "path": "./src",
+                "type": "directory"
+            },
+            {
+                "path": "./gradle",
+                "type": "directory"
+            },
+            {
+                "path": "./build.gradle",
+                "type": "file"
+            },
+            {
+                "path": "./gradlew",
+                "type": "file"
+            },
+            {
+                "path": "./README.md",
+                "type": "file"
+            },
+            {
+                "path": "./LICENSE",
+                "type": "file"
+            },
+            {
+                "path": "./settings.gradle",
+                "type": "file"
+            }
+        ],
+        "-contains": [
+            {
+                "path": "./oci"
+            }
+        ]
+    },
+    "contents": {
+        "contains": [
+            {
+                "path": "./src/main/java/com/example/Application.java",
+                "match": "public class Application"
+            }
+        ]
+    }
+}

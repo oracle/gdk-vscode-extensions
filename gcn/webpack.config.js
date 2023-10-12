@@ -42,6 +42,12 @@ const config = {
             'isomorphic-fetch': {
                 mainFields: ['main', 'module']
             }
+        },
+        fallback: {
+            "fs": false,
+            "os": false,
+            "path": false,
+            "child_process": false
         }
     },
     module: {
@@ -52,11 +58,12 @@ const config = {
             use: [{
                 loader: 'ts-loader'
             }]
-        }]
+        }],
+        noParse: path.resolve(__dirname, 'lib', 'gcn.ui.api.js')
     },
     plugins: [
         new ESLintPlugin({extensions: ['ts']})
-    ],
+    ]
 };
 const devConf = {
     target: 'node', // vscode extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
@@ -88,6 +95,12 @@ const devConf = {
         },
         symlinks: false,
         cacheWithContext: false,
+        fallback: {
+            "fs": false,
+            "os": false,
+            "path": false,
+            "child_process": false
+        }
     },
     module: {
         rules: [{

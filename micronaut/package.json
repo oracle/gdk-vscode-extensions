@@ -96,8 +96,7 @@
 		}
 	},
 	"dependencies": {
-		"decompress": "^4.2.1",
-		"jdk-utils": "^0.4.4"
+		"decompress": "^4.2.1"
 	},
 	"devDependencies": {
 		"@types/decompress": "^4.2.4",

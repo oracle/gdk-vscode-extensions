@@ -6,7 +6,7 @@
  */
 
 import * as vscode from 'vscode';
-import { micronautProjectExists, getJavaHome } from "./utils";
+import { getJavaHome, micronautProjectExists } from '../../common/lib/utils';
 import { WelcomePanel } from './welcome';
 import { builderInit, build } from './projectBuild';
 import { createDeployment } from './kubernetes/kubernetesDeployment';
@@ -23,8 +23,10 @@ import * as codeLens from './navigation/codeLens';
 import * as kubernetes from 'vscode-kubernetes-tools-api';
 import * as launcher from './launcher/extension';
 import * as dbSupport from './database/dbsupport';
+import * as logUtils from '../../common/lib/logUtils';
 
 export function activate(context: vscode.ExtensionContext) {
+	logUtils.registerExtensionForLogging(context);
 	symbols.initialize(context);
 	workspaceFolders.initialize(context);
 	views.initialize(context);

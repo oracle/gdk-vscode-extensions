@@ -1,0 +1,45 @@
+{
+    "structure": {
+        "contains": [
+            {
+                "path": "./src",
+                "type": "directory"
+            },
+            {
+                "path": "./pom.xml",
+                "type": "file"
+            },
+            {
+                "path": "./mvnw",
+                "type": "file"
+            },
+            {
+                "path": "./README.md",
+                "type": "file"
+            },
+            {
+                "path": "./LICENSE",
+                "type": "file"
+            }
+        ],
+        "-contains": [
+            {
+                "path": "./oci"
+            },
+            {
+                "path": "./build.gradle"
+            },
+            {
+                "path": "./gradle"
+            }
+        ]
+    },
+    "contents": {
+        "contains": [
+            {
+                "path": "./src/main/java/com/example/Application.java",
+                "match": "public class Application"
+            }
+        ]
+    }
+}
