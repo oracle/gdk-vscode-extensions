@@ -7,10 +7,10 @@
 
 function main() {
     if (process.argv.indexOf('--runTest') != -1) {
-        const test = require('runTest');
+        const test = require('./runTest');
         test.runTest();
     } else if (process.argv.indexOf('--runTest-ui') != -1) {
-        const test = require('runTest-ui');
+        const test = require('./runTest-ui');
         test.runTestUI();
     } else {
         console.log("Invalid arguments passed");
