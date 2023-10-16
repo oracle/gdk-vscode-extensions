@@ -76,6 +76,15 @@ vscodeRunTests : ${vscodeTestsCommon} {
 
 vscodeTestsDaily : ${vscodeTestsCommon} {
   targets : [ daily ],
+  environment: {
+    EXTESTER_EXTENSION_LIST: "asf.apache-netbeans-java,vscjava.vscode-java-pack,oracle-labs-graalvm.gcn,oracle-labs-graalvm.graalvm,oracle-labs-graalvm.oci-devops",
+    TEST_GLOB_PATTER: "**/extension.test.js",
+    MOCHA_EXTENSION_LIST: "asf.apache-netbeans-java,redhat.java,vscjava.vscode-java-pack,vscjava.vscode-java-debug,ms-kubernetes-tools.vscode-kubernetes-tools"
+  },
+  run: [
+    ["npm", "run", "tests:oci-devops"],
+    ["npm", "run", "tests-ui"]
+  ],
   notify_emails: [
     "stevo.mitric@oracle.com",
     "martin.balin@oracle.com"

@@ -11,10 +11,17 @@ export async function runTestUI() {
 	// run UI extension tests
 	try {
 		// download code and chromedriver
-		let exTester : extest.ExTester = new extest.ExTester();
+		let exTester : extest.ExTester = new extest.ExTester('test-resources', extest.ReleaseQuality.Stable, 'test-resources/extensions');
 		await exTester.downloadCode();
 		await exTester.downloadChromeDriver();
 		
+		if (process.env['EXTESTER_EXTENSION_LIST']) {
+			const extension_list : string[] = process.env['EXTESTER_EXTENSION_LIST'].split(',');
+			for (let extension of extension_list) {
+				exTester.installFromMarketplace(extension);
+			}
+		}
+
 		// Run tests
 		await exTester.runTests('**/**.ui-test.js');
 	} catch (err) {
