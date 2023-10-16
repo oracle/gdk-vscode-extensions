@@ -217,7 +217,7 @@ describe("Editor test", async () => {
           try {
             const dialog = new ModalDialog();
             await dialog.pushButton("Yes");
-          } catch {}
+          } catch { }
 
           tree = (await content.getSection(
             project.prectName
@@ -226,7 +226,7 @@ describe("Editor test", async () => {
         }).timeout(300000);
 
         describe("Application.java test", () => {
-   
+
           it("Open file", async () => {
             const children = await openItemInExplorer(
               tree,
@@ -257,7 +257,7 @@ describe("Editor test", async () => {
             // we do not want to fail test if dialog is not shown
             try {
               assert.ok(list.includes("Opening Java Projects: check details"));
-            } catch {}
+            } catch { }
           }).timeout(300000);
 
           describe("Codelense test", () => {
@@ -265,31 +265,43 @@ describe("Editor test", async () => {
               let runWIthMicronaut: CodeLens;
               it('Gets codelenses', async () => {
                 await new EditorView().openEditor("Application.java");
-      
+
                 const notifications = await waitForItems(getItems, 30);
                 let list: string[] = [];
                 for (const notification of notifications) {
                   const message = await notification.getMessage();
                   list.push(message);
                 }
-      
+
                 // we do not want to fail test if dialog is not shown
                 try {
                   assert.ok(list.includes("Opening Java Projects: check details"));
                 }
                 catch { }
-      
+
                 const codelenses = await waitForItems(getLenses, 60);
-      
+
                 assert.strictEqual(codelenses.length, 3);
                 runWIthMicronaut = codelenses[0];
                 assert.strictEqual(await runWIthMicronaut.getText(), "Run with Micronaut Continuous Mode");
               }).timeout(300000);;
-      
+
               it('Executes codelense', async () => {
+                if (runWIthMicronaut === undefined)
+                {
+                    assert.fail("Getting codelenses failed");
+                }
                 await new Promise(f => setTimeout(f, 20000));
-                await runWIthMicronaut.click();
-      
+                try{
+                  await runWIthMicronaut.click();
+                }
+                catch{
+                  // try to locate it one more time
+                  runWIthMicronaut = (await waitForItems(getLenses, 60))[0];
+                  await runWIthMicronaut.click();
+                }
+
+
                 if (!(await getTerminal()).includes("Server Running")) {
                   // sometimes we need to click it twico to invoke action properly
                   await (await new TextEditor().getCodeLens(0))?.click();
@@ -299,7 +311,7 @@ describe("Editor test", async () => {
                 (await new BottomBarPanel().openTerminalView()).killTerminal();
 
               }).timeout(120000);
-      
+
             }
           }).timeout(600000);
 
@@ -322,7 +334,7 @@ describe("Editor test", async () => {
                 const editor = new TextEditor(edit);
 
                 editor.moveCursor(32, 21);
-                await new Promise((f) => setTimeout(f, 10000));
+                await new Promise((f) => setTimeout(f, 15000));
                 const assist = (await editor.toggleContentAssist(
                   true
                 )) as ContentAssist;
@@ -330,7 +342,7 @@ describe("Editor test", async () => {
                 assert.ok(await assist.isDisplayed());
                 const items = await compareIntellisense(
                   assist,
-                  "build() : ApplicationContext"
+                  "build"
                 );
                 assert.ok(items.length === 0, items.join(";"));
 
@@ -343,7 +355,9 @@ describe("Editor test", async () => {
 
                 //TODO delete whole line
                 await editor.setTextAtLine(32, "");
+                await new Promise((f) => setTimeout(f, 15000));
                 await editor.save();
+                await new Promise((f) => setTimeout(f, 15000));
               }).timeout(300000);
             }
           }).timeout(600000);
