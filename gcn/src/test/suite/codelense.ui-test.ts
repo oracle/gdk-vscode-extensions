@@ -11,7 +11,6 @@ import {
   ActivityBar,
   DefaultTreeSection,
   EditorView,
-  ViewContent,
   VSBrowser,
   Notification,
   CodeLens,
@@ -19,11 +18,13 @@ import {
   ExtensionsViewSection,
   ModalDialog,
   BottomBarPanel,
-} from 'vscode-extension-tester';
-import * as path from 'path';
-import * as assert from 'assert';
-const forEach = require('mocha-each');
-import * as fs from 'fs';
+  ContentAssist,
+  TreeItem
+} from "vscode-extension-tester";
+import * as path from "path";
+import * as assert from "assert";
+const forEach = require("mocha-each");
+import * as fs from "fs";
 
 async function getItems(): Promise<Notification[]> {
   return await new Workbench().getNotifications();
@@ -34,32 +35,51 @@ async function getLenses(): Promise<CodeLens[]> {
 }
 
 async function getTerminal(): Promise<string> {
-  await new Promise(f => setTimeout(f, 20000));
+  await new Promise((f) => setTimeout(f, 30000));
   const terminalView = await new BottomBarPanel().openTerminalView();
   const text = (await terminalView.getText()).trim();
   return text;
 }
 
 async function installExtension(extensionTitle: string): Promise<void> {
-  let view1 = await new ActivityBar().getViewControl('Extensions');
-  if (view1 === undefined)
-    assert.fail("Could not open extensions tab");
+  const extensionTab = await new ActivityBar().getViewControl("Extensions");
+  if (extensionTab === undefined) assert.fail("Could not open extensions tab");
 
-  let view = await view1.openView();
-  let section1 = await view.getContent().getSection("Installed") as ExtensionsViewSection;
+  const openExtensionTab = await extensionTab.openView();
+  const extensionSection = (await openExtensionTab
+    .getContent()
+    .getSection("Installed")) as ExtensionsViewSection;
 
-  let item1 = await section1.findItem(extensionTitle);
-  if (item1 === undefined)
-    assert.fail("Item " + extensionTitle + " not found");
+  const item = await extensionSection.findItem(extensionTitle);
+  if (item === undefined) assert.fail("Item " + extensionTitle + " not found");
 
-  if (!(await item1.isInstalled()))
-    await item1.install();
+  if (!(await item.isInstalled())) await item.install();
 
-  assert.ok(await item1.isInstalled());
-  assert.ok(await item1.isEnabled());
+  assert.ok(await item.isInstalled());
+  assert.ok(await item.isEnabled());
 
-  await section1.clearSearch();
-  await new Promise(f => setTimeout(f, 5000));
+  await extensionSection.clearSearch();
+  await new Promise((f) => setTimeout(f, 5000));
+}
+
+async function compareIntellisense(
+  assist: ContentAssist,
+  ...items: string[]
+): Promise<string[]> {
+  await new Promise((f) => setTimeout(f, 2000));
+  const elements = await assist.getItems();
+  assert.ok(elements.length > 0);
+  const labels = await Promise.all(
+    elements.map(async (item): Promise<string> => {
+      return await item.getLabel();
+    })
+  );
+  const setLabels = new Set(labels);
+  const setItems = new Set(items);
+
+  const difference = [...setItems].filter((x) => !setLabels.has(x));
+  // console.log("hints are: " + labels.join("; "))
+  return difference;
 }
 
 /**
@@ -69,14 +89,17 @@ async function installExtension(extensionTitle: string): Promise<void> {
  * @param step is a step between each try
  * @returns array of wanted items
  */
-async function waitForItems<K>(getItemsFunction: () => Promise<K[]>, numberOfTries: number, step = 2000): Promise<K[]> {
+async function waitForItems<K>(
+  getItemsFunction: () => Promise<K[]>,
+  numberOfTries: number,
+  step = 2000
+): Promise<K[]> {
   do {
     const notifications = await getItemsFunction();
 
-    if (notifications.length)
-      return notifications;
+    if (notifications.length) return notifications;
 
-    await new Promise(f => setTimeout(f, step));
+    await new Promise((f) => setTimeout(f, step));
     numberOfTries -= 1;
   } while (numberOfTries > 0);
 
@@ -88,23 +111,21 @@ async function waitForItems<K>(getItemsFunction: () => Promise<K[]>, numberOfTri
  * @param projFolder is a path you want to edit
  */
 async function editProject(projFolder: string) {
+  let filename = path.join(projFolder, "oci", "src", "main", "java");
 
-  let filename = path.join(projFolder, 'oci', "src", "main", "java");
-
-  fs.writeFile(path.join(filename, "index"), 'index', (err) => {
+  fs.writeFile(path.join(filename, "index"), "index", (err) => {
     if (err) {
-      assert.fail('Error creating empty file: ' + err);
+      assert.fail("Error creating empty file: " + err);
     }
   });
 
   filename = path.join(filename, "com");
-  fs.writeFile(path.join(filename, "index"), 'index', (err) => {
+  fs.writeFile(path.join(filename, "index"), "index", (err) => {
     if (err) {
-      assert.fail('Error creating empty file: ' + err);
+      assert.fail("Error creating empty file: " + err);
     }
   });
 }
-
 
 /**
  * Returns all projects in a given path
@@ -112,9 +133,7 @@ async function editProject(projFolder: string) {
  * @returns array of projects
  */
 function getAllProjects(projFolder: string): Project[] {
-
-  if (!fs.existsSync(projFolder))
-    return [];
+  if (!fs.existsSync(projFolder)) return [];
 
   const items = fs.readdirSync(projFolder);
   const folders: Project[] = [];
@@ -125,7 +144,7 @@ function getAllProjects(projFolder: string): Project[] {
     if (fs.lstatSync(itemPath).isDirectory()) {
       const project: Project = {
         prectName: item,
-        projetPath: itemPath
+        projetPath: itemPath,
       };
       folders.push(project);
     }
@@ -135,127 +154,262 @@ function getAllProjects(projFolder: string): Project[] {
   return folders;
 }
 
+/**
+ * Opens item at the location and returns it's children
+ * @param tree is a tree you want to ipen the item in
+ * @param path in the tree to the item
+ * @returns children of item on given path
+ */
+async function openItemInExplorer(
+  tree: DefaultTreeSection,
+  ...path: string[]
+): Promise<TreeItem[]> {
+  let children;
+  const items = await tree.getVisibleItems();
+  const labels = await Promise.all(items.map((item) => item.getLabel()));
+
+  if (labels.includes("oci")) {
+    // for GCN
+    children = await tree.openItem("oci", ...path);
+  } else if (labels.includes("src")) {
+    // for Micronaut
+    children = await tree.openItem(...path);
+  } else {
+    assert.fail("Unknown project structrure");
+  }
+  return children;
+}
+
 interface Project {
   prectName: string;
   projetPath: string;
 }
 
-describe("CodeLense test", async () => {
+describe("Editor test", async () => {
   it("Install extensions", async () => {
     await installExtension(`Extension Pack for Java`);
     await installExtension("Micronaut Tools");
-  }).timeout(60000);
+  }).timeout(300000);
 
   // iterate throgh all projects
-  forEach(
-    getAllProjects(path.join("out", "test", "projects"))
-  )
-    .describe('Extension codelense tests for %(prectName)s', function (project: Project) {
-      let content: ViewContent;
-
-
-      before(() => {
-        if (!fs.existsSync(project.projetPath)) {
-          assert.fail("folder does not exist " + project);
-        }
-        editProject(project.projetPath);
-      });
-
-      it("Open project", async () => {
-
-        assert.ok(fs.existsSync(project.projetPath));
-        await VSBrowser.instance.openResources(project.projetPath);
-        (await new ActivityBar().getViewControl('Explorer'))?.openView();
-        content = new SideBarView().getContent();
-
-        await new Promise(f => setTimeout(f, 10000));
-
-        // we do not want to fail test if dialog is not shown
-        try {
-          const dialog = new ModalDialog();
-          await dialog.pushButton('Yes');
-        }
-        catch { }
-
-      }).timeout(60000);
-
-      describe('Project test', () => {
-
+  forEach(getAllProjects(path.join("out", "test", "projects")))
+    .describe(
+      "Extension codelense tests for %(prectName)s",
+      function (project: Project) {
         let tree: DefaultTreeSection;
 
-        it('Opened project', async () => {
-          tree = await content.getSection(project.prectName) as DefaultTreeSection;
-          assert.ok(tree !== undefined);
-        }).timeout(60000);
-
-        it('Opened file', async () => {
-
-          const items = await tree.getVisibleItems();
-          const labels = await Promise.all(items.map(item => item.getLabel()));
-          let children;
-
-          if (labels.includes("oci")) { // for GCN
-            children = await tree.openItem('oci', "src", "main", "java", "com", "example", "Application.java");
+        before(() => {
+          if (!fs.existsSync(project.projetPath)) {
+            assert.fail("folder does not exist " + project);
           }
-          else if (labels.includes("src")) { // for Micronaut
-            children = await tree.openItem("src", "main", "java", "com", "example", "Application.java");
-          }
-          else {
-            assert.fail("Unknown project structrure");
-          }
+          editProject(project.projetPath);
+        });
 
-          // it is file
-          assert.strictEqual(children.length, 0);
+        it("Open project", async () => {
+          assert.ok(fs.existsSync(project.projetPath));
+          await VSBrowser.instance.openResources(project.projetPath);
+          (await new ActivityBar().getViewControl("Explorer"))?.openView();
+          const content = new SideBarView().getContent();
 
-          const editors = await new EditorView().getOpenEditorTitles();
-          assert.ok(editors.includes("Application.java"));
-
-        }).timeout(60000);
-
-        let runWIthMicronaut: CodeLens;
-        it('Gets codelenses', async () => {
-          await new EditorView().openEditor("Application.java");
-
-          const notifications = await waitForItems(getItems, 30);
-          let list: string[] = [];
-          for (const notification of notifications) {
-            const message = await notification.getMessage();
-            list.push(message);
-          }
+          await new Promise((f) => setTimeout(f, 10000));
 
           // we do not want to fail test if dialog is not shown
           try {
-            assert.ok(list.includes("Opening Java Projects: check details"));
-          }
-          catch { }
+            const dialog = new ModalDialog();
+            await dialog.pushButton("Yes");
+          } catch { }
 
-          let codelenses = await waitForItems(getLenses, 60);
+          tree = (await content.getSection(
+            project.prectName
+          )) as DefaultTreeSection;
+          assert.ok(tree !== undefined);
+        }).timeout(300000);
 
-          // TODO known bug in redhat-extension-tester, it returns only the first codelense
-          assert.strictEqual(codelenses.length, 1);
-          runWIthMicronaut = codelenses[0];
-          assert.strictEqual(await runWIthMicronaut.getText(), "Run with Micronaut Continuous Mode");
-        }).timeout(60000);;
+        describe("Application.java test", () => {
 
-        it('Executes codelense', async () => {
-          await new Promise(f => setTimeout(f, 15000));
-          await runWIthMicronaut.click();
+          it("Open file", async () => {
+            const children = await openItemInExplorer(
+              tree,
+              "src",
+              "main",
+              "java",
+              "com",
+              "example",
+              "Application.java"
+            );
 
-          if (!(await getTerminal()).includes("Server Running")) {
-            // sometimes we need to click it twico to invoke action properly
-            await (await new TextEditor().getCodeLens(0))?.click();
-            const terminal = await getTerminal();
-            assert.ok(terminal.includes("Server Running"), terminal);
-          }
-        }).timeout(120000);
+            // it is file
+            assert.strictEqual(children.length, 0);
+            const editors = await new EditorView().getOpenEditorTitles();
+            assert.ok(editors.includes("Application.java"));
+          }).timeout(300000);
+
+          it("Wait for startup", async () => {
+            await new EditorView().openEditor("Application.java");
+
+            const notifications = await waitForItems(getItems, 30);
+            let list: string[] = [];
+            for (const notification of notifications) {
+              const message = await notification.getMessage();
+              list.push(message);
+            }
+
+            // we do not want to fail test if dialog is not shown
+            try {
+              assert.ok(list.includes("Opening Java Projects: check details"));
+            } catch { }
+          }).timeout(300000);
+
+          describe("Codelense test", () => {
+            {
+              let runWIthMicronaut: CodeLens;
+              it('Gets codelenses', async () => {
+                await new EditorView().openEditor("Application.java");
+
+                const notifications = await waitForItems(getItems, 30);
+                let list: string[] = [];
+                for (const notification of notifications) {
+                  const message = await notification.getMessage();
+                  list.push(message);
+                }
+
+                // we do not want to fail test if dialog is not shown
+                try {
+                  assert.ok(list.includes("Opening Java Projects: check details"));
+                }
+                catch { }
+
+                const codelenses = await waitForItems(getLenses, 60);
+
+                assert.strictEqual(codelenses.length, 3);
+                runWIthMicronaut = codelenses[0];
+                assert.strictEqual(await runWIthMicronaut.getText(), "Run with Micronaut Continuous Mode");
+              }).timeout(300000);;
+
+              it('Executes codelense', async () => {
+                if (runWIthMicronaut === undefined)
+                {
+                    assert.fail("Getting codelenses failed");
+                }
+                await new Promise(f => setTimeout(f, 20000));
+                try{
+                  await runWIthMicronaut.click();
+                }
+                catch{
+                  // try to locate it one more time
+                  runWIthMicronaut = (await waitForItems(getLenses, 60))[0];
+                  await runWIthMicronaut.click();
+                }
+
+
+                if (!(await getTerminal()).includes("Server Running")) {
+                  // sometimes we need to click it twico to invoke action properly
+                  await (await new TextEditor().getCodeLens(0))?.click();
+                  const terminal = await getTerminal();
+                  assert.ok(terminal.includes("Server Running"), terminal);
+                }
+                (await new BottomBarPanel().openTerminalView()).killTerminal();
+
+              }).timeout(120000);
+
+            }
+          }).timeout(600000);
+
+          describe("Code completions test", () => {
+            {
+              it("Write text", async () => {
+                const edit = new EditorView();
+                await edit.openEditor("Application.java");
+                const editor = new TextEditor();
+
+                await new Promise((f) => setTimeout(f, 10000));
+
+                const text = "\nbuilder.";
+                await editor.typeTextAt(31, 56, text);
+              }).timeout(300000);
+
+              it("Completes code", async () => {
+                const edit = new EditorView();
+                await edit.openEditor("Application.java");
+                const editor = new TextEditor(edit);
+
+                editor.moveCursor(32, 21);
+                await new Promise((f) => setTimeout(f, 15000));
+                const assist = (await editor.toggleContentAssist(
+                  true
+                )) as ContentAssist;
+
+                assert.ok(await assist.isDisplayed());
+                const items = await compareIntellisense(
+                  assist,
+                  "build"
+                );
+                assert.ok(items.length === 0, items.join(";"));
+
+                await editor.toggleContentAssist(false);
+              }).timeout(300000);
+
+              it("Clean text", async () => {
+                const edit = new EditorView();
+                const editor = new TextEditor(edit);
+
+                //TODO delete whole line
+                await editor.setTextAtLine(32, "");
+                await new Promise((f) => setTimeout(f, 15000));
+                await editor.save();
+                await new Promise((f) => setTimeout(f, 15000));
+              }).timeout(300000);
+            }
+          }).timeout(600000);
+        }).timeout(900000);
+
+        describe(".properties test", () => {
+          it("Open file", async () => {
+            const children = await openItemInExplorer(
+              tree,
+              "src",
+              "main",
+              "resources",
+              "application-oraclecloud.properties"
+            );
+
+            // it is file
+            assert.strictEqual(children.length, 0);
+
+            const editors = await new EditorView().getOpenEditorTitles();
+            assert.ok(editors.includes("application-oraclecloud.properties"));
+          }).timeout(300000);
+
+          describe("Code completion test", () => {
+            {
+              it("Completes code", async () => {
+                const edit = new EditorView();
+                await edit.openEditor("application-oraclecloud.properties");
+                const editor = new TextEditor(edit);
+
+                editor.moveCursor(5, 1);
+                await new Promise((f) => setTimeout(f, 10000));
+
+                const assist = (await editor.toggleContentAssist(
+                  true
+                )) as ContentAssist;
+                assert.ok(await assist.isDisplayed());
+
+                const items = await compareIntellisense(assist, "application");
+                assert.ok(items.length === 0, items.join(";"));
+
+                await editor.toggleContentAssist(false);
+              }).timeout(300000);
+            }
+          }).timeout(600000);
+        }).timeout(900000);
 
         after(async () => {
-          // if (fs.existsSync(projectPath.projetPath)) {
-          //   fs.rmdirSync(projectPath.projetPath, { recursive: true });
-          // }
+          if (fs.existsSync(project.projetPath)) {
+            fs.rmdirSync(project.projetPath, { recursive: true });
+          }
         });
-      }).timeout(240000);
-
-    });
-
-}).timeout(300000);
+      }
+    )
+    .timeout(1000000);
+}).timeout(1100000);
