@@ -1,4 +1,4 @@
-FROM oraclelinux:8-slim AS runtime
+FROM container-registry.oracle.com/os/oraclelinux:8-slim AS runtime
 
 ARG APP_FILE
 EXPOSE 8080
