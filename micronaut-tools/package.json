@@ -420,7 +420,7 @@
 		"compile": "webpack --mode development",
 		"info": "webpack --display-modules",
 		"watch": "webpack --mode development --watch",
-		"test-compile": "tsc -p ./",
+		"test-compile": "tsc -p . --declaration --outDir out",
 		"prebuild": "npm install",
 		"build": "npm run build-server && cross-os build",
 		"build-server": "node scripts/buildJdtlsExt.js",
