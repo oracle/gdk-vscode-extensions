@@ -60,7 +60,7 @@
 		"watch": "webpack --mode development --watch",
 		"watch-tests": "tsc --outDir out --watch",
 		"test-clean": "rm -r out",
-		"test-compile": "tsc -p . --outDir out",
+		"test-compile": "tsc -p . --declaration --outDir out",
 		"test": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./node_modules/gcn-extension-tests/bin/main.js --runTest",
 		"test-ui": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./node_modules/gcn-extension-tests/bin/main.js --runTest-ui",
 		"prebuild": "npm install",
