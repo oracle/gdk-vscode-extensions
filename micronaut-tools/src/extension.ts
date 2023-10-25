@@ -27,6 +27,7 @@ import * as logUtils from '../../common/lib/logUtils';
 
 export function activate(context: vscode.ExtensionContext) {
 	logUtils.registerExtensionForLogging(context);
+	logUtils.logInfo(`Activating Extension.`);
 	symbols.initialize(context);
 	workspaceFolders.initialize(context);
 	views.initialize(context);
@@ -72,6 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
 		let id: string = ociNode.adbInstanceNodeProperties.adbInstanceID;
 		let name: string = ociNode.adbInstanceNodeProperties.adbInstanceDisplayName;
 		let info = {id, name};
+		logUtils.logInfo(`[NBLS] Download Wallet action: name: ${name}; id: ${id}`);
 		vscode.commands.executeCommand('nbls:Tools:org.netbeans.modules.cloud.oracle.actions.DownloadWalletAction', info);
 	}));
 
@@ -97,9 +99,13 @@ export function activate(context: vscode.ExtensionContext) {
 				if (kubectl.available) {
 					vscode.commands.executeCommand('setContext', 'kubectl.available', true);
 				}
+				logUtils.logWarning(`[micronaut-project] Project exist: javaHome: ${javaHome}; kubectl: ${kubectl.available}.`);
 			}));
+		} else {
+			logUtils.logWarning(`[micronaut-project] Project doesn't exist.`);
 		}
 	});
+	logUtils.logInfo(`Activated Extension.`);
 }
 
 export function deactivate() {

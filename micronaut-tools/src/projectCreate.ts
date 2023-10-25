@@ -6,7 +6,7 @@
  */
 
 import * as vscode from 'vscode';
-
+import * as logUtils from '../../common/lib/logUtils'
 
 const EXTENSION_ID_MICRONAUT = 'oracle-labs-graalvm.micronaut';
 const EXTENSION_NAME_MICRONAUT = 'Micronaut Launch';
@@ -41,6 +41,7 @@ async function extensionReady(extensionID: string, extensionName: string): Promi
             await vscode.commands.executeCommand('workbench.extensions.installExtension', extensionID);
         } catch (err) {
             vscode.window.showErrorMessage(`${err}`);
+            logUtils.logError(`[projectCreate] extension installation failed: ${err}`);
             return false;
         }
     }
@@ -49,13 +50,17 @@ async function extensionReady(extensionID: string, extensionName: string): Promi
 
 async function invokeCommand(createCommandID: string, steps: number = 5): Promise<boolean> {
     try {
+        logUtils.logInfo(`[projectCreate] invocating command: ${createCommandID}`);
         await vscode.commands.executeCommand(createCommandID);
+        logUtils.logInfo(`[projectCreate] command '${createCommandID}' successful.`);
         return true;
     } catch (err) {
         if (--steps <= 0) {
+            logUtils.logError(`[projectCreate] command '${createCommandID}' failed: ${err}`);
             vscode.window.showErrorMessage(`${err}`);
             return false;
         } else {
+            logUtils.logWarning(`[projectCreate] command '${createCommandID}' failed: ${err}`);
             await new Promise(resolve => setTimeout(resolve, 500));
             return invokeCommand(createCommandID, steps);
         }

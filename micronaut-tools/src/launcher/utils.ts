@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as logUtils from '../../../common/lib/logUtils';
 
 export const JAVA_LANGUAGE_SUPPORT: string = "redhat.java";
 
@@ -23,6 +24,7 @@ export async function executeJavaExtensionCommand(command : string, ...args : an
 }
 
 export async function executeExtensionCommand(extId : string, command : string, ...args : any[]) : Promise<any> {
+    logUtils.logInfo(`[launcher-utils] executing extension: ${extId}; command: ${command}; args: ${JSON.stringify(args)}`);
     let x = vscode.extensions.getExtension('redhat.java');
     if (x) {
         if (!x.isActive) {
@@ -38,6 +40,7 @@ export async function executeExtensionCommand(extId : string, command : string, 
         case 'redhat.java': disp = 'VS Code Java Extension'; break;
         default: disp = `extension ${extId}`; break;
     }
+    logUtils.logError(`[launcher-utils] Cannot execute command ${command}, ${disp} is not enabled`);
     throw new JavaExtensionNotEnabledError(`Cannot execute command ${command}, ${disp} is not enabled`);
 }
 

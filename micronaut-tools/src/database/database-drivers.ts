@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as logUtils from '../../../common/lib/logUtils';
 import { isBoolean, isInIs, isNumber, isObject, isString, isTypeArray } from './typeUtils';
 
 export const COMMAND_PREFIX = "nbls.";
@@ -50,6 +51,7 @@ function convertToDBConnectionInfo(dbNode: unknown): [DatabaseConnectionInfo] | 
 }
 
 function registerDatabase(databaseInfo: DatabaseConnectionInfo) {
+    logUtils.logInfo(`[database-drivers] registering database: ${databaseInfo.dataSource}`);
     const userId: string = databaseInfo.userName;
     const dataSource: string = databaseInfo.dataSource;
     const tnsAdmin : string = databaseInfo.tnsAdmin.replace(/\\/g, "\\\\");
@@ -61,7 +63,9 @@ function registerDatabase(databaseInfo: DatabaseConnectionInfo) {
         schema: userId.toUpperCase(),
         displayName: dataSource,
     };
-    vscode.commands.executeCommand(COMMAND_NBLS_ADD_DB_CONNECTION, info);
+    logUtils.logInfo(`[NBLS] add database connection: ${dataSource}`);
+    vscode.commands.executeCommand(COMMAND_NBLS_ADD_DB_CONNECTION, info).then(() =>
+        logUtils.logInfo(`[database-drivers] registered database: ${dataSource}`));
 }
 
 function readPassword(databaseInfo: DatabaseConnectionInfo): string | undefined {
@@ -87,12 +91,23 @@ async function pickDatabase(): Promise<DatabaseConnectionInfo[] | undefined> {
 
 const CONNECTIONS_FIELD = 'oracledevtools.connections';
 export async function getODTDatabaseConnections(): Promise<DatabaseConnectionInfo[]> {
+    logUtils.logInfo(`[database-drivers] obtaining database connections.`);
     const databases = await vscode.commands.executeCommand(COMMAND_ODT_GET_DB_CONNECTIONS);
-    if (!(databases && typeof databases === "string")) { return []; }
+    if (!(databases && typeof databases === "string")) {
+        logUtils.logInfo(`[database-drivers] obtained no database connections.`);
+        return [];
+    }
     const dat = JSON.parse(databases);
-    if (!(CONNECTIONS_FIELD in dat)) { return []; }
+    if (!(CONNECTIONS_FIELD in dat)) {
+        logUtils.logInfo(`[database-drivers] obtained no database connections.`);
+        return [];
+    }
     const conns = dat[CONNECTIONS_FIELD];
-    if (!(conns && isTypeArray(conns, isDatabaseConnectionInfo))) { return []; }
+    if (!(conns && isTypeArray(conns, isDatabaseConnectionInfo))) {
+        logUtils.logInfo(`[database-drivers] obtained no database connections.`);
+        return [];
+    }
+    logUtils.logInfo(`[database-drivers] obtained database connections: ${conns.length}`);
     return conns;
 }
 
