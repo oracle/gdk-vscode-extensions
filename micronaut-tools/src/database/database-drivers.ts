@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { isBoolean, isInIs, isNumber, isObject, isString, isTypeArray } from './typeUtils';
 
-export const COMMAND_PREFIX = "";
+export const COMMAND_PREFIX = "nbls.";
 export const COMMAND_NBLS_ADD_DB_CONNECTION = COMMAND_PREFIX + 'db.add.connection';
 export const COMMAND_ODT_GET_DB_CONNECTIONS = 'oracledevtools.getDBExplorerConnections';
 
