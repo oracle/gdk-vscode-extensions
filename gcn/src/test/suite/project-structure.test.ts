@@ -120,6 +120,9 @@ suite('Project structure Test Suite', function() {
 
         // Requirements for testing project structure - GCN extension present, create project action present 
         test("Setup environment", async () => {
+            // Make sure writeProjectContents is ready before creating any project
+            await Common.initialize();
+
             let extension = vscode.extensions.getExtension('oracle-labs-graalvm.gcn');
             assert(extension, "No GCN extension found!");
             await extension.activate();
@@ -151,7 +154,7 @@ suite('Project structure Test Suite', function() {
             const name = "base-example";
             let testOptions : Common.CreateOptions = {...options};
 
-            createAndTest(testOptions, name);
+            await createAndTest(testOptions, name);
         });
 
 
@@ -160,7 +163,7 @@ suite('Project structure Test Suite', function() {
             let testOptions : Common.CreateOptions = {...options};
             testOptions['buildTool'] = "MAVEN";
 
-            createAndTest(testOptions, name);
+            await createAndTest(testOptions, name);
         });
 
         test("OCI project", async () => {            
@@ -168,7 +171,7 @@ suite('Project structure Test Suite', function() {
             let testOptions : Common.CreateOptions = {...options};
             testOptions['clouds'] = ["OCI"];
 
-            createAndTest(testOptions, name);
+            await createAndTest(testOptions, name);
         });
 
         test("AWS project", async () => {            
@@ -176,15 +179,16 @@ suite('Project structure Test Suite', function() {
             let testOptions : Common.CreateOptions = {...options};
             testOptions['clouds'] = ["AWS"];
 
-            createAndTest(testOptions, name);
+            await createAndTest(testOptions, name);
         });
 
         test("Project with selected services", async () => {            
             const name = "custom-services";
             let testOptions : Common.CreateOptions = {...options};
+            testOptions['clouds'] = ["OCI", "AWS"];
             testOptions["services"] = ["DATABASE", "EMAIL", "LOGGING", "METRICS", "TRACING"];
 
-            createAndTest(testOptions, name);
+            await createAndTest(testOptions, name);
         });
 
 });
