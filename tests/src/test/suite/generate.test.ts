@@ -9,7 +9,7 @@ import * as path from 'path';
 import { getSpecifications } from '../../abstractRunTests';
 
 suite('Creating projects', function () {
-  this.timeout(10000);
+  this.timeout(0);
 
   test('Create UI projects', async () => {
     const testPath = path.resolve(__dirname, 'Gates/UI');

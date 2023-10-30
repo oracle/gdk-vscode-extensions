@@ -29,7 +29,7 @@ export async function getSpecifications(testFolder: string): Promise<IMochaTestS
   const directories = await getSubDIrectories(testFolder);
 
   for (let i = 0; i < directories.length; i++) {
-    const testSpecificationFolder = path.join(testFolder, directories[i], 'TestSpecification');
+    const testSpecificationFolder = path.join(testFolder, directories[i], 'testSpecification');
 
     let specModule;
     if (fs.existsSync(testSpecificationFolder + '.js')) {
