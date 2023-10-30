@@ -6,5 +6,5 @@
  */
 
 export interface IMochaTestSpecification {
-  createProjects(): void;
+  createProjects(): Promise<void>;
 }
