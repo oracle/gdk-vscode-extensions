@@ -20,7 +20,7 @@
     "generate": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --generate",
     "pre-test": "npm install; npm run clean; npm run dependency-compile; npm run clean-resources; npm run compile; npm run generate",
     "test": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --runTest",
-    "pre-test-ui": "npm run pretest",
+    "pre-test-ui": "npm run pre-test",
     "test-ui": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --runTest-ui"
   },
   "author": {

@@ -1,0 +1,35 @@
+// A launch configuration that compiles the extension and then opens it inside a new window
+// Use IntelliSense to learn about possible attributes.
+// Hover to view descriptions of existing attributes.
+// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+{
+	"version": "1.0.0",
+	"configurations": [
+		{
+			"name": "API Tests",
+			"type": "node",
+			//"runtimeExecutable": "C:/Program Files/nodejs/node.exe", // WINDOWS: default node
+			"request": "launch",
+			"program": "${workspaceFolder}/out/bin.js",
+			"args": [
+				"--runTest"
+			],
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen",
+			// "preLaunchTask": "tasks: tests-ui-prerequisites"
+		},
+		{
+			"name": "UI Tests",
+			"type": "node",
+			//"runtimeExecutable": "C:/Program Files/nodejs/node.exe", // WINDOWS: default node
+			"request": "launch",
+			"program": "${workspaceFolder}/out/bin.js",
+			"args": [
+				"--runTest-ui"
+			],
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen",
+			// "preLaunchTask": "tasks: tests-prerequisites"
+		}
+	]
+}
