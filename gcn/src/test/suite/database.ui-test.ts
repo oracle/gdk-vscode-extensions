@@ -48,7 +48,7 @@ async function findAndExpand( section : ViewSection, itemLabel : string, timeout
             console.log("[DEBUG] Waiting for item: " + itemLabel + " to appear");
         }
     }
-    assert(viewItem, "Item: " + itemLabel + " not found in the viewSection");
+    assert.ok(viewItem, "Item: " + itemLabel + " not found in the viewSection");
     await viewItem.select();
 }
 
@@ -68,8 +68,8 @@ describe('Database UI Tests', function () {
     const DB_PASSWORD : string = process.env["DB_PASSWORD"] ? process.env["DB_PASSWORD"] : "";
 
     it ("Setup environment", async () => {
-        assert(DB_USERNAME, "Database Username cannot be blank");
-        assert(DB_PASSWORD, "Database Password cannot be blank");
+        assert.ok(DB_USERNAME, "Database Username cannot be blank");
+        assert.ok(DB_PASSWORD, "Database Password cannot be blank");
     });
 
     // Create and open a dummy java file to trigger onCreation event for NBLS Extension
@@ -85,7 +85,7 @@ describe('Database UI Tests', function () {
     // Wait for the "DATABASE" panel to appear inside explorer actionBar
     it("Check Database panel", async () => {
         const control : ViewControl | undefined = await new ActivityBar().getViewControl("Explorer");
-        assert(control, "No explorer View Controller");
+        assert.ok(control, "No explorer View Controller");
 
         const view = await control.openView();
         let found : boolean = false;
@@ -101,7 +101,7 @@ describe('Database UI Tests', function () {
             }
             await new Promise(f=>setTimeout(f, 10000));
         }
-        assert(found, "No Databases panel found. Check if NBLS Extension has been installed and enabled.");
+        assert.ok(found, "No Databases panel found. Check if NBLS Extension has been installed and enabled.");
     });
 
 
@@ -116,28 +116,36 @@ describe('Database UI Tests', function () {
         
         // wait for OCI scanning to complete
         let picks : QuickPickItem[] = [];
+        let skipOCISelection = false;
         for (let i = 0; i < 30; ++i) {
             console.log("DEBUG: Waiting for OCI profiles to load ("+(i+1)+"/30)");
             picks = await input.getQuickPicks();
             if (picks.length === 0) {
                 await new Promise(f=>setTimeout(f,1000));
-            } else break;
+            } else {
+                if ((await input.getPlaceHolder()).indexOf("OCI") === -1 ) {
+                    skipOCISelection = true;
+                }
+                break;
+            } 
         }
-        assert.ok(picks.length>0, "No OCI Profiles have been found");
-        let ociProfileIndex = 0;
-        for (let pick of picks) {
-            if (await pick.getLabel() === OCI_PROFILE) {
-                ociProfileIndex = picks.indexOf(pick);
+        if (!skipOCISelection) {
+            assert.ok(picks.length>0, "No OCI Profiles have been found");
+            let ociProfileIndex = 0;
+            for (let pick of picks) {
+                if (await pick.getLabel() === OCI_PROFILE) {
+                    ociProfileIndex = picks.indexOf(pick);
+                }
             }
+            console.log("DEBUG: Chosing OCI Profile:", await picks[ociProfileIndex].getLabel() );
+            await input.selectQuickPick(ociProfileIndex);
         }
-        console.log("DEBUG: Chosing OCI Profile:", await picks[ociProfileIndex].getLabel() );
-        await input.selectQuickPick(ociProfileIndex);
         let compartmentIndex = await waitForQuickpickValue(input, DB_COMPARTMENT, 60);
-        assert(compartmentIndex !== -1, "No compartment "+DB_COMPARTMENT+" found. Check OCI credentials/tendency/compartment path.");
+        assert.ok(compartmentIndex !== -1, "No compartment "+DB_COMPARTMENT+" found. Check OCI credentials/tendency/compartment path.");
         await input.selectQuickPick(compartmentIndex);
 
         let databaseIndex = await waitForQuickpickValue(input, DB_NAME, 60);
-        assert(databaseIndex !==-1, "No database "+DB_NAME+" found. Check the compartment: " + DB_COMPARTMENT);
+        assert.ok(databaseIndex !==-1, "No database "+DB_NAME+" found. Check the compartment: " + DB_COMPARTMENT);
         await input.selectQuickPick(databaseIndex);
         await new Promise(f=>setTimeout(f,1000));
 
@@ -166,13 +174,13 @@ describe('Database UI Tests', function () {
 
             await new Promise(f=>setTimeout(f, 1000));
         }
-        assert(walletGenerated, "No wallet has been generated for the database.");
+        assert.ok(walletGenerated, "No wallet has been generated for the database.");
     });
 
     // Open the database panel, right click on the added database and establish a connection 
     it ("Connect to database via panel", async ()=> {
         const control : ViewControl | undefined = await new ActivityBar().getViewControl("Explorer");
-        assert(control, "No explorer View Controller");
+        assert.ok(control, "No explorer View Controller");
 
         const view = await control.openView();
         const contentPart = view.getContent();
@@ -184,7 +192,7 @@ describe('Database UI Tests', function () {
                 databaseSection = sec;
             }
         }
-        assert(databaseSection, "No database section found.");
+        assert.ok(databaseSection, "No database section found.");
         await databaseSection.expand();
         await new Promise(f=>setTimeout(f,10000));
 
@@ -196,7 +204,7 @@ describe('Database UI Tests', function () {
             }
         }
         await new Promise(f=>setTimeout(f,1000));
-        assert(contextMenu, "The database has not been listed inside the database panel");
+        assert.ok(contextMenu, "The database has not been listed inside the database panel");
 
         const contextItems : ContextMenuItem[] = await contextMenu.getItems();
         let connectItem : ContextMenuItem | undefined;
@@ -205,7 +213,7 @@ describe('Database UI Tests', function () {
                 connectItem = ctxItem;
             }
         }
-        assert(connectItem, "No connect option found in context menu for the added database");
+        assert.ok(connectItem, "No connect option found in context menu for the added database");
         await connectItem.click();
         await new Promise(f=>setTimeout(f,5000));
     });
