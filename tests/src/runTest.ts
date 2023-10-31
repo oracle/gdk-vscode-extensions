@@ -58,7 +58,7 @@ export async function runTest() {
         const vscodeExecutablePath = await downloadAndUnzipVSCode('1.76.0');
         const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
 
-        let extensionList: string[] = ['oracle-labs-graalvm.graalvm', 'oracle-labs-graalvm.gcn']; // TODO each test can have own extension list
+        let extensionList: string[] = ['oracle-labs-graalvm.graalvm', 'oracle-labs-graalvm.gcn', 'asf.apache-netbeans-java']; // TODO each test can have own extension list
 
         // download additional extensions
         if (process.env['MOCHA_EXTENSION_LIST']) {
