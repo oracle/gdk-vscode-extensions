@@ -115,22 +115,34 @@ export async function createGcnProject(
   services: Features[],
   relativePath: string[],
   java: SupportedJavas = SupportedJavas.AnyJava,
+  absolute: boolean = true
 ): Promise<string> {
   try {
+    console.log("hello")
     await Common.initialize();
 
     const options = await getCreateOptions(buildTool, java, services);
 
-    const relPath = path.join('..', '..', ...relativePath, getName(buildTool, services));
 
-    const projFolder: string = path.resolve(__dirname, relPath);
+
+    let projFolder;
+    if (absolute)
+    {
+      projFolder = path.join(...relativePath);
+      projFolder = path.resolve("~", projFolder)
+    }
+    else{
+      const relPath = path.join('..', '..', ...relativePath, getName(buildTool, services));
+      projFolder = path.resolve(__dirname, relPath);
+    }
+
 
     if (!fs.existsSync(projFolder)) {
       fs.mkdirSync(projFolder, { recursive: true });
     }
+    console.log("saving to", projFolder);
     await Common.writeProjectContents(options.options, new NodeFileHandler(vscode.Uri.file(projFolder)));
-
-    return projFolder;
+    return options.homeDir;
   } catch (e: any) {
     assert.fail('Project options were not resolved properly: ' + e.message);
   }
