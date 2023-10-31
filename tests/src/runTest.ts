@@ -10,7 +10,7 @@ import * as path from 'path';
 import * as cp from 'child_process';
 import { runTests, downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron';
 import { AbortController } from 'node-abort-controller';
-import { getSubDIrectories } from './abstractRunTests';
+import { getSubDirectories } from './abstractRunTests';
 import { ICodeTestSpecification } from './Common/ICodeTestSpecification';
 
 export async function runTest() {
@@ -28,7 +28,7 @@ export async function runTest() {
 
   // The path for tests
   const bigTestPath = path.resolve(__dirname, '../out/test/suite/Gates/API');
-  const directories = await getSubDIrectories(bigTestPath);
+  const directories = await getSubDirectories(bigTestPath);
 
   let statusAll: boolean = true;
 
@@ -46,7 +46,7 @@ export async function runTest() {
     }
 
     const projectPath = path.join(testPath, 'projects');
-    const projects = await getSubDIrectories(projectPath);
+    const projects = await getSubDirectories(projectPath);
 
     for (let j = 0; j < projects.length; j++) {
       const project = path.join(projectPath, projects[j]);
@@ -58,7 +58,7 @@ export async function runTest() {
         const vscodeExecutablePath = await downloadAndUnzipVSCode('1.76.0');
         const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
 
-        let extensionList: string[] = ['oracle-labs-graalvm.graalvm', 'oracle-labs-graalvm.gcn', 'asf.apache-netbeans-java']; // TODO each test can have own extension list
+        let extensionList: string[] = ['oracle-labs-graalvm.graalvm', 'oracle-labs-graalvm.gcn', 'asf.apache-netbeans-java', "oracle-labs-graalvm.oci-devops", "vscjava.vscode-java-pack", "ms-kubernetes-tools.vscode-kubernetes-tools"]; // TODO each test can have own extension list
 
         // download additional extensions
         if (process.env['MOCHA_EXTENSION_LIST']) {

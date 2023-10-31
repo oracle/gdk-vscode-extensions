@@ -11,7 +11,7 @@ import { readdir } from 'fs/promises';
 import { IMochaTestSpecification } from './Common/IMochaTestSpecification';
 import { ICodeTestSpecification } from './Common/ICodeTestSpecification';
 
-export async function getSubDIrectories(projectPath: string): Promise<string[]> {
+export async function getSubDirectories(projectPath: string): Promise<string[]> {
   let directories;
   try {
     directories = (await readdir(projectPath, { withFileTypes: true }))
@@ -26,7 +26,7 @@ export async function getSubDIrectories(projectPath: string): Promise<string[]> 
 
 export async function getSpecifications(testFolder: string): Promise<IMochaTestSpecification[]> {
   const specifications: IMochaTestSpecification[] = [];
-  const directories = await getSubDIrectories(testFolder);
+  const directories = await getSubDirectories(testFolder);
 
   for (let i = 0; i < directories.length; i++) {
     const testSpecificationFolder = path.join(testFolder, directories[i], 'testSpecification');
@@ -43,7 +43,7 @@ export async function getSpecifications(testFolder: string): Promise<IMochaTestS
 
 export async function getDeletions(testFolder: string): Promise<ICodeTestSpecification[]> {
   const specifications: ICodeTestSpecification[] = [];
-  const directories = await getSubDIrectories(testFolder);
+  const directories = await getSubDirectories(testFolder);
 
   for (let i = 0; i < directories.length; i++) {
     const testSpecificationFolder = path.join(testFolder, directories[i], 'testDeletion');
