@@ -244,8 +244,9 @@ To create repository classes, follow these steps:
 2. Create a new Java package in your project, for example, `com.example.micronaut.repositories`.
 3. Right-click the package name and select **New From Template...** from the menu.
 4. When prompted, select **Micronaut**, then **Micronaut Data Repository Interfaces from Entity**.
-5. From the list of entities, select the entities for which you want to create corresponding repositories. 
-6. Click **Enter**.
+5. Choose if **Repository Interfaces** should to be based on **CRUD**, or **Pageable**. The default is **CRUD**.
+6. From the list of entities, select the entities for which you want to create corresponding repositories.
+7. Click **Enter**.
 
 ## Extension Settings
 
