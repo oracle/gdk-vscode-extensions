@@ -1,0 +1,90 @@
+/*
+ * Copyright 2023 Oracle and/or its affiliates
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+plugins {
+    id("com.github.johnrengelman.shadow")
+    id("cloud.graal.gcn.gcn-bom") 
+    id("io.micronaut.application")
+    id("io.micronaut.test-resources")
+}
+
+version = "1.0-SNAPSHOT"
+group = "com.exampleg"
+
+repositories {
+    mavenCentral()
+    
+    maven { url "https://maven.oracle.com/public" }
+}
+
+dependencies {
+    annotationProcessor("io.micronaut.data:micronaut-data-processor")
+    annotationProcessor("io.micronaut.serde:micronaut-serde-processor")
+    annotationProcessor("io.micronaut.validation:micronaut-validation-processor")
+    implementation("ch.qos.logback.contrib:logback-jackson:0.1.5")
+    implementation("ch.qos.logback.contrib:logback-json-classic:0.1.5")
+    micronautBoms(platform("cloud.graal.gcn:gcn-bom:2.1"))
+    implementation("io.micronaut:micronaut-http-client")
+    implementation("io.micronaut:micronaut-management")
+    implementation("io.micronaut.data:micronaut-data-jdbc")
+    implementation("io.micronaut.flyway:micronaut-flyway")
+    implementation("io.micronaut.micrometer:micronaut-micrometer-core")
+    implementation("io.micronaut.oraclecloud:micronaut-oraclecloud-atp")
+    implementation("io.micronaut.oraclecloud:micronaut-oraclecloud-bmc-monitoring")
+    implementation("io.micronaut.oraclecloud:micronaut-oraclecloud-httpclient-netty")
+    implementation("io.micronaut.oraclecloud:micronaut-oraclecloud-logging")
+    implementation("io.micronaut.oraclecloud:micronaut-oraclecloud-micrometer")
+    implementation("io.micronaut.oraclecloud:micronaut-oraclecloud-sdk")
+    implementation("io.micronaut.serde:micronaut-serde-jackson")
+    implementation("io.micronaut.sql:micronaut-jdbc-hikari")
+    implementation("io.micronaut.tracing:micronaut-tracing-opentelemetry-zipkin-exporter")
+    implementation("io.micronaut.validation:micronaut-validation")
+    implementation("jakarta.validation:jakarta.validation-api")
+    compileOnly("org.graalvm.nativeimage:svm")
+    runtimeOnly("ch.qos.logback:logback-classic")
+    runtimeOnly("org.flywaydb:flyway-database-oracle")
+    implementation(project(":lib"))
+}
+
+
+application {
+    mainClass.set("com.exampleg.Application")
+}
+java {
+    sourceCompatibility = JavaVersion.toVersion("17")
+    targetCompatibility = JavaVersion.toVersion("17")
+}
+
+graalvmNative.toolchainDetection = false
+micronaut {
+    runtime("netty")
+    testRuntime("junit5")
+    processing {
+        incremental(true)
+        annotations("com.exampleg.*")
+    }
+}
+
+
+
+
+tasks.named('dockerBuild') {
+    images = ["${rootProject.name}-${project.name}"]
+}
+
+tasks.named('dockerBuildNative') {
+    images = ["${rootProject.name}-${project.name}"]
+}

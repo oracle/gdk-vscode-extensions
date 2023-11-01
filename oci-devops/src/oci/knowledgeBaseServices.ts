@@ -484,7 +484,7 @@ class Service extends ociService.Service {
     
     constructor(folder: vscode.WorkspaceFolder, oci: ociContext.Context, serviceData: any | undefined, dataChanged: dataSupport.DataChanged) {
         super(folder, oci, DATA_NAME, serviceData, dataChanged);
-        if (this.settingsData?.folderAuditsKnowledgeBase) {
+        if (this.settingsData?.folderAuditsKnowledgeBase && !process.env['ADM_SUPPRESS_AUTO_DISPLAY']) {
             this.tryDisplayProjectAudit(0);
         }
     }
