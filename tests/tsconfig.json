@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+ */
+{
+  "compilerOptions": {
+    "target": "es6", /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
+    "module": "commonjs", /* Specify what module code is generated. */
+    "rootDir": "./src", /* Specify the root folder within your source files. */
+    "outDir": "./out", /* Specify an output folder for all emitted files. */
+    "esModuleInterop": true, /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. TODO*/
+    "forceConsistentCasingInFileNames": true, /* Ensure that casing is correct in imports. */
+    /* Type Checking */
+    "strict": true, /* Enable all strict type-checking options. TODO */  
+    "lib": [
+      "es6",
+      "DOM"
+    ],
+    "sourceMap": true,
+    /* Strict Type-Checking Option */
+    /* Additional Checks */
+    "noUnusedLocals": true, /* Report errors on unused locals. */
+    "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
+    "noFallthroughCasesInSwitch": true, /* Report errors for fallthrough cases in switch statement. */
+    "noUnusedParameters": true, /* Report errors on unused parameters. */
+    // Pick types from our module and not from common/node_modules
+    "baseUrl": ".",
+    "paths": {
+      "vscode": [
+        "node_modules/@types/vscode"
+      ]
+    }
+  },
+    
+	"include": [
+		"src/**/*"
+	],
+  "exclude": ["node_modules", ".vscode-test", "test-resources"]
+}
