@@ -14,9 +14,9 @@ export class TestSpecification implements ICodeTestSpecification {
   private actualPath = ['src', 'test', 'suite', 'Gates', 'API', 'NITests', 'projects'];
 
   public async clean() {
-    // const pathss = path.join(...this.actualPath);
-    // if (fs.existsSync(pathss)) {
-    //   fs.rmdirSync(pathss, { recursive: true });
-    // }
+    const pathss = path.join(...this.actualPath);
+    if (fs.existsSync(pathss)) {
+      // fs.rmdirSync(pathss, { recursive: true });
+    }
   }
 }

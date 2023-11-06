@@ -10,13 +10,50 @@ import * as fs from 'fs';
 import axios from 'axios';
 import { ChildProcess, exec, spawn } from 'child_process';
 import path = require('path');
-import { BuildTools } from '../../../../../Common/project-generator';
+import { BuildTools, Features, SupportedJavas, getCreateOptions } from '../../../../../Common/project-generator';
+import { NodeFileHandler } from '../../../../../../../gcn/out/gcnProjectCreate';
+import * as vscode from 'vscode';
+
+import * as Common from '../../../../../../../gcn/out/common';
+
+/**
+ * Creates GCN project with given specification
+ * @param buildTool is a tool you want the project to be initialized with
+ * @param services are services you want the project to be initialized with
+ * @param java is a java runtime you want the project to be initialized with
+ * @returns path to the created project
+ */
+export async function createGcnProjectNiTest(
+  buildTool: BuildTools,
+  services: Features[],
+  relativePath: string[],
+  java: SupportedJavas = SupportedJavas.AnyJava,
+): Promise<string> {
+  try {
+    await Common.initialize();
+    relativePath = relativePath.slice(-5);
+
+    const options = await getCreateOptions(buildTool, java, services);
+    const relPath = path.join(...relativePath);
+    const projFolder: string = path.resolve(relPath);
+
+    if (!fs.existsSync(projFolder)) {
+      fs.mkdirSync(projFolder, { recursive: true });
+    }
+    assert.ok(fs.existsSync(projFolder));
+
+    await Common.writeProjectContents(options.options, new NodeFileHandler(vscode.Uri.file(projFolder)));
+    assert.ok(fs.existsSync(projFolder));
+    return options.homeDir;
+  } catch (e: any) {
+    assert.fail('Project options were not resolved properly: ' + e.message);
+  }
+}
 
 export class TestHelper {
   private readonly getRunParameters: (buildTool: BuildTools, test: Tests) => [string, string[]];
   private readonly totalTimeInterval: number;
   private server: ChildProcess | null = null;
-  private readonly remove: boolean;
   private defaltFodler: string;
   private controllerPath: string;
   private debug: boolean;
@@ -27,18 +64,15 @@ export class TestHelper {
    * @param timeout is timeout
    * @param baseFolder is a base folder
    * @param controllerFolder is a controller path, relative to project, without ControllerName
-   * @param remove if you want to remove resources
    */
   constructor(
     getRunParameters: (buildTool: BuildTools, test: Tests) => [string, string[]],
     timeout: number,
     baseFolder: string,
     controllerFolder: string,
-    remove = true,
   ) {
     this.getRunParameters = getRunParameters;
     this.totalTimeInterval = timeout;
-    this.remove = remove;
     this.defaltFodler = path.join(path.resolve(baseFolder));
     this.controllerPath = controllerFolder;
 
@@ -144,13 +178,20 @@ export class TestHelper {
     }
   }
 
+  private writeLog(message: string) {
+    if (true) return;
+    console.log('\x1b[36m', message);
+    console.log('\x1b[0m', '');
+  }
+
   private log(message: string) {
-    if (this.debug) console.log('\x1b[34m', message);
+    if (!process.env.DEBUG) return;
+    console.log('\x1b[34m', message);
     console.log('\x1b[0m', '');
   }
 
   private removeFunc(projFolder: string) {
-    if (!this.remove) return;
+    if (!process.env.DEBUG) return;
     this.log('deleting fodler' + projFolder);
     fs.rmSync(projFolder, { recursive: true });
   }
@@ -219,11 +260,10 @@ export class TestHelper {
       if (data.includes(message)) {
         logs += data;
         isRunning = true;
+      } else if (data.includes('build failure') || data.includes('BUILD FAILURE')) {
+        logs += data;
+        this.server?.kill();
       }
-      // else if (data.includes("build failure") || data.includes("BUILD FAILURE")) {
-      //   logs += data;
-      //   this.server?.kill();
-      // }
     };
 
     this.server.stdout.on('data', checker);
@@ -287,9 +327,7 @@ export class TestHelper {
       fs.mkdirSync(this.defaltFodler, { recursive: true });
 
       this.log('creating project');
-      console.log("CREATING PROJECT")
       process.env.GRAALVM_HOME = await createMyProject(buildTool);
-      console.log("PROJECT CREATED", process.env.GRAALVM_HOME)
       assert.ok(fs.existsSync(projFolder), 'Project folder exists');
       assert.ok(this.createController(projFolder, randomNumeber), 'Controller was created');
       const time = this.totalTimeInterval * 0.9;
@@ -326,13 +364,6 @@ export class TestHelper {
 
   private writeYellow(message: string) {
     console.log('\x1b[33m', message);
-    console.log('\x1b[0m', '');
-  }
-
-  private writeLog(message: string) {
-    if (!this.debug) return;
-
-    console.log('\x1b[36m', message);
     console.log('\x1b[0m', '');
   }
 

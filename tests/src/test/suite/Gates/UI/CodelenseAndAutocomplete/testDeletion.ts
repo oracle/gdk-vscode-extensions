@@ -8,8 +8,9 @@
 import * as fs from 'fs';
 
 import path = require('path');
+import { ICodeTestSpecification } from 'src/Common/ICodeTestSpecification';
 
-export class TestSpecification {
+export class TestSpecification implements ICodeTestSpecification {
   private actualPath = ['src', 'test', 'suite', 'Gates', 'UI', 'CodelenseAndAutocomplete', 'projects'];
 
   public async clean() {
