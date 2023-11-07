@@ -16,7 +16,7 @@ export class TestSpecification implements ICodeTestSpecification {
   public async clean() {
     const pathss = path.join(...this.actualPath);
     if (fs.existsSync(pathss)) {
-      // fs.rmdirSync(pathss, { recursive: true });
+      fs.rmdirSync(pathss, { recursive: true });
     }
   }
 }
