@@ -556,7 +556,9 @@ class Service extends ociService.Service {
         if (!auditsKnowledgeBase) {
             return;
         }
-        vscode.commands.executeCommand('nbls.projectAudit.display', this.folder.uri.toString(), auditsKnowledgeBase, 
+
+        let l : Thenable<unknown>[] = [];
+        l.push(vscode.commands.executeCommand('nbls.projectAudit.display', this.folder.uri.toString(), auditsKnowledgeBase, 
             { 
                 force : true,
                 profile: this.oci.getProfile(),
@@ -564,14 +566,14 @@ class Service extends ociService.Service {
                 displaySummary: false,
                 suppressErrors: true
             }
-        ).then(result => reportAuditResults(result), error => reportAuditError(error));
+        ).then(result => reportAuditResults(result), error => reportAuditError(error)));
         const prjs: any[] = await vscode.commands.executeCommand('nbls.project.info', this.folder.uri.toString(), { recursive : true, projectStructure : true });
 
         if (prjs.length < 2) {
             return;
         }
         for (let i of prjs.slice(1)) {
-            vscode.commands.executeCommand('nbls.projectAudit.display', i.projectDirectory, auditsKnowledgeBase,  
+            l.push(vscode.commands.executeCommand('nbls.projectAudit.display', i.projectDirectory, auditsKnowledgeBase,  
                 { 
                     force : true,
                     profile: this.oci.getProfile(),
@@ -579,8 +581,10 @@ class Service extends ociService.Service {
                     displaySummary: false,
                     suppressErrors: true
                 }
-            ).then(result => reportAuditResults(result), error => reportAuditError(error));
+            ).then(result => reportAuditResults(result), error => reportAuditError(error)));
         }
+        // complete this function only afer 
+        await Promise.all(l);
     }
 
     tryDisplayProjectAudit(attempt : number) {
