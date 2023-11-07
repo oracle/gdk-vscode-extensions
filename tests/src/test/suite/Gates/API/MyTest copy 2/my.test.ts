@@ -1,0 +1,3 @@
+suite('Tst', () => {
+  test('myFirstTest', () => {});
+});

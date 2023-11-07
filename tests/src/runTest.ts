@@ -5,15 +5,14 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
-import * as fs from 'fs';
 import * as path from 'path';
 import * as cp from 'child_process';
 import { runTests, downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron';
 import { AbortController } from 'node-abort-controller';
-import { getSubDirectories } from './abstractRunTests';
-import { TestVscodeOptions, ICodeTestSpecification } from './Common/ICodeTestSpecification';
+import { getSubDirs, gatherTestCases } from './Common/helpers';
 
-export async function runTest() {
+export async function runTest(args: string[]) {
+  console.log("runTest: " + args);
   // BuildBot Abort controller fix
   // @ts-ignore
   global.AbortController = AbortController;
@@ -28,34 +27,19 @@ export async function runTest() {
 
   // The path for tests
   const bigTestPath = path.resolve(__dirname, '../out/test/suite/Gates/API');
-  const directories = await getSubDirectories(bigTestPath);
+  const testCases = gatherTestCases(bigTestPath, ...(args.length > 0 ? args : ['**test.js']));
 
   let statusAll: boolean = true;
 
-  for (let i = 0; i < directories.length; i++) {
-    process.env['test'] = directories[i];
-
-    let testPath = path.resolve(__dirname, '../src/test/suite/Gates/API');
-    testPath = path.join(testPath, directories[i]);
-
-    const specfile = path.resolve(__dirname, '../out/test/suite/Gates/API');
-    const testSpecificationFolder = path.join(specfile, directories[i], 'testDeletion');
-    let testSpecification;
-    if (fs.existsSync(testSpecificationFolder + '.js')) {
-      testSpecification = require(testSpecificationFolder);
-    }
-
-    const projectPath = path.join(testPath, 'projects');
-    const projects = await getSubDirectories(projectPath);
+  for (const directory in testCases) {
+    process.env['test'] = path.basename(directory);
+    const testDescriptor = testCases[directory][0];
+    process.env['tests'] = testCases[directory][1].map(fn => path.join(directory, fn)).join(';');
+    const projectPath = path.join(directory, 'projects');
+    const projects = getSubDirs(projectPath);
 
     for (let j = 0; j < projects.length; j++) {
       const project = path.join(projectPath, projects[j]);
-
-      function supportsOptions(spec : unknown) : spec is TestVscodeOptions {
-        return (spec as TestVscodeOptions).launchOptions !== undefined;
-      }
-
-      const x: ICodeTestSpecification = new testSpecification.TestSpecification();
       try {
         const testWorkspace = project;
 
@@ -86,20 +70,14 @@ export async function runTest() {
 
         const launchArgs = testWorkspace ? [testWorkspace] : undefined;
 
-        let extensionTestsEnv : {
-          [key: string]: string | undefined;
-        } | undefined;
-
-        if (supportsOptions(x)) {
-          extensionTestsEnv  = x.launchOptions()?.env;
-        }
+        const env = testDescriptor.getProjectEnvironment();
 
         const statusCode = await runTests({
           vscodeExecutablePath,
           extensionDevelopmentPath,
           extensionTestsPath,
           launchArgs,
-          extensionTestsEnv
+          extensionTestsEnv: Object.keys(env).length > 0 ? env : undefined
         });
 
         statusAll = statusAll && statusCode === 0;
@@ -107,7 +85,7 @@ export async function runTest() {
         console.error('Failed to run tests', err);
         statusAll = false;
       } finally {
-        await x.clean();
+        await testDescriptor.clean();
       }
     }
   }

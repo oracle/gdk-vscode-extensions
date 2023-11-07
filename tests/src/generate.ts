@@ -9,7 +9,7 @@ import * as path from 'path';
 import { runTests, downloadAndUnzipVSCode } from '@vscode/test-electron';
 import { AbortController } from 'node-abort-controller';
 
-export async function generate() {
+export async function generate(args: string[]) {
   // BuildBot Abort controller fix
   // @ts-ignore
   global.AbortController = AbortController;

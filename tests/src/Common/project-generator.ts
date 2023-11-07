@@ -14,32 +14,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
-
-export enum BuildTools {
-  Maven = 'MAVEN',
-  Gradle = 'GRADLE',
-  Unsupported = 'Unsupported',
-}
-
-export enum SupportedJavas {
-  AnyJava17 = 'java17',
-  Unsupported = 'Unsupported',
-  AnyJava = 'java',
-}
-
-export enum Features {
-  DATABASE = 'DATABASE',
-  EMAIL = 'EMAIL',
-  K8S = 'K8S',
-  LOGGING = 'LOGGING',
-  METRICS = 'METRICS',
-  OBJECTSTORE = 'OBJECTSTORE',
-  SDK = 'SDK',
-  SECRETMANAGEMENT = 'SECRETMANAGEMENT',
-  SECURITY = 'SECURITY',
-  STREAMING = 'STREAMING',
-  TRACING = 'TRACING',
-}
+import { BuildTool, Feature, SupportedJava } from './types';
 
 interface CreateOptions {
   homeDir: string;
@@ -53,8 +28,8 @@ function generateUID(): string {
 }
 
 export async function getCreateOptions(
-  ourBuildTool: BuildTools,
-  java: SupportedJavas,
+  ourBuildTool: BuildTool,
+  java: SupportedJava,
   services: string[],
 ): Promise<CreateOptions> {
   let javaRuntimes;
@@ -93,7 +68,7 @@ export async function getCreateOptions(
   };
 }
 
-export function createUniqueSuffix(buildTool: BuildTools, services: string[]) {
+function getName(buildTool: BuildTool, services: string[]) {
   let name: string = buildTool + '_';
   if (services.length > 0) {
     name += services.join('_') + '_';
@@ -111,19 +86,17 @@ export function createUniqueSuffix(buildTool: BuildTools, services: string[]) {
  * @returns path to the created project
  */
 export async function createGcnProject(
-  buildTool: BuildTools,
-  services: Features[],
-  relativePath: string[],
-  java: SupportedJavas = SupportedJavas.AnyJava,
+  buildTool: BuildTool,
+  services: Feature[],
+  relAbsPath: string[] | string,
+  java: SupportedJava = SupportedJava.AnyJava,
 ): Promise<string> {
   try {
     await Common.initialize();
 
     const options = await getCreateOptions(buildTool, java, services);
 
-    const relPath = path.join('..', '..', ...relativePath, createUniqueSuffix(buildTool, services));
-
-    const projFolder: string = path.resolve(__dirname, relPath);
+    const projFolder: string = resolveProjFolder(relAbsPath, getName(buildTool, services));
 
     if (!fs.existsSync(projFolder)) {
       fs.mkdirSync(projFolder, { recursive: true });
@@ -133,5 +106,14 @@ export async function createGcnProject(
     return projFolder;
   } catch (e: any) {
     assert.fail('Project options were not resolved properly: ' + e.message);
+  }
+}
+
+function resolveProjFolder(relAbsPath: string[] | string, ending: string): string {
+  if (typeof relAbsPath === 'string')
+    return path.join(relAbsPath, ending);
+  else {
+    const relPath = path.join('..', '..', ...relAbsPath, ending);
+    return path.resolve(__dirname, relPath);
   }
 }
