@@ -19,6 +19,7 @@ import * as folderStorage from '../folderStorage';
 import * as ociAuthentication from './ociAuthentication';
 import * as ociUtils from './ociUtils';
 import * as ociServices from './ociServices';
+import * as gitUtils from '../gitUtils';
 
 
 const ACTION_NAME = 'Delete Folder(s) from OCI DevOps Project';
@@ -809,7 +810,9 @@ export async function undeploy(folders: devopsServices.FolderData[], deployData:
                         if (fs.existsSync(gitDirPath)) {
                             progress.report({ message: `Deleting local GIT repository at ${gitDirPath}`});
                             logUtils.logInfo(`[undeploy] Deleting local GIT repository at ${gitDirPath}`);
-                            fs.rmdirSync(gitDirPath, { recursive : true});
+                            let u = vscode.Uri.file(gitDirPath);
+                            await vscode.workspace.fs.delete(u, { recursive: true, useTrash: false });
+                            await gitUtils.closeRepository(vscode.Uri.file(folderPath));
                         }
                     }
                 }
@@ -1270,13 +1273,15 @@ export async function undeployFolder(folder: devopsServices.FolderData) {
 
         _progress.report({ message: `Deleting code repository: ${repositoryName}`});
         logUtils.logInfo(`[undeploy] Deleting code repository ${repositoryName} in ${projectLogname}`);
-        await ociUtils.deleteCodeRepository(authProvider, repositoryId);
+        await ociUtils.deleteCodeRepository(authProvider, repositoryId, true);
 
         const gitPath = path.join(folderPath, '.git');
         if (fs.existsSync(gitPath)) {
             _progress.report({ message: `Deleting local GIT repository at ${gitPath}`});
             logUtils.logInfo(`[undeploy] Deleting local GIT repository at ${gitPath}`);
-            fs.rmdirSync(gitPath, { recursive : true});
+            let u = vscode.Uri.file(gitPath);
+            await vscode.workspace.fs.delete(u, { recursive: true, useTrash: false });
+            await gitUtils.closeRepository(vscode.Uri.file(folderPath));
         }
 
         if (isLast) {
@@ -1333,7 +1338,7 @@ export async function undeployFolder(folder: devopsServices.FolderData) {
             }
             _progress.report({message : `Deleting project ${data[0].name}`});
             logUtils.logInfo(`[undeploy] Deleting devops project ${projectLogname}`);
-            ociUtils.deleteDevOpsProject(authProvider, devopsId, true);
+            await ociUtils.deleteDevOpsProject(authProvider, devopsId, true);
             logUtils.logInfo(`[undeploy] Devops project ${projectLogname} deleted`);
         }
 
