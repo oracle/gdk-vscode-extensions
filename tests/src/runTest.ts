@@ -11,7 +11,7 @@ import * as cp from 'child_process';
 import { runTests, downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron';
 import { AbortController } from 'node-abort-controller';
 import { getSubDirectories } from './abstractRunTests';
-import { ICodeTestSpecification } from './Common/ICodeTestSpecification';
+import { TestVscodeOptions, ICodeTestSpecification } from './Common/ICodeTestSpecification';
 
 export async function runTest() {
   // BuildBot Abort controller fix
@@ -51,6 +51,11 @@ export async function runTest() {
     for (let j = 0; j < projects.length; j++) {
       const project = path.join(projectPath, projects[j]);
 
+      function supportsOptions(spec : unknown) : spec is TestVscodeOptions {
+        return (spec as TestVscodeOptions).launchOptions !== undefined;
+      }
+
+      const x: ICodeTestSpecification = new testSpecification.TestSpecification();
       try {
         const testWorkspace = project;
 
@@ -74,11 +79,20 @@ export async function runTest() {
 
         const launchArgs = testWorkspace ? [testWorkspace] : undefined;
 
+        let extensionTestsEnv : {
+          [key: string]: string | undefined;
+        } | undefined;
+
+        if (supportsOptions(x)) {
+          extensionTestsEnv  = x.launchOptions()?.env;
+        }
+
         const statusCode = await runTests({
           vscodeExecutablePath,
           extensionDevelopmentPath,
           extensionTestsPath,
           launchArgs,
+          extensionTestsEnv
         });
 
         statusAll = statusAll && statusCode === 0;
@@ -86,7 +100,6 @@ export async function runTest() {
         console.error('Failed to run tests', err);
         statusAll = false;
       } finally {
-        const x: ICodeTestSpecification = new testSpecification.TestSpecification();
         await x.clean();
       }
     }
