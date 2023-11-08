@@ -14,7 +14,9 @@ export async function runTestUI(args: string[]) {
     const testPath = path.resolve(__dirname, '../out/test/suite/Gates/UI');
     const testCases = gatherTestCases(testPath, ...(args.length > 0 ? args : ['**test.js']));
     try {
-      process.env['tests'] = Object.keys(testCases).map(dir => testCases[dir][1].map(fn => path.join(dir, fn)).join(';')).join(';');
+      process.env['tests'] = Object.keys(testCases)
+        .map((dir) => testCases[dir][1].map((fn) => path.join(dir, fn)).join(';'))
+        .join(';');
       // download code and chromedriver
       const exTester: extest.ExTester = new extest.ExTester(
         'test-resources',
@@ -32,7 +34,6 @@ export async function runTestUI(args: string[]) {
       }
       exTester.installFromMarketplace('vscjava.vscode-java-pack');
 
-
       // Run tests
       await exTester.runTests('**/testRunner-ui.js');
     } catch (err) {
@@ -40,7 +41,7 @@ export async function runTestUI(args: string[]) {
       process.exit(1);
     }
 
-    for (const x of Object.values(testCases).map(val => val[0])) {
+    for (const x of Object.values(testCases).map((val) => val[0])) {
       await x.clean();
     }
   } catch (err) {

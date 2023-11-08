@@ -12,7 +12,7 @@ import { AbortController } from 'node-abort-controller';
 import { getSubDirs, gatherTestCases } from './Common/helpers';
 
 export async function runTest(args: string[]) {
-  console.log("runTest: " + args);
+  console.log('runTest: ' + args);
   // BuildBot Abort controller fix
   // @ts-ignore
   global.AbortController = AbortController;
@@ -34,7 +34,7 @@ export async function runTest(args: string[]) {
   for (const directory in testCases) {
     process.env['test'] = path.basename(directory);
     const testDescriptor = testCases[directory][0];
-    process.env['tests'] = testCases[directory][1].map(fn => path.join(directory, fn)).join(';');
+    process.env['tests'] = testCases[directory][1].map((fn) => path.join(directory, fn)).join(';');
     const projectPath = path.join(directory, 'projects');
     const projects = getSubDirs(projectPath);
 
@@ -48,6 +48,7 @@ export async function runTest(args: string[]) {
         const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
 
         let extensionList: string[] = [
+          'redhat.java',
           'oracle-labs-graalvm.graalvm',
           'oracle-labs-graalvm.gcn',
           'asf.apache-netbeans-java',
@@ -77,7 +78,7 @@ export async function runTest(args: string[]) {
           extensionDevelopmentPath,
           extensionTestsPath,
           launchArgs,
-          extensionTestsEnv: Object.keys(env).length > 0 ? env : undefined
+          extensionTestsEnv: Object.keys(env).length > 0 ? env : undefined,
         });
 
         statusAll = statusAll && statusCode === 0;

@@ -10,14 +10,16 @@ import { getDescriptors } from '../../Common/helpers';
 
 suite('Creating projects', function () {
   this.timeout(0);
-  generate("API");
-  generate("UI");
+  generate('API');
+  generate('UI');
 });
 
 async function generate(target: string) {
   let descs = getDescriptors(path.join(__dirname, 'Gates', target));
-  test(`Generating ${target} Projects: ` + descs.map(d => d.getProjectDescriptions().length).reduce((n1, n2) => n1 + n2), async () => {
-    for (const desc of descs)
-      await desc.createProjects();
-  });
+  test(
+    `Generating ${target} Projects: ` + descs.map((d) => d.getProjectDescriptions().length).reduce((n1, n2) => n1 + n2),
+    async () => {
+      for (const desc of descs) await desc.createProjects();
+    },
+  );
 }

@@ -74,9 +74,15 @@ suite('Micronaut Symbols Test Suite', function () {
         assert.ok(name.length > 0, 'Endpoint symbol has an empty name');
         const uri: vscode.Uri = vscode.Uri.parse(endpoint.location?.uri);
         assert.ok(uri, 'Endpoint symbol has an invalid uri');
-        const startPos: vscode.Position = new vscode.Position(endpoint.location?.range?.start?.line, endpoint.location?.range?.start?.character);
+        const startPos: vscode.Position = new vscode.Position(
+          endpoint.location?.range?.start?.line,
+          endpoint.location?.range?.start?.character,
+        );
         assert.ok(startPos, 'Endpoint symbol has an invalid start position');
-        const endPos: vscode.Position = new vscode.Position(endpoint.location?.range?.end?.line, endpoint.location?.range?.end?.character);
+        const endPos: vscode.Position = new vscode.Position(
+          endpoint.location?.range?.end?.line,
+          endpoint.location?.range?.end?.character,
+        );
         assert.ok(endPos, 'Endpoint symbol has an invalid end position');
       } catch (err) {
         assert.fail(`Failed to read endpoint symbol: ${err}`);
@@ -94,9 +100,15 @@ suite('Micronaut Symbols Test Suite', function () {
         assert.ok(name.length > 0, 'Bean symbol has an empty name');
         const uri: vscode.Uri = vscode.Uri.parse(bean.location?.uri);
         assert.ok(uri, 'Bean symbol has an invalid uri');
-        const startPos: vscode.Position = new vscode.Position(bean.location?.range?.start?.line, bean.location?.range?.start?.character);
+        const startPos: vscode.Position = new vscode.Position(
+          bean.location?.range?.start?.line,
+          bean.location?.range?.start?.character,
+        );
         assert.ok(startPos, 'Bean symbol has an invalid start position');
-        const endPos: vscode.Position = new vscode.Position(bean.location?.range?.end?.line, bean.location?.range?.end?.character);
+        const endPos: vscode.Position = new vscode.Position(
+          bean.location?.range?.end?.line,
+          bean.location?.range?.end?.character,
+        );
         assert.ok(endPos, 'Bean symbol has an invalid end position');
       } catch (err) {
         assert.fail(`Failed to read bean symbol: ${err}`);

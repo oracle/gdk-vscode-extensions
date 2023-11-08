@@ -1,47 +1,46 @@
 export enum BuildTool {
-    Maven = 'MAVEN',
-    Gradle = 'GRADLE',
-    Unsupported = 'Unsupported',
+  Maven = 'MAVEN',
+  Gradle = 'GRADLE',
+  Unsupported = 'Unsupported',
 }
 
 export enum SupportedJava {
-    AnyJava17 = 'java17',
-    Unsupported = 'Unsupported',
-    AnyJava = 'java',
+  AnyJava17 = 'java17',
+  Unsupported = 'Unsupported',
+  AnyJava = 'java',
 }
 
 export enum Feature {
-    DATABASE = 'DATABASE',
-    EMAIL = 'EMAIL',
-    K8S = 'K8S',
-    LOGGING = 'LOGGING',
-    METRICS = 'METRICS',
-    OBJECTSTORE = 'OBJECTSTORE',
-    SDK = 'SDK',
-    SECRETMANAGEMENT = 'SECRETMANAGEMENT',
-    SECURITY = 'SECURITY',
-    STREAMING = 'STREAMING',
-    TRACING = 'TRACING',
+  DATABASE = 'DATABASE',
+  EMAIL = 'EMAIL',
+  K8S = 'K8S',
+  LOGGING = 'LOGGING',
+  METRICS = 'METRICS',
+  OBJECTSTORE = 'OBJECTSTORE',
+  SDK = 'SDK',
+  SECRETMANAGEMENT = 'SECRETMANAGEMENT',
+  SECURITY = 'SECURITY',
+  STREAMING = 'STREAMING',
+  TRACING = 'TRACING',
 }
-
 
 export type ProjectDescription = GeneratedProject | CopiedProject;
 type NamedProject = { name?: string };
 export type GeneratedProject = NamedProject & {
-    _type: 'generated';
-    buildTool: BuildTool;
-    features: Feature[];
-    java?: SupportedJava;
+  _type: 'generated';
+  buildTool: BuildTool;
+  features: Feature[];
+  java?: SupportedJava;
 };
 export type CopiedProject = NamedProject & {
-    _type: 'copied';
-    copyPath: string;
-}
+  _type: 'copied';
+  copyPath: string;
+};
 
 export type Arg<T extends string> = {
-    name: T;
-    args: string[];
-}
+  name: T;
+  args: string[];
+};
 
 export type UITestArg = Arg<'runTest-ui'>;
 export type APITestArg = Arg<'runTest'>;

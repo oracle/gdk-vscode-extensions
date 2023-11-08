@@ -19,7 +19,7 @@ export function run(): Promise<void> {
 
   const testRunner = path.resolve(__dirname, 'Gates', 'API', 'testRunner.js');
   mocha.addFile(testRunner);
-  
+
   return new Promise((resolve, reject) => {
     try {
       // Run the mocha test

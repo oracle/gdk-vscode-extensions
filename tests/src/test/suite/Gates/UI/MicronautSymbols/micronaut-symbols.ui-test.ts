@@ -15,11 +15,11 @@ import {
   ModalDialog,
   InputBox,
   ExtensionsViewSection,
-} from "vscode-extension-tester";
-import * as path from "path";
-import * as assert from "assert";
-const forEach = require("mocha-each");
-import * as fs from "fs";
+} from 'vscode-extension-tester';
+import * as path from 'path';
+import * as assert from 'assert';
+const forEach = require('mocha-each');
+import * as fs from 'fs';
 
 async function installExtension(extensionTitle: string): Promise<void> {
   const extensionTab = await new ActivityBar().getViewControl('Extensions');
@@ -72,26 +72,25 @@ interface Project {
   projetPath: string;
 }
 
-describe("Go to Micronaut symbols test", async () => {
-
-  it("Install extensions", async () => {
-    await installExtension("Micronaut Tools");
+describe('Go to Micronaut symbols test', async () => {
+  it('Install extensions', async () => {
+    await installExtension('Micronaut Tools');
   }).timeout(300000);
 
-  forEach(getAllProjects(path.join("src", "test", "suite", "Gates", "UI", "MicronautSymbols", "projects")))
-    .describe("Extension Go to Micronaut symbols tests for %(prectName)s", function (project: Project) {
+  forEach(getAllProjects(path.join('src', 'test', 'suite', 'Gates', 'UI', 'MicronautSymbols', 'projects')))
+    .describe('Extension Go to Micronaut symbols tests for %(prectName)s', function (project: Project) {
       let tree: DefaultTreeSection;
 
       before(() => {
         if (!fs.existsSync(project.projetPath)) {
-          assert.fail("Folder does not exist " + project);
+          assert.fail('Folder does not exist ' + project);
         }
       });
 
-      it("Open project", async () => {
+      it('Open project', async () => {
         assert.ok(fs.existsSync(project.projetPath));
         await VSBrowser.instance.openResources(project.projetPath);
-        (await new ActivityBar().getViewControl("Explorer"))?.openView();
+        (await new ActivityBar().getViewControl('Explorer'))?.openView();
         const content = new SideBarView().getContent();
 
         await new Promise((f) => setTimeout(f, 10000));
@@ -99,64 +98,63 @@ describe("Go to Micronaut symbols test", async () => {
         // we do not want to fail test if dialog is not shown
         try {
           const dialog = new ModalDialog();
-          await dialog.pushButton("Yes");
-        } catch { }
+          await dialog.pushButton('Yes');
+        } catch {}
 
-        tree = (await content.getSection(
-          project.prectName
-        )) as DefaultTreeSection;
+        tree = (await content.getSection(project.prectName)) as DefaultTreeSection;
         assert.ok(tree !== undefined);
       }).timeout(300000);
 
-      it("Wait for startup", async () => {
+      it('Wait for startup', async () => {
         while (true) {
-          await new Promise(f => setTimeout(f, 2000));
+          await new Promise((f) => setTimeout(f, 2000));
           const items = await new Workbench().getStatusBar().getItems();
           for (const item of items) {
             const msg = await item.getText();
-            if ("Indexing completed." === msg) {
+            if ('Indexing completed.' === msg) {
               return;
             }
           }
         }
       }).timeout(300000);
 
-      it("Gets endpoint symbols", async () => {
+      it('Gets endpoint symbols', async () => {
         // Open Go to Symbol in Workspace
-        await new Workbench().executeCommand("workbench.action.showAllSymbols");
+        await new Workbench().executeCommand('workbench.action.showAllSymbols');
         const input: InputBox = await InputBox.create();
-        await input.setText("#@/");
+        await input.setText('#@/');
         let hasProgress;
         do {
-          await new Promise(f => setTimeout(f, 1000));
+          await new Promise((f) => setTimeout(f, 1000));
           hasProgress = await input.hasProgress();
         } while (hasProgress);
         const picks = await input.getQuickPicks();
-        assert.ok(picks.length > 0, "No endpoint symbols found");
+        assert.ok(picks.length > 0, 'No endpoint symbols found');
         const text = await picks[0].getText();
         await input.selectQuickPick(0);
         const activeTab = await new EditorView().getActiveTab();
         const activeTitle = await activeTab?.getTitle();
         assert.ok(activeTitle && text.endsWith(activeTitle));
-      }).timeout(300000);;
+      }).timeout(300000);
 
-      it("Gets bean symbols", async () => {
+      it('Gets bean symbols', async () => {
         // Open Go to Symbol in Workspace
-        await new Workbench().executeCommand("workbench.action.showAllSymbols");
+        await new Workbench().executeCommand('workbench.action.showAllSymbols');
         const input: InputBox = await InputBox.create();
-        await input.setText("#@+");
+        await input.setText('#@+');
         let hasProgress;
         do {
-          await new Promise(f => setTimeout(f, 1000));
+          await new Promise((f) => setTimeout(f, 1000));
           hasProgress = await input.hasProgress();
         } while (hasProgress);
         const picks = await input.getQuickPicks();
-        assert.ok(picks.length > 0, "No beans symbols found");
+        assert.ok(picks.length > 0, 'No beans symbols found');
         const text = await picks[0].getText();
         await input.selectQuickPick(0);
         const activeTab = await new EditorView().getActiveTab();
         const activeTitle = await activeTab?.getTitle();
         assert.ok(activeTitle && text.endsWith(activeTitle));
       }).timeout(120000);
-    }).timeout(900000);
+    })
+    .timeout(900000);
 }).timeout(1100000);

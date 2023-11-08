@@ -110,8 +110,7 @@ export async function createGcnProject(
 }
 
 function resolveProjFolder(relAbsPath: string[] | string, ending: string): string {
-  if (typeof relAbsPath === 'string')
-    return path.join(relAbsPath, ending);
+  if (typeof relAbsPath === 'string') return path.join(relAbsPath, ending);
   else {
     const relPath = path.join('..', '..', ...relAbsPath, ending);
     return path.resolve(__dirname, relPath);
