@@ -11,6 +11,7 @@ import * as path from 'path';
 import { createReadStream } from 'fs';
 import { createInterface } from 'readline';
 import { findExecutable, getJavaHome } from '../../common/lib/utils';
+import * as logUtils from '../../common/lib/logUtils';
 
 const MICRONAUT: string = 'Micronaut';
 const NATIVE_IMAGE: string = 'native-image';
@@ -80,9 +81,10 @@ export async function build(goal?: string, group?: string) {
                 terminal = vscode.window.createTerminal({ name: MICRONAUT, env });
             }
             terminal.show();
+            logUtils.logInfo(`[projectBuild] executing command: ${command}`);
             terminal.sendText(command);
         } else {
-            throw new Error(`No terminal command for ${goal}`);
+            logUtils.logAndThrow(`No terminal command for ${goal}`);
         }
     }
 }
@@ -134,7 +136,9 @@ async function getMicronautVersion(): Promise<string[] | undefined> {
             const str: string = line.toString();
             const idx = str.indexOf(key);
             if (idx >= 0) {
-                return str.substr(idx + key.length).trim().split('.');
+                const v = str.substr(idx + key.length).trim().split('.');
+                logUtils.logInfo(`[projectBuild] micronaut version: ${v}`);
+                return v;
             }
         }
     }

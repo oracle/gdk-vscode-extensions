@@ -159,6 +159,7 @@ async function reload(kind: string[]) {
         kind.forEach(toReload.add, toReload);
         return;
     }
+    logUtils.logInfo(`[symbols] reloading workspace symbols: ${kind}`);
     reloadInProgress = true;
     if (isBeanKind(kind)) {
         await vscode.commands.executeCommand('setContext', CONTEXT_RELOADING_BEANS, true);
@@ -206,6 +207,7 @@ async function reload(kind: string[]) {
                 await vscode.commands.executeCommand('setContext', CONTEXT_ENDPOINTS_INITIALIZED, true);
             }
         }
+        logUtils.logInfo(`[symbols] reloaded workspace symbols: ${kind}`);
         reloadInProgress = false;
         if (toReload.size > 0) {
             const kinds = [...toReload];
@@ -216,47 +218,36 @@ async function reload(kind: string[]) {
 }
 
 async function readBeans(): Promise<Bean[]> {
-    const newBeans: Bean[] = [];
-    try {
-        const beans: any[] = await vscode.commands.executeCommand(COMMAND_NBLS_WORKSPACE_SYMBOLS, PREFIX_BEANS);
-        for (const bean of beans) {
-            try {
-                const name: string = bean.name;
-                const uri: vscode.Uri = vscode.Uri.parse(bean.location?.uri);
-                const startPos: vscode.Position = new vscode.Position(bean.location?.range?.start?.line, bean.location?.range?.start?.character);
-                const endPos: vscode.Position = new vscode.Position(bean.location?.range?.end?.line, bean.location?.range?.end?.character);
-                newBeans.push(new Bean(name, uri, startPos, endPos));
-            } catch (err) {
-                logUtils.logWarning(`[symbols] readBeans - failed to read bean: ${err}`);
-            }
-        }
-    } catch (err) {
-        logUtils.logError(`[symbols] readBeans - failed to read beans: ${err}`);
-    }
-    newBeans.sort((o1, o2) => o1.def.localeCompare(o2.def));
-    return newBeans;
+    return obtainWorkspaceSymbols(PREFIX_BEANS, Bean);
 }
 
 async function readEndpoints(): Promise<Endpoint[]> {
-    const newEndpoints: Endpoint[] = [];
+    return obtainWorkspaceSymbols(PREFIX_ENDPOINTS, Endpoint);
+}
+
+async function obtainWorkspaceSymbols<T extends Symbol>(ENDPOINT: typeof PREFIX_ENDPOINTS | typeof PREFIX_BEANS, constructor: new (def: string, uri: vscode.Uri, startPos: vscode.Position, endPos: vscode.Position) => T): Promise<T[]> {
+    const newSymbols: T[] = [];
+    const logMessageType = ENDPOINT === PREFIX_ENDPOINTS ? 'endpoint' : 'bean';
     try {
-        const endpoints: any[] = await vscode.commands.executeCommand(COMMAND_NBLS_WORKSPACE_SYMBOLS, PREFIX_ENDPOINTS);
-        for (const endpoint of endpoints) {
+        logUtils.logInfo(`[NBLS] obtaining workspace ${logMessageType}s.`);
+        const symbols: any[] = await vscode.commands.executeCommand(COMMAND_NBLS_WORKSPACE_SYMBOLS, ENDPOINT);
+        logUtils.logInfo(`[NBLS] obtained workspace ${logMessageType}s: ${symbols.length}`);
+        for (const symbol of symbols) {
             try {
-                const name: string = endpoint.name;
-                const uri: vscode.Uri = vscode.Uri.parse(endpoint.location?.uri);
-                const startPos: vscode.Position = new vscode.Position(endpoint.location?.range?.start?.line, endpoint.location?.range?.start?.character);
-                const endPos: vscode.Position = new vscode.Position(endpoint.location?.range?.end?.line, endpoint.location?.range?.end?.character);
-                newEndpoints.push(new Endpoint(name, uri, startPos, endPos));
+                const name: string = symbol.name;
+                const uri: vscode.Uri = vscode.Uri.parse(symbol.location?.uri);
+                const startPos: vscode.Position = new vscode.Position(symbol.location?.range?.start?.line, symbol.location?.range?.start?.character);
+                const endPos: vscode.Position = new vscode.Position(symbol.location?.range?.end?.line, symbol.location?.range?.end?.character);
+                newSymbols.push(new constructor(name, uri, startPos, endPos));
             } catch (err) {
-                logUtils.logWarning(`[symbols] readEndpoints - failed to read endpoint: ${err}`);
+                logUtils.logWarning(`[symbols] WorkspaceSymbols - failed to read ${logMessageType}: ${symbol.def}: ${err}`);
             }
         }
     } catch (err) {
-        logUtils.logError(`[symbols] readEndpoints - failed to read endpoints: ${err}`);
+        logUtils.logError(`[symbols] WorkspaceSymbols - failed to read ${logMessageType}s: ${err}`);
     }
-    newEndpoints.sort((o1, o2) => o1.def.localeCompare(o2.def));
-    return newEndpoints;
+    newSymbols.sort((o1, o2) => o1.def.localeCompare(o2.def));
+    return newSymbols;
 }
 
 export function byWorkspaceFolder(symbols: Symbol[]): any {

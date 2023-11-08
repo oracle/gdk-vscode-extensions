@@ -14,6 +14,7 @@ import * as logUtils from '../../../common/lib/logUtils';
 
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.languages.registerCodeLensProvider({ language: 'java' }, new CodeLensProvider()));
+    logUtils.logInfo(`[codeLens] initialized`);
 }
 
 class CodeLensProvider implements vscode.CodeLensProvider {
@@ -61,9 +62,11 @@ class CodeLensProvider implements vscode.CodeLensProvider {
     }
 
     private async readDocumentEndpoints(uri: vscode.Uri): Promise<symbols.Endpoint[]> {
+        logUtils.logInfo(`[codeLens] resolving Document Endpoints: ${uri}`);
         const newEndpoints: symbols.Endpoint[] = [];
         try {
             if ((await vscode.commands.getCommands()).find(cmd => cmd === this.COMMAND_NBLS_DOCUMENT_SYMBOLS)) {
+                logUtils.logInfo(`[NBLS] obtain document endpoints: ${uri}`);
                 const endpoints: any[] = await vscode.commands.executeCommand(this.COMMAND_NBLS_DOCUMENT_SYMBOLS, uri.toString(), symbols.PREFIX_ENDPOINTS);
                 for (const endpoint of endpoints) {
                     try {
@@ -72,14 +75,15 @@ class CodeLensProvider implements vscode.CodeLensProvider {
                         const endPos: vscode.Position = new vscode.Position(endpoint.range?.end?.line, endpoint.range?.end?.character);
                         newEndpoints.push(new symbols.Endpoint(name, uri, startPos, endPos));
                     } catch (err) {
-                        logUtils.logWarning(`[symbols] readDocumentEndpoints - failed to read endpoint: ${err}`);
+                        logUtils.logWarning(`[codeLens] readDocumentEndpoints - failed to read endpoint: ${err}`);
                     }
                 }
             }
         } catch (err) {
-            logUtils.logError(`[symbols] readDocumentEndpoints - failed to read endpoints: ${err}`);
+            logUtils.logError(`[codeLens] readDocumentEndpoints - failed to read endpoints: ${err}`);
         }
         newEndpoints.sort((o1, o2) => o1.def.localeCompare(o2.def));
+        logUtils.logInfo(`[codeLens] resolved Document Endpoints: ${newEndpoints.length}`);
         return newEndpoints;
     }
 }

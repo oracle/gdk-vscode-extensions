@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as logUtils from '../../../common/lib/logUtils';
 import { askToExecCommand, createWrapper, findResourceFileByKind, createContent, createNewFile, RunInfo, collectInfo, getPod } from "./kubernetesUtil";
 import { deploy } from "./kubernetesDeploy";
 import { kubernetesChannel } from './kubernetesChannel';
@@ -32,6 +33,7 @@ async function run(info: RunInfo) {
     const podName = await getPod(info.kubectl, info.appName);
     if (info.port && podName) {
         let command = `wait --for=condition=ready pod ${podName}`;
+        logUtils.logInfo(`[kubernetesRun] invoking command: ${command}`);
         await info.kubectl.invokeCommand(command);
         info.kubectl.portForward(
             podName, 
@@ -41,12 +43,16 @@ async function run(info: RunInfo) {
             { showInUI: { location: 'status-bar' } 
         }).then(() => {
             kubernetesChannel.appendLine(`You can access ${podName} on http://localhost:${info.port}`);
-        }).catch(e => kubernetesChannel.appendLine(`failed to start port-forward ${e}`));
+        }).catch(e => {
+            kubernetesChannel.appendLine(`failed to start port-forward ${e}`);
+            logUtils.logError(`[kubernetesRun] failed to start port-forward: ${e}`);
+        });
     }
 }
 
 export async function createService(context: vscode.ExtensionContext) {
     const title = 'Create Kubernetes Service File';
+    logUtils.logInfo(`[kubernetesRun] Creating Kubernetes Service File.`);
 
     let wrapper =  await createWrapper();
 
@@ -61,6 +67,7 @@ export async function createService(context: vscode.ExtensionContext) {
     );
     const deployment = await findResourceFileByKind('Deployment');
     if (!deployment) {
+        logUtils.logWarning(`[kubernetesUtil] ${projectInfo.name}: Deployment file is not present.`);
         askToExecCommand(
             'extension.micronaut-tools.createDeploy',
             'Deployment file is not present. Would you like to create it?');
@@ -69,5 +76,5 @@ export async function createService(context: vscode.ExtensionContext) {
 
     let text = createContent(context.extensionPath, 'service.yaml', projectInfo.name);
     createNewFile(projectInfo.root, "service", "yaml", text);
-    
+    logUtils.logInfo(`[kubernetesRun] Created Kubernetes Service File.`);
 }

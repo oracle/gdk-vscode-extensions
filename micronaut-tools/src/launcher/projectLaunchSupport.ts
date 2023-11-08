@@ -9,6 +9,7 @@ import { CancellationToken, DebugConfiguration, DebugConfigurationProvider, Prov
 import * as path from "path";
 import * as vscode from 'vscode';
 import * as utils from './utils';
+import * as logUtils from '../../../common/lib/logUtils';
 
 export class InitialMicronautContinuousConfigurationProvider implements DebugConfigurationProvider {
     provideDebugConfigurations(folder: vscode.WorkspaceFolder | undefined, token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration[]> {
@@ -22,6 +23,7 @@ export class InitialMicronautContinuousConfigurationProvider implements DebugCon
         if (!folder) {
             return [];
         }
+        logUtils.logInfo(`[launchSupport] providing debug configuration for: ${folder.name}`);
         const cfg : vscode.DebugConfiguration[] = [];
         try {
             const mainClasses : utils.IMainClassOption[] = await utils.executeJavaWorkspaceCommand('vscode.java.resolveMainClass', 
@@ -60,8 +62,10 @@ export class InitialMicronautContinuousConfigurationProvider implements DebugCon
                 cfg.unshift(defaultLaunchConfig);
             }
         } catch (e) {
+            logUtils.logError(`[launchSupport] providing debug configuration failed: ${e}`);
             console.log(e);
         }
+        logUtils.logInfo(`[launchSupport] provided debug configuration for: ${folder.name}`);
         return cfg;
      }
 }
@@ -105,6 +109,7 @@ export async function resolveConfigurationAsync(folder: vscode.Uri | undefined, 
     if (config?.mainClass && /org.eclipse.jdt.internal.junit.runner\.*/.test(config.mainClass)) {
         return config;
     }
+    logUtils.logInfo(`[launchSupport] providing debug configuration for: ${folder}`);
     const uri = vscode.window.activeTextEditor?.document?.uri || folder;
     const arg = {
         projectName: config?.projectName,
@@ -115,6 +120,7 @@ export async function resolveConfigurationAsync(folder: vscode.Uri | undefined, 
 
     // support just maven and gradle projects.
     if (!root) {
+        logUtils.logInfo(`[launchSupport] provided basic debug configuration for: ${folder}`);
         return config;
     }
     // redirect the java launch to a custom launcher script
@@ -142,5 +148,6 @@ export async function resolveConfigurationAsync(folder: vscode.Uri | undefined, 
     if (config['build-maven-dependencies'] !== undefined) {
         config['env']['JDT_LAUNCHWRAP_MAVEN_DEPENDENCIES'] = config['build-maven-dependencies'] as string;
     }
+    logUtils.logInfo(`[launchSupport] provided debug configuration for: ${folder}: ${JSON.stringify({container, projectDir, root}, undefined, 2)}`);
     return config;
 }

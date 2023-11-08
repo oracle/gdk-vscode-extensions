@@ -26,6 +26,12 @@ export function logError(record: string) {
     logRecord('error', record);
 }
 
+export function logAndThrow(record: string, errFnc?: (err: Error) => Error) {
+    logError(record);
+    const err = new Error(record);
+    throw errFnc ? errFnc(err) : err;
+}
+
 export function logRecord(category: string, record: string) {
     if (!LOG_OUTPUT) { throw new Error("Extension isn't registered for logging."); }
     LOG_OUTPUT.appendLine(`[${new Date().toISOString()}] [${category}] ${record}`);

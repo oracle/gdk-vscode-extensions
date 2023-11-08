@@ -9,15 +9,18 @@ import * as vscode from 'vscode';
 import { createWrapper, createContent, createNewFile } from "./kubernetesUtil";
 import * as kubernetes from 'vscode-kubernetes-tools-api';
 import { MultiStepInput } from "../../../common/lib/dialogs";
+import * as logUtils from "../../../common/lib/logUtils";
 
 const LOCAL = "<local>";
 const NO_SECRET = "<public repository>";
 
 export async function createDeployment(context: vscode.ExtensionContext) {
+    logUtils.logInfo(`[kubernetesDeployment] creating deployment.`);
     const kubectl: kubernetes.API<kubernetes.KubectlV1> = await kubernetes.extension.kubectl.v1;
     if (!kubectl.available) {
         vscode.window.showErrorMessage(`kubectl not available: ${kubectl.reason}.`);
-        return;;
+        logUtils.logError(`[kubernetesDeployment] kubectl not available: ${kubectl.reason}.`);
+        return;
     }
     const title = 'Create Kubernetes Deployment File';
 
@@ -48,6 +51,7 @@ export async function createDeployment(context: vscode.ExtensionContext) {
 
     async function collectInputs(): Promise<State> {
 		const state = {} as Partial<State>;
+        logUtils.logInfo(`[kubernetesDeployment] collecting user input.`);
         await MultiStepInput.run(input => pickDockerRegistry(input, state));
 		return state as State;
 	}
@@ -78,6 +82,7 @@ export async function createDeployment(context: vscode.ExtensionContext) {
 			shouldResume: () => Promise.resolve(false)
         });
         state.dockerRegistry = normalizeRegistryUrl(selected.value);
+        logUtils.logInfo(`[kubernetesDeployment] docker registry: ${state.dockerRegistry}`);
 		return (input: MultiStepInput) => inputImageName(input, state);
 	}
 
@@ -95,7 +100,7 @@ export async function createDeployment(context: vscode.ExtensionContext) {
 			validate: () => Promise.resolve(undefined),
 			shouldResume: () => Promise.resolve(false)
 		});
-        
+        logUtils.logInfo(`[kubernetesDeployment] image name: ${state.imageName}`);
         return (input: MultiStepInput) => pickNamespace(input, state);
 	}
 
@@ -110,6 +115,7 @@ export async function createDeployment(context: vscode.ExtensionContext) {
         });
         state.namespace = selected.label;
         if (totalSteps(state) === 4) {
+            logUtils.logInfo(`[kubernetesDeployment] namespace: ${state.namespace}`);
 		    return (input: MultiStepInput) => pickDockerSecret(input, state);
         } else {
             return undefined;
@@ -126,6 +132,7 @@ export async function createDeployment(context: vscode.ExtensionContext) {
 			shouldResume: () => Promise.resolve(false)
         });
         if (selected.label !== NO_SECRET) {
+            logUtils.logInfo(`[kubernetesDeployment] collected secret.`);
             state.dockerSecret = selected.label;
         }
 	}
@@ -135,37 +142,37 @@ export async function createDeployment(context: vscode.ExtensionContext) {
         let text = createContent(context.extensionPath, 'deploy.yaml', projectInfo.name, state.namespace, state.imageName, state.dockerSecret);
         createNewFile(projectInfo.root, "deploy", "yaml", text);
     }
+    logUtils.logInfo(`[kubernetesDeployment] created deployment.`);
 }
 
 async function getSecrets(kubectl: kubernetes.KubectlV1): Promise<{label: string}[]> {
-    return new Promise<vscode.QuickPickItem[]> ((resolve) => {
-        let command = `get secrets -o jsonpath='{range .items[*]}{@.metadata.name}{\"\\t\"}{@.type}{\"\\n\"}{end}'`;
-        let secrets: vscode.QuickPickItem[] = [];
-        secrets.push({label: NO_SECRET});
-        kubectl.invokeCommand(command).then((result) => {
-            result?.stdout.split("\n").forEach(line => {
-                let str = line.split("\t");
-                if (str[1] === 'kubernetes.io/dockerconfigjson') {
-                    secrets.push({label: str[0]});
-                }
-            });
-            resolve(secrets);
-        });
+    const command = `get secrets -o jsonpath='{range .items[*]}{@.metadata.name}{\"\\t\"}{@.type}{\"\\n\"}{end}'`;
+    const secrets: vscode.QuickPickItem[] = [];
+    secrets.push({label: NO_SECRET});
+    logUtils.logInfo(`[kubernetesDeployment] invoking command: ${command}`);
+    const result = await kubectl.invokeCommand(command);
+    result?.stdout.split("\n").forEach(line => {
+        const str = line.split("\t");
+        if (str[1] === 'kubernetes.io/dockerconfigjson') {
+            secrets.push({label: str[0]});
+        }
     });
+    logUtils.logInfo(`[kubernetesDeployment] found ${secrets.length} secret${secrets.length !== 1 ? 's' : ''}.`);
+    return secrets;
 }
  
 async function getNamespaces(kubectl: kubernetes.KubectlV1): Promise<vscode.QuickPickItem[]> {
     const command = "get namespace -o jsonpath='{.items[*].metadata.name}'";
-    let namespaces: vscode.QuickPickItem[] = [];
-    kubectl.invokeCommand(command)
-        .then((result) => {
-            if (result?.code === 0) {
-                let parts = result.stdout.trim().split(' ');
-                parts.forEach(ns => {
-                    namespaces.push({label: ns});
-                });
-            }
+    const namespaces: vscode.QuickPickItem[] = [];
+    logUtils.logInfo(`[kubernetesDeployment] invoking command: ${command}`);
+    const result = await kubectl.invokeCommand(command);
+    if (result?.code === 0) {
+        const parts = result.stdout.trim().split(' ');
+        parts.forEach(ns => {
+            namespaces.push({label: ns});
         });
+    }
+    logUtils.logInfo(`[kubernetesDeployment] found namespaces: ${namespaces}.`);
     return namespaces;
 }
 

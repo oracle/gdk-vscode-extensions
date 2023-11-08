@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import * as nodes from './nodes';
 import * as symbols from './symbols';
 import * as workspaceFolders from './workspaceFolders';
+import * as logUtils from '../../../common/lib/logUtils';
 
 
 const VIEW_BEANS = 'extension-micronaut-tools-beans';
@@ -35,6 +36,7 @@ export function initialize(context: vscode.ExtensionContext) {
         beansNodeProvider.dataChanged(added, removed, current);
         endpointsNodeProvider.dataChanged(added, removed, current);
     });
+    logUtils.logInfo(`[views] Initialized`);
 }
 
 async function searchFilterView(viewID: string) {
