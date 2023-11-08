@@ -24,6 +24,7 @@ import {
 import * as path from 'path';
 import * as assert from 'assert';
 import * as fs from 'fs';
+import { TestDescriptor } from './testDescriptor';
 const forEach = require('mocha-each');
 
 async function getItems(): Promise<Notification[]> {
@@ -189,8 +190,9 @@ describe('Editor test', async () => {
     await installExtension('Micronaut Tools');
   }).timeout(300000);
 
+  const descriptor = new TestDescriptor();
   // iterate throgh all projects
-  forEach(getAllProjects(path.join('src', 'test', 'suite', 'Gates', 'UI', 'CodelenseAndAutocomplete', 'projects')))
+  forEach(getAllProjects(descriptor.getProjectsPath()))
     .describe('Extension codelense tests for %(prectName)s', (project: Project) => {
       let tree: DefaultTreeSection;
 

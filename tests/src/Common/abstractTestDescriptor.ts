@@ -29,4 +29,9 @@ export abstract class AbstractTestDescriptor {
             else if (desc._type === 'copied')
                 await copyProject(desc, this.projPath);
     }
+
+    public  getProjectsPath() : string
+    {
+        return this.projPath;
+    }
 }
