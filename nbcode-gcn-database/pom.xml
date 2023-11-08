@@ -17,22 +17,6 @@
 
     <name>NBCode Database - parent project</name>
 
-    <repositories>
-        <!--
-        Repository hosting NetBeans modules, especially APIs.
-        Versions are based on IDE releases, e.g.: RELEASE691
-        To create your own repository, use: nbm:populate-repository
-        
-        If you use Apache NetBeans starting with Apache NetBeans 9.0 
-        you can remove the netbeans repository section
-        -->
-        <repository>
-            <id>netbeans</id>
-            <name>NetBeans</name>
-            <url>http://bits.netbeans.org/nexus/content/groups/netbeans/</url>
-        </repository>
-    </repositories>
-
     <build>
         <pluginManagement>
             <plugins>
