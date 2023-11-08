@@ -290,7 +290,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         totalSteps += 2; // Jar artifact, NI artifact
                     }
                     if (deployData.okeCluster) {
-                        totalSteps += 8; // OKE setup command spec and artifact, OKE deploy spec and artifact, deploy to OKE pipeline, dev OKE deploy spec and artifact, dev deploy to OKE pipeline
+                        totalSteps += 11; // OKE setup command spec and artifact, OKE deploy spec and artifact, deploy to OKE pipeline, dev OKE deploy spec and artifact, dev deploy to OKE pipeline
                     }
                     totalSteps += 4; // Docker jvm image, build spec, and pipeline, jvm container repository
                     totalSteps += 4 * projectUtils.getCloudSpecificSubProjectNames(projectFolder).length; // Docker native image, build spec, and pipeline, native container repository per cloud specific subproject
@@ -1748,7 +1748,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 subData.deployNativeToOkeStage = false;
-                                                subData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage(provider, subData.oke_deployNativePipeline, subData.setupSecretForDeployNativeStage, deployData.okeClusterEnvironment, subData.oke_deployNativeConfigArtifact, {
+                                                subData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage('Deploy to OKE', provider, subData.oke_deployNativePipeline, subData.setupSecretForDeployNativeStage, deployData.okeClusterEnvironment, subData.oke_deployNativeConfigArtifact, {
                                                     'devops_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
@@ -2176,7 +2176,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 subData.deployJvmToOkeStage = false;
-                                                subData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage(provider, subData.oke_deployJvmPipeline, subData.setupSecretForDeployJvmStage, deployData.okeClusterEnvironment, subData.oke_deployJvmConfigArtifact, {
+                                                subData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage('Deploy to OKE', provider, subData.oke_deployJvmPipeline, subData.setupSecretForDeployJvmStage, deployData.okeClusterEnvironment, subData.oke_deployJvmConfigArtifact, {
                                                     'devops_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
@@ -2439,6 +2439,69 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
 
                         if (deployData.okeClusterEnvironment) {
 
+                            if (deployData.okeClusterEnvironment) {
+                                // --- Create OKE ConfigMap
+                                progress.report({
+                                    increment,
+                                    message: `Creating OKE ConfigMap for ${repositoryName}...`
+                                });
+                                const oke_configmap_template = 'oke_configmap.yaml';
+                                const oke_configMapInlineContent = expandTemplate(resourcesPath, oke_configmap_template, {
+                                    app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
+                                });
+                                if (!oke_configMapInlineContent) {
+                                    resolve(`Failed to create OKE ConfigMap for ${repositoryName}`);
+                                    return;
+                                }
+                                if (folderData.oke_configMapArtifact) {
+                                    progress.report({
+                                        message: `Using already created OKE jvm deployment configuration development artifact for ${repositoryName}...`
+                                    });
+                                    try {
+                                        const artifact = await ociUtils.getDeployArtifact(provider, folderData.oke_configMapArtifact);
+                                        if (!artifact) {
+                                            folderData.oke_configMapArtifact = undefined;
+                                        }
+                                    } catch (err) {
+                                        folderData.oke_configMapArtifact = undefined;
+                                    }
+                                }
+                                if (folderData.oke_configMapArtifact) {
+                                    progress.report({
+                                        increment,
+                                    });
+                                    logUtils.logInfo(`[deploy] Using already created OKE ConfigMap artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                } else {
+                                    // --- Create OKE ConfigMap artifact
+                                    progress.report({
+                                        increment,
+                                        message: `Creating OKE jvm deployment configuration artifact for ${repositoryName}...`
+                                    });
+                                    const oke_configMapArtifactName = `${repositoryName}_oke_configmap`;
+                                    const oke_configMapArtifactArtifactDescription = `OKE ConfigMap for devops project ${projectName} & repository ${repositoryName}`;
+                                    try {
+                                        logUtils.logInfo(`[deploy] Creating OKE ConfigMap artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        folderData.oke_configMapArtifact = false;
+                                        folderData.oke_configMapArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_configMapInlineContent, oke_configMapArtifactName, oke_configMapArtifactArtifactDescription, {
+                                            'devops_tooling_deployID': deployData.tag,
+                                            'devops_tooling_codeRepoID': codeRepository.id
+                                        })).id;
+                                        if (!codeRepoResources.artifacts) {
+                                            codeRepoResources.artifacts = [];
+                                        }
+                                        codeRepoResources.artifacts.push({
+                                            ocid: folderData.oke_configMapArtifact,
+                                            originalName: oke_configMapArtifactName
+                                        });
+                                    } catch (err) {
+                                        resolve(dialogs.getErrorMessage(`Failed to create OKE ConfigMap artifact for ${repositoryName}`, err));
+                                        folderData.oke_configMapArtifact = false;
+                                        dump(deployData);
+                                        return;
+                                    }
+                                    dump(deployData);
+                                }
+
                             // --- Create OKE native deployment configuration spec
                             progress.report({
                                 increment,
@@ -2454,6 +2517,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 resolve(`Failed to create OKE native deployment configuration spec for ${repositoryName}`);
                                 return;
                             }
+
                             if (folderData.oke_deployNativeConfigArtifact) {
                                 progress.report({
                                     message: `Using already created OKE native deployment configuration artifact for ${repositoryName}...`
@@ -2603,12 +2667,39 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 try {
                                     logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.deployNativeToOkeStage = false;
-                                    folderData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage(provider, folderData.oke_deployNativePipeline, folderData.setupSecretForDeployNativeStage, deployData.okeClusterEnvironment, folderData.oke_deployNativeConfigArtifact, {
+                                    folderData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage('Deploy to OKE', provider, folderData.oke_deployNativePipeline, folderData.setupSecretForDeployNativeStage, deployData.okeClusterEnvironment, folderData.oke_deployNativeConfigArtifact, {
                                         'devops_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {
                                     resolve(dialogs.getErrorMessage(`Failed to create ${NI_CONTAINER_NAME_LC} deployment to OKE stage for ${repositoryName}`, err));
                                     folderData.deployNativeToOkeStage = false;
+                                    dump(deployData);
+                                    return;
+                                }
+                                dump(deployData);
+                            }
+                            if (folderData.applyNativeConfigMapStage) {
+                                try {
+                                    const stage = await ociUtils.getDeployStage(provider, folderData.applyNativeConfigMapStage);
+                                    if (!stage) {
+                                        folderData.applyNativeConfigMapStage = undefined;
+                                    }
+                                } catch (err) {
+                                    folderData.applyNativeConfigMapStage = undefined;
+                                }
+                            }
+                            if (folderData.applyNativeConfigMapStage) {
+                                logUtils.logInfo(`[deploy] Using already created apply ConfigMap stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            } else {
+                                try {
+                                    logUtils.logInfo(`[deploy] Creating apply ConfigMap stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    folderData.applyNativeConfigMapStage = false;
+                                    folderData.applyNativeConfigMapStage = (await ociUtils.createDeployToOkeStage('Apply ConfigMap', provider, folderData.oke_deployNativePipeline, folderData.oke_deployNativePipeline, deployData.okeClusterEnvironment, folderData.oke_configMapArtifact, {
+                                        'devops_tooling_deployID': deployData.tag
+                                    })).id;
+                                } catch (err) {
+                                    resolve(dialogs.getErrorMessage(`Failed to create ${NI_CONTAINER_NAME_LC} apply ConfigMap stage for ${repositoryName}`, err));
+                                    folderData.applyNativeConfigMapStage = false;
                                     dump(deployData);
                                     return;
                                 }
@@ -2854,9 +2945,6 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             dump(deployData);
                         }
                         buildPipelines.push({ 'ocid': folderData.docker_jvmbuildPipeline, 'displayName': docker_jvmbuildPipelineName });
-
-                        if (deployData.okeClusterEnvironment) {
-
                             // --- Create OKE jvm deployment configuration spec
                             progress.report({
                                 increment,
@@ -3021,12 +3109,39 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 try {
                                     logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.deployJvmToOkeStage = false;
-                                    folderData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage(provider, folderData.oke_deployJvmPipeline, folderData.setupSecretForDeployJvmStage, deployData.okeClusterEnvironment, folderData.oke_deployJvmConfigArtifact, {
+                                    folderData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage('Deploy to OKE', provider, folderData.oke_deployJvmPipeline, folderData.setupSecretForDeployJvmStage, deployData.okeClusterEnvironment, folderData.oke_deployJvmConfigArtifact, {
                                         'devops_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {
                                     resolve(dialogs.getErrorMessage(`Failed to create ${JVM_CONTAINER_NAME_LC} deployment to OKE stage for ${repositoryName}`, err));
                                     folderData.deployJvmToOkeStage = false;
+                                    dump(deployData);
+                                    return;
+                                }
+                                dump(deployData);
+                            }
+                            if (folderData.applyConfigMapStage) {
+                                try {
+                                    const stage = await ociUtils.getDeployStage(provider, folderData.applyConfigMapStage);
+                                    if (!stage) {
+                                        folderData.applyConfigMapStage = undefined;
+                                    }
+                                } catch (err) {
+                                    folderData.applyConfigMapStage = undefined;
+                                }
+                            }
+                            if (folderData.applyConfigMapStage) {
+                                logUtils.logInfo(`[deploy] Using already created apply ConfigMap stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            } else {
+                                try {
+                                    logUtils.logInfo(`[deploy] Creating apply ConfigMap stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    folderData.applyConfigMapStage = false;
+                                    folderData.applyConfigMapStage = (await ociUtils.createDeployToOkeStage('Apply ConfigMap', provider, folderData.oke_deployJvmPipeline, folderData.oke_deployJvmPipeline, deployData.okeClusterEnvironment, folderData.oke_configMapArtifact, {
+                                        'devops_tooling_deployID': deployData.tag
+                                    })).id;
+                                } catch (err) {
+                                    resolve(dialogs.getErrorMessage(`Failed to create ${JVM_CONTAINER_NAME_LC} apply ConfigMap stage for ${repositoryName}`, err));
+                                    folderData.applyConfigMapStage = false;
                                     dump(deployData);
                                     return;
                                 }
