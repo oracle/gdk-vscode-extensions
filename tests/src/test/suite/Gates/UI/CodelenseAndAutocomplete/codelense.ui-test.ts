@@ -8,15 +8,10 @@
 import {
   Workbench,
   TextEditor,
-  ActivityBar,
   DefaultTreeSection,
   EditorView,
-  VSBrowser,
   Notification,
   CodeLens,
-  SideBarView,
-  ExtensionsViewSection,
-  ModalDialog,
   BottomBarPanel,
   ContentAssist,
   TreeItem,
@@ -25,6 +20,7 @@ import * as path from 'path';
 import * as assert from 'assert';
 import * as fs from 'fs';
 import { TestDescriptor } from './testDescriptor';
+import { Project, getAllProjects, installExtension, openProjectTest } from '../ui-helpers';
 const forEach = require('mocha-each');
 
 async function getItems(): Promise<Notification[]> {
@@ -40,31 +36,6 @@ async function getTerminal(): Promise<string> {
   const terminalView = await new BottomBarPanel().openTerminalView();
   const text = (await terminalView.getText()).trim();
   return text;
-}
-
-async function installExtension(extensionTitle: string): Promise<void> {
-  const extensionTab = await new ActivityBar().getViewControl('Extensions');
-  if (extensionTab === undefined) {
-    assert.fail('Could not open extensions tab');
-  }
-
-  const openExtensionTab = await extensionTab.openView();
-  const extensionSection = (await openExtensionTab.getContent().getSection('Installed')) as ExtensionsViewSection;
-
-  const item = await extensionSection.findItem(extensionTitle);
-  if (item === undefined) {
-    assert.fail('Item ' + extensionTitle + ' not found');
-  }
-
-  if (!(await item.isInstalled())) {
-    await item.install();
-  }
-
-  assert.ok(await item.isInstalled());
-  assert.ok(await item.isEnabled());
-
-  await extensionSection.clearSearch();
-  await new Promise((f) => setTimeout(f, 5000));
 }
 
 async function compareIntellisense(assist: ContentAssist, ...items: string[]): Promise<string[]> {
@@ -128,35 +99,6 @@ async function editProject(projFolder: string) {
 }
 
 /**
- * Returns all projects in a given path
- * @param projFolder is a path to a folder with projects
- * @returns array of projects
- */
-function getAllProjects(projFolder: string): Project[] {
-  if (!fs.existsSync(projFolder)) {
-    return [];
-  }
-
-  const items = fs.readdirSync(projFolder);
-  const folders: Project[] = [];
-
-  for (const item of items) {
-    const itemPath = path.join(projFolder, item);
-
-    if (fs.lstatSync(itemPath).isDirectory()) {
-      const project: Project = {
-        prectName: item,
-        projetPath: itemPath,
-      };
-      folders.push(project);
-    }
-  }
-
-  // console.log(folders.length + " projects found");
-  return folders;
-}
-
-/**
  * Opens item at the location and returns it's children
  * @param tree is a tree you want to ipen the item in
  * @param itemPath in the tree to the item
@@ -179,22 +121,15 @@ async function openItemInExplorer(tree: DefaultTreeSection, ...itemPath: string[
   return children;
 }
 
-interface Project {
-  prectName: string;
-  projetPath: string;
-}
-
 describe('Editor test', async () => {
   it('Install extensions', async () => {
     await installExtension(`Extension Pack for Java`);
     await installExtension('Micronaut Tools');
   }).timeout(300000);
 
-  const descriptor = new TestDescriptor();
   // iterate throgh all projects
-  forEach(getAllProjects(descriptor.projectsPath))
+  forEach(getAllProjects(new TestDescriptor().projectsPath))
     .describe('Extension codelense tests for %(prectName)s', (project: Project) => {
-      let tree: DefaultTreeSection;
 
       before(() => {
         if (!fs.existsSync(project.projetPath)) {
@@ -203,27 +138,11 @@ describe('Editor test', async () => {
         editProject(project.projetPath);
       });
 
-      it('Open project', async () => {
-        assert.ok(fs.existsSync(project.projetPath));
-        await VSBrowser.instance.openResources(project.projetPath);
-        (await new ActivityBar().getViewControl('Explorer'))?.openView();
-        const content = new SideBarView().getContent();
-
-        await new Promise((f) => setTimeout(f, 10000));
-
-        // we do not want to fail test if dialog is not shown
-        try {
-          const dialog = new ModalDialog();
-          await dialog.pushButton('Yes');
-        } catch {}
-
-        tree = (await content.getSection(project.prectName)) as DefaultTreeSection;
-        assert.ok(tree !== undefined);
-      }).timeout(300000);
+      const tree = openProjectTest(project);
 
       describe('Application.java test', () => {
         it('Open file', async () => {
-          const children = await openItemInExplorer(tree, 'src', 'main', 'java', 'com', 'example', 'Application.java');
+          const children = await openItemInExplorer(await tree, 'src', 'main', 'java', 'com', 'example', 'Application.java');
 
           // it is file
           assert.strictEqual(children.length, 0);
@@ -342,7 +261,7 @@ describe('Editor test', async () => {
       describe('.properties test', () => {
         it('Open file', async () => {
           const children = await openItemInExplorer(
-            tree,
+            await tree,
             'src',
             'main',
             'resources',
