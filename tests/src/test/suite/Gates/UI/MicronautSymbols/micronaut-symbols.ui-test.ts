@@ -21,7 +21,7 @@ describe('Go to Micronaut symbols test', async () => {
     await installExtension('Micronaut Tools');
   }).timeout(300000);
 
-  forEach(getAllProjects(new TestDescriptor().getProjectsPath()))
+  forEach(getAllProjects(new TestDescriptor().projectsPath))
     .describe('Extension Go to Micronaut symbols tests for %(prectName)s', function (project: Project) {
 
       before(() => {
