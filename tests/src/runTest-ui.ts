@@ -7,43 +7,36 @@
 
 import * as extest from 'vscode-extension-tester';
 import * as path from 'path';
-import { gatherTestCases } from './Common/helpers';
+import { gatherTestFolders } from './Common/testHelper';
+import { prepareUITests } from './Common/projectHelper';
 
 export async function runTestUI(args: string[]) {
+  const testPath = path.resolve(__dirname, '../out/test/suite/Gates/UI');
+  const testCases = gatherTestFolders(testPath, ...(args.length > 0 ? args : ['**test.js']));
+  prepareUITests(testCases);
   try {
-    const testPath = path.resolve(__dirname, '../out/test/suite/Gates/UI');
-    const testCases = gatherTestCases(testPath, ...(args.length > 0 ? args : ['**test.js']));
-    try {
-      process.env['tests'] = Object.keys(testCases)
-        .map((dir) => testCases[dir][1].map((fn) => path.join(dir, fn)).join(';'))
-        .join(';');
-      // download code and chromedriver
-      const exTester: extest.ExTester = new extest.ExTester(
-        'test-resources',
-        extest.ReleaseQuality.Stable,
-        'test-resources/extensions',
-      );
-      await exTester.downloadCode();
-      await exTester.downloadChromeDriver();
+    process.env['tests'] = Object.keys(testCases)
+      .map((dir) => testCases[dir][1].map((fn) => path.join(dir, fn)).join(';'))
+      .join(';');
+    // download code and chromedriver
+    const exTester: extest.ExTester = new extest.ExTester(
+      'test-resources',
+      extest.ReleaseQuality.Stable,
+      'test-resources/extensions',
+    );
+    await exTester.downloadCode();
+    await exTester.downloadChromeDriver();
 
-      if (process.env['EXTESTER_EXTENSION_LIST']) {
-        const extensionList: string[] = process.env['EXTESTER_EXTENSION_LIST'].split(',');
-        for (const extension of extensionList) {
-          exTester.installFromMarketplace(extension);
-        }
+    if (process.env['EXTESTER_EXTENSION_LIST']) {
+      const extensionList: string[] = process.env['EXTESTER_EXTENSION_LIST'].split(',');
+      for (const extension of extensionList) {
+        exTester.installFromMarketplace(extension);
       }
-      exTester.installFromMarketplace('vscjava.vscode-java-pack');
-
-      // Run tests
-      await exTester.runTests('**/testRunner-ui.js');
-    } catch (err) {
-      console.error('Failed to run tests', err);
-      process.exit(1);
     }
+    exTester.installFromMarketplace('vscjava.vscode-java-pack');
 
-    for (const x of Object.values(testCases).map((val) => val[0])) {
-      await x.clean();
-    }
+    // Run tests
+    await exTester.runTests('**/testRunner-ui.js');
   } catch (err) {
     console.error('Failed to run tests', err);
     process.exit(1);

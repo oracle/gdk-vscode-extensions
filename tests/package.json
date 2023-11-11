@@ -14,7 +14,7 @@
     "compile-ociDevops": " cd ../oci-devops; npm install; npm run compile; npm run test-compile",
     "dependency-compile": "npm run compile-common; npm run compile-gcn; npm run compile-micronaut; npm run compile-micronautTools; npm run compile-ociDevops",
     "clean": "rm -rf ../**/out",
-    "clean-projects": "find . -type d -name projects -exec rm -rf {} \\;",
+    "clean-projects": "rm -rf ./generated-projects; find . -type d -name projects -exec rm -rf {} \\;",
     "clean-resources": "rm -rf test-resources; rm -rf .vscode-test; rm -rf mochawesome-report; npm run clean-projects",
     "compile": "tsc -p . --outDir out",
     "generate": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --generate",

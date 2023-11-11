@@ -6,7 +6,7 @@
  */
 
 import { parseArgs } from './Common/helpers';
-import { AllArg } from './Common/types';
+import { Arg } from './Common/types';
 
 async function main() {
   const args = parseArgs(process.argv);
@@ -15,7 +15,7 @@ async function main() {
     console.log('Invalid arguments passed');
     return;
   }
-  const allArg: AllArg = args.find((v) => v.name === '__all__') as AllArg;
+  const allArg: Arg<string> = args[0];
   let currentArg;
   if ((currentArg = args.find((v) => v.name === 'generate')) !== undefined) {
     const test = require('./generate');

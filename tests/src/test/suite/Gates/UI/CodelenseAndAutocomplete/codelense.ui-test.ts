@@ -192,7 +192,7 @@ describe('Editor test', async () => {
 
   const descriptor = new TestDescriptor();
   // iterate throgh all projects
-  forEach(getAllProjects(descriptor.getProjectsPath()))
+  forEach(getAllProjects(descriptor.projectsPath))
     .describe('Extension codelense tests for %(prectName)s', (project: Project) => {
       let tree: DefaultTreeSection;
 

@@ -5,7 +5,9 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
-suite(process.env['testName'] ?? 'API Tests: ' + process.env['test'], function () {
+import path from 'path';
+
+suite(process.env['testName'] ?? 'API Tests: ' + path.basename(process.env['test'] ?? ''), function () {
   this.timeout(0);
   const tests = process.env['tests']?.split(';');
   if (tests) {

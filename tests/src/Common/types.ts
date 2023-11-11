@@ -5,6 +5,8 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
+import { AbstractTestDescriptor } from './abstractTestDescriptor';
+
 export enum BuildTool {
   Maven = 'MAVEN',
   Gradle = 'GRADLE',
@@ -32,15 +34,13 @@ export enum Feature {
 }
 
 export type ProjectDescription = GeneratedProject | CopiedProject;
-type NamedProject = { name?: string };
-export type GeneratedProject = NamedProject & {
-  _type: 'generated';
+type NamedProject<T extends string> = { name?: string; _type: T };
+export type GeneratedProject = NamedProject<'generated'> & {
   buildTool: BuildTool;
   features: Feature[];
   java?: SupportedJava;
 };
-export type CopiedProject = NamedProject & {
-  _type: 'copied';
+export type CopiedProject = NamedProject<'copied'> & {
   copyPath: string;
 };
 
@@ -49,7 +49,5 @@ export type Arg<T extends string> = {
   args: string[];
 };
 
-export type UITestArg = Arg<'runTest-ui'>;
-export type APITestArg = Arg<'runTest'>;
-export type GenArg = Arg<'generate'>;
-export type AllArg = Arg<'__all__'>;
+export type TestFolder = [AbstractTestDescriptor, string[]];
+export type TestFolders = { [directory: string]: TestFolder };

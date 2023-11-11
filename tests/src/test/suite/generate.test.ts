@@ -6,20 +6,17 @@
  */
 
 import * as path from 'path';
-import { getDescriptors } from '../../Common/helpers';
+import { findDescriptors } from '../../Common/testHelper';
+import { gatherProjectsToGenerate, generateProjects } from '../../Common/projectHelper';
 
 suite('Creating projects', function () {
   this.timeout(0);
-  generate('API');
-  generate('UI');
+  const args = process.env['generator']?.split(';');
+  if (!args) return;
+  const gatesPath = path.join(__dirname, 'Gates');
+  const descriptors = findDescriptors(gatesPath, ...args);
+  const projects = gatherProjectsToGenerate(descriptors);
+  test(`Generating ${projects.length} Projects...`, async () => {
+    await generateProjects(projects);
+  });
 });
-
-async function generate(target: string) {
-  let descs = getDescriptors(path.join(__dirname, 'Gates', target));
-  test(
-    `Generating ${target} Projects: ` + descs.map((d) => d.getProjectDescriptions().length).reduce((n1, n2) => n1 + n2),
-    async () => {
-      for (const desc of descs) await desc.createProjects();
-    },
-  );
-}
