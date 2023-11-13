@@ -11,7 +11,7 @@ import path = require('path');
 import { ICodeTestSpecification } from 'src/Common/ICodeTestSpecification';
 
 export class TestSpecification implements ICodeTestSpecification {
-  private actualPath = ['src', 'test', 'suite', 'Gates', 'UI', 'CodelenseAndAutocomplete', 'projects'];
+  private actualPath = ['src', 'test', 'suite', 'Gates', 'API', 'NITests', 'projects'];
 
   public async clean() {
     const pathss = path.join(...this.actualPath);

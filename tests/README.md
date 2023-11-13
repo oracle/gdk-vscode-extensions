@@ -72,6 +72,11 @@ Run `npm run compile` before the first test run or after you change the test sou
 - UI tests
     Time consuming and not-so-reliable tests. If you are facing nondeterministic errors, add a sleep (e.g., `await new Promise((f) => setTimeout(f, 1000));`) between API calls. UI tests cannot execute vscode commands and cannot access source code => and not create projects. But they can open projects. To create a project, specify `testSpecification.ts` After that, run `npm run generate` to generate the projects. When you run the `npm run test-ui`, UI tests are executed and are not opened in any project. To open a project in your vscode, you must do it explicitly in your test. Take inspiration from `codelense.ui-test.ts.`
 
+# Configuring tests
+- `TIMEOUT_MULTIPLICATOR` - ENV variable that customizes test timeout. If not defined, than default value is 1. Can be any number. Example: to extend test's timeout twice, you can write `TIMEOUT_MULTIPLICATOR=2`
+- `DEBUG` - ENV variable that enables debug mode, in which inner proces' output is displayed in your console. If not defined it is set to false. To set debug flag to true use `DEBUG=true`. All other values are considered as false.
+- `MICRONAUT_SERVER_PORT` - ENV variable that customizes the port you want to run the server on (eg `MICRONAUT_SERVER_PORT=8080`)
+
 # Other documentation
 - https://github.com/redhat-developer/vscode-extension-tester
 - https://code.visualstudio.com/api/working-with-extensions/testing-extension

@@ -8,7 +8,7 @@
 import { IMochaTestSpecification } from 'src/Common/IMochaTestSpecification';
 
 export class TestSpecification implements IMochaTestSpecification {
-  private actualPath = ['src', 'test', 'suite', 'Gates', 'API', 'OCITests', 'projects'];
+  private actualPath = ['src', 'test', 'suite', 'Gates', 'API', 'NITests', 'projects'];
   public async createProjects() {
     const generator = require('../../../../../Common/project-generator');
     await generator.createGcnProject(generator.BuildTools.Maven, [generator.Features.OBJECTSTORE], this.actualPath);

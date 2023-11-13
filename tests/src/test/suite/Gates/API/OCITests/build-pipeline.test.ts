@@ -129,10 +129,7 @@ suite('Build pipeline Test Suite', function () {
   test('List build pipelines', async () => {
     assert.ok(provider !== undefined, 'Authentication failed');
 
-    const buildPipelinesList: any[] = await ociUtils.listBuildPipelines(
-      provider,
-      projectId,
-    );
+    const buildPipelinesList: any[] = await ociUtils.listBuildPipelines(provider, projectId);
     assert.ok(buildPipelinesList.length > 0, 'No build pipelines found!');
 
     let foundJVMContainer: boolean = false;
@@ -152,10 +149,7 @@ suite('Build pipeline Test Suite', function () {
   test('List build stages', async () => {
     assert.ok(provider !== undefined, 'Authentication failed');
 
-    const stages = await ociUtils.listBuildPipelineStages(
-      provider,
-      JVMContainerPipelineId,
-    );
+    const stages = await ociUtils.listBuildPipelineStages(provider, JVMContainerPipelineId);
     assert.ok(stages.length > 0, 'No build pipeline stages found!');
   });
 

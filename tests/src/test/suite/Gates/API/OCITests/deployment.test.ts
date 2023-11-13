@@ -10,7 +10,7 @@ import * as vscode from 'vscode';
 import * as ociUtils from '../../../../../../../oci-devops/out/oci/ociUtils';
 import * as fs from 'fs';
 import * as ociAuthentication from '../../../../../../../oci-devops/out/oci/ociAuthentication';
-import {devops, identity } from 'oci-sdk';
+import { devops, identity } from 'oci-sdk';
 import { DeployOptions } from '../../../../../../../oci-devops/out/oci/deployUtils';
 import { waitForStatup } from './extension.test';
 import { getDefaultConfigFile, listProfiles } from '../../../../../../../oci-devops/out/oci/ociAuthentication';

@@ -52,7 +52,7 @@ function generateUID(): string {
   return shortUUID;
 }
 
-async function getCreateOptions(
+export async function getCreateOptions(
   ourBuildTool: BuildTools,
   java: SupportedJavas,
   services: string[],
