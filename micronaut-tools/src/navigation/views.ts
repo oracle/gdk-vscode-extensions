@@ -12,15 +12,21 @@ import * as workspaceFolders from './workspaceFolders';
 import * as logUtils from '../../../common/lib/logUtils';
 
 
+const VIEW_APPLICATIONS = 'extension-micronaut-tools-applications';
 const VIEW_BEANS = 'extension-micronaut-tools-beans';
 const VIEW_ENDPOINTS = 'extension-micronaut-tools-endpoints';
+const VIEW_MANAGEMENT = 'extension-micronaut-tools-management';
 
 const COMMAND_SEARCH_FILTER_BEANS = 'extension.micronaut-tools.navigation.searchBeans';
 const COMMAND_SEARCH_FILTER_ENDPOINTS = 'extension.micronaut-tools.navigation.searchEndpoints';
 export const COMMAND_REVEAL_IN_ENDPOINTS = 'extension.micronaut-tools.navigation.revealInEndpoints';
 export const COMMAND_NAME_REVEAL_IN_ENDPOINTS = vscode.l10n.t('Reveal in Endpoints');
 
+let ICONS_FOLDER: vscode.Uri | undefined;
+
 export function initialize(context: vscode.ExtensionContext) {
+    ICONS_FOLDER = vscode.Uri.joinPath(context.extensionUri, 'images');
+
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_SEARCH_FILTER_BEANS, () => {
         searchFilterView(VIEW_BEANS);
 	}));
@@ -33,6 +39,7 @@ export function initialize(context: vscode.ExtensionContext) {
         }
 	}));
     workspaceFolders.onUpdated((added, removed, current) => {
+        applicationsNodeProvider.dataChanged(added, removed, current);
         beansNodeProvider.dataChanged(added, removed, current);
         endpointsNodeProvider.dataChanged(added, removed, current);
     });
@@ -80,7 +87,7 @@ abstract class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> 
 
 	getChildren(element?: vscode.TreeItem): vscode.TreeItem[] {
         if (!element) {
-            return this.roots.length === 1 ? this.roots[0].getChildren() || [] : this.roots; // collapse single root node
+            return this.collapsesSingleRoot() && this.roots.length === 1 ? this.roots[0].getChildren() || [] : this.roots; // collapse single root node
         } else {
             return (element as nodes.BaseNode).getChildren() || [];
         }
@@ -102,7 +109,48 @@ abstract class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> 
         }
         return undefined;
     }
+
+    collapsesSingleRoot(): boolean {
+        return true;
+    }
 }
+
+class ApplicationsNodeProvider extends NodeProvider {
+    
+    async buildNodes(roots: nodes.BaseNode[], added: workspaceFolders.FolderData[], removed: workspaceFolders.FolderData[], _current: workspaceFolders.FolderData[]) {
+        for (const remove of removed) {
+            for (let index = 0; index < roots.length; index++) {
+                if ((roots[index] as nodes.ApplicationFolderNode).getFolderData().getWorkspaceFolder() === remove.getWorkspaceFolder()) {
+                    roots.splice(index, 1);
+                    break;
+                }
+            }
+        }
+        if (ICONS_FOLDER) {
+            for (const add of added) {
+                const node = new nodes.ApplicationFolderNode(add, ICONS_FOLDER, applicationsTreeChanged);
+                roots.push(node);
+            }
+        }
+        applicationsTreeChanged();
+    }
+
+    collapsesSingleRoot(): boolean {
+        return false;
+    }
+
+}
+
+const applicationsNodeProvider = new ApplicationsNodeProvider();
+const applicationsTreeView = vscode.window.createTreeView(VIEW_APPLICATIONS, { treeDataProvider: applicationsNodeProvider });
+const applicationsTreeChanged: nodes.TreeChanged = (treeItem?: vscode.TreeItem, expand?: boolean) => {
+    if (treeItem && expand) {
+        applicationsTreeView.reveal(treeItem, {
+            expand: true
+        });
+    }
+    applicationsNodeProvider.refresh(treeItem);
+};
 
 class BeansNodeProvider extends NodeProvider {
     
@@ -164,4 +212,35 @@ const endpointsTreeChanged: nodes.TreeChanged = (treeItem?: vscode.TreeItem, exp
         });
     }
     endpointsNodeProvider.refresh(treeItem);
+};
+
+class ManagementNodeProvider extends NodeProvider {
+    
+    async buildNodes(roots: nodes.BaseNode[], added: workspaceFolders.FolderData[], removed: workspaceFolders.FolderData[], _current: workspaceFolders.FolderData[]) {
+        // for (const remove of removed) {
+        //     for (let index = 0; index < roots.length; index++) {
+        //         if ((roots[index] as nodes.BeansFolderNode).getFolderData().getWorkspaceFolder() === remove.getWorkspaceFolder()) {
+        //             roots.splice(index, 1);
+        //             break;
+        //         }
+        //     }
+        // }
+        // for (const add of added) {
+        //     const node = new nodes.BeansFolderNode(add, beansTreeChanged);
+        //     roots.push(node);
+        // }
+        // managementTreeChanged();
+    }
+
+}
+
+const managementNodeProvider = new ManagementNodeProvider();
+const managementTreeView = vscode.window.createTreeView(VIEW_MANAGEMENT, { treeDataProvider: managementNodeProvider });
+const managementTreeChanged: nodes.TreeChanged = (treeItem?: vscode.TreeItem, expand?: boolean) => {
+    if (treeItem && expand) {
+        managementTreeView.reveal(treeItem, {
+            expand: true
+        });
+    }
+    managementNodeProvider.refresh(treeItem);
 };

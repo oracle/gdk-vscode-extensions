@@ -7,6 +7,7 @@
 
 import * as vscode from 'vscode';
 import * as logUtils from '../../../common/lib/logUtils';
+import * as applications from './applications';
 import * as symbols from './symbols';
 
 
@@ -27,19 +28,31 @@ export class FolderData {
 
     private readonly workspaceFolder: vscode.WorkspaceFolder;
     
+    private application: applications.Application;
     private beans: symbols.Bean[] | undefined;
     private endpoints: symbols.Endpoint[] | undefined;
 
     private readonly events: symbols.Events = new symbols.Events();
     onUpdating(listener: symbols.OnUpdating) { this.events.onUpdating(listener); }
     onUpdated(listener: symbols.OnUpdated) { this.events.onUpdated(listener); }
+
+    private readonly runtimeEvents: symbols.Events = new symbols.Events();
+    onRuntimeUpdated(listener: symbols.OnUpdated) { this.runtimeEvents.onUpdated(listener); }
     
     constructor(workspaceFolder: vscode.WorkspaceFolder) {
         this.workspaceFolder = workspaceFolder;
+        this.application = new applications.Application(workspaceFolder);
+        this.application.getManagement().onRuntimeSymbolsUpdated((kind: string[], beans: symbols.Bean[], endpoints: symbols.Endpoint[]) => {
+            this.runtimeEvents.notifyUpdated(kind, beans, endpoints);
+        });
     };
 
     getWorkspaceFolder(): vscode.WorkspaceFolder {
         return this.workspaceFolder;
+    }
+
+    getApplication(): applications.Application {
+        return this.application;
     }
 
     getBeans(): symbols.Bean[] | undefined {

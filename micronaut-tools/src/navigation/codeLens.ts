@@ -38,7 +38,7 @@ class CodeLensProvider implements vscode.CodeLensProvider {
             if (endpoints) {
                 for (const endpoint of endpoints) {
                     const range = new vscode.Range(endpoint.startPos, endpoint.endPos);
-                    if (endpoint.type === symbols.Endpoint.TYPE_GET) {
+                    if (endpoint.type === symbols.EndpointType.TYPE_GET) {
                         lenses.push(new vscode.CodeLens(range, {
                             title: actions.COMMAND_NAME_OPEN_IN_BROWSER,
                             command: actions.COMMAND_OPEN_IN_BROWSER,
@@ -73,7 +73,7 @@ class CodeLensProvider implements vscode.CodeLensProvider {
                         const name: string = endpoint.name;
                         const startPos: vscode.Position = new vscode.Position(endpoint.range?.start?.line, endpoint.range?.start?.character);
                         const endPos: vscode.Position = new vscode.Position(endpoint.range?.end?.line, endpoint.range?.end?.character);
-                        newEndpoints.push(new symbols.Endpoint(name, uri, startPos, endPos));
+                        newEndpoints.push(new symbols.SourceEndpoint(name, uri, startPos, endPos));
                     } catch (err) {
                         logUtils.logWarning(`[codeLens] readDocumentEndpoints - failed to read endpoint: ${err}`);
                     }

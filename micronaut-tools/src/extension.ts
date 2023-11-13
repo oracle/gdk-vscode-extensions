@@ -13,11 +13,11 @@ import { createDeployment } from './kubernetes/kubernetesDeployment';
 import { deployProject } from './kubernetes/kubernetesDeploy';
 import { runProject, createService } from './kubernetes/kubernetesRun';
 import { createExternalMicronaut, createExternalGCN } from './projectCreate';
+import * as applications from './navigation/applications';
 import * as symbols from './navigation/symbols';
 import * as workspaceFolders from './navigation/workspaceFolders';
 import * as views from './navigation/views';
 import * as actions from './navigation/actions';
-import * as targetAddress from './navigation/targetAddress';
 import * as restQueries from './navigation/restQueries';
 import * as codeLens from './navigation/codeLens';
 import * as kubernetes from 'vscode-kubernetes-tools-api';
@@ -28,11 +28,12 @@ import * as logUtils from '../../common/lib/logUtils';
 export function activate(context: vscode.ExtensionContext) {
 	logUtils.registerExtensionForLogging(context);
 	logUtils.logInfo(`Activating Extension.`);
+	
+	applications.initialize(context);
 	symbols.initialize(context);
 	workspaceFolders.initialize(context);
 	views.initialize(context);
 	actions.initialize(context);
-	targetAddress.initialize(context);
 	restQueries.initialize(context);
 	codeLens.initialize(context);
 

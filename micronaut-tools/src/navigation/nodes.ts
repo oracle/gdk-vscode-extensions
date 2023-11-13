@@ -7,8 +7,10 @@
 
 import * as vscode from 'vscode';
 import * as workspaceFolders from './workspaceFolders';
+import * as applications from './applications';
 import * as symbols from './symbols';
 import * as actions from './actions';
+import * as targetAddress from './targetAddress';
 
 
 export type TreeChanged = (treeItem?: vscode.TreeItem, expand?: boolean) => void;
@@ -105,12 +107,16 @@ export class LoadingNode extends TextNode {
 export abstract class SymbolNode<T extends symbols.Symbol> extends BaseNode {
 
     private readonly symbol: T;
+    private readonly icon: string;
+    private readonly baseContext: string;
 
     protected constructor(name: string, detail: string | undefined, tooltip: string | undefined, icon: string, context: string, symbol: T) {
         super(name, detail, context, undefined, undefined);
         this.tooltip = tooltip;
+        this.icon = icon;
         this.iconPath = new vscode.ThemeIcon(icon);
         this.symbol = symbol;
+        this.baseContext = context;
         this.command = {
             title: actions.COMMAND_NAME_GO_TO_DEFINITION,
             command: actions.COMMAND_GO_TO_DEFINITION,
@@ -120,6 +126,22 @@ export abstract class SymbolNode<T extends symbols.Symbol> extends BaseNode {
 
     getSymbol(): T {
         return this.symbol;
+    }
+
+    setRuntimeStatus(status: boolean | undefined) {
+        switch (status) {
+            case true:
+                this.iconPath = new vscode.ThemeIcon(this.icon, new vscode.ThemeColor('charts.green'));
+                this.contextValue = this.baseContext + '.available.';
+                break;
+            case false:
+                this.iconPath = new vscode.ThemeIcon(this.icon, new vscode.ThemeColor('charts.red'));
+                this.contextValue = this.baseContext;
+                break;
+            default:
+                this.iconPath = new vscode.ThemeIcon(this.icon);
+                this.contextValue = this.baseContext;
+        }
     }
 
 }
@@ -134,15 +156,7 @@ export class BeanNode extends SymbolNode<symbols.Bean> {
     }
 
     static create(bean: symbols.Bean) {
-        const def = bean.def;
-
-        let name = def.substring('@+ \''.length);
-        const nameEndIdx = name.indexOf('\'');
-        name = name.substring(0, nameEndIdx);
-
-        const tooltip = vscode.workspace.asRelativePath(bean.uri, false);
-
-        return new BeanNode(name, undefined, tooltip, bean);
+        return new BeanNode(bean.name, undefined, bean.description, bean);
     }
 
 }
@@ -153,12 +167,283 @@ export class EndpointNode extends SymbolNode<symbols.Endpoint> {
     private static readonly ICON = 'link';
 
     private constructor(name: string, detail: string | undefined, tooltip: string | undefined, endpoint: symbols.Endpoint) {
-        super(name, detail, tooltip, EndpointNode.ICON, EndpointNode.CONTEXT + endpoint.type, endpoint);
+        super(name, detail, tooltip, EndpointNode.ICON, `${EndpointNode.CONTEXT}.${endpoint.type}`, endpoint);
     }
 
     static create(endpoint: symbols.Endpoint) {
-        const tooltip = vscode.workspace.asRelativePath(endpoint.uri, false);
-        return new EndpointNode(endpoint.name, endpoint.type, tooltip, endpoint);
+        return new EndpointNode(endpoint.name, endpoint.type.toString(), endpoint.description, endpoint);
+    }
+
+}
+
+export class ApplicationFolderNode extends BaseNode {
+
+    private static readonly BASE_CONTEXT = 'extension.micronaut-tools.navigation.ApplicationFolderNode';
+
+    private readonly folderData: workspaceFolders.FolderData;
+
+    constructor(folder: workspaceFolders.FolderData, _iconsFolder: vscode.Uri, treeChanged: TreeChanged) {
+        super(folder.getWorkspaceFolder().name, undefined, ApplicationFolderNode.BASE_CONTEXT, [ new ApplicationAddressNode(folder.getApplication(), treeChanged), new ApplicationMonitoringNode(folder.getApplication(), treeChanged), new ApplicationControlPanelNode(folder.getApplication(), treeChanged)/*, new ApplicationPropertiesNode(vscode.Uri.file('application.properties'), treeChanged)*/ ], true);
+        this.tooltip = folder.getWorkspaceFolder().uri.fsPath;
+        this.folderData = folder;
+        // this.iconPath = vscode.Uri.joinPath(iconsFolder, 'micronaut.png');
+
+        this.updateIcon();
+        this.updateContext();
+
+        const application = this.folderData.getApplication();
+        application.onAddressChanged(() => {
+            this.updateIcon();
+            this.updateContext();
+            treeChanged(this);
+        });
+        application.onStateChanged(() => {
+            this.updateIcon();
+            this.updateContext();
+            treeChanged(this);
+        });
+        application.getManagement().onFeaturesAvailableChanged((refreshAvailable, serverStopAvailable) => {
+            this.updateContext(refreshAvailable, serverStopAvailable);
+            treeChanged(this);
+        });
+    }
+
+    getFolderData(): workspaceFolders.FolderData {
+        return this.folderData;
+    }
+
+    getAddress() {
+        return this.folderData.getApplication().getAddress();
+    }
+
+    private updateIcon() {
+        const application = this.folderData.getApplication();
+        const local = application.isLocal();
+        const state = application.getState().toString();
+        switch (state) {
+            case applications.State.CONNECTING_LAUNCH:
+            case applications.State.CONNECTING_ATTACH:
+                this.iconPath = new vscode.ThemeIcon('loading~spin'); break;
+            case applications.State.CONNECTED_LAUNCH:
+            case applications.State.CONNECTED_ATTACH:
+                this.iconPath = new vscode.ThemeIcon(local ? 'circle-large-filled' : 'circle-large', new vscode.ThemeColor('charts.green')); break;
+            case applications.State.DISCONNECTING_LAUNCH:
+            case applications.State.DISCONNECTING_ATTACH:
+                this.iconPath = new vscode.ThemeIcon('loading~spin'); break;
+            default:
+                this.iconPath = new vscode.ThemeIcon(local ? 'circle-large-filled' : 'circle-large');
+        }
+
+    }
+
+    private updateContext(refreshAvailable?: boolean, serverStopAvailable?: boolean) {
+        const application = this.folderData.getApplication();
+        const location = targetAddress.isLocal(application.getAddress()) ? 'local' : 'remote';
+        const state = application.getState().toString();
+        let contextValue = `${ApplicationFolderNode.BASE_CONTEXT}.${location}.${state}.`;
+        if (refreshAvailable) {
+            contextValue += 'refreshable.';
+        }
+        if (serverStopAvailable) {
+            contextValue += 'serverStoppable.';
+        }
+        this.contextValue = contextValue;
+    }
+
+}
+
+export class ApplicationAddressNode extends BaseNode {
+
+    private static readonly BASE_CONTEXT = 'extension.micronaut-tools.navigation.ApplicationAddressNode';
+
+    private readonly application: applications.Application;
+
+    constructor(application: applications.Application, treeChanged: TreeChanged) {
+        super('Address:', application.getAddress(), ApplicationAddressNode.BASE_CONTEXT, null, undefined);
+        this.tooltip = 'Address of a local or remote application';
+        this.application = application;
+
+        this.updateContext(this.application.getState());
+        this.application.onStateChanged(state => {
+            this.updateContext(state);
+            treeChanged(this);
+        });
+        this.application.onAddressChanged(address => {
+            this.description = address;
+            treeChanged(this);
+        });
+    }
+
+    editAddress() {
+        this.application.editAddress();
+    }
+
+    private updateContext(state: applications.State) {
+        this.contextValue = `${ApplicationAddressNode.BASE_CONTEXT}.${state}.`;
+    }
+
+}
+
+export class ApplicationMonitoringNode extends BaseNode {
+
+    private static readonly BASE_CONTEXT = 'extension.micronaut-tools.navigation.ApplicationMonitoringNode';
+
+    private readonly application: applications.Application;
+
+    constructor(application: applications.Application, treeChanged: TreeChanged) {
+        super('Monitoring & Management:', '...', ApplicationMonitoringNode.BASE_CONTEXT, null, undefined);
+        this.tooltip = 'Enable to display the runtime status and services of the application';
+        this.application = application;
+
+        this.application.onStateChanged(() => {
+            this.update();
+            treeChanged(this);
+        });
+        
+        const management = this.application.getManagement();
+        management.onEnabledChanged(() => {
+            this.update();
+            treeChanged(this);
+        });
+        management.onAvailableChanged(() => {
+            this.update();
+            treeChanged(this);
+        });
+
+        this.update();
+    }
+    
+    toggleEnabled() {
+        const management = this.application.getManagement();
+        management.setEnabled(!management.isEnabled());
+    }
+
+    private update() {
+        const management = this.application.getManagement();
+        switch (this.application.getState()) {
+            case applications.State.CONNECTED_LAUNCH:
+            case applications.State.CONNECTED_ATTACH:
+                switch (management.isAvailable()) {
+                    case true:
+                        this.description = 'available';
+                        this.contextValue = ApplicationMonitoringNode.BASE_CONTEXT + '.available.';
+                        break;
+                    case false:
+                        this.description = 'not available';
+                        this.contextValue = ApplicationMonitoringNode.BASE_CONTEXT + '.unavailable.';
+                        break;
+                    default:
+                        this.description = '...';
+                        this.contextValue = ApplicationMonitoringNode.BASE_CONTEXT + '.updating.';
+                }
+                break;
+            case applications.State.CONNECTING_LAUNCH:
+            case applications.State.CONNECTING_ATTACH:
+            case applications.State.DISCONNECTING_LAUNCH:
+            case applications.State.DISCONNECTING_ATTACH:
+                this.description = '...';
+                this.contextValue = ApplicationMonitoringNode.BASE_CONTEXT + '.updating.';
+                break;
+            default:
+                this.description = management.isEnabled() ? 'enabled' : 'inherited';
+                this.contextValue = ApplicationMonitoringNode.BASE_CONTEXT + '.idle.';
+        }
+    }
+
+}
+
+export class ApplicationControlPanelNode extends BaseNode {
+
+    private static readonly BASE_CONTEXT = 'extension.micronaut-tools.navigation.ApplicationControlPanelNode';
+
+    private readonly application: applications.Application;
+
+    constructor(application: applications.Application, treeChanged: TreeChanged) {
+        super('Micronaut Control Panel:', '...', ApplicationControlPanelNode.BASE_CONTEXT, null, undefined);
+        this.tooltip = 'Enable to have the Micronaut Control Panel available for the application';
+        this.application = application;
+
+        this.application.onStateChanged(() => {
+            this.update();
+            treeChanged(this);
+        });
+        
+        const controlPanel = this.application.getControlPanel();
+        controlPanel.onEnabledChanged(() => {
+            this.update();
+            treeChanged(this);
+        });
+        controlPanel.onAvailableChanged(() => {
+            this.update();
+            treeChanged(this);
+        });
+
+        this.update();
+    }
+
+    getAddress() {
+        return this.application.getControlPanel().getAddress();
+    }
+
+    toggleEnabled() {
+        const controlPanel = this.application.getControlPanel();
+        controlPanel.setEnabled(!controlPanel.isEnabled());
+    }
+
+    private update() {
+        const controlPanel = this.application.getControlPanel();
+        switch (this.application.getState()) {
+            case applications.State.CONNECTED_LAUNCH:
+            case applications.State.CONNECTED_ATTACH:
+                switch (controlPanel.isAvailable()) {
+                    case true:
+                        this.description = 'available';
+                        this.contextValue = ApplicationControlPanelNode.BASE_CONTEXT + '.available.';
+                        break;
+                    case false:
+                        this.description = 'not available';
+                        this.contextValue = ApplicationControlPanelNode.BASE_CONTEXT + '.unavailable.';
+                        break;
+                    default:
+                        this.description = '...';
+                        this.contextValue = ApplicationControlPanelNode.BASE_CONTEXT + '.updating.';
+                }
+                break;
+            case applications.State.CONNECTING_LAUNCH:
+            case applications.State.CONNECTING_ATTACH:
+            case applications.State.DISCONNECTING_LAUNCH:
+            case applications.State.DISCONNECTING_ATTACH:
+                this.description = '...';
+                this.contextValue = ApplicationControlPanelNode.BASE_CONTEXT + '.updating.';
+                break;
+            default:
+                this.description = controlPanel.isEnabled() ? 'enabled' : 'inherited';
+                this.contextValue = ApplicationControlPanelNode.BASE_CONTEXT + '.idle.';
+        }
+    }
+
+}
+
+export class ApplicationPropertiesNode extends BaseNode {
+
+    private static readonly BASE_CONTEXT = 'extension.micronaut-tools.navigation.ApplicationPropertiesNode';
+
+    private readonly file: vscode.Uri;
+
+    constructor(file: vscode.Uri, _treeChanged: TreeChanged) {
+        super('properties:', file.path, ApplicationPropertiesNode.BASE_CONTEXT, null, undefined);
+        // this.tooltip = 'Address of a local or remote application';
+        // this.iconPath = new vscode.ThemeIcon('location');
+        this.file = file;
+
+        // this.updateContext(this.application.getState());
+        // this.application.onStateChanged(state => {
+        //     this.updateContext(state);
+        // });
+        // this.application.onAddressChanged(address => {
+        //     this.description = address;
+        //     treeChanged(this);
+        // });
     }
 
 }
@@ -179,6 +464,13 @@ export class BeansFolderNode extends BaseNode {
                 this.reloadSymbol(beans, treeChanged);
             }
         });
+        let lastRuntimeCount: number = 0;
+        folder.onRuntimeUpdated((kind: string[], beans: symbols.Bean[], _endpoints: symbols.Endpoint[]) => {
+            if (symbols.isBeanKind(kind) && beans.length !== lastRuntimeCount) {
+                lastRuntimeCount = beans.length;
+                this.reloadRuntimeSymbol(beans, treeChanged);
+            }
+        });
     }
 
     private reloadSymbol(beans: symbols.Bean[], treeChanged: TreeChanged) {
@@ -191,6 +483,22 @@ export class BeansFolderNode extends BaseNode {
             children.push(new NoItemsNode(BeansFolderNode.SUBJECT));
         }
         this.setChildren(children);
+        treeChanged(this);
+    }
+
+    private reloadRuntimeSymbol(beans: symbols.Bean[], treeChanged: TreeChanged) {
+        const beansMap: any = {};
+        for (const bean of beans) {
+            beansMap[bean.name] = true;
+        }
+        const children = this.getChildren();
+        if (children) {
+            for (const child of children) {
+                if (child instanceof BeanNode) {
+                    (child as BeanNode).setRuntimeStatus(beansMap[child.getSymbol().name]);
+                }
+            }
+        }
         treeChanged(this);
     }
 
@@ -216,6 +524,13 @@ export class EndpointsFolderNode extends BaseNode {
                 this.reloadSymbol(endpoints, treeChanged);
             }
         });
+        let lastRuntimeCount: number = 0;
+        folder.onRuntimeUpdated((kind: string[], _beans: symbols.Bean[], endpoints: symbols.Endpoint[]) => {
+            if (symbols.isEndpointKind(kind) && endpoints.length !== lastRuntimeCount) {
+                lastRuntimeCount = endpoints.length;
+                this.reloadRuntimeSymbol(endpoints, treeChanged);
+            }
+        });
     }
 
     private reloadSymbol(endpoints: symbols.Endpoint[], treeChanged: TreeChanged) {
@@ -231,8 +546,28 @@ export class EndpointsFolderNode extends BaseNode {
         treeChanged(this);
     }
 
+    private reloadRuntimeSymbol(endpoints: symbols.Endpoint[], treeChanged: TreeChanged) {
+        const endpointsMap: any = {};
+        for (const endpoint of endpoints) {
+            endpointsMap[EndpointsFolderNode.endpointID(endpoint)] = true;
+        }
+        const children = this.getChildren();
+        if (children) {
+            for (const child of children) {
+                if (child instanceof EndpointNode) {
+                    (child as EndpointNode).setRuntimeStatus(endpointsMap[EndpointsFolderNode.endpointID(child.getSymbol())]);
+                }
+            }
+        }
+        treeChanged(this);
+    }
+
     getFolderData(): workspaceFolders.FolderData {
         return this.folderData;
+    }
+
+    static endpointID(endpoint: symbols.Endpoint): string {
+        return `${endpoint.name}|${endpoint.type.toString()}`;
     }
 
 }
