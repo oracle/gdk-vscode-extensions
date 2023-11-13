@@ -1,5 +1,8 @@
 # Change Log
 
+# Version 0.6.2
+* MySQL Connector/J updated to v. 8.2.0
+
 # Version 0.6.1
 * Fix in Java .properties files handling for Micronaut/GCN
 * Fix for command palette commands not displayed

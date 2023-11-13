@@ -279,9 +279,11 @@ Command performs port forwarding at the end and running application can be acces
 * **Micronaut Tools: Search/Filter Endpoints**:  Search or filter the items of the Endpoints view
 
 ## Troubleshooting
-This extension modifies Run for **Java** environment so that the application is launched using the build system (Gradle, Maven). In some scenarios the support may not support all customizations necessary for the user project and has to be turned off.
+This extension modifies Run for **Java** environment so that the application is launched using the build system (Gradle, Maven). These are so called *Code lenses* shown above `main()` method `Run | Debug | Run with Micronaut Continuous Mode`. In some scenarios the support may not support all customizations necessary for the user project and has to be turned off.
 
 To enable or disable the enhanced Run feature, navigate to `File - Preferences - Settings`, locate `Micronaut Tools` extension section and turn on/off the `Use build system to run or debug applications`. The relevant setting (in JSON format) is `micronaut-tools.buildsystemExecution`
+
+In some configurations of VSCode extensions Enhanced Run feature - code lenses for Micronaut and GCN applications `Run | Debug | Run with Micronaut Continuous Mode` are not displayed for **Gradle** projects when **Gradle for Java extension** is Enabled. In such a case it is necessary to disable Gradle for Java extension, reload VSCode and then enable Gradle for Java again. After this action Enhanced Run feature starts working and code lenses `Run | Debug | Run with Micronaut Continuous Mode` appears.
 
 Apache NetBeans Language Server for Java does not work on Linux and macOS when VSCode extensions directory contains space in path, e.g. `/User/great code/.vscode/extensions`. This extension depends on Apache NetBeans Lang Server. Extensions directory is where all VSCode extensions are installed. Default location is:
 * Windows `%USERPROFILE%\.vscode\extensions`
