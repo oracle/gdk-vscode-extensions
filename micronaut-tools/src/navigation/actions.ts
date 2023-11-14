@@ -14,6 +14,7 @@ import * as targetAddress from './targetAddress';
 
 
 export const COMMAND_RUN_APPLICATION = 'extension.micronaut-tools.navigation.runApplication';
+export const COMMAND_RUN_DEV_APPLICATION = 'extension.micronaut-tools.navigation.runDevApplication';
 export const COMMAND_DEBUG_APPLICATION = 'extension.micronaut-tools.navigation.debugApplication';
 export const COMMAND_CONNECT_APPLICATION = 'extension.micronaut-tools.navigation.connectApplication';
 export const COMMAND_DISCONNECT_APPLICATION = 'extension.micronaut-tools.navigation.disconnectApplication';
@@ -36,6 +37,12 @@ export function initialize(context: vscode.ExtensionContext) {
         if (node) {
             const application = node.getFolderData().getApplication();
             application.startDebugSession(applications.RunMode.RUN);
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_RUN_DEV_APPLICATION, (node: nodes.ApplicationFolderNode) => {
+        if (node) {
+            const application = node.getFolderData().getApplication();
+            application.startDebugSession(applications.RunMode.RUN_DEV);
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_DEBUG_APPLICATION, (node: nodes.ApplicationFolderNode) => {

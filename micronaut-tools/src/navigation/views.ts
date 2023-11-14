@@ -42,6 +42,7 @@ export function initialize(context: vscode.ExtensionContext) {
         applicationsNodeProvider.dataChanged(added, removed, current);
         beansNodeProvider.dataChanged(added, removed, current);
         endpointsNodeProvider.dataChanged(added, removed, current);
+        managementNodeProvider.dataChanged(added, removed, current);
     });
     logUtils.logInfo(`[views] Initialized`);
 }
@@ -217,19 +218,19 @@ const endpointsTreeChanged: nodes.TreeChanged = (treeItem?: vscode.TreeItem, exp
 class ManagementNodeProvider extends NodeProvider {
     
     async buildNodes(roots: nodes.BaseNode[], added: workspaceFolders.FolderData[], removed: workspaceFolders.FolderData[], _current: workspaceFolders.FolderData[]) {
-        // for (const remove of removed) {
-        //     for (let index = 0; index < roots.length; index++) {
-        //         if ((roots[index] as nodes.BeansFolderNode).getFolderData().getWorkspaceFolder() === remove.getWorkspaceFolder()) {
-        //             roots.splice(index, 1);
-        //             break;
-        //         }
-        //     }
-        // }
-        // for (const add of added) {
-        //     const node = new nodes.BeansFolderNode(add, beansTreeChanged);
-        //     roots.push(node);
-        // }
-        // managementTreeChanged();
+        for (const remove of removed) {
+            for (let index = 0; index < roots.length; index++) {
+                if ((roots[index] as nodes.BeansFolderNode).getFolderData().getWorkspaceFolder() === remove.getWorkspaceFolder()) {
+                    roots.splice(index, 1);
+                    break;
+                }
+            }
+        }
+        for (const add of added) {
+            const node = new nodes.ManagementFolderNode(add, managementTreeChanged);
+            roots.push(node);
+        }
+        managementTreeChanged();
     }
 
 }

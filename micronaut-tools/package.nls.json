@@ -23,7 +23,7 @@
     "extension.micronaut-tools.navigation.applicationsView.title": "Applications",
     "extension.micronaut-tools.navigation.beansView.title": "Beans",
     "extension.micronaut-tools.navigation.endpointsView.title": "Endpoints",
-    "extension.micronaut-tools.navigation.managementView.title": "Management",
+    "extension.micronaut-tools.navigation.managementView.title": "Monitoring & Management",
     "extension.micronaut-tools.navigation.welcomeView.noFolders.content": "No folder opened yet.",
     "extension.micronaut-tools.navigation.welcomeView.loadingView.content": "Loading view...",
     "extension.micronaut-tools.launch.continuous.title": "Run with Micronaut Continuous Mode",

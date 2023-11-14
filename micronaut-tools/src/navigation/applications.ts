@@ -17,9 +17,13 @@ import * as controlPanel from './management/controlPanel';
 
 export enum RunMode {
     RUN = 'java.project.run',
-    RUN_DEV = 'java.project.run',
+    RUN_DEV = 'java.project.runDev',
     DEBUG = 'java.project.debug'
 }
+
+const PROJECT_INFO = 'nbls.project.info';
+const DEV_MAVEN = 'Micronaut: dev mode';
+const DEV_GRADLE = 'Continuous Mode';
 
 export enum State {
     IDLE = 'idle',
@@ -174,7 +178,26 @@ export class Application {
                         return;
                     }
                 }
-                vscode.commands.executeCommand(runMode, this.folder.uri);
+                if (runMode === RunMode.RUN_DEV) {
+                    try {
+                        const projectInfo: any = await vscode.commands.executeCommand(PROJECT_INFO, this.folder.uri.toString());
+                        console.log(projectInfo)
+                        const projectType = projectInfo[0].projectType;
+                        if (projectType.includes('maven')) {
+                            vscode.commands.executeCommand(RunMode.RUN, this.folder.uri, DEV_MAVEN);
+                        } else if (projectType.includes('gradle')) {
+                            vscode.commands.executeCommand(RunMode.RUN, this.folder.uri, DEV_GRADLE);
+                        } else {
+                            vscode.window.showErrorMessage('Running in Dev mode not supported for this project.');
+                        }
+                    } catch (err) {
+                        logUtils.logError('' + err);
+                        console.log(err);
+                        vscode.window.showErrorMessage('Failed to run project in Dev mode.');
+                    }
+                } else {
+                    vscode.commands.executeCommand(runMode, this.folder.uri);
+                }
             });
         }
     }

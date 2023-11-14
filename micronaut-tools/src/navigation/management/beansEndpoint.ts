@@ -8,7 +8,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as applications from '../applications';
-import * as rest from '../rest';
+// import * as rest from '../rest';
 import * as symbols from '../symbols';
 import * as beanHandler from './beanHandler';
 
@@ -27,12 +27,13 @@ export class BeansEndpoint extends beanHandler.BeanHandler {
         super(application, RELATIVE_ADDRESS)
     }
 
-    protected async getData(): Promise<{ code: number | undefined; headers: any; data: any }> {
-        return rest.getDataRetry(this.getAddress());
-    }
+    // protected async getData(): Promise<{ code: number | undefined; headers: any; data: any }> {
+    //     return rest.getDataRetry(this.getAddress());
+    // }
 
     protected async processResponse(response: { code: number | undefined; headers: any; data: any }) {
         // console.log('>>> BEANS PROCESS RESPONSE')
+        // console.log(JSON.parse(response.data))
         const beans = JSON.parse(response.data).beans;
         const resolved: symbols.Bean[] = [];
         for (const beanKey of Object.keys(beans)) {

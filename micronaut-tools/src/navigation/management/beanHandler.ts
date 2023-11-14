@@ -70,6 +70,7 @@ export abstract class BeanHandler {
     async checkAvailable(state?: applications.State): Promise<boolean> {
         state = state || this.application.getState();
         if (state !== applications.State.CONNECTED_LAUNCH && state !== applications.State.CONNECTED_ATTACH) {
+            this.setAvailable(false);
             return false;
         }
         this.setAvailable(undefined);
@@ -122,6 +123,48 @@ export abstract class BeanHandler {
     private notifyAvailableChanged() {
         for (const listener of this.onAvailableChangedListeners) {
             listener(this.available);
+        }
+    }
+
+}
+
+export type OnUpdated = (data: any) => void;
+
+export abstract class UpdatableBeanHandler extends BeanHandler {
+
+    async update(): Promise<boolean> {
+        return new Promise(resolve => {
+            if (!this.isAvailable()) {
+                resolve(false);
+            } else {
+                this.getData().then(response => {
+                    this.processResponse(response).then(() => {
+                        resolve(true);
+                    }).catch(err => {
+                        console.log(err)
+                        this.setAvailable(false);
+                        resolve(false);
+                    });
+                }).catch(err => {
+                    console.log(err)
+                    this.setAvailable(false);
+                    resolve(false);
+                });
+            }
+        });
+    }
+
+    private readonly onUpdatedListeners: OnUpdated[] = [];
+
+    onUpdated(listener: OnUpdated) {
+        this.onUpdatedListeners.push(listener);
+    }
+
+    protected notifyUpdated(data: any) {
+        if (this.isAvailable()) {
+            for (const listener of this.onUpdatedListeners) {
+                listener(data);
+            }
         }
     }
 

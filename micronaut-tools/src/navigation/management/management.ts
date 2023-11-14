@@ -13,6 +13,8 @@ import * as refreshEndpoint from './refreshEndpoint';
 import * as serverStopEndpoint from './serverStopEndpoint';
 import * as beansEndpoint from './beansEndpoint';
 import * as routesEndpoint from './routesEndpoint';
+import * as healthEndpoint from './healthEndpoint';
+import * as metricsEndpoint from './metricsEndpoint';
 
 
 export type OnFeaturesAvailableChanged = (refreshAvailable: boolean, serverStopAvailable: boolean) => void;
@@ -29,6 +31,9 @@ export class Management extends beanHandler.BeanHandler {
     private beansEndpoint: beansEndpoint.BeansEndpoint;
     private routesEndpoint: routesEndpoint.RoutesEndpoint;
 
+    private healthEndpoint: healthEndpoint.HealthEndpoint;
+    private metricsEndpoint: metricsEndpoint.MetricsEndpoint;
+
     private symbolEvents: symbols.Events;
 
     constructor(application: applications.Application) {
@@ -44,6 +49,8 @@ export class Management extends beanHandler.BeanHandler {
         this.routesEndpoint.onEndpointsResolved(endpoints => {
             this.symbolEvents.notifyUpdated([symbols.Endpoint.KIND], [], endpoints);
         });
+        this.healthEndpoint = healthEndpoint.forApplication(application);
+        this.metricsEndpoint = metricsEndpoint.forApplication(application);
         application.onStateChanged(async (state, previousState) => {
             if (state === applications.State.CONNECTED_LAUNCH || state === applications.State.CONNECTED_ATTACH) {
                 this.setAvailable(undefined);
@@ -51,7 +58,9 @@ export class Management extends beanHandler.BeanHandler {
                     this.refreshEndpoint.checkAvailable(),
                     this.serverStopEndpoint.checkAvailable(),
                     this.beansEndpoint.checkAvailable(),
-                    this.routesEndpoint.checkAvailable()
+                    this.routesEndpoint.checkAvailable(),
+                    this.healthEndpoint.checkAvailable(),
+                    this.metricsEndpoint.checkAvailable()
                 ];
                 Promise.all(available).then(available => {
                     const refreshEndpointAvailable = available[0];
@@ -62,17 +71,38 @@ export class Management extends beanHandler.BeanHandler {
                     // console.log('>>> beansEndpointAvailable: ' + beansEndpointAvailable)
                     const routesEndpointAvailable = available[3];
                     // console.log('>>> routesEndpointAvailable: ' + routesEndpointAvailable)
-                    this.setAvailable(refreshEndpointAvailable || serverStopEndpointAvailable || beansEndpointAvailable || routesEndpointAvailable);
+                    const healthEndpointAvailable = available[4];
+                    // console.log('>>> healthEndpointAvailable: ' + healthEndpointAvailable)
+                    const metricsEndpointAvailable = available[5];
+                    // console.log('>>> metricsEndpointAvailable: ' + metricsEndpointAvailable)
+                    this.setAvailable(
+                        refreshEndpointAvailable ||
+                        serverStopEndpointAvailable ||
+                        beansEndpointAvailable ||
+                        routesEndpointAvailable ||
+                        healthEndpointAvailable ||
+                        metricsEndpointAvailable
+                    );
                     this.notifyFeaturesAvailableChanged(refreshEndpointAvailable, serverStopEndpointAvailable);
                 });
             } else {
                 this.refreshEndpoint.checkAvailable();
                 this.serverStopEndpoint.checkAvailable();
+                this.beansEndpoint.checkAvailable();
+                this.routesEndpoint.checkAvailable();
+                this.healthEndpoint.checkAvailable();
+                this.metricsEndpoint.checkAvailable();
                 this.setAvailable(false)
                 if (previousState === applications.State.CONNECTED_LAUNCH || previousState === applications.State.CONNECTED_ATTACH) {
                     this.notifyFeaturesAvailableChanged(false, false);
                     this.symbolEvents.notifyUpdated([symbols.Bean.KIND, symbols.Endpoint.KIND], [], []);
                 }
+            }
+        });
+        application.onAliveTick(counter => {
+            if (counter > 1) { // 1 handled by available check
+                this.healthEndpoint.update();
+                this.metricsEndpoint.update();
             }
         });
     }
@@ -96,6 +126,14 @@ export class Management extends beanHandler.BeanHandler {
         return this.serverStopEndpoint;
     }
 
+    getHealthEndpoint(): healthEndpoint.HealthEndpoint {
+        return this.healthEndpoint;
+    }
+
+    getMetricsEndpoint(): metricsEndpoint.MetricsEndpoint {
+        return this.metricsEndpoint;
+    }
+
     fakeConfiguredFlag: boolean = false;
     private async checkConfigured(): Promise<boolean> {
         // TODO:
@@ -110,6 +148,11 @@ export class Management extends beanHandler.BeanHandler {
         // <dependency>
         //     <groupId>io.micrometer</groupId>
         //     <artifactId>micrometer-core</artifactId>
+        //     <scope>runtime</scope> ??
+        // </dependency>
+        // <dependency>
+        //     <groupId>io.micronaut.micrometer</groupId>
+        //     <artifactId>micronaut-micrometer-core</artifactId>
         //     <scope>runtime</scope> ??
         // </dependency>
         // --- Gradle ---
@@ -154,6 +197,16 @@ export class Management extends beanHandler.BeanHandler {
         const routesEndpointVmArgs = this.routesEndpoint.buildVmArgs();
         if (routesEndpointVmArgs) {
             vmArgs.push(routesEndpointVmArgs);
+        }
+
+        const healthEndpointVmArgs = this.healthEndpoint.buildVmArgs();
+        if (healthEndpointVmArgs) {
+            vmArgs.push(healthEndpointVmArgs);
+        }
+
+        const metricsEndpointVmArgs = this.metricsEndpoint.buildVmArgs();
+        if (metricsEndpointVmArgs) {
+            vmArgs.push(metricsEndpointVmArgs);
         }
 
         return vmArgs.length ? vmArgs.join(' ') : undefined;

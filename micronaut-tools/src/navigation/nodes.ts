@@ -11,6 +11,10 @@ import * as applications from './applications';
 import * as symbols from './symbols';
 import * as actions from './actions';
 import * as targetAddress from './targetAddress';
+import * as management from './management/management';
+import * as healthEndpoint from './management/healthEndpoint';
+import * as metricsEndpoint from './management/metricsEndpoint';
+import * as formatters from './formatters';
 
 
 export type TreeChanged = (treeItem?: vscode.TreeItem, expand?: boolean) => void;
@@ -568,6 +572,212 @@ export class EndpointsFolderNode extends BaseNode {
 
     static endpointID(endpoint: symbols.Endpoint): string {
         return `${endpoint.name}|${endpoint.type.toString()}`;
+    }
+
+}
+
+export class ManagementFolderNode extends BaseNode {
+
+    private static readonly CONTEXT = 'extension.micronaut-tools.navigation.ManagementFolderNode';
+
+    // private readonly folderData: workspaceFolders.FolderData;
+
+    constructor(folder: workspaceFolders.FolderData, treeChanged: TreeChanged) {
+        super(folder.getWorkspaceFolder().name, undefined, ManagementFolderNode.CONTEXT, [], true);
+        this.tooltip = folder.getWorkspaceFolder().uri.fsPath;
+        // this.folderData = folder;
+
+        const management = folder.getApplication().getManagement();
+        const monitoringNode = new MonitoringNode(management, treeChanged);
+        const managementNode = new ManagementNode(management, treeChanged);
+        this.setChildren([ monitoringNode, managementNode ]);
+    }
+
+    // getFolderData(): workspaceFolders.FolderData {
+    //     return this.folderData;
+    // }
+
+}
+
+export class MonitoringNode extends BaseNode {
+
+    private static readonly CONTEXT = 'extension.micronaut-tools.navigation.MonitoringNode';
+
+    constructor(management: management.Management, treeChanged: TreeChanged) {
+        super('Monitoring', undefined, MonitoringNode.CONTEXT, [], true);
+        this.tooltip = 'Application monitoring';
+
+        const uptimeNode = new MonitoringUptimeNode(management.getMetricsEndpoint(), treeChanged);
+        const cpuNode = new MonitoringCpuNode(management.getMetricsEndpoint(), treeChanged);
+        const heapNode = new MonitoringHeapNode(management.getMetricsEndpoint(), treeChanged);
+        const nonheapNode = new MonitoringNonHeapNode(management.getMetricsEndpoint(), treeChanged);
+        const diskSpaceNode = new MonitoringDiskSpaceNode(management.getHealthEndpoint(), treeChanged);
+        this.setChildren([ uptimeNode, cpuNode, heapNode, nonheapNode, diskSpaceNode ]);
+    }
+
+}
+
+export class MonitoringCpuNode extends BaseNode {
+
+    private static readonly CONTEXT = 'extension.micronaut-tools.navigation.MonitoringCpuNode';
+
+    constructor(endpoint: metricsEndpoint.MetricsEndpoint, treeChanged: TreeChanged) {
+        super('CPU:', 'n/a', MonitoringCpuNode.CONTEXT, null, undefined);
+        this.tooltip = 'Cpu';
+        endpoint.onAvailableChanged(available => {
+            switch (available) {
+                case false:
+                    this.description = 'n/a';
+                    // this.tooltip = 'Process uptime: data not available';
+                    treeChanged(this);
+                    break;
+                case undefined:
+                    this.description = '...';
+                    // this.tooltip = 'Process uptime: waiting for data...';
+                    treeChanged(this);
+            }
+        })
+        endpoint.onUpdated(data => {
+            const processCpu = Number.parseFloat(data[metricsEndpoint.PROCESS_CPU].measurements[0].value);
+            const systemCpu = Number.parseFloat(data[metricsEndpoint.SYSTEM_CPU].measurements[0].value);
+            this.description = `${formatters.formatPercent(processCpu)} process, ${formatters.formatPercent(systemCpu)} system`;
+            // this.tooltip = `Disk space: ${free.toLocaleString()} B free of ${total.toLocaleString()} B total`;
+            treeChanged(this);
+        });
+    }
+
+}
+
+export class MonitoringHeapNode extends BaseNode {
+
+    private static readonly CONTEXT = 'extension.micronaut-tools.navigation.MonitoringHeapNode';
+
+    constructor(endpoint: metricsEndpoint.MetricsEndpoint, treeChanged: TreeChanged) {
+        super('Heap:', 'n/a', MonitoringHeapNode.CONTEXT, null, undefined);
+        this.tooltip = 'Heap';
+        endpoint.onAvailableChanged(available => {
+            switch (available) {
+                case false:
+                    this.description = 'n/a';
+                    // this.tooltip = 'Process uptime: data not available';
+                    treeChanged(this);
+                    break;
+                case undefined:
+                    this.description = '...';
+                    // this.tooltip = 'Process uptime: waiting for data...';
+                    treeChanged(this);
+            }
+        })
+        endpoint.onUpdated(data => {
+            const heapUsed = Number.parseInt(data[metricsEndpoint.MEMORY_USED_HEAP].measurements[0].value);
+            const heapMax = Number.parseInt(data[metricsEndpoint.MEMORY_MAX_HEAP].measurements[0].value);
+            this.description = `${formatters.formatBytes(heapUsed)} used, ${formatters.formatBytes(heapMax)} max`;
+            // this.tooltip = `Disk space: ${free.toLocaleString()} B free of ${total.toLocaleString()} B total`;
+            treeChanged(this);
+        });
+    }
+
+}
+
+export class MonitoringNonHeapNode extends BaseNode {
+
+    private static readonly CONTEXT = 'extension.micronaut-tools.navigation.MonitoringNonHeapNode';
+
+    constructor(endpoint: metricsEndpoint.MetricsEndpoint, treeChanged: TreeChanged) {
+        super('Non Heap:', 'n/a', MonitoringNonHeapNode.CONTEXT, null, undefined);
+        this.tooltip = 'Non heap';
+        endpoint.onAvailableChanged(available => {
+            switch (available) {
+                case false:
+                    this.description = 'n/a';
+                    // this.tooltip = 'Process uptime: data not available';
+                    treeChanged(this);
+                    break;
+                case undefined:
+                    this.description = '...';
+                    // this.tooltip = 'Process uptime: waiting for data...';
+                    treeChanged(this);
+            }
+        })
+        endpoint.onUpdated(data => {
+            const heapUsed = Number.parseInt(data[metricsEndpoint.MEMORY_USED_NONHEAP].measurements[0].value);
+            const heapMax = Number.parseInt(data[metricsEndpoint.MEMORY_MAX_NONHEAP].measurements[0].value);
+            this.description = `${formatters.formatBytes(heapUsed)} used, ${formatters.formatBytes(heapMax)} max`;
+            // this.tooltip = `Disk space: ${free.toLocaleString()} B free of ${total.toLocaleString()} B total`;
+            treeChanged(this);
+        });
+    }
+
+}
+
+export class MonitoringUptimeNode extends BaseNode {
+
+    private static readonly CONTEXT = 'extension.micronaut-tools.navigation.MonitoringUptimeNode';
+
+    constructor(endpoint: metricsEndpoint.MetricsEndpoint, treeChanged: TreeChanged) {
+        super('Uptime:', 'n/a', MonitoringUptimeNode.CONTEXT, null, undefined);
+        this.tooltip = 'Process uptime';
+        endpoint.onAvailableChanged(available => {
+            switch (available) {
+                case false:
+                    this.description = 'n/a';
+                    // this.tooltip = 'Process uptime: data not available';
+                    treeChanged(this);
+                    break;
+                case undefined:
+                    this.description = '...';
+                    // this.tooltip = 'Process uptime: waiting for data...';
+                    treeChanged(this);
+            }
+        })
+        endpoint.onUpdated(data => {
+            const uptime = Number.parseInt(data[metricsEndpoint.PROCESS_UPTIME].measurements[0].value);
+            this.description = `${formatters.formatTime(uptime)}`;
+            // this.tooltip = `Disk space: ${free.toLocaleString()} B free of ${total.toLocaleString()} B total`;
+            treeChanged(this);
+        });
+    }
+
+}
+
+export class MonitoringDiskSpaceNode extends BaseNode {
+
+    private static readonly CONTEXT = 'extension.micronaut-tools.navigation.MonitoringDiskSpaceNode';
+
+    constructor(endpoint: healthEndpoint.HealthEndpoint, treeChanged: TreeChanged) {
+        super('Disk:', 'n/a', MonitoringDiskSpaceNode.CONTEXT, null, undefined);
+        this.tooltip = 'Disk space';
+        endpoint.onAvailableChanged(available => {
+            switch (available) {
+                case false:
+                    this.description = 'n/a';
+                    // this.tooltip = 'Disk space: data not available';
+                    treeChanged(this);
+                    break;
+                case undefined:
+                    this.description = '...';
+                    // this.tooltip = 'Disk space: waiting for data...';
+                    treeChanged(this);
+            }
+        })
+        endpoint.onUpdated(data => {
+            const free = Number.parseInt(data.details.diskSpace.details.free);
+            const total = Number.parseInt(data.details.diskSpace.details.total);
+            this.description = `${formatters.formatBytes(free)} free, ${formatters.formatBytes(total)} total`;
+            // this.tooltip = `Disk space: ${free.toLocaleString()} B free of ${total.toLocaleString()} B total`;
+            treeChanged(this);
+        });
+    }
+
+}
+
+export class ManagementNode extends BaseNode {
+
+    private static readonly CONTEXT = 'extension.micronaut-tools.navigation.ManagementNode';
+
+    constructor(management: management.Management, treeChanged: TreeChanged) {
+        super('Management', undefined, ManagementNode.CONTEXT, [], false);
+        this.tooltip = 'Application management';
     }
 
 }
