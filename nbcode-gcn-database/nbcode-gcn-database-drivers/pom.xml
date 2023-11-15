@@ -6,8 +6,8 @@
         <artifactId>nbcode-gcn-database-drivers-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-    <groupId>org.netbeans.modules.nbcode</groupId>
-    <artifactId>nbcode-gcn-database-drivers</artifactId>
+    <groupId>org.netbeans.modules.gcn</groupId>
+    <artifactId>database-drivers</artifactId>
     <packaging>nbm</packaging>
     <name>GCN Database Drivers Pack</name>
     <build>
@@ -62,5 +62,5 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-    <version>1.1</version>
+    <version>1.2</version>
 </project>

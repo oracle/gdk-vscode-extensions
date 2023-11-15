@@ -25,7 +25,7 @@
   <display-name value='MySQL (Connector/J driver)'/>
   <class value='com.mysql.cj.jdbc.Driver'/>
   <urls>
-  	<url value="nbinst://org.netbeans.modules.nbcode.nbcode.gcn.database.drivers/modules/ext/org.netbeans.modules.nbcode.nbcode-gcn-database-drivers/com-google-protobuf/protobuf-java.jar"/>
-  	<url value="nbinst://org.netbeans.modules.nbcode.nbcode.gcn.database.drivers/modules/ext/org.netbeans.modules.nbcode.nbcode-gcn-database-drivers/com-mysql/mysql-connector-j.jar"/>
+  	<url value="nbinst://org.netbeans.modules.gcn.database.drivers/modules/ext/org.netbeans.modules.gcn.database-drivers/com-google-protobuf/protobuf-java.jar"/>
+  	<url value="nbinst://org.netbeans.modules.gcn.database.drivers/modules/ext/org.netbeans.modules.gcn.database-drivers/com-mysql/mysql-connector-j.jar"/>
   </urls>
 </driver>

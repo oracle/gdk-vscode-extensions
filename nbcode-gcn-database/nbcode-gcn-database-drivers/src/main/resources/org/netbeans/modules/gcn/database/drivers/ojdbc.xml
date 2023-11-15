@@ -1,0 +1,17 @@
+<?xml version='1.0'?>
+<!--
+
+    Copyright (c) 2023 Oracle and/or its affiliates. All rights reserved.
+    Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
+
+-->
+<!DOCTYPE driver PUBLIC '-//NetBeans//DTD JDBC Driver 1.1//EN' 'http://www.netbeans.org/dtds/jdbc-driver-1_1.dtd'>
+<driver>
+  <name value='Oracle'/>
+  <display-name value='Oracle Database 23c (23.3) JDBC Driver'/>
+  <class value='oracle.jdbc.OracleDriver'/>
+  <urls>
+  	<url value="nbinst://org.netbeans.modules.gcn.database.drivers/modules/ext/org.netbeans.modules.gcn.database-drivers/com-oracle-database-jdbc/ojdbc11.jar"/>
+  	<url value="nbinst://org.netbeans.modules.gcn.database.drivers/modules/ext/org.netbeans.modules.gcn.database-drivers/com-oracle-database-security/oraclepki.jar"/>
+  </urls>
+</driver>
