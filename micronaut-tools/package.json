@@ -301,6 +301,18 @@
 				"category": "Micronaut Tools"
 			},
 			{
+				"command": "extension.micronaut-tools.navigation.updateLoggers",
+				"title": "%extension.micronaut-tools.navigation.updateLoggers.title%",
+				"icon": "$(refresh)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.editLoggers",
+				"title": "%extension.micronaut-tools.navigation.editLoggers.title%",
+				"icon": "$(settings)",
+				"category": "Micronaut Tools"
+			},
+			{
 				"command": "extension.micronaut-tools.launch.continuous",
 				"title": "%extension.micronaut-tools.launch.continuous.title%",
 				"icon": "$(run)",
@@ -498,6 +510,14 @@
 					"when": "extension.micronaut-tools.navigation.endpointsInitialized"
 				},
 				{
+					"command": "extension.micronaut-tools.navigation.updateLoggers",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editLoggers",
+					"when": "false"
+				},
+				{
 					"command": "extension.micronaut-tools.database.register",
 					"when": "odt.extension.enabled"
 				}
@@ -688,6 +708,26 @@
 				{
 					"command": "extension.micronaut-tools.navigation.openInBrowser",
 					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.EndpointNode\\.GET/",
+					"group": "context@3"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.updateLoggers",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementLoggersNode.available.",
+					"group": "inline@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.updateLoggers",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementLoggersNode.available.",
+					"group": "context@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editLoggers",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementLoggersNode.available.",
+					"group": "inline@3"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editLoggers",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementLoggersNode.available.",
 					"group": "context@3"
 				},
 				{

@@ -1,7 +1,7 @@
 {
     "extension.micronaut-tools.navigation.runApplication.title": "Run Application",
     "extension.micronaut-tools.navigation.debugApplication.title": "Debug Application",
-    "extension.micronaut-tools.navigation.runDevApplication.title": "Run Application in Dev Mode",
+    "extension.micronaut-tools.navigation.runDevApplication.title": "Run Application in Dev Mode (Restarts on Change)",
     "extension.micronaut-tools.navigation.connectApplication.title": "Connect to Running Application",
     "extension.micronaut-tools.navigation.disconnectApplication.title": "Disconnect from Application",
     "extension.micronaut-tools.navigation.cancelConnectApplication.title": "Cancel Connecting to Application",
@@ -19,6 +19,8 @@
     "extension.micronaut-tools.navigation.composeRestQuery.title": "Compose REST Query",
     "extension.micronaut-tools.navigation.searchBeans.title": "Search/Filter Beans",
     "extension.micronaut-tools.navigation.searchEndpoints.title": "Search/Filter Endpoints",
+    "extension.micronaut-tools.navigation.editLoggers.title": "Configure Loggers",
+    "extension.micronaut-tools.navigation.updateLoggers.title": "Refresh Loggers",
     "extension.micronaut-tools.navigation.view.title": "Micronaut Tools",
     "extension.micronaut-tools.navigation.applicationsView.title": "Applications",
     "extension.micronaut-tools.navigation.beansView.title": "Beans",

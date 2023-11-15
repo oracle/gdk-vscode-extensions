@@ -14,6 +14,7 @@ import * as targetAddress from './targetAddress';
 import * as management from './management/management';
 import * as healthEndpoint from './management/healthEndpoint';
 import * as metricsEndpoint from './management/metricsEndpoint';
+import * as loggersEndpoint from './management/loggersEndpoint';
 import * as formatters from './formatters';
 
 
@@ -604,7 +605,7 @@ export class MonitoringNode extends BaseNode {
     private static readonly CONTEXT = 'extension.micronaut-tools.navigation.MonitoringNode';
 
     constructor(management: management.Management, treeChanged: TreeChanged) {
-        super('Monitoring', undefined, MonitoringNode.CONTEXT, [], true);
+        super('Monitoring', undefined, MonitoringNode.CONTEXT, [], false);
         this.tooltip = 'Application monitoring';
 
         const uptimeNode = new MonitoringUptimeNode(management.getMetricsEndpoint(), treeChanged);
@@ -776,8 +777,63 @@ export class ManagementNode extends BaseNode {
     private static readonly CONTEXT = 'extension.micronaut-tools.navigation.ManagementNode';
 
     constructor(management: management.Management, treeChanged: TreeChanged) {
-        super('Management', undefined, ManagementNode.CONTEXT, [], false);
+        super('Management', undefined, ManagementNode.CONTEXT, [], true);
         this.tooltip = 'Application management';
+
+        const loggersNode = new ManagementLoggersNode(management.getLoggersEndpoint(), treeChanged);
+        this.setChildren([ loggersNode ]);
+    }
+
+}
+
+export class ManagementLoggersNode extends BaseNode {
+
+    private static readonly BASE_CONTEXT = 'extension.micronaut-tools.navigation.ManagementLoggersNode';
+
+    private readonly endpoint: loggersEndpoint.LoggersEndpoint;
+
+    constructor(endpoint: loggersEndpoint.LoggersEndpoint, treeChanged: TreeChanged) {
+        super('Loggers:', 'n/a', ManagementLoggersNode.BASE_CONTEXT, null, undefined);
+        this.tooltip = 'Application loggers';
+        this.endpoint = endpoint;
+        endpoint.onAvailableChanged(available => {
+            switch (available) {
+                case true:
+                    this.contextValue = `${ManagementLoggersNode.BASE_CONTEXT}.available.`;
+                    break;
+                case false:
+                    this.description = 'n/a';
+                    this.tooltip = 'Application loggers';
+                    this.contextValue = ManagementLoggersNode.BASE_CONTEXT;
+                    break;
+                case undefined:
+                    this.description = '...';
+                    this.tooltip = 'Application loggers';
+                    this.contextValue = ManagementLoggersNode.BASE_CONTEXT;
+            }
+            treeChanged(this);
+        })
+        endpoint.onUpdated(data => {
+            const configured = loggersEndpoint.getConfigured(data);
+            this.description = `${configured.length.toLocaleString()} configured`;
+            if (configured.length) {
+                this.tooltip = 'Configured loggers:';
+                for (const logger of configured) {
+                    this.tooltip += `\n \u25CF ${logger.name}: ${logger.configuredLevel}`
+                }
+            } else {
+                this.tooltip = 'No loggers configured';
+            }
+            treeChanged(this);
+        });
+    }
+
+    updateLoggers() {
+        this.endpoint.update();
+    }
+
+    editLoggers() {
+        this.endpoint.editLoggers();
     }
 
 }

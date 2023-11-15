@@ -367,8 +367,8 @@ class RunCustomizer implements vscode.DebugConfigurationProvider {
                                 config.vmArgs = `${config.vmArgs} ${vmArgs}`;
                             }
                         }
-                        console.log('>>> CONFIG:')
-                        console.log(config)
+                        // console.log('>>> CONFIG:')
+                        // console.log(config)
                         // resolve(config);
                         break;
                     }

@@ -31,6 +31,8 @@ export const COMMAND_OPEN_CONTROL_PANEL_IN_BROWSER = 'extension.micronaut-tools.
 export const COMMAND_EDIT_CONTROL_PANEL = 'extension.micronaut-tools.navigation.editControlPanel';
 export const COMMAND_REFRESH_SERVER = 'extension.micronaut-tools.navigation.refreshServer';
 export const COMMAND_STOP_SERVER = 'extension.micronaut-tools.navigation.stopServer';
+export const COMMAND_UPDATE_LOGGERS = 'extension.micronaut-tools.navigation.updateLoggers';
+export const COMMAND_EDIT_LOGGERS = 'extension.micronaut-tools.navigation.editLoggers';
 
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_RUN_APPLICATION, (node: nodes.ApplicationFolderNode) => {
@@ -124,6 +126,16 @@ export function initialize(context: vscode.ExtensionContext) {
         if (node) {
             const application = node.getFolderData().getApplication();
             application.getManagement().getServerStopEndpoint().stopServer();
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_UPDATE_LOGGERS, (node: nodes.ManagementLoggersNode) => {
+        if (node) {
+            node.updateLoggers();
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_EDIT_LOGGERS, (node: nodes.ManagementLoggersNode) => {
+        if (node) {
+            node.editLoggers();
         }
 	}));
     logUtils.logInfo('[actions] Initialized');

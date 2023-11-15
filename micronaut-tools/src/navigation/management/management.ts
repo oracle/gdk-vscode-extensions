@@ -15,6 +15,7 @@ import * as beansEndpoint from './beansEndpoint';
 import * as routesEndpoint from './routesEndpoint';
 import * as healthEndpoint from './healthEndpoint';
 import * as metricsEndpoint from './metricsEndpoint';
+import * as loggersEndpoint from './loggersEndpoint';
 
 
 export type OnFeaturesAvailableChanged = (refreshAvailable: boolean, serverStopAvailable: boolean) => void;
@@ -34,6 +35,8 @@ export class Management extends beanHandler.BeanHandler {
     private healthEndpoint: healthEndpoint.HealthEndpoint;
     private metricsEndpoint: metricsEndpoint.MetricsEndpoint;
 
+    private loggersEndpoint: loggersEndpoint.LoggersEndpoint;
+
     private symbolEvents: symbols.Events;
 
     constructor(application: applications.Application) {
@@ -51,6 +54,7 @@ export class Management extends beanHandler.BeanHandler {
         });
         this.healthEndpoint = healthEndpoint.forApplication(application);
         this.metricsEndpoint = metricsEndpoint.forApplication(application);
+        this.loggersEndpoint = loggersEndpoint.forApplication(application);
         application.onStateChanged(async (state, previousState) => {
             if (state === applications.State.CONNECTED_LAUNCH || state === applications.State.CONNECTED_ATTACH) {
                 this.setAvailable(undefined);
@@ -60,7 +64,8 @@ export class Management extends beanHandler.BeanHandler {
                     this.beansEndpoint.checkAvailable(),
                     this.routesEndpoint.checkAvailable(),
                     this.healthEndpoint.checkAvailable(),
-                    this.metricsEndpoint.checkAvailable()
+                    this.metricsEndpoint.checkAvailable(),
+                    this.loggersEndpoint.checkAvailable()
                 ];
                 Promise.all(available).then(available => {
                     const refreshEndpointAvailable = available[0];
@@ -75,13 +80,16 @@ export class Management extends beanHandler.BeanHandler {
                     // console.log('>>> healthEndpointAvailable: ' + healthEndpointAvailable)
                     const metricsEndpointAvailable = available[5];
                     // console.log('>>> metricsEndpointAvailable: ' + metricsEndpointAvailable)
+                    const loggersEndpointAvailable = available[6];
+                    // console.log('>>> loggersEndpointAvailable: ' + loggersEndpointAvailable)
                     this.setAvailable(
                         refreshEndpointAvailable ||
                         serverStopEndpointAvailable ||
                         beansEndpointAvailable ||
                         routesEndpointAvailable ||
                         healthEndpointAvailable ||
-                        metricsEndpointAvailable
+                        metricsEndpointAvailable ||
+                        loggersEndpointAvailable
                     );
                     this.notifyFeaturesAvailableChanged(refreshEndpointAvailable, serverStopEndpointAvailable);
                 });
@@ -92,6 +100,7 @@ export class Management extends beanHandler.BeanHandler {
                 this.routesEndpoint.checkAvailable();
                 this.healthEndpoint.checkAvailable();
                 this.metricsEndpoint.checkAvailable();
+                this.loggersEndpoint.checkAvailable();
                 this.setAvailable(false)
                 if (previousState === applications.State.CONNECTED_LAUNCH || previousState === applications.State.CONNECTED_ATTACH) {
                     this.notifyFeaturesAvailableChanged(false, false);
@@ -132,6 +141,10 @@ export class Management extends beanHandler.BeanHandler {
 
     getMetricsEndpoint(): metricsEndpoint.MetricsEndpoint {
         return this.metricsEndpoint;
+    }
+
+    getLoggersEndpoint(): loggersEndpoint.LoggersEndpoint {
+        return this.loggersEndpoint;
     }
 
     fakeConfiguredFlag: boolean = false;
@@ -207,6 +220,11 @@ export class Management extends beanHandler.BeanHandler {
         const metricsEndpointVmArgs = this.metricsEndpoint.buildVmArgs();
         if (metricsEndpointVmArgs) {
             vmArgs.push(metricsEndpointVmArgs);
+        }
+
+        const loggersEndpointVmArgs = this.loggersEndpoint.buildVmArgs();
+        if (loggersEndpointVmArgs) {
+            vmArgs.push(loggersEndpointVmArgs);
         }
 
         return vmArgs.length ? vmArgs.join(' ') : undefined;

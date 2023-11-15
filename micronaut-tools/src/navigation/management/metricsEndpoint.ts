@@ -65,8 +65,8 @@ export class MetricsEndpoint extends beanHandler.UpdatableBeanHandler {
                         data[MONITORED_METRICS[i]] = JSON.parse(responses[i].data);
                     }
                     this.notifyUpdated(data);
-                    console.log('>>> --- METRICS --- <<<')
-                    console.log(data)
+                    // console.log('>>> --- METRICS --- <<<')
+                    // console.log(data)
                     resolve(true);
                 }).catch(err => {
                     console.log(err)
