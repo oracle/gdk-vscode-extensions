@@ -1,0 +1,7 @@
+*/.gradle
+*/.git
+**/bin
+*/build
+*/buildSrc/.gradle
+*/buildSrc/build
+

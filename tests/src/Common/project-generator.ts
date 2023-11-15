@@ -93,7 +93,7 @@ export async function getCreateOptions(
   };
 }
 
-function getName(buildTool: BuildTools, services: string[]) {
+export function createUniqueSuffix(buildTool: BuildTools, services: string[]) {
   let name: string = buildTool + '_';
   if (services.length > 0) {
     name += services.join('_') + '_';
@@ -121,7 +121,7 @@ export async function createGcnProject(
 
     const options = await getCreateOptions(buildTool, java, services);
 
-    const relPath = path.join('..', '..', ...relativePath, getName(buildTool, services));
+    const relPath = path.join('..', '..', ...relativePath, createUniqueSuffix(buildTool, services));
 
     const projFolder: string = path.resolve(__dirname, relPath);
 

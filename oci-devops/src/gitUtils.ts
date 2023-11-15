@@ -67,6 +67,48 @@ export async function cloneRepository(address: string, target: string): Promise<
     return true;
 }
 
+/**
+ * Close the internal Git Repository object. When the .git directory is deleted, vscode git extension's
+ * model is still cached and active; susbequent attempts to reinitialize Git for the project would fail. 
+ * This function will close the internal model and evict it from the git extension's cache. It uses
+ * an undocumented hack - git extension registers internal commands working against model objects,
+ * which must be unwrapped from the API wrappers.
+ * @param target target directory (the parent of .git dir)
+ * @param silent true to not report any errors
+ * @returns true, if close was successful.
+ */
+export async function closeRepository(target : vscode.Uri, silent : boolean = true) : Promise<boolean | undefined> {
+    logUtils.logInfo(`[git] Checking existing repository for ${target.fsPath}`);
+    const gitApi = getGitAPI();
+    if (!gitApi) {
+        if (!silent) {
+            dialogs.showErrorMessage('Cannot access Git support.');
+        }
+        return undefined;
+    }
+    if (gitApi.state === 'uninitialized') {
+        if (!silent) {
+            dialogs.showErrorMessage('Git support has not been initialized yet.');
+        }
+        return undefined;
+    }
+    const repository = gitApi.getRepository(target);
+    if (repository != null) {
+        logUtils.logInfo(`[git] Closing repository for ${target.fsPath}`);
+        try {
+            // must unwrap the internal model from the API facade.
+            await vscode.commands.executeCommand('git.close', repository['repository']);
+            logUtils.logInfo(`[git] Repository closed for ${target.fsPath}`)
+            return true;
+        } catch (err : any) {
+            // just in the case, shouldn't fail anyway but if it does, we do not want to fail the undeploy operation.
+            logUtils.logError(`[git] Error closing repository at ${target.fsPath}: ${err?.message}`);
+            return false;
+        }
+    }
+    return true;
+}
+
 export function getHEAD(target: vscode.Uri, silent?: boolean): { name?: string; commit?: string; upstream?: object } | undefined {
     logUtils.logInfo(`[git] Get head of ${target.fsPath}`);
     const gitApi = getGitAPI();
@@ -83,6 +125,8 @@ export function getHEAD(target: vscode.Uri, silent?: boolean): { name?: string; 
         return undefined;
     }
     const repository = gitApi.getRepository(target);
+
+
     if (!repository) {
         if (!silent) {
             dialogs.showErrorMessage(`Cannot find Git repository for ${target}`);

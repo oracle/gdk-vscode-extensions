@@ -8,3 +8,32 @@
 export interface ICodeTestSpecification {
   clean(): void;
 }
+
+/**
+ * Test-mandated options for setting up the extension hosting instance.
+ */
+export interface LaunchOptions {
+  /**
+   * Environment variables to set up before vscode starts.
+   */
+  env? : { [key: string]: string | undefined };
+
+  /**
+   * Extensions to install in vscode. TBD
+  extensionList? : string[];
+   */
+
+  /**
+   * User settings that should be set up prior to actually executing
+   * tests or activating extensions. TBD.
+  userSettings? : { [key: string]: any | undefined };
+   */
+}
+
+/**
+ * A mixin interface, to be present on the `project-generators` test package entry point. If present,
+ * the test infrastructure will get launch options for specific details on how vscode process should be run.
+ */
+export interface TestVscodeOptions {
+  launchOptions() : LaunchOptions | undefined;
+}
