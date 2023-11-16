@@ -6,9 +6,10 @@ export class TestDescriptor extends AbstractTestDescriptor {
   constructor() {
     super(__dirname);
   }
-  descriptions: ProjectDescription[] = [help.copProj(path.join(__dirname, 'project-templates', 'adm', 'oci-adm-g'))];
+  descriptions: ProjectDescription[] = [help.copProj(path.join('test-projects', 'adm', 'oci-adm-g'))];
   environment: Record<string, string> = {
     ADM_SUPPRESS_AUTO_DISPLAY: 'true',
     TEST_ADM_REUSE_PROJECTS: 'true',
   };
+  protected destructive: boolean = false;
 }

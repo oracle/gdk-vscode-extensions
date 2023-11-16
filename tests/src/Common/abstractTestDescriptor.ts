@@ -12,7 +12,7 @@ export abstract class AbstractTestDescriptor {
     readonly directory: string;
     public readonly projectsPath: string;
     descriptions: ProjectDescription[] = [];
-    environment: Record<string, string> = {};
+    environment: Record<string, string> | undefined;
     protected destructive: boolean = true;
 
     constructor(directory: string) {
@@ -24,7 +24,7 @@ export abstract class AbstractTestDescriptor {
         return this.descriptions;
     }
 
-    public getProjectEnvironment(): Record<string, string> {
+    public getProjectEnvironment(): Record<string, string> | undefined {
         return this.environment;
     }
     public isDestructive(): boolean {

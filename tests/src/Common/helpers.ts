@@ -69,13 +69,6 @@ export function copProj(copyPath: string, name?: string): CopiedProject {
     return { _type: 'copied', copyPath, name };
 }
 
-export function copyProject(desc: CopiedProject, dest: string): void {
-    const src = desc.copyPath.replace('out', 'src');
-    dest = path.join(dest, path.basename(src));
-    fs.rmSync(dest, { recursive: true, force: true });
-    copyRecursiveSync(src, dest);
-}
-
 export function copyRecursiveSync(src: string, dest: string, clean: boolean = false) {
     if (!fs.existsSync(src)) {
         throw new Error("Src doesn't exist: " + src);

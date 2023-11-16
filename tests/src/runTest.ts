@@ -11,6 +11,7 @@ import { runTests, downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePat
 import { AbortController } from 'node-abort-controller';
 import { gatherTestFolders } from './Common/testHelper';
 import { prepareAPITests } from './Common/projectHelper';
+import { TestFolders, TestFolder } from './Common/types';
 
 export async function runTest(args: string[]) {
   // BuildBot Abort controller fix
@@ -65,14 +66,12 @@ export async function runTest(args: string[]) {
 
       const launchArgs = testWorkspace ? [testWorkspace] : undefined;
 
-      const env = testCases[directory][0]?.getProjectEnvironment();
-
       const statusCode = await runTests({
         vscodeExecutablePath,
         extensionDevelopmentPath,
         extensionTestsPath,
         launchArgs,
-        extensionTestsEnv: env && Object.keys(env).length > 0 ? env : undefined,
+        extensionTestsEnv: getEnv(directory, testCases),
       });
 
       statusAll = statusAll && statusCode === 0;
@@ -83,4 +82,10 @@ export async function runTest(args: string[]) {
     }
   }
   return statusAll;
+}
+function getEnv(projDir: string, testCases: TestFolders): Record<string, string> | undefined {
+  const tests: TestFolder | undefined = testCases[path.dirname(projDir)];
+  if (!tests)
+    return undefined;
+  return tests[0].getProjectEnvironment();
 }

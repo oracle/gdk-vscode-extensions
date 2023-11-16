@@ -81,7 +81,7 @@ function copyTestProject(project: ProjectDescription, destination: string): stri
 }
 
 function absoluteCopyPath(copyPath: string): string {
-  return path.isAbsolute(copyPath) ? copyPath : path.resolve(rootPath, copyPath);
+  return path.isAbsolute(copyPath) ? copyPath : path.resolve(copyPath);
 }
 
 function makeTag(project: ProjectDescription): string {
