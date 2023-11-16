@@ -443,7 +443,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     return;
                 }
                 try {
-                    await ociUtils.createDeployToOkeStage(oci.getProvider(), deployPipeline.id, setupSecretStage.id, okeClusterEnvironment, deployConfigArtifact);
+                    await ociUtils.createDeployToOkeStage('Deploy to OKE', oci.getProvider(), deployPipeline.id, setupSecretStage.id, okeClusterEnvironment, deployConfigArtifact);
                 } catch (err) {
                     resolve(undefined);
                     dialogs.showErrorMessage(`Failed to create deployment to OKE stage for ${repositoryName}`, err);

@@ -85,6 +85,32 @@ export async function undeploy(folders: devopsServices.FolderData[], deployData:
                                     } else if (subData.deployJvmToOkeStage !== undefined) {
                                         toCheck = true;
                                     }
+                                    if (subData.applyConfigMapStage) {
+                                        try {
+                                            progress.report({ message: `Deleting ${subName} jvm image apply ConfigMap stage for ${repositoryName}...` });
+                                            logUtils.logInfo(`[undeploy] Deleting apply ConfigMap stage of deployment to OKE pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            await ociUtils.deleteDeployStage(provider, subData.applyConfigMapStage, true);
+                                        } catch (err) {
+                                            toCheck = true;
+                                        }
+                                        delete subData.applyConfigMapStage;
+                                        dump(deployData);
+                                    } else if (subData.applyConfigMapStage !== undefined) {
+                                        toCheck = true;
+                                    }
+                                    if (subData.applyNativeConfigMapStage) {
+                                        try {
+                                            progress.report({ message: `Deleting ${subName} native image apply ConfigMap stage for ${repositoryName}...` });
+                                            logUtils.logInfo(`[undeploy] Deleting apply ConfigMap stage of deployment to OKE pipeline for ${subName} docker jvm image of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            await ociUtils.deleteDeployStage(provider, subData.applyNativeConfigMapStage, true);
+                                        } catch (err) {
+                                            toCheck = true;
+                                        }
+                                        delete subData.applyNativeConfigMapStage;
+                                        dump(deployData);
+                                    } else if (subData.applyNativeConfigMapStage !== undefined) {
+                                        toCheck = true;
+                                    }
                                     if (subData.setupSecretForDeployNativeStage) {
                                         try {
                                             progress.report({ message: `Deleting ${subName} docker native executables setup secret stage for ${repositoryName}...` });
@@ -1207,6 +1233,7 @@ export async function undeployFolder(folder: devopsServices.FolderData) {
             `${repositoryName}_dev_executable`,
             `${repositoryName}_oke_deploy_ni_configuration`,
             `${repositoryName}_oke_deploy_jvm_configuration`,
+            `${repositoryName}_oke_configmap`,
             `${repositoryName}_oke_deploy_docker_secret_setup_command`
         ];
         if (cloudSubNames.length) {

@@ -26,9 +26,24 @@ spec:
         imagePullPolicy: Always
         image: {{{image_name}}}
         ports:
-          - containerPort: 8080
+        - containerPort: 8080
+        volumeMounts:
+        - name: configuration
+          mountPath: /etc/conf
+          readOnly: true
         env:
         - name: MICRONAUT_ENVIRONMENTS
           value: "oraclecloud"
+        - name: MICRONAUT_CONFIG_FILES
+          value: "/etc/conf/application-oraclecloud.properties,/etc/conf/bootstrap-oraclecloud.properties"
+      volumes:
+      - name: configuration
+        configMap:
+          name: {{{app_name}}}
+          items: 
+          - key: "bootstrap-oraclecloud.properties"
+            path: "bootstrap-oraclecloud.properties"
+          - key: "application-oraclecloud.properties"
+            path: "application-oraclecloud.properties"
       imagePullSecrets:
       - name: {{{secret_name}}}

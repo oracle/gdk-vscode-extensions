@@ -426,7 +426,7 @@ async function createJVMDeploymentPipeline(deploy: DeploymentResources): Promise
 
             assert.ok(setupSecretStage, "setupSecretStage Not Found - Line 427");
             assert.ok(deploy.okeConfig.okeClusterEnvironment, "Oke Cluster Environment Error - Line 428");
-            let deployStage = await ociUtils.createDeployToOkeStage(deploy.auth.provider, deployPipeline.id, setupSecretStage.id, deploy.okeConfig.okeClusterEnvironment.id, deploy.okeConfig.deployConfigArtifact);
+            let deployStage = await ociUtils.createDeployToOkeStage('Deploy to OKE', deploy.auth.provider, deployPipeline.id, setupSecretStage.id, deploy.okeConfig.okeClusterEnvironment.id, deploy.okeConfig.deployConfigArtifact);
             assert.ok(deployStage, "deployStage Not Exist at all - Line 430");
 
             let deployPipelines = await  ociUtils.listDeployPipelines(deploy.auth.provider, deploy.projectInfo.project.id);
