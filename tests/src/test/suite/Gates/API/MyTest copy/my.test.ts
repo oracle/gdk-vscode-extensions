@@ -1,3 +1,0 @@
-suite('Tst', () => {
-  test('myFirstTest', () => {});
-});

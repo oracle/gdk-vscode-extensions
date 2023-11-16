@@ -38,24 +38,6 @@ export function findFiles(testFolder: string, ...globPatterns: string[]): { [dir
     return out;
 }
 
-export function gatherTestCases(
-    testFolder: string,
-    ...globPatterns: string[]
-): TestFolders {
-    const tmp: { [directory: string]: string[] } = findFiles(testFolder, ...globPatterns);
-    const out: TestFolders = {};
-    for (const dir in tmp) {
-        const newFiles = [];
-        for (const file of tmp[dir]) {
-            if (file.endsWith('test.js')) newFiles.push(file);
-        }
-        if (newFiles.length === 0) continue;
-        const desc = getDescriptor(dir);
-        if (desc) out[dir] = [desc, newFiles];
-    }
-    return out;
-}
-
 export function genProj(
     buildTool: BuildTool,
     features: Feature[],
