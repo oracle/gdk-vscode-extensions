@@ -88,8 +88,8 @@ export class LoggersEndpoint extends beanHandler.UpdatableBeanHandler {
         });
         vscode.window.showQuickPick(items, {
             title: 'Configure Loggers',
-            placeHolder: 'Select the logger to be configured or create a new logger',
-            ignoreFocusOut: true
+            placeHolder: 'Select the logger to be configured or create a new logger'
+            // ignoreFocusOut: true
         }).then(selected => {
             if (selected && levels) {
                 let logger: string | undefined = selected.label;

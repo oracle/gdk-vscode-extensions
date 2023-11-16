@@ -11,11 +11,12 @@ import * as applications from './applications';
 import * as symbols from './symbols';
 import * as actions from './actions';
 import * as targetAddress from './targetAddress';
+import * as formatters from './formatters';
 import * as management from './management/management';
 import * as healthEndpoint from './management/healthEndpoint';
 import * as metricsEndpoint from './management/metricsEndpoint';
 import * as loggersEndpoint from './management/loggersEndpoint';
-import * as formatters from './formatters';
+import * as cachesEndpoint from './management/cachesEndpoint';
 
 
 export type TreeChanged = (treeItem?: vscode.TreeItem, expand?: boolean) => void;
@@ -114,6 +115,7 @@ export abstract class SymbolNode<T extends symbols.Symbol> extends BaseNode {
     private readonly symbol: T;
     private readonly icon: string;
     private readonly baseContext: string;
+    private readonly baseTooltip: string;
 
     protected constructor(name: string, detail: string | undefined, tooltip: string | undefined, icon: string, context: string, symbol: T) {
         super(name, detail, context, undefined, undefined);
@@ -122,6 +124,7 @@ export abstract class SymbolNode<T extends symbols.Symbol> extends BaseNode {
         this.iconPath = new vscode.ThemeIcon(icon);
         this.symbol = symbol;
         this.baseContext = context;
+        this.baseTooltip = tooltip || '';
         this.command = {
             title: actions.COMMAND_NAME_GO_TO_DEFINITION,
             command: actions.COMMAND_GO_TO_DEFINITION,
@@ -133,19 +136,22 @@ export abstract class SymbolNode<T extends symbols.Symbol> extends BaseNode {
         return this.symbol;
     }
 
-    setRuntimeStatus(status: boolean | undefined) {
-        switch (status) {
-            case true:
-                this.iconPath = new vscode.ThemeIcon(this.icon, new vscode.ThemeColor('charts.green'));
-                this.contextValue = this.baseContext + '.available.';
-                break;
-            case false:
-                this.iconPath = new vscode.ThemeIcon(this.icon, new vscode.ThemeColor('charts.red'));
-                this.contextValue = this.baseContext;
-                break;
-            default:
-                this.iconPath = new vscode.ThemeIcon(this.icon);
-                this.contextValue = this.baseContext;
+    setRuntimeStatus(disabledReasons?: string[]) {
+        if (!disabledReasons) { // bean not reported during runtime
+            this.iconPath = new vscode.ThemeIcon(this.icon);
+            this.contextValue = this.baseContext;
+            this.tooltip = this.baseTooltip;
+        } else if (!disabledReasons.length) { // bean available during runtime
+            this.iconPath = new vscode.ThemeIcon(this.icon, new vscode.ThemeColor('charts.green'));
+            this.contextValue = this.baseContext + '.available.';
+            this.tooltip = `${this.baseTooltip}\n\u2714 Available in running application`;
+        } else { // bean disabled during runtime
+            this.iconPath = new vscode.ThemeIcon(this.icon, new vscode.ThemeColor('charts.orange'));
+            this.contextValue = this.baseContext + '.disabled.';
+            this.tooltip = `${this.baseTooltip}\n\u2716 Disabled in running application:`;
+            for (const reason of disabledReasons) {
+                this.tooltip += `\n \u25CF ${reason}`;
+            }
         }
     }
 
@@ -494,7 +500,7 @@ export class BeansFolderNode extends BaseNode {
     private reloadRuntimeSymbol(beans: symbols.Bean[], treeChanged: TreeChanged) {
         const beansMap: any = {};
         for (const bean of beans) {
-            beansMap[bean.name] = true;
+            beansMap[bean.name] = (bean as any).disabledReasons || [];
         }
         const children = this.getChildren();
         if (children) {
@@ -762,10 +768,14 @@ export class MonitoringDiskSpaceNode extends BaseNode {
             }
         })
         endpoint.onUpdated(data => {
-            const free = Number.parseInt(data.details.diskSpace.details.free);
-            const total = Number.parseInt(data.details.diskSpace.details.total);
-            this.description = `${formatters.formatBytes(free)} free, ${formatters.formatBytes(total)} total`;
-            // this.tooltip = `Disk space: ${free.toLocaleString()} B free of ${total.toLocaleString()} B total`;
+            if (data.details?.diskSpace) {
+                const free = Number.parseInt(data.details.diskSpace.details.free);
+                const total = Number.parseInt(data.details.diskSpace.details.total);
+                this.description = `${formatters.formatBytes(free)} free, ${formatters.formatBytes(total)} total`;
+                // this.tooltip = `Disk space: ${free.toLocaleString()} B free of ${total.toLocaleString()} B total`;
+            } else {
+                this.description = 'n/a';
+            }
             treeChanged(this);
         });
     }
@@ -781,7 +791,8 @@ export class ManagementNode extends BaseNode {
         this.tooltip = 'Application management';
 
         const loggersNode = new ManagementLoggersNode(management.getLoggersEndpoint(), treeChanged);
-        this.setChildren([ loggersNode ]);
+        const cachesNode = new ManagementCachesNode(management.getCachesEndpoint(), treeChanged);
+        this.setChildren([ loggersNode, cachesNode ]);
     }
 
 }
@@ -819,7 +830,7 @@ export class ManagementLoggersNode extends BaseNode {
             if (configured.length) {
                 this.tooltip = 'Configured loggers:';
                 for (const logger of configured) {
-                    this.tooltip += `\n \u25CF ${logger.name}: ${logger.configuredLevel}`
+                    this.tooltip += `\n \u25CF ${logger.name}: ${logger.configuredLevel}`;
                 }
             } else {
                 this.tooltip = 'No loggers configured';
@@ -832,8 +843,63 @@ export class ManagementLoggersNode extends BaseNode {
         this.endpoint.update();
     }
 
-    editLoggers() {
+     editLoggers() {
         this.endpoint.editLoggers();
+    }
+
+}
+
+export class ManagementCachesNode extends BaseNode {
+
+    private static readonly BASE_CONTEXT = 'extension.micronaut-tools.navigation.ManagementCachesNode';
+
+    private readonly endpoint: cachesEndpoint.CachesEndpoint;
+
+    constructor(endpoint: cachesEndpoint.CachesEndpoint, treeChanged: TreeChanged) {
+        super('Caches:', 'n/a', ManagementCachesNode.BASE_CONTEXT, null, undefined);
+        this.tooltip = 'Application caches';
+        this.endpoint = endpoint;
+        endpoint.onAvailableChanged(available => {
+            switch (available) {
+                case true:
+                    // this.contextValue = `${ManagementCachesNode.BASE_CONTEXT}.available.`;
+                    this.contextValue = ManagementCachesNode.BASE_CONTEXT;
+                    break;
+                case false:
+                    this.description = 'n/a';
+                    this.tooltip = 'Application caches';
+                    this.contextValue = ManagementCachesNode.BASE_CONTEXT;
+                    break;
+                case undefined:
+                    this.description = '...';
+                    this.tooltip = 'Application caches';
+                    this.contextValue = ManagementCachesNode.BASE_CONTEXT;
+            }
+            treeChanged(this);
+        })
+        endpoint.onUpdated(data => {
+            const caches = cachesEndpoint.getNames(data);
+            this.description = `${caches.length.toLocaleString()} available`;
+            if (caches.length) {
+                this.tooltip = 'Available caches:';
+                for (const cache of caches) {
+                    this.tooltip += `\n \u25CF ${cache}`;
+                }
+                this.contextValue = `${ManagementCachesNode.BASE_CONTEXT}.available.`;
+            } else {
+                this.tooltip = 'No caches available';
+                this.contextValue = ManagementCachesNode.BASE_CONTEXT;
+            }
+            treeChanged(this);
+        });
+    }
+
+    updateCaches() {
+        this.endpoint.update();
+    }
+
+    clearCaches() {
+        this.endpoint.clearCaches();
     }
 
 }

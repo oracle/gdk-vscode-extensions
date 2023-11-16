@@ -27,26 +27,23 @@ export class BeansEndpoint extends beanHandler.BeanHandler {
         super(application, RELATIVE_ADDRESS)
     }
 
-    // protected async getData(): Promise<{ code: number | undefined; headers: any; data: any }> {
-    //     return rest.getDataRetry(this.getAddress());
-    // }
-
     protected async processResponse(response: { code: number | undefined; headers: any; data: any }) {
         // console.log('>>> BEANS PROCESS RESPONSE')
         // console.log(JSON.parse(response.data))
-        const beans = JSON.parse(response.data).beans;
         const resolved: symbols.Bean[] = [];
-        for (const beanKey of Object.keys(beans)) {
-            const bean = beans[beanKey];
+        const data = JSON.parse(response.data);
+        const available = data.beans;
+        for (const beanKey of Object.keys(available)) {
+            const bean = available[beanKey];
             const beanType = bean.type;
-            resolved.push(new RuntimeBean(beanKey, beanType, this.application));
-            // if (('' + beanType).startsWith('com.example')) {
-            //     console.log('>>> --- BEAN: ----------------------' + beanKey)
-            //     console.log(bean)
-            //     console.log(new RuntimeBean(beanKey, beanType, this.application))
-            // }
+            resolved.push(new RuntimeBean(beanKey, beanType, undefined, this.application));
         }
-        // console.log('>>> BEANS notifyBeansResolved')
+        const disabled = data.disabled;
+        for (const bean of disabled) {
+            const beanType = bean.type;
+            const disabledReasons = bean.reasons;
+            resolved.push(new RuntimeBean(beanType, beanType, disabledReasons, this.application));
+        }
         this.notifyBeansResolved(resolved);
     }
 
@@ -73,7 +70,9 @@ export class BeansEndpoint extends beanHandler.BeanHandler {
 
 class RuntimeBean extends symbols.Bean {
 
-    constructor(key: string, type: string, application: applications.Application) {
+    readonly disabledReasons: string[] | undefined;
+
+    constructor(key: string, type: string, disabledReasons: string[] | undefined, application: applications.Application) {
         super(
             RuntimeBean.defFromKeyType(key, type),
             RuntimeBean.nameFromType(type),
@@ -82,6 +81,7 @@ class RuntimeBean extends symbols.Bean {
             RuntimeBean.NO_POSITION,
             RuntimeBean.NO_POSITION
         );
+        this.disabledReasons = disabledReasons;
     }
 
     static defFromKeyType(key: string, type: string): string {
@@ -90,7 +90,11 @@ class RuntimeBean extends symbols.Bean {
 
     static nameFromType(type: string): string {
         const parts = type.split('.');
-        const name = parts[parts.length - 1];
+        let name = parts[parts.length - 1];
+        const definitionIdx = name.indexOf('$Definition');
+        if (definitionIdx > 0 && name.startsWith('$')) {
+            name = name.substring('$'.length, definitionIdx);
+        }
         return name[0].toLowerCase() + name.slice(1);
     }
 
@@ -101,6 +105,11 @@ class RuntimeBean extends symbols.Bean {
 
     static uriFromTypeApplication(type: string, application: applications.Application): vscode.Uri {
         const parts = type.split('.');
+        const name = parts[parts.length - 1];
+        const definitionIdx = name.indexOf('$Definition');
+        if (definitionIdx > 0 && name.startsWith('$')) {
+            parts[parts.length - 1] = name.substring('$'.length, definitionIdx);
+        }
         const controllerPath = path.join('src', 'main', 'java', ...parts) + '.java';
         // TODO: fake path, exact src location missing!
         return vscode.Uri.joinPath(application.getFolder().uri, controllerPath);

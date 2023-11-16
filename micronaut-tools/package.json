@@ -313,6 +313,18 @@
 				"category": "Micronaut Tools"
 			},
 			{
+				"command": "extension.micronaut-tools.navigation.updateCaches",
+				"title": "%extension.micronaut-tools.navigation.updateCaches.title%",
+				"icon": "$(refresh)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.clearCaches",
+				"title": "%extension.micronaut-tools.navigation.clearCaches.title%",
+				"icon": "$(trash)",
+				"category": "Micronaut Tools"
+			},
+			{
 				"command": "extension.micronaut-tools.launch.continuous",
 				"title": "%extension.micronaut-tools.launch.continuous.title%",
 				"icon": "$(run)",
@@ -518,6 +530,14 @@
 					"when": "false"
 				},
 				{
+					"command": "extension.micronaut-tools.navigation.updateCaches",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.clearCaches",
+					"when": "false"
+				},
+				{
 					"command": "extension.micronaut-tools.database.register",
 					"when": "odt.extension.enabled"
 				}
@@ -712,12 +732,12 @@
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.updateLoggers",
-					"when": "viewItem == extension.micronaut-tools.navigation.ManagementLoggersNode.available.",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementLoggersNode.available.disabled",
 					"group": "inline@4"
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.updateLoggers",
-					"when": "viewItem == extension.micronaut-tools.navigation.ManagementLoggersNode.available.",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementLoggersNode.available.disabled",
 					"group": "context@4"
 				},
 				{
@@ -728,6 +748,26 @@
 				{
 					"command": "extension.micronaut-tools.navigation.editLoggers",
 					"when": "viewItem == extension.micronaut-tools.navigation.ManagementLoggersNode.available.",
+					"group": "context@3"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.updateCaches",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementCachesNode.available.disabled",
+					"group": "inline@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.updateCaches",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementCachesNode.available.disabled",
+					"group": "context@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.clearCaches",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementCachesNode.available.",
+					"group": "inline@3"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.clearCaches",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementCachesNode.available.",
 					"group": "context@3"
 				},
 				{

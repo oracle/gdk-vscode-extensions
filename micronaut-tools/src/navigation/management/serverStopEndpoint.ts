@@ -24,20 +24,29 @@ export class ServerStopEndpoint extends beanHandler.BeanHandler {
         super(application, RELATIVE_ADDRESS, AVAILABLE_CODE)
     }
 
-    stopServer(): Promise<boolean> {
-        return new Promise(resolve => {
-            rest.postData(this.getAddress(), {}).then(response => {
-                // console.log('>>> POST STOP')
-                // console.log(response)
-                if (response.code === 401) {
-                    vscode.window.showErrorMessage('The user is not authorized to stop the application server.');
-                }
-                resolve(response.code === 200);
-            }).catch(err => {
-                console.log(err)
-                resolve(false);
+    async stopServer(): Promise<boolean> {
+        const shutdownOption = 'Shut Down';
+        const cancelOption = 'Cancel';
+        const selectedOption = await vscode.window.showInformationMessage('Externally started application server will be shut down. Confirm to proceed:', shutdownOption, cancelOption);
+        if (selectedOption === shutdownOption) {
+            return new Promise(resolve => {
+                rest.postData(this.getAddress(), {}).then(response => {
+                    // console.log('>>> POST STOP')
+                    // console.log(response)
+                    if (response.code === 401) {
+                        vscode.window.showErrorMessage('The user is not authorized to stop the application server.');
+                    } else if (response.code === 200) {
+                        vscode.window.showInformationMessage('Application server has been shut down.');
+                    }
+                    resolve(response.code === 200);
+                }).catch(err => {
+                    console.log(err)
+                    resolve(false);
+                });
             });
-        });
+        } else {
+            return false;
+        }
     }
 
     buildVmArgs(): string | undefined {

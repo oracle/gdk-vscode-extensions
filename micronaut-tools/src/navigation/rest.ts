@@ -61,7 +61,9 @@ export async function getData(address: string, options: https.RequestOptions = {
 
 export async function postData(address: string, data: any, options: https.RequestOptions = {}): Promise<{ code: number | undefined; headers: any; data: any }> {
     return new Promise((resolve, reject) => {
-        options.method = 'POST';
+        if (!options.method) {
+            options.method = 'POST';
+        }
         if (!options.headers) {
             options.headers = {};
         }

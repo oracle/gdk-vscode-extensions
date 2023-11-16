@@ -108,12 +108,14 @@ export class SourceEndpoint extends Endpoint {
 
     constructor(def: string, uri: vscode.Uri, startPos: vscode.Position, endPos: vscode.Position) {
         super(def, SourceEndpoint.nameFromDef(def), SourceEndpoint.descriptionFromUri(uri), SourceEndpoint.typeFromDef(def), uri, startPos, endPos);
+        // console.log('>>> DEF |' + def + '| -- NAME |' + this.name + '|')
     }
 
     static nameFromDef(def: string): string {
-        let name = def.substring('@'.length);
-        const nameEndIdx = name.indexOf('/ -- ');
-        return name.substring(0, nameEndIdx);
+        const typeSeparator = ' -- ';
+        const typeIdx = def.lastIndexOf(typeSeparator);
+        const name = def.substring('@'.length, typeIdx);
+        return name.endsWith('/') ? name.slice(0, -1) : name;
     }
 
     static descriptionFromUri(uri: vscode.Uri): string {

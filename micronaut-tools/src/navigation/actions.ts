@@ -33,6 +33,7 @@ export const COMMAND_REFRESH_SERVER = 'extension.micronaut-tools.navigation.refr
 export const COMMAND_STOP_SERVER = 'extension.micronaut-tools.navigation.stopServer';
 export const COMMAND_UPDATE_LOGGERS = 'extension.micronaut-tools.navigation.updateLoggers';
 export const COMMAND_EDIT_LOGGERS = 'extension.micronaut-tools.navigation.editLoggers';
+export const COMMAND_CLEAR_CACHES = 'extension.micronaut-tools.navigation.clearCaches';
 
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_RUN_APPLICATION, (node: nodes.ApplicationFolderNode) => {
@@ -136,6 +137,11 @@ export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_EDIT_LOGGERS, (node: nodes.ManagementLoggersNode) => {
         if (node) {
             node.editLoggers();
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_CLEAR_CACHES, (node: nodes.ManagementCachesNode) => {
+        if (node) {
+            node.clearCaches();
         }
 	}));
     logUtils.logInfo('[actions] Initialized');

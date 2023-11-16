@@ -24,22 +24,34 @@ export class RefreshEndpoint extends beanHandler.BeanHandler {
         super(application, RELATIVE_ADDRESS, AVAILABLE_CODE)
     }
 
-    refresh(): Promise<boolean> {
-        return new Promise(resolve => {
-            rest.postData(this.getAddress(), { 'force': true }).then(response => {
-                // console.log('>>> POST REFRESH')
-                // console.log(response)
-                if (response.code === 401) {
-                    vscode.window.showErrorMessage('The user is not authorized to refresh the application state.');
-                } else if (response.code === 200) {
-                    vscode.window.showInformationMessage('Application state has been refreshed.');
+    async refresh(): Promise<boolean> {
+        const refreshOption = 'Refresh';
+        const forceRefreshOption = 'Force Refresh';
+        const cancelOption = 'Cancel';
+        const selectedOption = await vscode.window.showInformationMessage('Refreshing the application state will cause all Refreshable beans in the context to be destroyed and re-instantiated upon further requests. Confirm to proceed:', refreshOption, forceRefreshOption, cancelOption);
+        if (selectedOption === refreshOption || selectedOption === forceRefreshOption) {
+            return new Promise(resolve => {
+                const data: any = {};
+                if (selectedOption === forceRefreshOption) {
+                    data.force = true;
                 }
-                resolve(response.code === 200);
-            }).catch(err => {
-                console.log(err)
-                resolve(false);
+                rest.postData(this.getAddress(), data).then(response => {
+                    // console.log('>>> POST REFRESH')
+                    // console.log(response)
+                    if (response.code === 401) {
+                        vscode.window.showErrorMessage('The user is not authorized to refresh the application state.');
+                    } else if (response.code === 200) {
+                        vscode.window.showInformationMessage('Application state has been refreshed.');
+                    }
+                    resolve(response.code === 200);
+                }).catch(err => {
+                    console.log(err)
+                    resolve(false);
+                });
             });
-        });
+        } else {
+            return false;
+        }
     }
 
     buildVmArgs(): string | undefined {

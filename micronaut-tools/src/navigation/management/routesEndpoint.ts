@@ -27,22 +27,15 @@ export class RoutesEndpoint extends beanHandler.BeanHandler {
         super(application, RELATIVE_ADDRESS)
     }
 
-    // protected async getData(): Promise<{ code: number | undefined; headers: any; data: any }> {
-    //     return rest.getDataRetry(this.getAddress());
-    // }
-
     protected async processResponse(response: { code: number | undefined; headers: any; data: any }) {
+        // console.log('>>> ROUTES PROCESS RESPONSE')
+        // console.log(JSON.parse(response.data))
         const routes = JSON.parse(response.data);
         const resolved: symbols.Endpoint[] = [];
         for (const routeKey of Object.keys(routes)) {
             const route = routes[routeKey];
             const routeMethod = route.method;
             resolved.push(new RuntimeEndpoint(routeKey, routeMethod, this.application));
-            // if (('' + routeMethod).includes('com.example')) {
-            //     console.log('>>> --- ROUTE: ----------------------' + routeKey)
-            //     console.log(route)
-            //     console.log(new RuntimeEndpoint(routeKey, routeMethod, this.application))
-            // }
         }
         this.notifyEndpointsResolved(resolved);
     }

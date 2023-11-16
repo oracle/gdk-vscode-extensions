@@ -21,6 +21,8 @@
     "extension.micronaut-tools.navigation.searchEndpoints.title": "Search/Filter Endpoints",
     "extension.micronaut-tools.navigation.editLoggers.title": "Configure Loggers",
     "extension.micronaut-tools.navigation.updateLoggers.title": "Refresh Loggers",
+    "extension.micronaut-tools.navigation.clearCaches.title": "Invalidate Caches",
+    "extension.micronaut-tools.navigation.updateCaches.title": "Refresh Caches",
     "extension.micronaut-tools.navigation.view.title": "Micronaut Tools",
     "extension.micronaut-tools.navigation.applicationsView.title": "Applications",
     "extension.micronaut-tools.navigation.beansView.title": "Beans",
