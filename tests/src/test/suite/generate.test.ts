@@ -6,28 +6,17 @@
  */
 
 import * as path from 'path';
-import { getSpecifications } from '../../abstractRunTests';
+import { findDescriptors } from '../../Common/testHelper';
+import { gatherProjectsToGenerate, generateProjects } from '../../Common/projectHelper';
 
 suite('Creating projects', function () {
   this.timeout(0);
-
-  test('Create UI projects', async () => {
-    const testPath = path.resolve(__dirname, 'Gates/UI');
-
-    const specifications = await getSpecifications(testPath);
-
-    for (const x of specifications) {
-      await x.createProjects();
-    }
-  });
-
-  test('Create api projects', async () => {
-    const testPath = path.resolve(__dirname, 'Gates/API');
-
-    const specifications = await getSpecifications(testPath);
-
-    for (const x of specifications) {
-      await x.createProjects();
-    }
+  const args = process.env['generator']?.split(';');
+  if (!args) return;
+  const gatesPath = path.join(__dirname, 'Gates');
+  const descriptors = findDescriptors(gatesPath, ...args);
+  const projects = gatherProjectsToGenerate(descriptors);
+  test(`Generating ${projects.length} Projects...`, async () => {
+    await generateProjects(projects);
   });
 });

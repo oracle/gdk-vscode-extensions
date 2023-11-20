@@ -14,21 +14,22 @@
     "compile-ociDevops": " cd ../oci-devops; npm install; npm run compile; npm run test-compile",
     "dependency-compile": "npm run compile-common; npm run compile-gcn; npm run compile-micronaut; npm run compile-micronautTools; npm run compile-ociDevops",
     "clean": "rm -rf ../**/out",
-    "clean-projects": "find . -type d -name projects -exec rm -rf {} \\;",
+    "clean-projects": "rm -rf ./generated-projects; find . -type d -name projects -exec rm -rf {} \\;",
     "clean-resources": "rm -rf test-resources; rm -rf .vscode-test; rm -rf mochawesome-report; npm run clean-projects",
     "compile": "tsc -p . --outDir out",
     "generate": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --generate",
     "pre-test": "npm install; npm run clean; npm run dependency-compile; npm run clean-resources; npm run compile; npm run generate",
     "test": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --runTest",
     "pre-test-ui": "npm run pre-test",
-    "test-ui": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --runTest-ui"
+    "test-ui": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --runTest-ui",
+    "try": "npm run compile; npm run generate; npm run test",
+    "try-ui": "npm run compile; npm run generate; npm run test-ui"
   },
   "author": {
     "name": "Oracle Labs"
   },
   "license": "ISC",
   "devDependencies": {
-    "@types/fs-extra": "^9.0.7",
     "@types/glob": "^8.0.1",
     "@types/mocha": "^10.0.1",
     "@types/node": "^14.18.63",

@@ -5,111 +5,87 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
-import * as fs from 'fs';
 import * as path from 'path';
 import * as cp from 'child_process';
 import { runTests, downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron';
 import { AbortController } from 'node-abort-controller';
-import { getSubDirectories } from './abstractRunTests';
-import { TestVscodeOptions, ICodeTestSpecification } from './Common/ICodeTestSpecification';
+import { gatherTestFolders } from './Common/testHelper';
+import { prepareAPITests } from './Common/projectHelper';
+import { TestFolders, TestFolder } from './Common/types';
 
-export async function runTest() {
+export async function runTest(args: string[]) {
   // BuildBot Abort controller fix
   // @ts-ignore
   global.AbortController = AbortController;
 
   // The folder containing the Extension Manifest package.json
   // Passed to `--extensionDevelopmentPath`
-  const extensionDevelopmentPath = path.resolve(__dirname, '../../graal-cloud-native-pack');
+  const extensionDevelopmentPath = path.resolve(__dirname, '..', '..', 'graal-cloud-native-pack');
 
   // The path to test runner
   // Passed to --extensionTestsPath
-  const extensionTestsPath = path.resolve(__dirname, '../out/test/suite/index');
+  const extensionTestsPath = path.resolve(__dirname, '..', 'out', 'test', 'suite', 'index');
 
   // The path for tests
-  const bigTestPath = path.resolve(__dirname, '../out/test/suite/Gates/API');
-  const directories = await getSubDirectories(bigTestPath);
-
+  const bigTestPath = path.resolve(__dirname, '..', 'out', 'test', 'suite', 'Gates', 'API');
+  const testCases = gatherTestFolders(bigTestPath, ...(args.length > 0 ? args : ['**test.js']));
+  const testRun = prepareAPITests(testCases);
   let statusAll: boolean = true;
 
-  for (let i = 0; i < directories.length; i++) {
-    process.env['test'] = directories[i];
+  for (const directory in testRun) {
+    process.env['test'] = directory;
+    process.env['tests'] = testRun[directory].join(';');
+    try {
+      const testWorkspace = directory;
 
-    let testPath = path.resolve(__dirname, '../src/test/suite/Gates/API');
-    testPath = path.join(testPath, directories[i]);
+      // Install NBLS extension
+      const vscodeExecutablePath = await downloadAndUnzipVSCode('1.76.0');
+      const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
 
-    const specfile = path.resolve(__dirname, '../out/test/suite/Gates/API');
-    const testSpecificationFolder = path.join(specfile, directories[i], 'testDeletion');
-    let testSpecification;
-    if (fs.existsSync(testSpecificationFolder + '.js')) {
-      testSpecification = require(testSpecificationFolder);
-    }
+      let extensionList: string[] = [
+        'redhat.java',
+        'oracle-labs-graalvm.graalvm',
+        'oracle-labs-graalvm.gcn',
+        'asf.apache-netbeans-java',
+        'oracle-labs-graalvm.oci-devops',
+        'vscjava.vscode-java-pack',
+        'ms-kubernetes-tools.vscode-kubernetes-tools',
+      ]; // TODO each test can have own extension list
 
-    const projectPath = path.join(testPath, 'projects');
-    const projects = await getSubDirectories(projectPath);
-
-    for (let j = 0; j < projects.length; j++) {
-      const project = path.join(projectPath, projects[j]);
-
-      function supportsOptions(spec : unknown) : spec is TestVscodeOptions {
-        return (spec as TestVscodeOptions).launchOptions !== undefined;
+      // download additional extensions
+      if (process.env['MOCHA_EXTENSION_LIST']) {
+        extensionList = extensionList.concat(process.env['MOCHA_EXTENSION_LIST'].split(','));
       }
 
-      const x: ICodeTestSpecification = new testSpecification.TestSpecification();
-      try {
-        const testWorkspace = project;
-
-        // Install NBLS extension
-        const vscodeExecutablePath = await downloadAndUnzipVSCode('1.76.0');
-        const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
-
-        let extensionList: string[] = [
-          'oracle-labs-graalvm.graalvm',
-          'oracle-labs-graalvm.gcn',
-          'asf.apache-netbeans-java',
-          'oracle-labs-graalvm.oci-devops',
-          'vscjava.vscode-java-pack',
-          'ms-kubernetes-tools.vscode-kubernetes-tools',
-        ]; // TODO each test can have own extension list
-
-        // download additional extensions
-        if (process.env['MOCHA_EXTENSION_LIST']) {
-          extensionList = extensionList.concat(process.env['MOCHA_EXTENSION_LIST'].split(','));
-        }
-
-        for (const extensionId of extensionList) {
-          cp.spawnSync(cli, [...args, '--install-extension', extensionId], {
-            encoding: 'utf-8',
-            stdio: 'inherit',
-          });
-        }
-
-        const launchArgs = testWorkspace ? [testWorkspace] : undefined;
-
-        let extensionTestsEnv : {
-          [key: string]: string | undefined;
-        } | undefined;
-
-        if (supportsOptions(x)) {
-          extensionTestsEnv  = x.launchOptions()?.env;
-        }
-
-        const statusCode = await runTests({
-          vscodeExecutablePath,
-          extensionDevelopmentPath,
-          extensionTestsPath,
-          launchArgs,
-          extensionTestsEnv
+      for (const extensionId of extensionList) {
+        cp.spawnSync(cli, [...args, '--install-extension', extensionId], {
+          encoding: 'utf-8',
+          stdio: 'inherit',
         });
-
-        statusAll = statusAll && statusCode === 0;
-      } catch (err) {
-        console.error('Failed to run tests', err);
-        statusAll = false;
-      } finally {
-        await x.clean();
       }
+
+      const launchArgs = testWorkspace ? [testWorkspace] : undefined;
+
+      const statusCode = await runTests({
+        vscodeExecutablePath,
+        extensionDevelopmentPath,
+        extensionTestsPath,
+        launchArgs,
+        extensionTestsEnv: getEnv(directory, testCases),
+      });
+
+      statusAll = statusAll && statusCode === 0;
+    } catch (err) {
+      console.error('Failed to run tests', err);
+      statusAll = false;
+    } finally {
     }
   }
   return statusAll;
+}
+function getEnv(projDir: string, testCases: TestFolders): Record<string, string> | undefined {
+  const tests: TestFolder | undefined = testCases[path.dirname(projDir)];
+  if (!tests)
+    return undefined;
+  return tests[0].getProjectEnvironment();
 }

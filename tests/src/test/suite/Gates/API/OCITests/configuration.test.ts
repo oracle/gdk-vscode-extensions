@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+ */
+
 import * as ociAuthentication from '../../../../../../../oci-devops/out/oci/ociAuthentication';
 import * as ociUtils from '../../../../../../../oci-devops/out//oci/ociUtils';
 import * as assert from 'assert';

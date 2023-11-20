@@ -7,13 +7,17 @@
 
 import * as extest from 'vscode-extension-tester';
 import * as path from 'path';
-import { getDeletions } from './abstractRunTests';
+import { gatherTestFolders } from './Common/testHelper';
+import { prepareUITests } from './Common/projectHelper';
 
-export async function runTestUI() {
+export async function runTestUI(args: string[]) {
   const testPath = path.resolve(__dirname, '../out/test/suite/Gates/UI');
-  const specifications = await getDeletions(testPath);
-
+  const testCases = gatherTestFolders(testPath, ...(args.length > 0 ? args : ['**test.js']));
+  prepareUITests(testCases);
   try {
+    process.env['tests'] = Object.keys(testCases)
+      .map((dir) => testCases[dir][1].map((fn) => path.join(dir, fn)).join(';'))
+      .join(';');
     // download code and chromedriver
     const exTester: extest.ExTester = new extest.ExTester(
       'test-resources',
@@ -32,13 +36,9 @@ export async function runTestUI() {
     exTester.installFromMarketplace('vscjava.vscode-java-pack');
 
     // Run tests
-    await exTester.runTests('**/**.ui-test.js');
+    await exTester.runTests('**/testRunner-ui.js');
   } catch (err) {
     console.error('Failed to run tests', err);
     process.exit(1);
-  }
-
-  for (const x of specifications) {
-    await x.clean();
   }
 }

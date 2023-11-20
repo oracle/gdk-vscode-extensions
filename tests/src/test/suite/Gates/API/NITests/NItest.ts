@@ -10,11 +10,12 @@ import * as fs from 'fs';
 import axios from 'axios';
 import { ChildProcess, exec, spawn } from 'child_process';
 import path = require('path');
-import { BuildTools, Features, SupportedJavas, getCreateOptions } from '../../../../../Common/project-generator';
+import { getCreateOptions } from '../../../../../Common/project-generator';
 import { NodeFileHandler } from '../../../../../../../gcn/out/gcnProjectCreate';
 import * as vscode from 'vscode';
 
 import * as Common from '../../../../../../../gcn/out/common';
+import { BuildTool, Feature, SupportedJava } from '../../../../../Common/types';
 
 /**
  * Creates GCN project with given specification
@@ -24,10 +25,10 @@ import * as Common from '../../../../../../../gcn/out/common';
  * @returns path to the created project
  */
 export async function createGcnProjectNiTest(
-  buildTool: BuildTools,
-  services: Features[],
+  buildTool: BuildTool,
+  services: Feature[],
   relativePath: string[],
-  java: SupportedJavas = SupportedJavas.AnyJava,
+  java: SupportedJava = SupportedJava.AnyJava,
 ): Promise<string> {
   try {
     await Common.initialize();
@@ -51,7 +52,7 @@ export async function createGcnProjectNiTest(
 }
 
 export class TestHelper {
-  private readonly getRunParameters: (buildTool: BuildTools, test: Tests) => [string, string[]];
+  private readonly getRunParameters: (buildTool: BuildTool, test: Tests) => [string, string[]];
   private readonly totalTimeInterval: number;
   private server: ChildProcess | null = null;
   private defaltFodler: string;
@@ -66,7 +67,7 @@ export class TestHelper {
    * @param controllerFolder is a controller path, relative to project, without ControllerName
    */
   constructor(
-    getRunParameters: (buildTool: BuildTools, test: Tests) => [string, string[]],
+    getRunParameters: (buildTool: BuildTool, test: Tests) => [string, string[]],
     timeout: number,
     baseFolder: string,
     controllerFolder: string,
@@ -99,7 +100,7 @@ export class TestHelper {
    * @param buildTool is a tool you want a path for
    * @returns projet folder for a project
    */
-  public getFolder(buildTool: BuildTools): string {
+  public getFolder(buildTool: BuildTool): string {
     return path.join(this.defaltFodler, buildTool.toString());
   }
 
@@ -133,7 +134,7 @@ export class TestHelper {
    * @param gradle if you want to run tests for gradle
    */
   public async CreateProject(
-    createMyProject: (buildTools: BuildTools) => Promise<string>,
+    createMyProject: (buildTools: BuildTool) => Promise<string>,
     description: string = '',
     runTest: boolean = true,
     compileTest: boolean = false,
@@ -147,14 +148,14 @@ export class TestHelper {
         this.log('maven');
         // test whether maven project is created successfully
         test('Run new Maven project' + description, async () => {
-          await this.CreateAndTestProject(createMyProject, BuildTools.Maven, TestCases.RunServer);
+          await this.CreateAndTestProject(createMyProject, BuildTool.Maven, TestCases.RunServer);
         }).timeout(this.totalTimeInterval);
       }
       if (gradle) {
         this.log('maven');
         // test whether gradle project is created successfully
         test('Create new Gradle project' + description, async () => {
-          await this.CreateAndTestProject(createMyProject, BuildTools.Gradle, TestCases.RunServer);
+          await this.CreateAndTestProject(createMyProject, BuildTool.Gradle, TestCases.RunServer);
         }).timeout(this.totalTimeInterval);
       }
     }
@@ -165,14 +166,14 @@ export class TestHelper {
         this.log('gradle');
         // test whether maven project is natively compiled successfully
         test('NativeCompile Maven project' + description, async () => {
-          await this.CreateAndTestProject(createMyProject, BuildTools.Maven, TestCases.NativeServer);
+          await this.CreateAndTestProject(createMyProject, BuildTool.Maven, TestCases.NativeServer);
         }).timeout(this.totalTimeInterval);
       }
       if (gradle) {
         this.log('maven');
         // test whether gradle project is natively compiled successfully
         test('NativeCompile Gradle project' + description, async () => {
-          await this.CreateAndTestProject(createMyProject, BuildTools.Gradle, TestCases.NativeServer);
+          await this.CreateAndTestProject(createMyProject, BuildTool.Gradle, TestCases.NativeServer);
         }).timeout(this.totalTimeInterval);
       }
     }
@@ -309,8 +310,8 @@ export class TestHelper {
    * @returns void or throws assert.exception
    */
   private async CreateAndTestProject(
-    createMyProject: (buildTools: BuildTools) => Promise<string>,
-    buildTool: BuildTools,
+    createMyProject: (buildTools: BuildTool) => Promise<string>,
+    buildTool: BuildTool,
     test: TestCases,
   ) {
     const randomNumeber = Math.random();
@@ -367,7 +368,7 @@ export class TestHelper {
     console.log('\x1b[0m', '');
   }
 
-  private async startServer(totalTime: number, buildTool: BuildTools, folder: string, randomNumeber: number) {
+  private async startServer(totalTime: number, buildTool: BuildTool, folder: string, randomNumber: number) {
     this.log('entered startServer');
     const runParameters = this.getRunParameters(buildTool, Tests.Run);
     this.server = spawn(runParameters[0], runParameters[1], { cwd: folder, shell: true });
@@ -376,14 +377,14 @@ export class TestHelper {
     await this.waitForServer(totalTime, `Server Running: http://localhost:${port}`);
 
     assert.ok(
-      (await axios.get(`http://localhost:${port}/test${randomNumeber}`)).data === this.serverResponse(randomNumeber),
+      (await axios.get(`http://localhost:${port}/test${randomNumber}`)).data === this.serverResponse(randomNumber),
       'Correct server response',
     );
     (this.server as ChildProcess).kill();
     this.server = null;
   }
 
-  private async compileServer(totalTime: number, buildTool: BuildTools, folder: string) {
+  private async compileServer(totalTime: number, buildTool: BuildTool, folder: string) {
     const runParameters = this.getRunParameters(buildTool, Tests.NativeComp);
     this.log('entered compile server');
     this.server = spawn(runParameters[0], runParameters[1], { cwd: folder, shell: true });
@@ -391,7 +392,7 @@ export class TestHelper {
     assert.ok(await this.waitForServer(totalTime, 'BUILD SUCCESS'), 'first fail');
     (this.server as ChildProcess).kill();
     this.server = null;
-    if (buildTool === BuildTools.Gradle) {
+    if (buildTool === BuildTool.Gradle) {
       return;
     }
 
