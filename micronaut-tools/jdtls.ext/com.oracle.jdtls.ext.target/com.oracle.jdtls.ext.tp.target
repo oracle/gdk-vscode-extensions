@@ -22,7 +22,8 @@
         </location>
         <location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
             <unit id="org.eclipse.jdt.ls.core" version="0.0.0"/>
-            <repository location="https://download.eclipse.org/jdtls/snapshots/repository/latest/"/>
+            <!-- The last version that does not require eclipse.search.core 1.30, an upgrade to JDTLS is likely to require Eclipse core upgrade -->
+            <repository location="https://download.eclipse.org/jdtls/snapshots/repository/1.30.0.202311151803"/>
         </location>
         <location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
            <repository location="https://download.eclipse.org/lsp4j/updates/releases/0.21.0/"/>
