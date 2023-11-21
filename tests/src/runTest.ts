@@ -35,7 +35,7 @@ export async function runTest(args: string[]) {
 
   // The path for tests
   const bigTestPath = path.resolve(__dirname, '..', 'out', 'test', 'suite', 'Gates', 'API');
-  const testCases = gatherTestFolders(bigTestPath, ...(args.length > 0 ? args : ['**test.js']));
+  const testCases = gatherTestFolders(bigTestPath, ...(args.length > 0 ? args : ['**combined.test.js']));
   const testRun = prepareAPITests(testCases);
   let statusAll: boolean = true;
 
@@ -92,8 +92,7 @@ export async function runTest(args: string[]) {
 }
 function getEnv(projDir: string, testCases: TestFolders): Record<string, string> | undefined {
   const tests: TestFolder | undefined = testCases[path.dirname(projDir)];
-  if (!tests)
-    return undefined;
+  if (!tests) return undefined;
   return tests[0].getProjectEnvironment();
 }
 

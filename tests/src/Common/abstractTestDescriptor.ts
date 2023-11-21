@@ -9,25 +9,25 @@ import path from 'path';
 import { ProjectDescription } from './types';
 
 export abstract class AbstractTestDescriptor {
-    readonly directory: string;
-    public readonly projectsPath: string;
-    descriptions: ProjectDescription[] = [];
-    environment: Record<string, string> | undefined;
-    protected destructive: boolean = true;
+  readonly directory: string;
+  public readonly projectsPath: string;
+  descriptions: ProjectDescription[] = [];
+  environment: Record<string, string> | undefined;
+  protected destructive: boolean = true;
 
-    constructor(directory: string) {
-        this.directory = directory;
-        this.projectsPath = path.join(this.directory, 'projects');
-    }
+  constructor(directory: string) {
+    this.directory = directory;
+    this.projectsPath = path.join(this.directory, 'projects');
+  }
 
-    public getProjectDescriptions(): ProjectDescription[] {
-        return this.descriptions;
-    }
+  public getProjectDescriptions(): ProjectDescription[] {
+    return this.descriptions;
+  }
 
-    public getProjectEnvironment(): Record<string, string> | undefined {
-        return this.environment;
-    }
-    public isDestructive(): boolean {
-        return this.destructive;
-    }
+  public getProjectEnvironment(): Record<string, string> | undefined {
+    return this.environment;
+  }
+  public isDestructive(): boolean {
+    return this.destructive;
+  }
 }
