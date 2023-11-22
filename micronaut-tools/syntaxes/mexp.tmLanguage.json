@@ -19,8 +19,12 @@
 		"literal-values": {
 			"patterns": [
 				{
-					"match": "\\b(null|true|false)\\b",
-					"name": "constant.language.mexp"
+					"match": "\\b(null)\\b",
+					"name": "constant.language.null.mexp"
+				},
+				{
+					"match": "\\b(true|false)\\b",
+					"name": "constant.boolean.mexp"
 				},
 				{
 					"match": "\\b(this)\\b",
@@ -68,28 +72,52 @@
 		"operators": {
 			"patterns": [
 				{
-					"match": "(\\+|\\-|\\*|\\/|div\\b|%|mod\\b|\\^)",
-					"name": "keyword.operator.arithmetic.mexp"
+					"match": "(\\+|\\-)",
+					"name": "keyword.operator.arithmetic.add.mexp"
 				},
 				{
-					"match": "(\\-\\-|\\+\\+)",
-					"name": "keyword.operator.increment-decrement.mexp"
+					"match": "(\\*|\\/|div\\b|%|mod\\b)",
+					"name": "keyword.operator.arithmetic.mul.mexp"
 				},
 				{
-					"match": "(==|!=|>|<|>=|<=|matches\\b)",
-					"name": "keyword.operator.comparison.mexp"
+					"match": "\\^",
+					"name": "keyword.operator.arithmetic.pow.mexp"
 				},
 				{
-					"match": "(&&|and\\b|\\|\\||or\\b|!|not\\b|empty\\b)",
-					"name": "keyword.operator.logical.mexp"
+					"match": "(==|!=)",
+					"name": "keyword.operator.comparison.eq.mexp"
+				},
+				{
+					"match": "(>(?!=)|<(?!=)|>=|<=|matches\\b)",
+					"name": "keyword.operator.comparison.rel.mexp"
+				},
+				{
+					"match": "(&&|and\\b)",
+					"name": "keyword.operator.logical.and.mexp"
+				},
+				{
+					"match": "(\\|\\||or\\b)",
+					"name": "keyword.operator.logical.or.mexp"
+				},
+				{
+					"match": "(!|not\\b)",
+					"name": "keyword.operator.logical.not.mexp"
+				},
+				{
+					"match": "empty\\b",
+					"name": "keyword.operator.logical.empty.mexp"
 				},
 				{
 					"match": "\\?:",
 					"name": "keyword.operator.elvis.mexp"
 				},
 				{
-					"match": "\\?(?!\\.)|:",
-					"name": "keyword.control.ternary.mexp"
+					"match": "\\?(?!\\.)",
+					"name": "keyword.control.ternary.qmark.mexp"
+				},
+				{
+					"match": ":",
+					"name": "keyword.control.ternary.colon.mexp"
 				},
 				{
 					"match": "\\b(instanceof)\\b",
@@ -101,7 +129,7 @@
 			"begin": "\\b(T)(\\()",
 			"beginCaptures": {
 				"1": {
-					"name": "support.function.mexp"
+					"name": "support.function.type-reference.mexp"
 				},
 				"2": {
 					"name": "punctuation.bracket.round.begin.mexp"
@@ -123,7 +151,7 @@
 			"begin": "\\b(ctx)(\\[)",
 			"beginCaptures": {
 				"1": {
-					"name": "support.function.mexp"
+					"name": "support.function.bean-context.mexp"
 				},
 				"2": {
 					"name": "punctuation.bracket.square.beging.mexp"
@@ -146,20 +174,20 @@
 			"begin": "\\b(env)(\\[)",
 			"beginCaptures": {
 				"1": {
-					"name": "support.function.mexp"
+					"name": "support.function.environment.mexp"
 				},
 				"2": {
 					"name": "punctuation.bracket.square.beging.mexp"
 				}
 			},
-			"contentName": "meta.bean-context-access.argument.mexp",
+			"contentName": "meta.environment-access.argument.mexp",
 			"end": "\\]",
 			"endCaptures": {
 				"0": {
 					"name": "punctuation.bracket.square.end.mexp"
 				}
 			},
-			"name": "meta.bean-context-access.mexp",
+			"name": "meta.environment-access.mexp",
 			"patterns": [
 				{ "include": "#code" }
 			]
@@ -200,26 +228,34 @@
 			]
 		},
 		"property-access": {
-			"match": "(?:(\\.)\\s*|(\\?\\.)\\s*|(#)\\s*)?([a-zA-Z_$][\\w$]*)",
-			"captures": {
-				"1": {
-					"name": "punctuation.accessor.mexp"
-				},
-				"2": {
-					"name": "punctuation.accessor.optional.mexp"
-				},
-				"3": {
-					"name": "punctuation.accessor.bean.mexp"
-				},
-				"4": {
-					"name": "variable.other.object.property.mexp"
-				}
-			}
+                        "patterns": [
+                                {
+                                        "match": "(?:(\\.)\\s*|(\\?\\.)\\s*|(#)\\s*)([a-zA-Z_$][\\w$]*)?",
+                                        "captures": {
+                                                "1": {
+                                                        "name": "punctuation.accessor.mexp"
+                                                },
+                                                "2": {
+                                                        "name": "punctuation.accessor.optional.mexp"
+                                                },
+                                                "3": {
+                                                        "name": "punctuation.accessor.bean.mexp"
+                                                },
+                                                "4": {
+                                                        "name": "variable.other.object.property.mexp"
+                                                }
+                                        }
+                                },
+                                {
+                                        "match": "([a-zA-Z_$][\\w$]*)",
+                                        "name": "variable.other.object.property.mexp"
+                                }
+                        ]
 		},
 		"type-name": {
-			"match": "\\b((?:[A-Za-z_]\\w*\\s*\\.\\s*)*[A-Z_]\\w*)\\b",
+			"match": "\\b[A-Za-z_]\\w*\\s*(?:\\.\\s*[A-Z_]\\w*|\\.\\s*)*",
 			"captures": {
-				"1": {
+				"0": {
 					"patterns": [
 						{
 							"match": "[A-Za-z_]\\w*",
