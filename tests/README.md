@@ -27,6 +27,8 @@ You need to compile the extensions itself, and the test code before launching th
 # Run the tests from the CLI
 Tests can be executed by `npm run test`. The test bootstrap will download a separate installation of vscode into `vscode-test` directory. The testing environment will use a **separate** extensions dir (`.vscode-test/extensions`) and user dir (`.vscode-test/user-data`). The tested vscode installation is completely separated from the development one.
 
+It is possible to run specific test using a glob pattern matching whole file name of the test passed as argument after the task: `npm run test **sometestname**`
+
 # Run the tests from the vscode UI
 You can select 'Extension Tests' from the launch menu. Note that in this mode, the debugged test host **shares the extensions and settings** with the development installation. You need to install **all required extensions** into the development vscode. The recommended setup is to **disable** the extensions needed for our extensions but not needed for the development **in workspace only**, which affects the development environment.
 The tested instance will use a different workspace, and will default to enabled state for these extensions.
@@ -44,33 +46,45 @@ Some tests require to have project generated before the run. Run `npm run genera
 # Run UI tests from the CLI/vscode UI
 UI tests allow for interactive extension testing from within vscode UI itself by controlling vscode with a chrome webdriver. Running `npm run test-ui` will start the tests. First run will download the latest vscode instance and chrome webdrive into `./test-resources` folder. Executing environment will share currently installed extensions.
 
+It is possible to run specific test using a glob pattern matching whole file name of the test passed as argument after the task: `npm run test-ui **sometestname**`
+
 # Developing new tests
 There are several options how to devolop a test.
 Run `npm run dependency-compile` before the first test run or after you do a change in source code.
 Run `npm run compile` before the first test run or after you do a change in test source code.
 
 - API tests
-    Fast and reliable tests. You can also execute vscode commands. Tests can access source code so that they can create new projects. However, you cannot open a new instance (tests would not know about other instances of vscode). To open a vscode in a specific project, specify `testSpecification.ts.` After that, run `npm run generate` to generate the projects. When you run the `npm run test` for each project, a new instance of VSCode will be opened. All tests in a given folder will run on each project automatically.
+    Fast and reliable tests. You can also execute vscode commands. Tests can access source code so that they can create new projects. However, you cannot open a new instance (tests would not know about other instances of vscode). To open a vscode in a specific project, specify `testDescriptor.ts.` After that, run `npm run generate` to generate the projects. When you run the `npm run test` for each project, a new instance of VSCode will be opened. All tests in a given folder will run on each project automatically.
 
 - UI tests
-    Time consuming and not so reliable tests. If you are facing undeterministic errors, add a sleep (eg `await new Promise((f) => setTimeout(f, 1000));`) between API calls. UI tests cannot execute vscode commands and cannot access source code => cannot create projects. But they can open projects. To create a project, specify `testSpecification.ts.` After that, run `npm run generate` to generate the projects. When you run the `npm run tes-ui` UI tests are executed and are not opened in any project. To open project in your vscode, you need to do it explicitely in your test. Take inspiration from `codelense.ui-test.ts`.
+    Time consuming and not so reliable tests. If you are facing undeterministic errors, add a sleep (eg `await new Promise((f) => setTimeout(f, 1000));`) between API calls. UI tests cannot execute vscode commands and cannot access source code => cannot create projects. But they can open projects. To create a project, specify `testDescriptor.ts.` After that, run `npm run generate` to generate the projects. When you run the `npm run test-ui` UI tests are executed and are not opened in any project. To open project in your vscode, you need to do it explicitely in your test. Take inspiration from `codelense.ui-test.ts`.
 
-# Future improvements
-- Run only selected test
-- Utility for handling env variables - passwords etc.
-- Fix reporting with mocha awesome / change workspaces with `vscode.workspace.updateWorkspaceFolders`
-- Make api for UI tests to run tests on multiple project easily
+## TestDescriptor - description
+Each folder with tests (files ending on `test.ts`) has to contain file `testDescriptor.ts` that contain class `TestsDescriptor` with default constructor and extending class `AbstractTestDescriptor`, fastest start is to copy already existing `testDescriptor.ts` file from other test folder.
+The class handles passing information about tests in folder, mainly projects on which the tests should be run and their generation.
+Other responsibilities will be added to this class as needed.
+At the moment it also handles test environment variables and keeps information about destructivity of tests.
+```typescript
+import { ProjectDescription } from '../../../../../Common/types';
+import { AbstractTestDescriptor } from '../../../../../Common/abstractTestDescriptor';
+import * as help from '../../../../../Common/helpers'; // contains helper functions for project description generation
+import path from 'path';
+export class TestDescriptor extends AbstractTestDescriptor {
+  constructor() {
+    super(__dirname);
+  }
+  descriptions: ProjectDescription[] = [// descriptions of projects against which the tests will be run
+    help.copProj(path.join('test-projects', 'adm', 'oci-adm-g')),// path is handled against root of tests folder
+    help.genProj(BuildTool.Maven, [Feature.OBJECTSTORE])// project generated by `npm run generate` task
+  ];
+  environment: Record<string, string> = {// Object with key:value pairs of type string
+    ADM_SUPPRESS_AUTO_DISPLAY: 'true',
+    TEST_ADM_REUSE_PROJECTS: 'true',
+  };
+  protected destructive: boolean = false;// Flag about destructivity of the tests, if the tests are run against some project and doesn't damage it in any way, this flag allows other tests to run in single vscode instance withou restart
+}
 
-# Developing new tests
-There are several options on how to develop a test.
-Run `npm run dependency-compile` before the first test run or after you change the source code.
-Run `npm run compile` before the first test run or after you change the test source code.
-
-- API tests
-    Fast and reliable tests. You can execute VSCode commands. Tests can access source code so that they can create new projects. However, you cannot open a new instance (tests would not know about other instances of VSCode). To open a vscode in a specific project, specify `testSpecification.ts` After that, run `npm run generate` to generate the projects. When you run the `npm run test` for each project, a new instance of VSCode will be opened. All tests in a given folder will run on each project automatically.
-
-- UI tests
-    Time consuming and not-so-reliable tests. If you are facing nondeterministic errors, add a sleep (e.g., `await new Promise((f) => setTimeout(f, 1000));`) between API calls. UI tests cannot execute vscode commands and cannot access source code => and not create projects. But they can open projects. To create a project, specify `testSpecification.ts` After that, run `npm run generate` to generate the projects. When you run the `npm run test-ui`, UI tests are executed and are not opened in any project. To open a project in your vscode, you must do it explicitly in your test. Take inspiration from `codelense.ui-test.ts.`
+```
 
 # Configuring tests
 - `TIMEOUT_MULTIPLICATOR` - ENV variable that customizes test timeout. If not defined, than default value is 1. Can be any number. Example: to extend test's timeout twice, you can write `TIMEOUT_MULTIPLICATOR=2`
@@ -82,7 +96,6 @@ Run `npm run compile` before the first test run or after you change the test sou
 - https://code.visualstudio.com/api/working-with-extensions/testing-extension
 
 # Future improvements
-- Run only selected test
 - Utility for handling env variables - passwords, etc.
 - Fix reporting with mocha awesome / change workspaces with `vscode.workspace.updateWorkspaceFolders.`
 - Make API for UI tests to run tests on multiple projects easily
