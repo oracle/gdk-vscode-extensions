@@ -7,6 +7,8 @@
     "extension.micronaut-tools.navigation.cancelConnectApplication.title": "Cancel Connecting to Application",
     "extension.micronaut-tools.navigation.stopApplication.title": "Stop Application",
     "extension.micronaut-tools.navigation.editAddress.title": "Edit Application Address",
+    "extension.micronaut-tools.navigation.configureEnvironments.title": "Configure Environment Properties",
+    "extension.micronaut-tools.navigation.editEnvironments.title": "Edit Application Environments",
     "extension.micronaut-tools.navigation.editManagement.title": "Enable or Inherit Application Monitoring & Management",
     "extension.micronaut-tools.navigation.configureManagement.title": "Configure Monitored Services",
     "extension.micronaut-tools.navigation.editControlPanel.title": "Enable or Inherit Micronaut Control Panel",

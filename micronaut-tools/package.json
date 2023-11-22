@@ -229,6 +229,18 @@
 				"category": "Micronaut Tools"
 			},
 			{
+				"command": "extension.micronaut-tools.navigation.configureEnvironments",
+				"title": "%extension.micronaut-tools.navigation.configureEnvironments.title%",
+				"icon": "$(tools)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.editEnvironments",
+				"title": "%extension.micronaut-tools.navigation.editEnvironments.title%",
+				"icon": "$(edit)",
+				"category": "Micronaut Tools"
+			},
+			{
 				"command": "extension.micronaut-tools.navigation.configureManagement",
 				"title": "%extension.micronaut-tools.navigation.configureManagement.title%",
 				"icon": "$(settings)",
@@ -474,6 +486,14 @@
 					"when": "false"
 				},
 				{
+					"command": "extension.micronaut-tools.navigation.configureEnvironments",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editEnvironments",
+					"when": "false"
+				},
+				{
 					"command": "extension.micronaut-tools.navigation.editManagement",
 					"when": "false"
 				},
@@ -507,10 +527,6 @@
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.openInBrowser",
-					"when": "false"
-				},
-				{
-					"command": "extension.micronaut-tools.navigation.editAddress",
 					"when": "false"
 				},
 				{
@@ -643,6 +659,26 @@
 				{
 					"command": "extension.micronaut-tools.navigation.editAddress",
 					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationAddressNode.idle.",
+					"group": "context@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.configureEnvironments",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.",
+					"group": "inline@3"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.configureEnvironments",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.",
+					"group": "context@3"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editEnvironments",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.",
+					"group": "inline@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editEnvironments",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.",
 					"group": "context@4"
 				},
 				{

@@ -40,6 +40,7 @@ export class LoggersEndpoint extends beanHandler.UpdatableBeanHandler {
         const items = new Promise<vscode.QuickPickItem[]>(resolve => {
             this.getLoggers().then(data => {
                 if (data) {
+                    this.notifyUpdated(data);
                     levels = getLevels(data);
                     const configured = getConfigured(data);
                     const notConfigured = getNotConfigured(data);
@@ -102,12 +103,16 @@ export class LoggersEndpoint extends beanHandler.UpdatableBeanHandler {
                         logger = logger.substring(NOT_CONFIGURED_PREFIX.length);
                     }
                 }
-                this.editLogger(logger, levels)
+                this.editLogger(logger, levels).then(success => {
+                    if (success) {
+                        this.update();
+                    }
+                });
             }
         });
     }
 
-    async editLogger(logger: string | undefined, levels: string[]) {
+    async editLogger(logger: string | undefined, levels: string[]): Promise<boolean> {
         let title = 'Configure Logger';
         if (!logger) {
             title = 'Create New Logger';
@@ -116,7 +121,7 @@ export class LoggersEndpoint extends beanHandler.UpdatableBeanHandler {
                 ignoreFocusOut: true
             });
             if (!logger) {
-                return;
+                return false;
             }
         }
         const levelItems = [];
@@ -131,12 +136,9 @@ export class LoggersEndpoint extends beanHandler.UpdatableBeanHandler {
             ignoreFocusOut: true
         })
         if (level) {
-            this.postLogger(logger, level.label).then(configured => {
-                if (configured) {
-                    this.update();
-                }
-            });
+            return this.postLogger(logger, level.label);
         }
+        return false;
     }
 
     private postLogger(logger: string, level: string): Promise<boolean> {

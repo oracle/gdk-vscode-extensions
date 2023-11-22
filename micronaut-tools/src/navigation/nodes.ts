@@ -13,6 +13,7 @@ import * as actions from './actions';
 import * as targetAddress from './targetAddress';
 import * as formatters from './formatters';
 import * as management from './management/management';
+import * as environmentEndpoint from './management/environmentEndpoint';
 import * as healthEndpoint from './management/healthEndpoint';
 import * as metricsEndpoint from './management/metricsEndpoint';
 import * as loggersEndpoint from './management/loggersEndpoint';
@@ -194,7 +195,12 @@ export class ApplicationFolderNode extends BaseNode {
     private readonly folderData: workspaceFolders.FolderData;
 
     constructor(folder: workspaceFolders.FolderData, _iconsFolder: vscode.Uri, treeChanged: TreeChanged) {
-        super(folder.getWorkspaceFolder().name, undefined, ApplicationFolderNode.BASE_CONTEXT, [ new ApplicationAddressNode(folder.getApplication(), treeChanged), new ApplicationMonitoringNode(folder.getApplication(), treeChanged), new ApplicationControlPanelNode(folder.getApplication(), treeChanged)/*, new ApplicationPropertiesNode(vscode.Uri.file('application.properties'), treeChanged)*/ ], true);
+        super(folder.getWorkspaceFolder().name, undefined, ApplicationFolderNode.BASE_CONTEXT, [
+            new ApplicationAddressNode(folder.getApplication(), treeChanged),
+            new ApplicationEnvironmentsNode(folder.getApplication(), treeChanged),
+            new ApplicationMonitoringNode(folder.getApplication(), treeChanged),
+            new ApplicationControlPanelNode(folder.getApplication(), treeChanged)
+        ], true);
         this.tooltip = folder.getWorkspaceFolder().uri.fsPath;
         this.folderData = folder;
         // this.iconPath = vscode.Uri.joinPath(iconsFolder, 'micronaut.png');
@@ -291,6 +297,95 @@ export class ApplicationAddressNode extends BaseNode {
 
     private updateContext(state: applications.State) {
         this.contextValue = `${ApplicationAddressNode.BASE_CONTEXT}.${state}.`;
+    }
+
+}
+
+export class ApplicationEnvironmentsNode extends BaseNode {
+
+    private static readonly BASE_CONTEXT = 'extension.micronaut-tools.navigation.ApplicationEnvironmentsNode';
+
+    private readonly application: applications.Application;
+
+    constructor(application: applications.Application, treeChanged: TreeChanged) {
+        super('Environments:', '...', ApplicationEnvironmentsNode.BASE_CONTEXT, null, undefined);
+        this.tooltip = 'Application environments';
+        this.application = application;
+
+        this.application.onStateChanged(() => {
+            this.update();
+            treeChanged(this);
+        });
+        this.application.onDefinedEnvironmentsChanged(() => {
+            this.update();
+            treeChanged(this);
+        });
+        
+        const environment = this.application.getManagement().getEnvironmentEndpoint();
+        environment.onAvailableChanged(() => {
+            this.update();
+            treeChanged(this);
+        });
+        environment.onUpdated(data => {
+            this.update(data);
+            treeChanged(this);
+        });
+
+        this.update();
+    }
+
+    configureEnvironments() {
+        this.application.configureDefinedEnvironments();
+    }
+
+    editEnvironments() {
+        this.application.editDefinedEnvironments();
+    }
+
+    private update(data?: any) {
+        const environment = this.application.getManagement().getEnvironmentEndpoint();
+        switch (this.application.getState()) {
+            case applications.State.CONNECTED_LAUNCH:
+            case applications.State.CONNECTED_ATTACH:
+                switch (environment.isAvailable()) {
+                    case true:
+                        if (data) {
+                            const activeEnvironments = environmentEndpoint.activeEnvironments(data);
+                            this.description = activeEnvironments?.length ? activeEnvironments.join(',') : 'default';
+                            this.contextValue = ApplicationEnvironmentsNode.BASE_CONTEXT + '.available.';
+                            this.tooltip = 'Application is running with these active environments';
+                        }
+                        break;
+                    case false:
+                        this.description = 'unknown';
+                        this.contextValue = ApplicationEnvironmentsNode.BASE_CONTEXT + '.unavailable.';
+                        this.tooltip = 'Cannot detect application active environments';
+                        break;
+                    default:
+                        this.description = '...';
+                        this.contextValue = ApplicationEnvironmentsNode.BASE_CONTEXT + '.updating.';
+                        this.tooltip = 'Determining application active environments...';
+                }
+                break;
+            case applications.State.CONNECTING_LAUNCH:
+            case applications.State.CONNECTING_ATTACH:
+            case applications.State.DISCONNECTING_LAUNCH:
+            case applications.State.DISCONNECTING_ATTACH:
+                this.description = '...';
+                this.contextValue = ApplicationEnvironmentsNode.BASE_CONTEXT + '.updating.';
+                this.tooltip = 'Determining application active environments...';
+                break;
+            default:
+                const definedEnvironments = this.application.getDefinedEnvironments();
+                if (definedEnvironments?.length) {
+                    this.description = definedEnvironments.join(',');
+                    this.tooltip = 'Application will be launched with defined environments';
+                } else {
+                    this.description = 'inherited';
+                    this.tooltip = 'Application will be launched with environments inherited from the context';
+                }
+                this.contextValue = ApplicationEnvironmentsNode.BASE_CONTEXT + '.idle.';
+        }
     }
 
 }
@@ -431,30 +526,6 @@ export class ApplicationControlPanelNode extends BaseNode {
                 this.description = controlPanel.isEnabled() ? 'enabled' : 'inherited';
                 this.contextValue = ApplicationControlPanelNode.BASE_CONTEXT + '.idle.';
         }
-    }
-
-}
-
-export class ApplicationPropertiesNode extends BaseNode {
-
-    private static readonly BASE_CONTEXT = 'extension.micronaut-tools.navigation.ApplicationPropertiesNode';
-
-    private readonly file: vscode.Uri;
-
-    constructor(file: vscode.Uri, _treeChanged: TreeChanged) {
-        super('properties:', file.path, ApplicationPropertiesNode.BASE_CONTEXT, null, undefined);
-        // this.tooltip = 'Address of a local or remote application';
-        // this.iconPath = new vscode.ThemeIcon('location');
-        this.file = file;
-
-        // this.updateContext(this.application.getState());
-        // this.application.onStateChanged(state => {
-        //     this.updateContext(state);
-        // });
-        // this.application.onAddressChanged(address => {
-        //     this.description = address;
-        //     treeChanged(this);
-        // });
     }
 
 }
@@ -611,7 +682,7 @@ export class MonitoringNode extends BaseNode {
     private static readonly CONTEXT = 'extension.micronaut-tools.navigation.MonitoringNode';
 
     constructor(management: management.Management, treeChanged: TreeChanged) {
-        super('Monitoring', undefined, MonitoringNode.CONTEXT, [], false);
+        super('Monitoring', undefined, MonitoringNode.CONTEXT, [], true);
         this.tooltip = 'Application monitoring';
 
         const uptimeNode = new MonitoringUptimeNode(management.getMetricsEndpoint(), treeChanged);
@@ -787,7 +858,7 @@ export class ManagementNode extends BaseNode {
     private static readonly CONTEXT = 'extension.micronaut-tools.navigation.ManagementNode';
 
     constructor(management: management.Management, treeChanged: TreeChanged) {
-        super('Management', undefined, ManagementNode.CONTEXT, [], true);
+        super('Management', undefined, ManagementNode.CONTEXT, [], false);
         this.tooltip = 'Application management';
 
         const loggersNode = new ManagementLoggersNode(management.getLoggersEndpoint(), treeChanged);

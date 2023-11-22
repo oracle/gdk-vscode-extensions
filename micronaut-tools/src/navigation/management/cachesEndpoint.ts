@@ -27,6 +27,7 @@ export class CachesEndpoint extends beanHandler.UpdatableBeanHandler {
         const items = new Promise<vscode.QuickPickItem[]>(resolve => {
             this.getCaches().then(data => {
                 if (data) {
+                    this.notifyUpdated(data);
                     const names = getNames(data);
                     const items = [];
                     if (names.length) {
@@ -67,6 +68,7 @@ export class CachesEndpoint extends beanHandler.UpdatableBeanHandler {
                 if (selectedOption === invalidateOption) {
                     this.deleteCaches(caches).then(success => {
                         if (success) {
+                            this.update();
                             vscode.window.showInformationMessage(`${subject} ${selected.length === 1 ? 'has' : 'have'} been invalidated.`);
                         }
                     })

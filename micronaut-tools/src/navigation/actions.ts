@@ -21,6 +21,8 @@ export const COMMAND_DISCONNECT_APPLICATION = 'extension.micronaut-tools.navigat
 export const COMMAND_CANCEL_CONNECT_APPLICATION = 'extension.micronaut-tools.navigation.cancelConnectApplication';
 export const COMMAND_STOP_APPLICATION = 'extension.micronaut-tools.navigation.stopApplication';
 export const COMMAND_EDIT_ADDRESS = 'extension.micronaut-tools.navigation.editAddress';
+export const COMMAND_CONFIGURE_ENVIRONMENTS = 'extension.micronaut-tools.navigation.configureEnvironments';
+export const COMMAND_EDIT_ENVIRONMENTS = 'extension.micronaut-tools.navigation.editEnvironments';
 export const COMMAND_GO_TO_DEFINITION = 'extension.micronaut-tools.navigation.goToDefinition';
 export const COMMAND_NAME_GO_TO_DEFINITION = vscode.l10n.t('Go to Symbol');
 export const COMMAND_OPEN_IN_BROWSER = 'extension.micronaut-tools.navigation.openInBrowser';
@@ -81,6 +83,16 @@ export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_EDIT_ADDRESS, (node: nodes.ApplicationAddressNode) => {
         if (node) {
             node.editAddress();
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_CONFIGURE_ENVIRONMENTS, (node: nodes.ApplicationEnvironmentsNode) => {
+        if (node) {
+            node.configureEnvironments();
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_EDIT_ENVIRONMENTS, (node: nodes.ApplicationEnvironmentsNode) => {
+        if (node) {
+            node.editEnvironments();
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_GO_TO_DEFINITION, (node: nodes.SymbolNode<symbols.Symbol>) => {

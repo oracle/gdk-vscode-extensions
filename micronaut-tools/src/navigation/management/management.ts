@@ -11,6 +11,7 @@ import * as symbols from '../symbols';
 import * as beanHandler from './beanHandler';
 import * as refreshEndpoint from './refreshEndpoint';
 import * as serverStopEndpoint from './serverStopEndpoint';
+import * as environmentEndpoint from './environmentEndpoint';
 import * as beansEndpoint from './beansEndpoint';
 import * as routesEndpoint from './routesEndpoint';
 import * as healthEndpoint from './healthEndpoint';
@@ -29,6 +30,8 @@ export class Management extends beanHandler.BeanHandler {
 
     private refreshEndpoint: refreshEndpoint.RefreshEndpoint;
     private serverStopEndpoint: serverStopEndpoint.ServerStopEndpoint;
+
+    private environmentEndpoint: environmentEndpoint.EnvironmentEndpoint;
     
     private beansEndpoint: beansEndpoint.BeansEndpoint;
     private routesEndpoint: routesEndpoint.RoutesEndpoint;
@@ -46,6 +49,7 @@ export class Management extends beanHandler.BeanHandler {
         this.symbolEvents = new symbols.Events();
         this.refreshEndpoint = refreshEndpoint.forApplication(application);
         this.serverStopEndpoint = serverStopEndpoint.forApplication(application);
+        this.environmentEndpoint = environmentEndpoint.forApplication(application);
         this.beansEndpoint = beansEndpoint.forApplication(application);
         this.beansEndpoint.onBeansResolved(beans => {
             this.symbolEvents.notifyUpdated([symbols.Bean.KIND], beans, []);
@@ -64,6 +68,7 @@ export class Management extends beanHandler.BeanHandler {
                 const available = [
                     this.refreshEndpoint.checkAvailable(),
                     this.serverStopEndpoint.checkAvailable(),
+                    this.environmentEndpoint.checkAvailable(),
                     this.beansEndpoint.checkAvailable(),
                     this.routesEndpoint.checkAvailable(),
                     this.healthEndpoint.checkAvailable(),
@@ -76,21 +81,24 @@ export class Management extends beanHandler.BeanHandler {
                     // console.log('>>> refreshEndpointAvailable: ' + refreshEndpointAvailable)
                     const serverStopEndpointAvailable = available[1];
                     // console.log('>>> serverStopEndpointAvailable: ' + serverStopEndpointAvailable)
-                    const beansEndpointAvailable = available[2];
+                    const environmentEndpoint = available[2];
                     // console.log('>>> beansEndpointAvailable: ' + beansEndpointAvailable)
-                    const routesEndpointAvailable = available[3];
+                    const beansEndpointAvailable = available[3];
+                    // console.log('>>> beansEndpointAvailable: ' + beansEndpointAvailable)
+                    const routesEndpointAvailable = available[4];
                     // console.log('>>> routesEndpointAvailable: ' + routesEndpointAvailable)
-                    const healthEndpointAvailable = available[4];
+                    const healthEndpointAvailable = available[5];
                     // console.log('>>> healthEndpointAvailable: ' + healthEndpointAvailable)
-                    const metricsEndpointAvailable = available[5];
+                    const metricsEndpointAvailable = available[6];
                     // console.log('>>> metricsEndpointAvailable: ' + metricsEndpointAvailable)
-                    const loggersEndpointAvailable = available[6];
+                    const loggersEndpointAvailable = available[7];
                     // console.log('>>> loggersEndpointAvailable: ' + loggersEndpointAvailable)
-                    const cachesEndpointAvailable = available[7];
+                    const cachesEndpointAvailable = available[8];
                     // console.log('>>> cachesEndpointAvailable: ' + cachesEndpointAvailable)
                     this.setAvailable(
                         refreshEndpointAvailable ||
                         serverStopEndpointAvailable ||
+                        environmentEndpoint ||
                         beansEndpointAvailable ||
                         routesEndpointAvailable ||
                         healthEndpointAvailable ||
@@ -103,6 +111,7 @@ export class Management extends beanHandler.BeanHandler {
             } else {
                 this.refreshEndpoint.checkAvailable();
                 this.serverStopEndpoint.checkAvailable();
+                this.environmentEndpoint.checkAvailable();
                 this.beansEndpoint.checkAvailable();
                 this.routesEndpoint.checkAvailable();
                 this.healthEndpoint.checkAvailable();
@@ -141,6 +150,10 @@ export class Management extends beanHandler.BeanHandler {
 
     getServerStopEndpoint(): serverStopEndpoint.ServerStopEndpoint {
         return this.serverStopEndpoint;
+    }
+
+    getEnvironmentEndpoint(): environmentEndpoint.EnvironmentEndpoint {
+        return this.environmentEndpoint;
     }
 
     getHealthEndpoint(): healthEndpoint.HealthEndpoint {
@@ -212,6 +225,11 @@ export class Management extends beanHandler.BeanHandler {
         const serverStopEndpointVmArgs = this.serverStopEndpoint.buildVmArgs();
         if (serverStopEndpointVmArgs) {
             vmArgs.push(serverStopEndpointVmArgs);
+        }
+
+        const environmentEndpointVmArgs = this.environmentEndpoint.buildVmArgs();
+        if (environmentEndpointVmArgs) {
+            vmArgs.push(environmentEndpointVmArgs);
         }
 
         const beansEndpointVmArgs = this.beansEndpoint.buildVmArgs();

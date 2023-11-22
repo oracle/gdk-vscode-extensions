@@ -34,7 +34,21 @@ export class ControlPanel extends beanHandler.BeanHandler {
     protected doEnable() {
         this.checkConfigured().then(configured => {
             if (configured) {
-                super.doEnable();
+                if (this.application.getDefinedEnvironments()?.length) {
+                    super.doEnable();
+                } else {
+                    const useDevOption = 'Use \'dev\'';
+                    const setCustomOption = 'Define Custom';
+                    const cancelOption = 'Cancel';
+                    vscode.window.showWarningMessage('Micronaut Control Panel requires at least one defined environment. Which environment should be used?', useDevOption, setCustomOption, cancelOption).then(selectedOption => {
+                        if (selectedOption === useDevOption) {
+                            this.application.setDefinedEnvironments(['dev']);
+                            super.doEnable();
+                        } else if (selectedOption === setCustomOption) {
+                            this.application.editDefinedEnvironments();
+                        }
+                    });
+                }
             }
         }).catch(err => {
             console.log('Failed to configure project for Micronaut Control Panel:')
@@ -85,8 +99,11 @@ export class ControlPanel extends beanHandler.BeanHandler {
         if (!this.isEnabled()) {
             return undefined;
         }
-        // return '-Dmicronaut.environments=dev';
-        return '-Dmicronaut.environments=dev -Dmicronaut.control-panel.enabled=true';
+        const definedEnvironments = this.application.getDefinedEnvironments();
+        if (!definedEnvironments?.length) {
+            return undefined;
+        }
+        return `-Dmicronaut.control-panel.enabled=true -Dmicronaut.control-panel.allowed-environments=${definedEnvironments.join(',')}`;
         // return '-Dmicronaut.control-panel.allowed-environments=vscode -Dmicronaut.environments=vscode';
     }
 
