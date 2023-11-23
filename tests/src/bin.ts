@@ -16,21 +16,25 @@ async function main() {
     return;
   }
   const allArg: Arg<string> = args[0];
-  let currentArg;
+  let currentArg: Arg<string> | undefined;
+  let exitCode = 0;
   if ((currentArg = args.find((v) => v.name === 'generate')) !== undefined) {
     const test = require('./generate');
-    test.generate(allArg.args.concat(currentArg.args));
+    await test.generate(allArg.args.concat(currentArg.args));
   }
   if ((currentArg = args.find((v) => v.name === 'runTest')) !== undefined) {
     const test = require('./runTest');
     const status: boolean = await test.runTest(allArg.args.concat(currentArg.args));
     console.log('TESTS', status ? 'SUCCEEDED' : 'FAILED');
+    exitCode = status ? exitCode : 1;
   }
   if ((currentArg = args.find((v) => v.name === 'runTest-ui')) !== undefined) {
     const test = require('./runTest-ui');
     const status: boolean = await test.runTestUI(allArg.args.concat(currentArg.args));
     console.log('TESTS', status ? 'SUCCEEDED' : 'FAILED');
+    exitCode = status ? exitCode : 1;
   }
+  process.exit(exitCode);
 }
 
 main();

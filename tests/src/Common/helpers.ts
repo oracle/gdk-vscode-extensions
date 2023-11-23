@@ -8,8 +8,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
-import { getDescriptor } from './testHelper';
-import { Arg, BuildTool, CopiedProject, Feature, GeneratedProject, SupportedJava, TestFolders } from './types';
+import { Arg, BuildTool, CopiedProject, Feature, GeneratedProject, SupportedJava } from './types';
 
 export function getSubDirs(projectPath: string): string[] {
     return fs.existsSync(projectPath)

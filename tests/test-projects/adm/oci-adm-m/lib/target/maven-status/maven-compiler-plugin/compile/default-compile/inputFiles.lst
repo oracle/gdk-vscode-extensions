@@ -1,5 +1,5 @@
-/home/odouda/WorkDir/clean/vscode-extensions/tests/src/test/suite/Gates/project-templates/adm/oci-adm-m/lib/src/main/java/com/example/WarehouseClient.java
-/home/odouda/WorkDir/clean/vscode-extensions/tests/src/test/suite/Gates/project-templates/adm/oci-adm-m/lib/src/main/java/com/example/StoreController.java
-/home/odouda/WorkDir/clean/vscode-extensions/tests/src/test/suite/Gates/project-templates/adm/oci-adm-m/lib/src/main/java/com/example/service/MetricsService.java
-/home/odouda/WorkDir/clean/vscode-extensions/tests/src/test/suite/Gates/project-templates/adm/oci-adm-m/lib/src/main/java/com/example/InventoryService.java
-/home/odouda/WorkDir/clean/vscode-extensions/tests/src/test/suite/Gates/project-templates/adm/oci-adm-m/lib/src/main/java/com/example/WarehouseController.java
+/home/odouda/WorkDir/clean/vscode-extensions/tests/test-projects/adm/oci-adm-m/lib/src/main/java/com/example/WarehouseController.java
+/home/odouda/WorkDir/clean/vscode-extensions/tests/test-projects/adm/oci-adm-m/lib/src/main/java/com/example/StoreController.java
+/home/odouda/WorkDir/clean/vscode-extensions/tests/test-projects/adm/oci-adm-m/lib/src/main/java/com/example/InventoryService.java
+/home/odouda/WorkDir/clean/vscode-extensions/tests/test-projects/adm/oci-adm-m/lib/src/main/java/com/example/WarehouseClient.java
+/home/odouda/WorkDir/clean/vscode-extensions/tests/test-projects/adm/oci-adm-m/lib/src/main/java/com/example/service/MetricsService.java
