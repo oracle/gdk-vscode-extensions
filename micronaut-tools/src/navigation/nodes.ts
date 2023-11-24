@@ -840,9 +840,13 @@ export class MonitoringDiskSpaceNode extends BaseNode {
         })
         endpoint.onUpdated(data => {
             if (data.details?.diskSpace) {
-                const free = Number.parseInt(data.details.diskSpace.details.free);
-                const total = Number.parseInt(data.details.diskSpace.details.total);
-                this.description = `${formatters.formatBytes(free)} free, ${formatters.formatBytes(total)} total`;
+                if (data.details.diskSpace.details.error) {
+                    this.description = 'low free space (below threshold)';
+                } else {
+                    const free = Number.parseInt(data.details.diskSpace.details.free);
+                    const total = Number.parseInt(data.details.diskSpace.details.total);
+                    this.description = `${formatters.formatBytes(free)} free, ${formatters.formatBytes(total)} total`;
+                }
                 // this.tooltip = `Disk space: ${free.toLocaleString()} B free of ${total.toLocaleString()} B total`;
             } else {
                 this.description = 'n/a';

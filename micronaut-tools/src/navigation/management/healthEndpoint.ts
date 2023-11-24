@@ -10,6 +10,7 @@ import * as beanHandler from './beanHandler';
 
 
 const RELATIVE_ADDRESS = '/health';
+const DOWN_CODE = 503;
 
 export function forApplication(application: applications.Application) {
     return new HealthEndpoint(application);
@@ -21,11 +22,15 @@ export class HealthEndpoint extends beanHandler.UpdatableBeanHandler {
         super(application, RELATIVE_ADDRESS)
     }
 
+    protected availableResp(response: { code: number | undefined; headers: any; data: any; }): boolean {
+        return super.availableResp(response) || response.code === DOWN_CODE;
+    }
+
     protected async processResponse(response: { code: number | undefined; headers: any; data: any }) {
         // console.log('-------- HEALTH ---------------------')
         const data = JSON.parse(response.data);
+        // console.log(data)
         this.notifyUpdated(data);
-        // console.log(health)
     }
 
     buildVmArgs(): string | undefined {

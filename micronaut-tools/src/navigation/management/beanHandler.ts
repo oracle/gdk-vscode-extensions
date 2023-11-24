@@ -79,7 +79,7 @@ export abstract class BeanHandler {
                 // console.log('>>> PROCESS RESPONSE')
                 // console.log(this)
                 // console.log(response)
-                const available = response.code === this.availableCode;
+                const available = this.availableResp(response);
                 this.setAvailable(available);
                 resolve(available);
                 if (available) {
@@ -91,6 +91,10 @@ export abstract class BeanHandler {
                 resolve(false);
             });
         });
+    }
+
+    protected availableResp(response: { code: number | undefined; headers: any; data: any; }): boolean {
+        return response.code === this.availableCode;
     }
 
     protected async getData(): Promise<{ code: number | undefined; headers: any; data: any }> {
