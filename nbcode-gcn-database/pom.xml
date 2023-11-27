@@ -54,7 +54,7 @@
     </modules>
 
     <properties>
-        <netbeans.version>RELEASE126</netbeans.version>
+        <netbeans.version>RELEASE190</netbeans.version>
         <brandingToken>nbcodegraalvm</brandingToken>
     </properties>
 </project>
