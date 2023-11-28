@@ -383,7 +383,7 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 			title,
 			step: 3,
 			totalSteps: totalSteps(state),
-			placeholder: 'Pick project Java',
+			placeholder: 'Select installed Java runtime to use for local builds',
 			items,
 			activeItems: findSelection(items, state.javaVersion),
 			shouldResume: () => Promise.resolve(false)

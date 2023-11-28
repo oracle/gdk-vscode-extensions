@@ -169,7 +169,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 			title,
 			step: 3,
 			totalSteps: totalSteps(state),
-			placeholder: 'Pick project Java',
+			placeholder: 'Select installed Java runtime to use for local builds',
 			items,
 			activeItems: state.javaVersion,
 			shouldResume: () => Promise.resolve(false)
