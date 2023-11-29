@@ -7,16 +7,23 @@
 
 import * as path from 'path';
 import * as cp from 'child_process';
+// @ts-ignore
+import * as marge from 'mochawesome-report-generator';
+// @ts-ignore
+import { merge } from 'mochawesome-merge';
 import { runTests, downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron';
 import { AbortController } from 'node-abort-controller';
 import { gatherTestFolders } from './Common/testHelper';
 import { prepareAPITests } from './Common/projectHelper';
 import { TestFolders, TestFolder } from './Common/types';
+import * as fs from 'fs';
 
 export async function runTest(args: string[]) {
   // BuildBot Abort controller fix
   // @ts-ignore
   global.AbortController = AbortController;
+
+  fs.rmSync(path.resolve(__dirname, '..', 'mochawesome-report'), { recursive: true, force: true });
 
   // The folder containing the Extension Manifest package.json
   // Passed to `--extensionDevelopmentPath`
@@ -78,9 +85,9 @@ export async function runTest(args: string[]) {
     } catch (err) {
       console.error('Failed to run tests', err);
       statusAll = false;
-    } finally {
     }
   }
+  await generateReport();
   return statusAll;
 }
 function getEnv(projDir: string, testCases: TestFolders): Record<string, string> | undefined {
@@ -88,4 +95,8 @@ function getEnv(projDir: string, testCases: TestFolders): Record<string, string>
   if (!tests)
     return undefined;
   return tests[0].getProjectEnvironment();
+}
+
+async function generateReport() {
+  return merge().then((report: any) => marge.create(report));
 }

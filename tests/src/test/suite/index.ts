@@ -5,9 +5,7 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
-import path from 'path';
 import Mocha from 'mocha';
-//import glob from 'glob';
 
 export function run(): Promise<void> {
   // Create the mocha test
@@ -15,10 +13,17 @@ export function run(): Promise<void> {
     ui: 'tdd',
     color: true,
     reporter: 'mochawesome',
+    reporterOptions: {
+      // disable overwrite to generate many JSON reports
+      "overwrite": false,
+      // do not generate intermediate HTML reports
+      "html": false,
+      // generate intermediate JSON reports
+      "json": true
+    }
   });
 
-  const testRunner = path.resolve(__dirname, 'Gates', 'API', 'testRunner.js');
-  mocha.addFile(testRunner);
+  process.env['tests']?.split(';').forEach(file => mocha.addFile(file));
 
   return new Promise((resolve, reject) => {
     try {
