@@ -35,7 +35,7 @@ export async function runTest(args: string[]) {
 
   // The path for tests
   const bigTestPath = path.resolve(__dirname, '..', 'out', 'test', 'suite', 'Gates', 'API');
-  const testCases = gatherTestFolders(bigTestPath, ...(args.length > 0 ? args : ['**combined.test.js']));
+  const testCases = gatherTestFolders(bigTestPath, ...(args.length > 0 ? args : ['**test.js']));
   const testRun = prepareAPITests(testCases);
   let statusAll: boolean = true;
 

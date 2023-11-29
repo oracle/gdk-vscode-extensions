@@ -13,15 +13,13 @@ import { BuildPipelineNode } from '../../../../../../../oci-devops/out/oci/build
 import * as helper from './helpers';
 import { DeploymentPipelineNode } from '../../../../../../../oci-devops/out/oci/deploymentServices';
 
-suite('Redeploy', function () {
+suite('Oci Combined pipelines test', function () {
   const wf = vscode.workspace.workspaceFolders;
 
   const COMPARTMENT_OCID: string = process.env['TEST_DEPLOY_COMPARTMENT_OCID']
     ? process.env['TEST_DEPLOY_COMPARTMENT_OCID']
-    : 'ocid1.compartment.oc1..aaaaaaaag4ltud75zxrjksjxql2ooty5leuce22cogsv2ulhsjvumtu2s64a';
-  const DEPLOY_COMPARTMENT_NAME: string = 'OndrejMan';
-
-  //ocid1.compartment.oc1..aaaaaaaa7thgaondgokuwyujlq4tosnpfaohdivlbbr64izsx5jxfxrezxca
+    : 'ocid1.compartment.oc1..aaaaaaaa7thgaondgokuwyujlq4tosnpfaohdivlbbr64izsx5jxfxrezxca';
+  const DEPLOY_COMPARTMENT_NAME: string = 'tests';
 
   let deploy_project_name: string;
   let selectedProfile = '';
