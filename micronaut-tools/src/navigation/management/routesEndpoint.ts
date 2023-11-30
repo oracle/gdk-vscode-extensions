@@ -8,14 +8,13 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as applications from '../applications';
-// import * as rest from '../rest';
 import * as symbols from '../symbols';
 import * as beanHandler from './beanHandler';
 
 
 const RELATIVE_ADDRESS = '/routes';
 
-export type OnEndpointsResolved = (beans: symbols.Endpoint[]) => void;
+export type OnEndpointsResolved = (endpoints: symbols.Endpoint[] | null | undefined) => void;
 
 export function forApplication(application: applications.Application) {
     return new RoutesEndpoint(application);
@@ -23,8 +22,14 @@ export function forApplication(application: applications.Application) {
 
 export class RoutesEndpoint extends beanHandler.BeanHandler {
 
+    private runtimeEndpoints: symbols.Endpoint[] | null | undefined;
+
     constructor(application: applications.Application) {
         super(application, RELATIVE_ADDRESS)
+    }
+
+    getRuntimeEndpoints(): symbols.Endpoint[] | null | undefined {
+        return this.runtimeEndpoints;
     }
 
     protected async processResponse(response: { code: number | undefined; headers: any; data: any }) {
@@ -37,7 +42,16 @@ export class RoutesEndpoint extends beanHandler.BeanHandler {
             const routeMethod = route.method;
             resolved.push(new RuntimeEndpoint(routeKey, routeMethod, this.application));
         }
+        this.runtimeEndpoints = resolved;
         this.notifyEndpointsResolved(resolved);
+    }
+
+    protected setAvailable(available: boolean | undefined) {
+        super.setAvailable(available);
+        if (!available) {
+            this.runtimeEndpoints = this.application.isConnected() ? null : undefined;
+            this.notifyEndpointsResolved(this.runtimeEndpoints);
+        }
     }
 
     buildVmArgs(): string | undefined {
@@ -53,7 +67,7 @@ export class RoutesEndpoint extends beanHandler.BeanHandler {
         this.onEndpointsResolvedListeners.push(listener);
     }
 
-    private notifyEndpointsResolved(endpoints: symbols.Endpoint[]) {
+    private notifyEndpointsResolved(endpoints: symbols.Endpoint[] | null | undefined) {
         for (const listener of this.onEndpointsResolvedListeners) {
             listener(endpoints);
         }

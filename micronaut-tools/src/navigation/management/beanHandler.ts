@@ -69,7 +69,7 @@ export abstract class BeanHandler {
 
     async checkAvailable(state?: applications.State): Promise<boolean> {
         state = state || this.application.getState();
-        if (state !== applications.State.CONNECTED_LAUNCH && state !== applications.State.CONNECTED_ATTACH) {
+        if (!applications.isConnected(state)) {
             this.setAvailable(false);
             return false;
         }

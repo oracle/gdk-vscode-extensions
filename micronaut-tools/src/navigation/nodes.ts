@@ -137,16 +137,20 @@ export abstract class SymbolNode<T extends symbols.Symbol> extends BaseNode {
         return this.symbol;
     }
 
-    setRuntimeStatus(disabledReasons?: string[]) {
-        if (!disabledReasons) { // bean not reported during runtime
+    setRuntimeStatus(disabledReasons: string[] | null | undefined) {
+        if (disabledReasons === undefined) { // symbol not reported during runtime or app finished
             this.iconPath = new vscode.ThemeIcon(this.icon);
             this.contextValue = this.baseContext;
             this.tooltip = this.baseTooltip;
-        } else if (!disabledReasons.length) { // bean available during runtime
+        } else if (disabledReasons === null) { // management feature not available (yet)
+            this.iconPath = new vscode.ThemeIcon(this.icon);
+            this.contextValue = this.baseContext + '.unknown.';
+            this.tooltip = this.baseTooltip;
+        } else if (!disabledReasons.length) { // symbol available during runtime
             this.iconPath = new vscode.ThemeIcon(this.icon, new vscode.ThemeColor('charts.green'));
             this.contextValue = this.baseContext + '.available.';
             this.tooltip = `${this.baseTooltip}\n\u2714 Available in running application`;
-        } else { // bean disabled during runtime
+        } else { // symbol disabled during runtime
             this.iconPath = new vscode.ThemeIcon(this.icon, new vscode.ThemeColor('charts.orange'));
             this.contextValue = this.baseContext + '.disabled.';
             this.tooltip = `${this.baseTooltip}\n\u2716 Disabled in running application:`;
@@ -195,12 +199,17 @@ export class ApplicationFolderNode extends BaseNode {
     private readonly folderData: workspaceFolders.FolderData;
 
     constructor(folder: workspaceFolders.FolderData, _iconsFolder: vscode.Uri, treeChanged: TreeChanged) {
-        super(folder.getWorkspaceFolder().name, undefined, ApplicationFolderNode.BASE_CONTEXT, [
+        super(folder.getWorkspaceFolder().name, undefined, ApplicationFolderNode.BASE_CONTEXT, [], true);
+        const children: BaseNode[] = [
             new ApplicationAddressNode(folder.getApplication(), treeChanged),
             new ApplicationEnvironmentsNode(folder.getApplication(), treeChanged),
             new ApplicationMonitoringNode(folder.getApplication(), treeChanged),
             new ApplicationControlPanelNode(folder.getApplication(), treeChanged)
-        ], true);
+        ];
+        if (folder.getApplication().getModule()) {
+            children.unshift(new ApplicationModuleNode(folder.getApplication(), treeChanged));
+        }
+        this.setChildren(children);
         this.tooltip = folder.getWorkspaceFolder().uri.fsPath;
         this.folderData = folder;
         // this.iconPath = vscode.Uri.joinPath(iconsFolder, 'micronaut.png');
@@ -265,6 +274,38 @@ export class ApplicationFolderNode extends BaseNode {
             contextValue += 'serverStoppable.';
         }
         this.contextValue = contextValue;
+    }
+
+}
+
+export class ApplicationModuleNode extends BaseNode {
+
+    private static readonly BASE_CONTEXT = 'extension.micronaut-tools.navigation.ApplicationModuleNode';
+
+    private readonly application: applications.Application;
+
+    constructor(application: applications.Application, treeChanged: TreeChanged) {
+        super('Subproject:', application.getModule() || 'application', ApplicationModuleNode.BASE_CONTEXT, null, undefined);
+        this.tooltip = 'Subproject of the GCN application';
+        this.application = application;
+
+        this.updateContext(this.application.getState());
+        this.application.onStateChanged(state => {
+            this.updateContext(state);
+            treeChanged(this);
+        });
+        this.application.onModuleChanged(module => {
+            this.description = module;
+            treeChanged(this);
+        });
+    }
+
+    editModule() {
+        this.application.editModule();
+    }
+
+    private updateContext(state: applications.State) {
+        this.contextValue = `${ApplicationModuleNode.BASE_CONTEXT}.${state}.`;
     }
 
 }
@@ -543,45 +584,51 @@ export class BeansFolderNode extends BaseNode {
         this.folderData = folder;
         folder.onUpdated((kind: string[], beans: symbols.Bean[], _endpoints: symbols.Endpoint[]) => {
             if (symbols.isBeanKind(kind)) {
-                this.reloadSymbol(beans, treeChanged);
+                this.reloadSymbol(beans, this.folderData.getApplication().getManagement().getBeansEndpoint().getRuntimeBeans() || [], treeChanged);
             }
         });
-        let lastRuntimeCount: number = 0;
-        folder.onRuntimeUpdated((kind: string[], beans: symbols.Bean[], _endpoints: symbols.Endpoint[]) => {
-            if (symbols.isBeanKind(kind) && beans.length !== lastRuntimeCount) {
-                lastRuntimeCount = beans.length;
-                this.reloadRuntimeSymbol(beans, treeChanged);
-            }
+        // let lastRuntimeCount: number = 0;
+        this.folderData.getApplication().getManagement().getBeansEndpoint().onBeansResolved(beans => {
+            // if (beans.length !== lastRuntimeCount) {
+            //     lastRuntimeCount = beans.length;
+                this.updateRuntimeStatus(beans, this.getChildren() || [], treeChanged);
+            // }
         });
     }
 
-    private reloadSymbol(beans: symbols.Bean[], treeChanged: TreeChanged) {
+    private reloadSymbol(beans: symbols.Bean[], runtimeBeans: symbols.Bean[] | null | undefined, treeChanged: TreeChanged) {
         const children: BaseNode[] = [];
         for (const bean of beans) {
             const beanNode = BeanNode.create(bean);
             children.push(beanNode);
         }
-        if (!children.length) {
+        if (children.length) {
+            this.updateRuntimeStatus(runtimeBeans, children, undefined);
+        } else {
             children.push(new NoItemsNode(BeansFolderNode.SUBJECT));
         }
         this.setChildren(children);
         treeChanged(this);
     }
 
-    private reloadRuntimeSymbol(beans: symbols.Bean[], treeChanged: TreeChanged) {
-        const beansMap: any = {};
-        for (const bean of beans) {
-            beansMap[bean.name] = (bean as any).disabledReasons || [];
-        }
-        const children = this.getChildren();
-        if (children) {
-            for (const child of children) {
-                if (child instanceof BeanNode) {
-                    (child as BeanNode).setRuntimeStatus(beansMap[child.getSymbol().name]);
+    private updateRuntimeStatus(runtimeBeans: symbols.Bean[] | null | undefined, children: BaseNode[], treeChanged: TreeChanged | undefined) {
+        if (children.length) {
+            const runtimeBeansMap: any = {};
+            if (runtimeBeans) {
+                for (const runtimeBean of runtimeBeans) {
+                    runtimeBeansMap[runtimeBean.name] = (runtimeBean as any).disabledReasons || [];
                 }
             }
+            for (const child of children) {
+                if (child instanceof BeanNode) {
+                    const status: string[] | null | undefined = runtimeBeans ? runtimeBeansMap[child.getSymbol().name] : runtimeBeans;
+                    (child as BeanNode).setRuntimeStatus(status);
+                }
+            }
+            if (treeChanged) {
+                treeChanged(this);
+            }
         }
-        treeChanged(this);
     }
 
     getFolderData(): workspaceFolders.FolderData {
@@ -603,45 +650,68 @@ export class EndpointsFolderNode extends BaseNode {
         this.folderData = folder;
         folder.onUpdated((kind: string[], _beans: symbols.Bean[], endpoints: symbols.Endpoint[]) => {
             if (symbols.isEndpointKind(kind)) {
-                this.reloadSymbol(endpoints, treeChanged);
+                this.reloadSymbol(endpoints, this.folderData.getApplication().getManagement().getRoutesEndpoint().getRuntimeEndpoints() || [], treeChanged);
             }
         });
-        let lastRuntimeCount: number = 0;
-        folder.onRuntimeUpdated((kind: string[], _beans: symbols.Bean[], endpoints: symbols.Endpoint[]) => {
-            if (symbols.isEndpointKind(kind) && endpoints.length !== lastRuntimeCount) {
-                lastRuntimeCount = endpoints.length;
-                this.reloadRuntimeSymbol(endpoints, treeChanged);
+        this.folderData.getApplication().onStateChanged(state => {
+            this.updateRuntimeStatus(applications.isConnected(state) ? null : undefined, this.getChildren() || [], treeChanged);
+            // if (state === applications.State.CONNECTED_LAUNCH || state === applications.State.CONNECTED_ATTACH) { // connected
+            //     setTimeout(() => {
+            //         if (!this.folderData.getApplication().getManagement().getRoutesEndpoint().isAvailable()) {
+            //             this.reloadRuntimeSymbol(null, this.getChildren() || [], treeChanged);
+            //         }
+            //     }, 150);
+            // } else if (previousState === applications.State.CONNECTED_LAUNCH || previousState === applications.State.CONNECTED_ATTACH) { // disconnected
+            //     this.reloadRuntimeSymbol(undefined, this.getChildren() || [], treeChanged);
+            // }
+        });
+        // this.folderData.getApplication().getManagement().getRoutesEndpoint().onAvailableChanged(available => {
+        //     console.log('>>> ENDPOINTS AVAILABLE: ' + available)
+        // });
+        // let lastRuntimeCount: number = 0;
+        this.folderData.getApplication().getManagement().getRoutesEndpoint().onEndpointsResolved(endpoints => {
+            // if (endpoints.length > 0 || lastRuntimeCount !== 0) {
+            //     lastRuntimeCount = endpoints.length;
+            if (endpoints) {
+                this.updateRuntimeStatus(endpoints, this.getChildren() || [], treeChanged);
             }
+            // }
         });
     }
 
-    private reloadSymbol(endpoints: symbols.Endpoint[], treeChanged: TreeChanged) {
+    private reloadSymbol(endpoints: symbols.Endpoint[], runtimeEndpoints: symbols.Endpoint[] | null | undefined, treeChanged: TreeChanged) {
         const children: BaseNode[] = [];
         for (const endpoint of endpoints) {
             const beanNode = EndpointNode.create(endpoint);
             children.push(beanNode);
         }
-        if (!children.length) {
+        if (children.length) {
+            this.updateRuntimeStatus(runtimeEndpoints, children, undefined);
+        } else {
             children.push(new NoItemsNode(EndpointsFolderNode.SUBJECT));
         }
         this.setChildren(children);
         treeChanged(this);
     }
 
-    private reloadRuntimeSymbol(endpoints: symbols.Endpoint[], treeChanged: TreeChanged) {
-        const endpointsMap: any = {};
-        for (const endpoint of endpoints) {
-            endpointsMap[EndpointsFolderNode.endpointID(endpoint)] = true;
-        }
-        const children = this.getChildren();
-        if (children) {
-            for (const child of children) {
-                if (child instanceof EndpointNode) {
-                    (child as EndpointNode).setRuntimeStatus(endpointsMap[EndpointsFolderNode.endpointID(child.getSymbol())]);
+    private updateRuntimeStatus(runtimeEndpoints: symbols.Endpoint[] | null | undefined, children: BaseNode[], treeChanged: TreeChanged | undefined) {
+        if (children.length) {
+            const runtimeEndpointsMap: any = {};
+            if (runtimeEndpoints) {
+                for (const runtimeEndpoint of runtimeEndpoints) {
+                    runtimeEndpointsMap[EndpointsFolderNode.endpointID(runtimeEndpoint)] = true;
                 }
             }
+            for (const child of children) {
+                if (child instanceof EndpointNode) {
+                    const status: string[] | null | undefined = runtimeEndpoints ? runtimeEndpointsMap[EndpointsFolderNode.endpointID(child.getSymbol())] : runtimeEndpoints;
+                    (child as EndpointNode).setRuntimeStatus(status);
+                }
+            }
+            if (treeChanged) {
+                treeChanged(this);
+            }
         }
-        treeChanged(this);
     }
 
     getFolderData(): workspaceFolders.FolderData {

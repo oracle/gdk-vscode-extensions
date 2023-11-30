@@ -7,7 +7,6 @@
 
 import * as vscode from 'vscode';
 import * as applications from '../applications';
-import * as symbols from '../symbols';
 import * as beanHandler from './beanHandler';
 import * as refreshEndpoint from './refreshEndpoint';
 import * as serverStopEndpoint from './serverStopEndpoint';
@@ -42,28 +41,19 @@ export class Management extends beanHandler.BeanHandler {
     private loggersEndpoint: loggersEndpoint.LoggersEndpoint;
     private cachesEndpoint: cachesEndpoint.CachesEndpoint;
 
-    private symbolEvents: symbols.Events;
-
     constructor(application: applications.Application) {
         super(application);
-        this.symbolEvents = new symbols.Events();
         this.refreshEndpoint = refreshEndpoint.forApplication(application);
         this.serverStopEndpoint = serverStopEndpoint.forApplication(application);
         this.environmentEndpoint = environmentEndpoint.forApplication(application);
         this.beansEndpoint = beansEndpoint.forApplication(application);
-        this.beansEndpoint.onBeansResolved(beans => {
-            this.symbolEvents.notifyUpdated([symbols.Bean.KIND], beans, []);
-        });
         this.routesEndpoint = routesEndpoint.forApplication(application);
-        this.routesEndpoint.onEndpointsResolved(endpoints => {
-            this.symbolEvents.notifyUpdated([symbols.Endpoint.KIND], [], endpoints);
-        });
         this.healthEndpoint = healthEndpoint.forApplication(application);
         this.metricsEndpoint = metricsEndpoint.forApplication(application);
         this.loggersEndpoint = loggersEndpoint.forApplication(application);
         this.cachesEndpoint = cachesEndpoint.forApplication(application);
         application.onStateChanged(async (state, previousState) => {
-            if (state === applications.State.CONNECTED_LAUNCH || state === applications.State.CONNECTED_ATTACH) {
+            if (applications.isConnected(state)) {
                 this.setAvailable(undefined);
                 const available = [
                     this.refreshEndpoint.checkAvailable(),
@@ -119,9 +109,8 @@ export class Management extends beanHandler.BeanHandler {
                 this.loggersEndpoint.checkAvailable();
                 this.cachesEndpoint.checkAvailable();
                 this.setAvailable(false)
-                if (previousState === applications.State.CONNECTED_LAUNCH || previousState === applications.State.CONNECTED_ATTACH) {
+                if (applications.isConnected(previousState)) {
                     this.notifyFeaturesAvailableChanged(false, false);
-                    this.symbolEvents.notifyUpdated([symbols.Bean.KIND, symbols.Endpoint.KIND], [], []);
                 }
             }
         });
@@ -154,6 +143,14 @@ export class Management extends beanHandler.BeanHandler {
 
     getEnvironmentEndpoint(): environmentEndpoint.EnvironmentEndpoint {
         return this.environmentEndpoint;
+    }
+
+    getBeansEndpoint(): beansEndpoint.BeansEndpoint {
+        return this.beansEndpoint;
+    }
+
+    getRoutesEndpoint(): routesEndpoint.RoutesEndpoint {
+        return this.routesEndpoint;
     }
 
     getHealthEndpoint(): healthEndpoint.HealthEndpoint {
@@ -275,10 +272,6 @@ export class Management extends beanHandler.BeanHandler {
         for (const listener of this.onFeaturesAvailableChangedListeners) {
             listener(refreshAvailable, serverStopAvailable);
         }
-    }
-
-    onRuntimeSymbolsUpdated(listener: symbols.OnUpdated) {
-        this.symbolEvents.onUpdated(listener);
     }
 
 }

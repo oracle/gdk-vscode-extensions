@@ -8,14 +8,13 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as applications from '../applications';
-// import * as rest from '../rest';
 import * as symbols from '../symbols';
 import * as beanHandler from './beanHandler';
 
 
 const RELATIVE_ADDRESS = '/beans';
 
-export type OnBeansResolved = (beans: symbols.Bean[]) => void;
+export type OnBeansResolved = (beans: symbols.Bean[] | null | undefined) => void;
 
 export function forApplication(application: applications.Application) {
     return new BeansEndpoint(application);
@@ -23,8 +22,14 @@ export function forApplication(application: applications.Application) {
 
 export class BeansEndpoint extends beanHandler.BeanHandler {
 
+    private runtimeBeans: symbols.Bean[] | null | undefined;
+
     constructor(application: applications.Application) {
         super(application, RELATIVE_ADDRESS)
+    }
+
+    getRuntimeBeans(): symbols.Bean[] | null | undefined {
+        return this.runtimeBeans;
     }
 
     protected async processResponse(response: { code: number | undefined; headers: any; data: any }) {
@@ -44,7 +49,16 @@ export class BeansEndpoint extends beanHandler.BeanHandler {
             const disabledReasons = bean.reasons;
             resolved.push(new RuntimeBean(beanType, beanType, disabledReasons, this.application));
         }
+        this.runtimeBeans = resolved;
         this.notifyBeansResolved(resolved);
+    }
+
+    protected setAvailable(available: boolean | undefined) {
+        super.setAvailable(available);
+        if (!available) {
+            this.runtimeBeans = this.application.isConnected() ? null : undefined;
+            this.notifyBeansResolved(this.runtimeBeans);
+        }
     }
 
     buildVmArgs(): string | undefined {
@@ -60,7 +74,7 @@ export class BeansEndpoint extends beanHandler.BeanHandler {
         this.onBeansResolvedListeners.push(listener);
     }
 
-    private notifyBeansResolved(beans: symbols.Bean[]) {
+    private notifyBeansResolved(beans: symbols.Bean[] | null | undefined) {
         for (const listener of this.onBeansResolvedListeners) {
             listener(beans);
         }

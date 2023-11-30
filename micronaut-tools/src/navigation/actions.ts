@@ -20,6 +20,7 @@ export const COMMAND_CONNECT_APPLICATION = 'extension.micronaut-tools.navigation
 export const COMMAND_DISCONNECT_APPLICATION = 'extension.micronaut-tools.navigation.disconnectApplication';
 export const COMMAND_CANCEL_CONNECT_APPLICATION = 'extension.micronaut-tools.navigation.cancelConnectApplication';
 export const COMMAND_STOP_APPLICATION = 'extension.micronaut-tools.navigation.stopApplication';
+export const COMMAND_EDIT_MODULE = 'extension.micronaut-tools.navigation.editModule';
 export const COMMAND_EDIT_ADDRESS = 'extension.micronaut-tools.navigation.editAddress';
 export const COMMAND_CONFIGURE_ENVIRONMENTS = 'extension.micronaut-tools.navigation.configureEnvironments';
 export const COMMAND_EDIT_ENVIRONMENTS = 'extension.micronaut-tools.navigation.editEnvironments';
@@ -78,6 +79,11 @@ export function initialize(context: vscode.ExtensionContext) {
         if (node) {
             const application = node.getFolderData().getApplication();
             application.stopDebugSession();
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_EDIT_MODULE, (node: nodes.ApplicationModuleNode) => {
+        if (node) {
+            node.editModule();
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_EDIT_ADDRESS, (node: nodes.ApplicationAddressNode) => {

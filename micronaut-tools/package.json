@@ -223,6 +223,12 @@
 				"category": "Micronaut Tools"
 			},
 			{
+				"command": "extension.micronaut-tools.navigation.editModule",
+				"title": "%extension.micronaut-tools.navigation.editModule.title%",
+				"icon": "$(edit)",
+				"category": "Micronaut Tools"
+			},
+			{
 				"command": "extension.micronaut-tools.navigation.editAddress",
 				"title": "%extension.micronaut-tools.navigation.editAddress.title%",
 				"icon": "$(edit)",
@@ -482,6 +488,10 @@
 					"when": "false"
 				},
 				{
+					"command": "extension.micronaut-tools.navigation.editModule",
+					"when": "false"
+				},
+				{
 					"command": "extension.micronaut-tools.navigation.editAddress",
 					"when": "false"
 				},
@@ -652,6 +662,16 @@
 					"group": "context@5"
 				},
 				{
+					"command": "extension.micronaut-tools.navigation.editModule",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationModuleNode.idle.",
+					"group": "inline@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editModule",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationModuleNode.idle.",
+					"group": "context@4"
+				},
+				{
 					"command": "extension.micronaut-tools.navigation.editAddress",
 					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationAddressNode.idle.",
 					"group": "inline@4"
@@ -748,7 +768,7 @@
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.composeRestQuery",
-					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.EndpointNode\\.(GET|HEAD|POST|PATCH|PUT|DELETE)\\.available\\./",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.EndpointNode\\.(GET|HEAD|POST|PATCH|PUT|DELETE)\\.(available|unknown)\\./",
 					"group": "inline@4"
 				},
 				{
@@ -758,7 +778,7 @@
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.openInBrowser",
-					"when": "viewItem == extension.micronaut-tools.navigation.EndpointNode.GET.available.",
+					"when": "viewItem == extension.micronaut-tools.navigation.EndpointNode.GET.available. || viewItem == extension.micronaut-tools.navigation.EndpointNode.GET.unknown.",
 					"group": "inline@3"
 				},
 				{
