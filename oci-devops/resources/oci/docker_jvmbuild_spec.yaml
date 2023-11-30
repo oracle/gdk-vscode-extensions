@@ -38,6 +38,8 @@ timeoutInSeconds: 15000
 runAs: root
 shell: bash
 env:
+  variables:
+    JAVA_VERSION : "21"
   exportedVariables:
     - JAVA_HOME
     - JAR_FILE
@@ -93,6 +95,7 @@ steps:
       echo "JAR_FILE: ${JAR_FILE}"
       docker build -f ./.devops/Dockerfile.jvm \
                   --build-arg JAR_FILE={{{project_artifact_location}}} \
+                  --build-arg LIBS=target/libs \
                   -t {{{image_name}}}:${DOCKER_TAG} -t {{{image_name}}}:latest .
       echo "Done"
       printf "List of docker images:\n $(docker images)"
