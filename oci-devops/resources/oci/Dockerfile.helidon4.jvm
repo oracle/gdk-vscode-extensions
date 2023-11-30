@@ -1,7 +1,10 @@
-FROM container-registry.oracle.com/java/openjdk:17
+FROM openjdk:21-jdk
 
 ARG JAR_FILE
+ARG LIBS
 EXPOSE 8080
 
 COPY $JAR_FILE app.jar
+COPY $LIBS ./libs
+
 ENTRYPOINT ["java","-jar","/app.jar"]

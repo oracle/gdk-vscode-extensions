@@ -23,6 +23,10 @@
 # Example GraalVM EE 21.x.y JDK 17:
 # GRAALVM_VERSION : "21"
 # JAVA_VERSION : "17"
+# Example for Helidon 4:
+# env:
+#   variables:
+#     JAVA_VERSION : "21"
 #
 # GraalVM Enterprise Edition is installed from OCI yum repo. It is possible to check available
 # RPM packages using OCI Console command: $ yum list available | grep graalvm.*ee.*native-image
@@ -38,8 +42,6 @@ timeoutInSeconds: 15000
 runAs: root
 shell: bash
 env:
-  variables:
-    JAVA_VERSION : "21"
   exportedVariables:
     - JAVA_HOME
     - JAR_FILE
@@ -93,11 +95,18 @@ steps:
       echo "Running docker build to include built application into it."
       echo "Docker Image Tag: ${DOCKER_TAG}"
       echo "JAR_FILE: ${JAR_FILE}"
-      docker build -f ./.devops/Dockerfile.jvm \
-                  --build-arg JAR_FILE={{{project_artifact_location}}} \
-                  --build-arg LIBS=target/libs \
-                  -t {{{image_name}}}:${DOCKER_TAG} -t {{{image_name}}}:latest .
-      echo "Done"
+      if [ "${JAVA_VERSION}" = "21" ]; then
+        docker build -f ./.devops/Dockerfile.helidon4.jvm \
+                    --build-arg JAR_FILE={{{project_artifact_location}}} \
+                    --build-arg LIBS=target/libs \
+                    -t {{{image_name}}}:${DOCKER_TAG} -t {{{image_name}}}:latest .
+        echo "Done"
+      else
+        docker build -f ./.devops/Dockerfile.jvm \
+                    --build-arg JAR_FILE={{{project_artifact_location}}} \
+                    -t {{{image_name}}}:${DOCKER_TAG} -t {{{image_name}}}:latest .
+        echo "Done"
+      fi
       printf "List of docker images:\n $(docker images)"
 outputArtifacts:
   - name: {{{deploy_artifact_name}}}
