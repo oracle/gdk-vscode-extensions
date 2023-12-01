@@ -100,6 +100,9 @@ export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<
         } else if (fs.existsSync(path.join(subprojects.length > 0 ? path.join(folder.uri.fsPath, 'app') : folder.uri.fsPath, 'src', 'main', 'resources', 'application.properties'))) {
             const projectType: ProjectType = 'SpringBoot';
             return Object.assign({}, folder, { projectType, buildSystem, subprojects });
+        } else if (fs.existsSync(path.join(folder.uri.fsPath, '.helidon'))) {
+            const projectType: ProjectType = 'Helidon';
+            return Object.assign({}, folder, { projectType, buildSystem, subprojects });
         } else {
             const projectType: ProjectType = 'Unknown';
             return Object.assign({}, folder, { projectType, buildSystem, subprojects: [] });
@@ -113,13 +116,16 @@ export async function getProjectBuildCommand(folder: ProjectFolder, subfolder: s
         if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {
             return 'chmod 777 ./mvnw && ./mvnw package --no-transfer-progress -DskipTests';
         }
+        if(folder.projectType === 'Helidon') {
+            return 'mvn package -DskipTests'
+        }
         if (folder.projectType === 'GCN') {
             return `chmod 777 ./mvnw && ./mvnw package -pl ${subfolder} -am --no-transfer-progress -DskipTests`;
         }
         return await vscode.window.showInputBox({ title: 'Provide Command to Build Project', value: 'mvn package'});
     }
     if (isGradle(folder)) {
-        if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {
+        if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot' || folder.projectType === 'Helidon') {
             return 'chmod 777 ./gradlew && ./gradlew build -x test';
         }
         if (folder.projectType === 'GCN') {
@@ -138,6 +144,10 @@ export async function getProjectBuildNativeExecutableCommand(folder: ProjectFold
         if (folder.projectType === 'SpringBoot') {
             return 'chmod 777 ./mvnw && ./mvnw --no-transfer-progress native:compile -Pnative -DskipTests';
         }
+        if (folder.projectType === 'Helidon') {
+            // TODO: Return Helidon 4 build native execute command for Maven
+            return '';
+        }
         if (folder.projectType === 'GCN') {
             let appName = undefined;
             if (fs.existsSync(path.join(folder.uri.fsPath, 'app'))) {
@@ -155,6 +165,10 @@ export async function getProjectBuildNativeExecutableCommand(folder: ProjectFold
     if (isGradle(folder)) {
         if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {
             return 'chmod 777 ./gradlew && ./gradlew nativeCompile -x test';
+        }
+        if (folder.projectType === 'Helidon') {
+            // TODO:  Return Helidon 4 build native execute command for Gradle
+            return '';
         }
         if (folder.projectType === 'GCN') {
             return `chmod 777 ./gradlew && ./gradlew ${subfolder || 'oci'}:nativeCompile -x test`;
@@ -225,6 +239,9 @@ export async function getProjectBuildArtifactLocation(folder: ProjectFolder, sub
         if (folder.projectType === 'SpringBoot') {
             return `target/${folder.name}-${tryReadMavenVersion(folder.uri.fsPath)}.jar`;
         }
+        if (folder.projectType === 'Helidon') {
+            return `target/${folder.name}-${tryReadMavenVersion(folder.uri.fsPath)}.jar`;
+        }
         if (folder.projectType === 'GCN') {
             const subPath = path.resolve(folder.uri.fsPath, subfolder);
             return `${subfolder}/target/${subfolder}-${tryReadMavenVersion(subPath)}.jar`;
@@ -235,6 +252,9 @@ export async function getProjectBuildArtifactLocation(folder: ProjectFolder, sub
             return `build/libs/${folder.name}-${tryReadGradleVersion(folder.uri.fsPath)}-all.jar`;
         }
         if (folder.projectType === 'SpringBoot') {
+            return `build/libs/${folder.name}-${tryReadGradleVersion(folder.uri.fsPath, '0.0.1')}-SNAPSHOT.jar`;
+        }
+        if (folder.projectType === 'Helidon') {
             return `build/libs/${folder.name}-${tryReadGradleVersion(folder.uri.fsPath, '0.0.1')}-SNAPSHOT.jar`;
         }
         if (folder.projectType === 'GCN') {
@@ -267,6 +287,10 @@ export async function getProjectNativeExecutableArtifactLocation(folder: Project
         if (folder.projectType === 'GCN') {
             return `${subfolder}/target/${subfolder}`;
         }
+        if (folder.projectType === 'Helidon') {
+            // TODO: return Helidon native executable artifact location for Maven
+            return '';
+        }
     }
     if (isGradle(folder)) {
         if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {
@@ -274,6 +298,10 @@ export async function getProjectNativeExecutableArtifactLocation(folder: Project
         }
         if (folder.projectType === 'GCN') {
             return `${subfolder}/build/native/nativeCompile/${subfolder}`;
+        }
+        if (folder.projectType === 'Helidon') {
+            // TODO: return Helidon native executable artifact location for Gradle
+            return '';
         }
     }
     return undefined;
@@ -283,7 +311,7 @@ export function getCloudSpecificSubProjectNames(folder: ProjectFolder): string[]
     return folder.subprojects.map(sub => sub.name).filter(name => name !== 'app' && name !== 'lib') || [];
 }
 
-export type ProjectType = 'GCN' | 'Micronaut' | 'SpringBoot' | 'Unknown';
+export type ProjectType = 'GCN' | 'Micronaut' | 'SpringBoot' | 'Helidon' | 'Unknown';
 export type BuildSystemType = 'Maven' | 'Gradle';
 
 export interface ProjectFolder extends vscode.WorkspaceFolder {

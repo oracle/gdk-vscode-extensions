@@ -1,0 +1,112 @@
+#####################################################################
+# Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+#####################################################################
+
+#####################################################################
+#
+# OCI DevOps Tools Build Pipeline Spec for Maven & Gradle
+# Builds application Docker fat jar and deploys it to
+# Container Registry
+#
+# Build pipeline accepts these optional paramateres:
+# GRAALVM_VERSION - Major GraalVM version number, e.g. 22 for 22.2.0 release
+# JAVA_VERSION - Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11
+# PROJECT_NAME - Name of Java project as defined in pom.xml for Maven or settings.gradle for Gradle project.
+#
+# Set following Parameters for Build Pipeline either in OCI UI or when calling the build from IDE
+# Example GraalVM EE 22.x.y JDK 11:
+# GRAALVM_VERSION : "22"
+# JAVA_VERSION : "11"
+# Example GraalVM EE 21.x.y JDK 17:
+# GRAALVM_VERSION : "21"
+# JAVA_VERSION : "21"
+#
+# Set this Parameter to setup the target framework "Helidon" or "Micronaut"
+# TARGET_FRAMEWORK="Helidon"
+# Example:
+# env:
+#   variables:
+#     -  TARGET_FRAMEWORK : "Helidon"
+#
+# GraalVM Enterprise Edition is installed from OCI yum repo. It is possible to check available
+# RPM packages using OCI Console command: $ yum list available | grep graalvm.*ee.*native-image
+#
+# GraalVM RPM filename looks like: 'graalvm22-ee-11-native-image'
+# GraalVM installation dir as created by RPM package looks like: '/usr/lib64/graalvm/graalvm/graalvm22-ee-java11'
+#
+# Set USE_NATIVE_IMAGE_JAVA_PLATFORM_MODULE_SYSTEM=false only for GraalVM 22.2.0 Native image builds, due to bug in NI
+#####################################################################
+version: 0.1
+component: build
+timeoutInSeconds: 15000
+runAs: root
+shell: bash
+env:
+  variables:
+    JAVA_VERSION : "21"
+  exportedVariables:
+    - JAVA_HOME
+    - JAR_FILE
+    - DOCKER_TAG
+steps:
+  - type: Command
+    name: "Install GraalVM EE - JDK and Native Image"
+    timeoutInSeconds: 300
+    command: |
+      if [ ! -n "${GRAALVM_VERSION}" ]; then export GRAALVM_VERSION={{{default_graalvm_version}}}; fi
+      if [ ! -n "${JAVA_VERSION}" ]; then export JAVA_VERSION={{{default_java_version}}}; fi
+      echo "GRAALVM_VERSION: ${GRAALVM_VERSION}, Java Version: ${JAVA_VERSION}"
+      if [ "${GRAALVM_VERSION}" -ge 23 ]; then
+        echo "yum -y install graalvm-${JAVA_VERSION}-jdk";
+        yum -y install graalvm-${JAVA_VERSION}-jdk;
+        export JAVA_HOME=`rpm -ql graalvm-${JAVA_VERSION}-jdk | grep "bin/javac" | sed "s/\/bin\/javac$//"`;
+      else
+        echo "yum -y install graalvm${GRAALVM_VERSION}-ee-${JAVA_VERSION}-jdk";
+        yum -y install graalvm${GRAALVM_VERSION}-ee-${JAVA_VERSION}-jdk;
+        export JAVA_HOME=/usr/lib64/graalvm/graalvm${GRAALVM_VERSION}-ee-java${JAVA_VERSION};
+      fi
+      echo "Exported JAVA_HOME: ${JAVA_HOME}"
+  - type: Command
+    name: "Set the PATH"
+    timeoutInSeconds: 40
+    command: |
+      export PATH=${JAVA_HOME}/bin:${PATH}
+      echo "Updated PATH: ${PATH}"
+  - type: Command
+    name: "Define docker image tag"
+    timeoutInSeconds: 40
+    command: |
+      echo "OCI_BUILD_RUN_ID: ${OCI_BUILD_RUN_ID}"
+      export DOCKER_TAG="latest"
+      echo "DOCKER_TAG: ${DOCKER_TAG}"
+  - type: Command
+    name: "Package application"
+    command: |
+      echo "Executing build command: {{{project_build_command}}}"
+      {{{project_build_command}}}
+    onFailure:
+      - type: Command
+        command: |
+          echo "Handling Failure"
+          echo "Failure successfully handled"
+        timeoutInSeconds: 40
+        runAs: root
+  - type: Command
+    name: "Docker build"
+    command: |
+      echo "Running docker build to include built application into it."
+      echo "Docker Image Tag: ${DOCKER_TAG}"
+      echo "JAR_FILE: ${JAR_FILE}"
+        docker build -f ./.devops/Dockerfile.helidon4.jvm \
+                    --build-arg JAR_FILE={{{project_artifact_location}}} \
+                    --build-arg LIBS=target/libs \
+                    -t {{{image_name}}}:${DOCKER_TAG} -t {{{image_name}}}:latest .
+      echo "Done"
+      printf "List of docker images:\n $(docker images)"
+outputArtifacts:
+  - name: {{{deploy_artifact_name}}}
+    type: DOCKER_IMAGE
+    location: {{{image_name}}}:latest

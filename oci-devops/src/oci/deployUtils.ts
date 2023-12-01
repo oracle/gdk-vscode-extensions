@@ -302,6 +302,14 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                     if (deployData.okeCluster) {
                         totalSteps += 8; // OKE setup command spec and artifact, OKE deploy spec and artifact, deploy to OKE pipeline, dev OKE deploy spec and artifact, dev deploy to OKE pipeline
                     }
+                } else if (projectFolder.projectType === 'Helidon') {
+                    totalSteps += 8; // Jar build spec and pipeline, build spec and pipeline, Docker jvm image, build spec and pipeline, jvm container repository
+                    if (!bypassArtifacts) {
+                        totalSteps += 1; // Jar artifact
+                    }
+                    if (deployData.okeCluster) {
+                        totalSteps += 8; // OKE setup command spec and artifact, OKE deploy spec and artifact, deploy to OKE pipeline, dev OKE deploy spec and artifact, dev deploy to OKE pipeline
+                    }
                 } else {
                     const baLocation = await projectUtils.getProjectBuildArtifactLocation(projectFolder);
                     let buildCommand;
@@ -2197,7 +2205,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                     // Add /bin folders created by EDT to .gitignore
                     gitUtils.addGitIgnoreEntry(folder.uri.fsPath, '**/bin');
 
-                } else { // Micronaut, SpringBoot, other Java projects
+                } else { // Micronaut, SpringBoot, Helidon 4, other Java projects
                     logUtils.logInfo(`[deploy] ${folder.projectType !== 'Unknown' ? 'Recognized ' : ''}${folder.projectType} project in ${deployData.compartment.name}/${projectName}/${repositoryName}`);
 
                     if (project_native_executable_artifact_location && project_build_native_executable_command) {
@@ -2249,6 +2257,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         }
 
                         // --- Generate docker native image build spec
+                        // TODO: Native image build for Helidon 4
                         progress.report({
                             increment,
                             message: `Creating ${NI_CONTAINER_NAME_LC} build spec for source code repository ${repositoryName}...`
@@ -2764,7 +2773,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             increment,
                             message: `Creating ${JVM_CONTAINER_NAME_LC} build build spec for source code repository ${repositoryName}...`
                         });
-                        const docker_jvmbuildspec_template = 'docker_jvmbuild_spec.yaml';
+                        var docker_jvmbuildspec_template = 'docker_jvmbuild_spec.yaml';
                         const docker_jvmbuildArtifactName = `${repositoryName}_jvm_docker_image`;
                         logUtils.logInfo(`[deploy] Creating ${JVM_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const docker_jvmbuildTemplate = expandTemplate(resourcesPath, docker_jvmbuildspec_template, {
@@ -2779,7 +2788,12 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             resolve(`Failed to configure ${JVM_CONTAINER_NAME_LC} build spec for ${repositoryName}`);
                             return;
                         }
-                        const docker_jvm_file = 'Dockerfile.jvm';
+                        var docker_jvm_file = 'Dockerfile.jvm';
+                        if(folder.projectType == 'Helidon')
+                        {
+                            docker_jvmbuildspec_template = 'docker_jvmbuild_spec_helidon.yaml';
+                            docker_jvm_file = 'Dockerfile.helidon4.jvm'
+                        }
                         const docker_jvmFile = expandTemplate(resourcesPath, docker_jvm_file, {}, folder);
                         if (!docker_jvmFile) {
                             resolve(`Failed to configure ${JVM_CONTAINER_NAME_LC} file for ${repositoryName}`);
