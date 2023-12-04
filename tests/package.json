@@ -23,10 +23,7 @@
     "headless": "xvfb-run -a npm run",
     "test": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --runTest",
     "pre-test-ui": "npm run pre-test",
-    "test-ui": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --runTest-ui",
-    "try": "npm run compile; npm run generate; npm run test",
-    "try-ui": "npm run compile; npm run generate; npm run test-ui",
-    "report": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --report"
+    "test-ui": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --runTest-ui"
   },
   "author": {
     "name": "Oracle Labs"
@@ -71,6 +68,7 @@
     "vscode": "^1.1.37",
     "vscode-extension-tester": "^5.10.0",
     "webpack": "^5.74.0",
-    "webpack-cli": "^4.10.0"
+    "webpack-cli": "^4.10.0",
+		"nodejs-file-downloader": "^4.12.1"
   }
 }

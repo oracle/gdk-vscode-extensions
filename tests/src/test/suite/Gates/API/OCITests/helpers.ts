@@ -8,7 +8,6 @@ import * as path from 'path';
 import { ChangeableNode } from '../../../../../../../oci-devops/out/nodes';
 import * as fs from 'fs';
 import axios from 'axios';
-import { v4 as uuidv4 } from 'uuid';
 
 export function serverResponse(randomNumber: string): string {
   return `Server response is ${randomNumber}`;
@@ -49,12 +48,6 @@ export async function functionAskServer(randomNumber: string, port: number): Pro
   return (await axios.get(`http://localhost:${port}/test${randomNumber}`)).data;
 }
 
-export function generateUID(): string {
-  const fullUUID = uuidv4();
-  const shortUUID = fullUUID.substr(0, 8);
-  return shortUUID;
-}
-
 export function getProfile(profiles: string[]): string {
   if (profiles.length === 1) return profiles[0];
   else if (profiles.indexOf('TESTS') !== -1) return 'TESTS';
@@ -84,33 +77,6 @@ export async function waitForContextChange(
     }
   }
   return undefined;
-}
-
-export async function waitForStatup(wf?: vscode.WorkspaceFolder): Promise<void> {
-  if (!wf) {
-    return;
-  }
-  let wf2 = wf;
-  let counter = 0;
-  let p: Promise<void> = new Promise(async (resolve, reject) => {
-    async function dowait() {
-      try {
-        await vscode.commands.executeCommand('nbls.project.info', wf2.uri.toString(), { projectStructure: true });
-        resolve();
-      } catch (e) {
-        if (counter < 60) {
-          counter++;
-          console.log(`Still waiting for NBLS start, ${counter} seconds elapsed.`);
-          setTimeout(dowait, 1000);
-          return;
-        } else {
-          reject(e);
-        }
-      }
-    }
-    setTimeout(dowait, 1000);
-  });
-  return p;
 }
 
 export type DeploymentResources = {

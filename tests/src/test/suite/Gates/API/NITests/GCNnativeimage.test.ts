@@ -85,7 +85,7 @@ async function testAll(
   compileTest: boolean = true,
   maven: boolean = true,
   gradle: boolean = true,
-  java: SupportedJava = SupportedJava.AnyJava17,
+  java: SupportedJava = SupportedJava.JDK_17,
 ) {
   await creator.CreateProject(
     async (tool: BuildTool) => await createProject(tool),

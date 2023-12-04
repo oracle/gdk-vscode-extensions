@@ -8,8 +8,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
-import { Arg, BuildTool, CopiedProject, Feature, GeneratedProject, SupportedJava } from './types';
+import { v4 as uuidv4 } from 'uuid';
+import type { Arg } from './types';
 
+/**
+ * Return list of names of sub directories in parent folder
+ * @param projectPath parent folder
+ * @returns sub directories names or empty list
+ */
 export function getSubDirs(projectPath: string): string[] {
   return fs.existsSync(projectPath)
     ? fs
@@ -19,6 +25,12 @@ export function getSubDirs(projectPath: string): string[] {
     : [];
 }
 
+/**
+ * Finds all files matching glob pattern in parent folder and its subdirectories
+ * @param testFolder parent folder
+ * @param globPatterns glob pattern for filename resolution
+ * @returns object where keys are folder paths and values are lists of filenames
+ */
 export function findFiles(testFolder: string, ...globPatterns: string[]): { [directory: string]: string[] } {
   const out: { [directory: string]: string[] } = {};
   for (const pattern of globPatterns) {
@@ -37,19 +49,12 @@ export function findFiles(testFolder: string, ...globPatterns: string[]): { [dir
   return out;
 }
 
-export function genProj(
-  buildTool: BuildTool,
-  features: Feature[],
-  name?: string,
-  java?: SupportedJava,
-): GeneratedProject {
-  return { _type: 'generated', buildTool, features, java, name };
-}
-
-export function copProj(copyPath: string, name?: string): CopiedProject {
-  return { _type: 'copied', copyPath, name };
-}
-
+/**
+ * Copies src folder to dest folder if src folder exists
+ * @param src source folder
+ * @param dest destination folder
+ * @param cleanif true the destination folder will be removed before copy
+ */
 export function copyRecursiveSync(src: string, dest: string, clean: boolean = false) {
   if (!fs.existsSync(src)) {
     throw new Error("Src doesn't exist: " + src);
@@ -68,6 +73,11 @@ function _copyRecursiveSync(src: string, dest: string) {
   }
 }
 
+/**
+ * Parses launch arguments into "simple" list of objects {@link Arg} to ease of use
+ * @param args launch arguments
+ * @returns parsed arguments
+ */
 export function parseArgs(args: string[]): Arg<string>[] {
   let current: Arg<string> = { name: '__all__', args: [] };
   const out: Arg<string>[] = [current];
@@ -80,3 +90,13 @@ export function parseArgs(args: string[]): Arg<string>[] {
   out[0].args = out[0].args.slice(2);
   return out;
 }
+
+/**
+ * Generates 8 character long UUID
+ * @returns 8 characters long random string
+ */
+export function generateUID(): string {
+    const fullUUID = uuidv4();
+    const shortUUID = fullUUID.substr(0, 8);
+    return shortUUID;
+  }

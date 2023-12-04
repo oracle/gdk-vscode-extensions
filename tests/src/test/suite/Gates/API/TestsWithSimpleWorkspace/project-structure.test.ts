@@ -112,7 +112,7 @@ async function createAndTest(options: Common.CreateOptions, name: string): Promi
   const jsonData = JSON.parse(jsonString);
   compareStructures(projFolder, jsonData);
 
-  fs.rmdirSync(projFolder, { recursive: true });
+  fs.rmSync(projFolder, { recursive: true });
 }
 
 /**

@@ -12,6 +12,8 @@ import { NodeProvider } from '../../../../../../../oci-devops/out/servicesView';
 import { BuildPipelineNode } from '../../../../../../../oci-devops/out/oci/buildServices';
 import * as helper from './helpers';
 import { DeploymentPipelineNode } from '../../../../../../../oci-devops/out/oci/deploymentServices';
+import { waitForStatup } from '../helpers';
+import { generateUID } from '../../../../../Common/helpers';
 
 suite('Oci Combined pipelines test', function () {
   const wf = vscode.workspace.workspaceFolders;
@@ -45,7 +47,7 @@ suite('Oci Combined pipelines test', function () {
   suite('Test configuaration', function () {
     suite('Prepare poject', async function () {
       test('Create controller', async function () {
-        randNumber = helper.generateUID();
+        randNumber = generateUID();
         assert.ok(wf);
         assert.ok(wf.length === 1);
         const project = wf[0];
@@ -125,7 +127,7 @@ suite('Oci Combined pipelines test', function () {
         // the timeout will propagate to beforeAll hook
         this.timeout(5 * 60 * 1000);
         this.beforeAll(async () => {
-          await helper.waitForStatup(wf![0]);
+          await waitForStatup(wf![0]);
         });
 
         // This test must be run first, in order to activate the extension (and wait for the activation to complete)

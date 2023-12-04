@@ -8,13 +8,13 @@
 import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import * as fs from 'fs';
-import * as http from 'http';
 import * as https from 'https';
 import * as path from 'path';
 import * as decompress from 'decompress';
 import { getMicronautHome, getMicronautLaunchURL } from './utils';
 import { getJavaHome, getJavaVMs } from "../../common/lib/utils";
 import { simpleProgress, MultiStepInput, handleNewGCNProject } from "../../common/lib/dialogs";
+import { downloadJSON } from "../../common/lib/connections";
 
 const HTTP_PROTOCOL: string = 'http://';
 const HTTPS_PROTOCOL: string = 'https://';
@@ -394,13 +394,13 @@ function parseJavaVersion(j : string) : number | undefined {
 async function getMicronautVersions(): Promise<{label: string; serviceUrl: string}[]> {
     const micronautLauchURL: string = getMicronautLaunchURL();
     return simpleProgress("Obtaining Micronaut versions...", () => Promise.all([
-        get(MICRONAUT_LAUNCH_URL + VERSIONS, 5000).catch(() => undefined).then(data => {
+        downloadJSON(MICRONAUT_LAUNCH_URL + VERSIONS, 5000).catch(() => undefined).then(data => {
             return data ? { label: JSON.parse(data).versions["micronaut.version"], serviceUrl: MICRONAUT_LAUNCH_URL } : undefined;
         }),
-        get(MICRONAUT_SNAPSHOT_URL + VERSIONS, 5000).catch(() => undefined).then(data => {
+        downloadJSON(MICRONAUT_SNAPSHOT_URL + VERSIONS, 5000).catch(() => undefined).then(data => {
             return data ? { label: JSON.parse(data).versions["micronaut.version"], serviceUrl: MICRONAUT_SNAPSHOT_URL } : undefined;
         }),
-        micronautLauchURL ? get(micronautLauchURL + VERSIONS, 5000).catch(() => undefined).then(data => {
+        micronautLauchURL ? downloadJSON(micronautLauchURL + VERSIONS, 5000).catch(() => undefined).then(data => {
             return data ? { label: JSON.parse(data).versions["micronaut.version"], serviceUrl: micronautLauchURL, description: '(using configured Micronaut Launch URL)'  } : undefined;
         }) : undefined,
         getMNVersion()
@@ -415,7 +415,7 @@ async function getMicronautVersions(): Promise<{label: string; serviceUrl: strin
 
 async function getApplicationTypes(micronautVersion: {label: string; serviceUrl: string}): Promise<{label: string; name: string}[]> {
     if (micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL)) {
-        return get(micronautVersion.serviceUrl + APPLICATION_TYPES).then(data => {
+        return downloadJSON(micronautVersion.serviceUrl + APPLICATION_TYPES).then(data => {
             return JSON.parse(data).types.map((type: any) => ({ label: type.title, name: type.name }));
         });
     }
@@ -424,7 +424,7 @@ async function getApplicationTypes(micronautVersion: {label: string; serviceUrl:
 
 async function getJavaVersions(micronautVersion: {label: string; serviceUrl: string}): Promise<{ default: number; versions: number[]}> {
     if (micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL)) {
-        return get(micronautVersion.serviceUrl + SELECT_OPTIONS).then(data => {
+        return downloadJSON(micronautVersion.serviceUrl + SELECT_OPTIONS).then(data => {
             let parsed = JSON.parse(data).jdkVersion;
             let parsedVersions: number[] = parsed.options.map((version: any) => parseInt(version.label));
 
@@ -475,7 +475,7 @@ function getTestFrameworks() {
 async function getFeatures(micronautVersion: {label: string; serviceUrl: string}, applicationType: {label: string; name: string}, javaVersion: {target: number}): Promise<{label: string; detail?: string; category: string; name: string}[]> {
     const comparator = (f1: any, f2: any) => f1.category < f2.category ? -1 : f1.category > f2.category ? 1 : f1.label < f2.label ? -1 : 1;
     if (micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL)) {
-        return get(micronautVersion.serviceUrl + APPLICATION_TYPES + '/' + applicationType.name + FEATURES).then(data => {
+        return downloadJSON(micronautVersion.serviceUrl + APPLICATION_TYPES + '/' + applicationType.name + FEATURES).then(data => {
             return JSON.parse(data).features.map((feature: any) => ({label: feature.title, detail: feature.description, category: feature.category, name: feature.name})).sort(comparator);
         });
     }
@@ -502,38 +502,6 @@ async function getFeatures(micronautVersion: {label: string; serviceUrl: string}
         vscode.window.showErrorMessage(`Cannot get Micronaut features: ${msg}`);
         return [];
     }
-}
-
-async function get(url: string, timeout?: number): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-        const protocol = url.startsWith(HTTP_PROTOCOL) ? http : https;
-        const callback = (res: http.IncomingMessage) => {
-            const { statusCode } = res;
-            const contentType = res.headers['content-type'] || '';
-            let error;
-            if (statusCode !== 200) {
-                error = `Request Failed.\nStatus Code: ${statusCode}`;
-            } else if (!/^application\/json/.test(contentType)) {
-                error = `Invalid content-type.\nExpected application/json but received ${contentType}`;
-            }
-            if (error) {
-                res.resume();
-                reject(error);
-            } else {
-                let rawData: string = '';
-                res.on('data', chunk => { rawData += chunk; });
-                res.on('end', () => {
-                    resolve(rawData);
-                });
-            }
-        };
-        const req = protocol.get(url, callback);
-        if(timeout){
-            const to = setTimeout(() => req.destroy(new Error("Timeout after " + timeout + " ms.")), timeout);
-            req.on('response', () => clearTimeout(to));
-        }
-        req.on('error', e => reject(e.message)).end();
-    });
 }
 
 function getMNVersion(): {label: string; serviceUrl: string; description: string} | undefined {

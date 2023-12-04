@@ -1,6 +1,6 @@
 import { ProjectDescription } from '../../../../../Common/types';
 import { AbstractTestDescriptor } from '../../../../../Common/abstractTestDescriptor';
-import * as help from '../../../../../Common/helpers';
+import * as help from '../../../../../Common/testHelper';
 import path from 'path';
 export class TestDescriptor extends AbstractTestDescriptor {
   constructor() {
@@ -12,8 +12,7 @@ export class TestDescriptor extends AbstractTestDescriptor {
     help.copProj(path.join('test-projects', 'adm', 'oci-adm-m'))
   ];
   environment: Record<string, string> = {
-    ADM_SUPPRESS_AUTO_DISPLAY: 'true',
-    TEST_ADM_REUSE_PROJECTS: 'true',
+    ADM_SUPPRESS_AUTO_DISPLAY: 'true'
   };
   protected destructive: boolean = false;
 }
