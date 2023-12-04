@@ -1,8 +1,8 @@
 {
-    "extension.micronaut-tools.navigation.runApplication.title": "Run Application",
-    "extension.micronaut-tools.navigation.debugApplication.title": "Debug Application",
+    "extension.micronaut-tools.navigation.runApplication.title": "Run Application Without Debugging",
+    "extension.micronaut-tools.navigation.debugApplication.title": "Start Debugging Application",
     "extension.micronaut-tools.navigation.runDevApplication.title": "Run Application in Dev Mode (Restarts on Change)",
-    "extension.micronaut-tools.navigation.connectApplication.title": "Connect to Running Application",
+    "extension.micronaut-tools.navigation.connectApplication.title": "Connect to Externally Started Application",
     "extension.micronaut-tools.navigation.disconnectApplication.title": "Disconnect from Application",
     "extension.micronaut-tools.navigation.cancelConnectApplication.title": "Cancel Connecting to Application",
     "extension.micronaut-tools.navigation.stopApplication.title": "Stop Application",

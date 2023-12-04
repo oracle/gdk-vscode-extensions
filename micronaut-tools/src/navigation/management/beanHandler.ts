@@ -16,7 +16,7 @@ export abstract class BeanHandler {
 
     protected readonly application: applications.Application;
 
-    protected readonly relativeAddress: string | undefined;
+    public readonly relativeAddress: string | undefined;
     protected readonly availableCode: number;
 
     private enabled: boolean = false;

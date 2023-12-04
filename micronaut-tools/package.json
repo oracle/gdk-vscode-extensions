@@ -195,7 +195,7 @@
 			{
 				"command": "extension.micronaut-tools.navigation.runDevApplication",
 				"title": "%extension.micronaut-tools.navigation.runDevApplication.title%",
-				"icon": "$(debug-coverage)",
+				"icon": "$(debug-rerun)",
 				"category": "Micronaut Tools"
 			},
 			{

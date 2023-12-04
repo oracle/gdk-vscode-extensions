@@ -149,11 +149,11 @@ export abstract class SymbolNode<T extends symbols.Symbol> extends BaseNode {
         } else if (!disabledReasons.length) { // symbol available during runtime
             this.iconPath = new vscode.ThemeIcon(this.icon, new vscode.ThemeColor('charts.green'));
             this.contextValue = this.baseContext + '.available.';
-            this.tooltip = `${this.baseTooltip}\n\u2714 Available in running application`;
+            this.tooltip = `${this.baseTooltip}\n\u2714 Available in the running application`;
         } else { // symbol disabled during runtime
             this.iconPath = new vscode.ThemeIcon(this.icon, new vscode.ThemeColor('charts.orange'));
             this.contextValue = this.baseContext + '.disabled.';
-            this.tooltip = `${this.baseTooltip}\n\u2716 Disabled in running application:`;
+            this.tooltip = `${this.baseTooltip}\n\u2716 Disabled in the running application:`;
             for (const reason of disabledReasons) {
                 this.tooltip += `\n \u25CF ${reason}`;
             }
@@ -317,17 +317,18 @@ export class ApplicationAddressNode extends BaseNode {
     private readonly application: applications.Application;
 
     constructor(application: applications.Application, treeChanged: TreeChanged) {
-        super('Address:', application.getAddress(), ApplicationAddressNode.BASE_CONTEXT, null, undefined);
-        this.tooltip = 'Address of a local or remote application';
+        super('Address:', '...', ApplicationAddressNode.BASE_CONTEXT, null, undefined);
         this.application = application;
 
         this.updateContext(this.application.getState());
         this.application.onStateChanged(state => {
+            this.updateAddress();
             this.updateContext(state);
             treeChanged(this);
         });
+        this.updateAddress(application.getAddress());
         this.application.onAddressChanged(address => {
-            this.description = address;
+            this.updateAddress(address);
             treeChanged(this);
         });
     }
@@ -338,6 +339,20 @@ export class ApplicationAddressNode extends BaseNode {
 
     private updateContext(state: applications.State) {
         this.contextValue = `${ApplicationAddressNode.BASE_CONTEXT}.${state}.`;
+    }
+
+    private updateAddress(address?: string)  {
+        address = address || this.application.getAddress();
+        this.description = address;
+        if (this.application.getState() === applications.State.IDLE) {
+            if (this.application.isLocal()) {
+                this.tooltip = 'Address to launch local or connect to externally started local/remote application';
+            } else {
+                this.tooltip = 'Address to connect to externally started local/remote application';
+            }
+        } else {
+            this.tooltip = `Address of the running application`;
+        }
     }
 
 }
@@ -393,19 +408,19 @@ export class ApplicationEnvironmentsNode extends BaseNode {
                         if (data) {
                             const activeEnvironments = environmentEndpoint.activeEnvironments(data);
                             this.description = activeEnvironments?.length ? activeEnvironments.join(',') : 'default';
+                            this.tooltip = 'Environments active in the running application';
                             this.contextValue = ApplicationEnvironmentsNode.BASE_CONTEXT + '.available.';
-                            this.tooltip = 'Application is running with these active environments';
                         }
                         break;
                     case false:
                         this.description = 'unknown';
+                        this.tooltip = 'Cannot determine environments active in the running application';
                         this.contextValue = ApplicationEnvironmentsNode.BASE_CONTEXT + '.unavailable.';
-                        this.tooltip = 'Cannot detect application active environments';
                         break;
                     default:
                         this.description = '...';
+                        this.tooltip = 'Determining environments active in the running application...';
                         this.contextValue = ApplicationEnvironmentsNode.BASE_CONTEXT + '.updating.';
-                        this.tooltip = 'Determining application active environments...';
                 }
                 break;
             case applications.State.CONNECTING_LAUNCH:
@@ -413,18 +428,17 @@ export class ApplicationEnvironmentsNode extends BaseNode {
             case applications.State.DISCONNECTING_LAUNCH:
             case applications.State.DISCONNECTING_ATTACH:
                 this.description = '...';
+                this.tooltip = 'Determining environments active in the running application...';
                 this.contextValue = ApplicationEnvironmentsNode.BASE_CONTEXT + '.updating.';
-                this.tooltip = 'Determining application active environments...';
                 break;
             default:
                 const definedEnvironments = this.application.getDefinedEnvironments();
                 if (definedEnvironments?.length) {
                     this.description = definedEnvironments.join(',');
-                    this.tooltip = 'Application will be launched with defined environments';
                 } else {
                     this.description = 'inherited';
-                    this.tooltip = 'Application will be launched with environments inherited from the context';
                 }
+                this.tooltip = 'Environments to be active in the launched application';
                 this.contextValue = ApplicationEnvironmentsNode.BASE_CONTEXT + '.idle.';
         }
     }
@@ -439,7 +453,6 @@ export class ApplicationMonitoringNode extends BaseNode {
 
     constructor(application: applications.Application, treeChanged: TreeChanged) {
         super('Monitoring & Management:', '...', ApplicationMonitoringNode.BASE_CONTEXT, null, undefined);
-        this.tooltip = 'Enable to display the runtime status and services of the application';
         this.application = application;
 
         this.application.onStateChanged(() => {
@@ -473,14 +486,44 @@ export class ApplicationMonitoringNode extends BaseNode {
                 switch (management.isAvailable()) {
                     case true:
                         this.description = 'available';
+                        this.tooltip = 'Monitoring and management capabilities available in the running application:';
+                        if (management.getBeansEndpoint().isAvailable()) {
+                            this.tooltip += `\n \u25CF Beans endpoint (${management.getBeansEndpoint().relativeAddress})`;
+                        }
+                        if (management.getCachesEndpoint().isAvailable()) {
+                            this.tooltip += `\n \u25CF Caches endpoint (${management.getCachesEndpoint().relativeAddress})`;
+                        }
+                        if (management.getEnvironmentEndpoint().isAvailable()) {
+                            this.tooltip += `\n \u25CF Environment endpoint (${management.getEnvironmentEndpoint().relativeAddress})`;
+                        }
+                        if (management.getHealthEndpoint().isAvailable()) {
+                            this.tooltip += `\n \u25CF Health endpoint (${management.getHealthEndpoint().relativeAddress})`;
+                        }
+                        if (management.getLoggersEndpoint().isAvailable()) {
+                            this.tooltip += `\n \u25CF Loggers endpoint (${management.getLoggersEndpoint().relativeAddress})`;
+                        }
+                        if (management.getMetricsEndpoint().isAvailable()) {
+                            this.tooltip += `\n \u25CF Metrics endpoint (${management.getMetricsEndpoint().relativeAddress})`;
+                        }
+                        if (management.getRefreshEndpoint().isAvailable()) {
+                            this.tooltip += `\n \u25CF Refresh endpoint (${management.getRoutesEndpoint().relativeAddress})`;
+                        }
+                        if (management.getRoutesEndpoint().isAvailable()) {
+                            this.tooltip += `\n \u25CF Routes endpoint (${management.getRoutesEndpoint().relativeAddress})`;
+                        }
+                        if (management.getServerStopEndpoint().isAvailable()) {
+                            this.tooltip += `\n \u25CF Server stop endpoint (${management.getServerStopEndpoint().relativeAddress})`;
+                        }
                         this.contextValue = ApplicationMonitoringNode.BASE_CONTEXT + '.available.';
                         break;
                     case false:
                         this.description = 'not available';
+                        this.tooltip = 'Monitoring and management capabilities not available in the running application';
                         this.contextValue = ApplicationMonitoringNode.BASE_CONTEXT + '.unavailable.';
                         break;
                     default:
                         this.description = '...';
+                        this.tooltip = 'Determining monitoring and management capabilities of the running application...';
                         this.contextValue = ApplicationMonitoringNode.BASE_CONTEXT + '.updating.';
                 }
                 break;
@@ -489,10 +532,12 @@ export class ApplicationMonitoringNode extends BaseNode {
             case applications.State.DISCONNECTING_LAUNCH:
             case applications.State.DISCONNECTING_ATTACH:
                 this.description = '...';
+                this.tooltip = 'Determining monitoring and management capabilities of the running application...';
                 this.contextValue = ApplicationMonitoringNode.BASE_CONTEXT + '.updating.';
                 break;
             default:
                 this.description = management.isEnabled() ? 'enabled' : 'inherited';
+                this.tooltip = 'Monitoring and management capabilities for the launched application';
                 this.contextValue = ApplicationMonitoringNode.BASE_CONTEXT + '.idle.';
         }
     }
@@ -507,7 +552,6 @@ export class ApplicationControlPanelNode extends BaseNode {
 
     constructor(application: applications.Application, treeChanged: TreeChanged) {
         super('Micronaut Control Panel:', '...', ApplicationControlPanelNode.BASE_CONTEXT, null, undefined);
-        this.tooltip = 'Enable to have the Micronaut Control Panel available for the application';
         this.application = application;
 
         this.application.onStateChanged(() => {
@@ -545,14 +589,17 @@ export class ApplicationControlPanelNode extends BaseNode {
                 switch (controlPanel.isAvailable()) {
                     case true:
                         this.description = 'available';
+                        this.tooltip = 'Micronaut Control Panel available in the running application';
                         this.contextValue = ApplicationControlPanelNode.BASE_CONTEXT + '.available.';
                         break;
                     case false:
                         this.description = 'not available';
+                        this.tooltip = 'Micronaut Control Panel not available in the running application';
                         this.contextValue = ApplicationControlPanelNode.BASE_CONTEXT + '.unavailable.';
                         break;
                     default:
                         this.description = '...';
+                        this.tooltip = 'Determining Micronaut Control Panel availability in the running application...';
                         this.contextValue = ApplicationControlPanelNode.BASE_CONTEXT + '.updating.';
                 }
                 break;
@@ -561,10 +608,12 @@ export class ApplicationControlPanelNode extends BaseNode {
             case applications.State.DISCONNECTING_LAUNCH:
             case applications.State.DISCONNECTING_ATTACH:
                 this.description = '...';
+                this.tooltip = 'Determining Micronaut Control Panel availability in the running application...';
                 this.contextValue = ApplicationControlPanelNode.BASE_CONTEXT + '.updating.';
                 break;
             default:
                 this.description = controlPanel.isEnabled() ? 'enabled' : 'inherited';
+                this.tooltip = 'Micronaut Control Panel availability for the launched application';
                 this.contextValue = ApplicationControlPanelNode.BASE_CONTEXT + '.idle.';
         }
     }
