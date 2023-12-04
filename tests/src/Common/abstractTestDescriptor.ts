@@ -10,7 +10,7 @@ import type { ProjectDescription, CopiedProject, GeneratedProject } from './type
 
 /**
  * Abstract class that encapsulates descriptions and configuration of tests in the folder.
- * 
+ *
  * The extending class is expected to have name TestDescriptor
  */
 export abstract class AbstractTestDescriptor {
@@ -26,7 +26,7 @@ export abstract class AbstractTestDescriptor {
 
   /**
    * Tests projects descriptions to be used during testing can be {@link CopiedProject} or {@link GeneratedProject}
-  */
+   */
   descriptions: ProjectDescription[] = [];
 
   /**

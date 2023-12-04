@@ -25,7 +25,7 @@ suite('Extension Test Suite', function () {
   this.timeout(30000);
   this.beforeAll(async () => {
     await waitForStatup(wf![0]);
-  }).timeout(5*60*1000);
+  }).timeout(5 * 60 * 1000);
 
   // This test must be run first, in order to activate the extension (and wait for the activation to complete)
   test('Extension loaded', async () => {

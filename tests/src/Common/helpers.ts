@@ -96,7 +96,7 @@ export function parseArgs(args: string[]): Arg<string>[] {
  * @returns 8 characters long random string
  */
 export function generateUID(): string {
-    const fullUUID = uuidv4();
-    const shortUUID = fullUUID.substr(0, 8);
-    return shortUUID;
-  }
+  const fullUUID = uuidv4();
+  const shortUUID = fullUUID.substr(0, 8);
+  return shortUUID;
+}

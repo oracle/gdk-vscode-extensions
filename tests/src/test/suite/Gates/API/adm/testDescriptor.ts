@@ -9,10 +9,10 @@ export class TestDescriptor extends AbstractTestDescriptor {
   descriptions: ProjectDescription[] = [
     help.copProj(path.join('test-projects', 'adm', 'oci-adm-g')),
     help.copProj(path.join('test-projects', 'adm', 'oci-adm-g-simple')),
-    help.copProj(path.join('test-projects', 'adm', 'oci-adm-m'))
+    help.copProj(path.join('test-projects', 'adm', 'oci-adm-m')),
   ];
   environment: Record<string, string> = {
-    ADM_SUPPRESS_AUTO_DISPLAY: 'true'
+    ADM_SUPPRESS_AUTO_DISPLAY: 'true',
   };
   protected destructive: boolean = false;
 }

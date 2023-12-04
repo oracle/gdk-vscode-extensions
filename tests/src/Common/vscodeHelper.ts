@@ -5,8 +5,8 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
-import { downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from "@vscode/test-electron";
-import { includeInPreferences, resolveExtensions } from "./extensionHelper";
+import { downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron';
+import { includeInPreferences, resolveExtensions } from './extensionHelper';
 import * as cp from 'child_process';
 
 /**
@@ -14,30 +14,33 @@ import * as cp from 'child_process';
  * @returns path to vscode test installation executable
  */
 export async function prepareVSCode(): Promise<string> {
-    // Install extensions
-    const vscodeExecutablePath = await downloadAndUnzipVSCode('1.76.0');
-    
-    const proxyFull = process.env['http_proxy']
-    if (proxyFull !== undefined && proxyFull.length > 0) {
-        const proxyHost = proxyFull.slice(proxyFull.lastIndexOf('/') + 1, proxyFull.lastIndexOf(':'));
-        const proxyPort = proxyFull.slice(proxyFull.lastIndexOf(':') + 1);
-        includeInPreferences("java.jdt.ls.vmargs", `-Dhttp.proxyHost=${proxyHost} -Dhttp.proxyPort=${proxyPort} -Dhttps.proxyHost=${proxyHost} -Dhttps.proxyPort=${proxyPort}`);
-    } else {
-        includeInPreferences("java.jdt.ls.vmargs");
-    }
+  // Install extensions
+  const vscodeExecutablePath = await downloadAndUnzipVSCode('1.76.0');
 
-    includeInPreferences("java.imports.gradle.wrapper.checksums", [
-        {
-            "sha256": "a8451eeda314d0568b5340498b36edf147a8f0d692c5ff58082d477abe9146e4",
-            "allowed": true
-        }
-    ]);
+  const proxyFull = process.env['http_proxy'];
+  if (proxyFull !== undefined && proxyFull.length > 0) {
+    const proxyHost = proxyFull.slice(proxyFull.lastIndexOf('/') + 1, proxyFull.lastIndexOf(':'));
+    const proxyPort = proxyFull.slice(proxyFull.lastIndexOf(':') + 1);
+    includeInPreferences(
+      'java.jdt.ls.vmargs',
+      `-Dhttp.proxyHost=${proxyHost} -Dhttp.proxyPort=${proxyPort} -Dhttps.proxyHost=${proxyHost} -Dhttps.proxyPort=${proxyPort}`,
+    );
+  } else {
+    includeInPreferences('java.jdt.ls.vmargs');
+  }
 
-    includeInPreferences("extensions.autoUpdate", false);
+  includeInPreferences('java.imports.gradle.wrapper.checksums', [
+    {
+      sha256: 'a8451eeda314d0568b5340498b36edf147a8f0d692c5ff58082d477abe9146e4',
+      allowed: true,
+    },
+  ]);
 
-    process.env['netbeans.extra.options'] = '-J-Dnetbeans.networkProxy=IGNORE';
+  includeInPreferences('extensions.autoUpdate', false);
 
-    return vscodeExecutablePath;
+  process.env['netbeans.extra.options'] = '-J-Dnetbeans.networkProxy=IGNORE';
+
+  return vscodeExecutablePath;
 }
 
 /**
@@ -46,19 +49,19 @@ export async function prepareVSCode(): Promise<string> {
  * @param extensionList list of Extension IDs
  */
 export async function prepareExtensions(vscodeExecutablePath: string, extensionList: string[]) {
-    // TODO: remove previous Extensions..?
-    const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
-    // download additional extensions
-    if (process.env['MOCHA_EXTENSION_LIST']) {
-        extensionList = extensionList.concat(process.env['MOCHA_EXTENSION_LIST'].split(','));
-    }
+  // TODO: remove previous Extensions..?
+  const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
+  // download additional extensions
+  if (process.env['MOCHA_EXTENSION_LIST']) {
+    extensionList = extensionList.concat(process.env['MOCHA_EXTENSION_LIST'].split(','));
+  }
 
-    extensionList = await resolveExtensions(extensionList);
+  extensionList = await resolveExtensions(extensionList);
 
-    for (const extensionId of extensionList) {
-        cp.spawnSync(cli, [...args, '--install-extension', extensionId], {
-            encoding: 'utf-8',
-            stdio: 'inherit',
-        });
-    }
+  for (const extensionId of extensionList) {
+    cp.spawnSync(cli, [...args, '--install-extension', extensionId], {
+      encoding: 'utf-8',
+      stdio: 'inherit',
+    });
+  }
 }

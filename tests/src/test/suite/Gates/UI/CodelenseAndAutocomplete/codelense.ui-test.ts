@@ -130,7 +130,6 @@ describe('Editor test', async () => {
   // iterate throgh all projects
   forEach(getAllProjects(new TestDescriptor().projectsPath))
     .describe('Extension codelense tests for %(prectName)s', (project: Project) => {
-
       before(() => {
         if (!fs.existsSync(project.projetPath)) {
           assert.fail('folder does not exist ' + project);
@@ -142,7 +141,15 @@ describe('Editor test', async () => {
 
       describe('Application.java test', () => {
         it('Open file', async () => {
-          const children = await openItemInExplorer(await tree, 'src', 'main', 'java', 'com', 'example', 'Application.java');
+          const children = await openItemInExplorer(
+            await tree,
+            'src',
+            'main',
+            'java',
+            'com',
+            'example',
+            'Application.java',
+          );
 
           // it is file
           assert.strictEqual(children.length, 0);

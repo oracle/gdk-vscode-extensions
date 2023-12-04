@@ -207,8 +207,8 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
     deployProjectName = process.env['TEST_DEPLOY_PROJECT_NAME']
       ? process.env['TEST_DEPLOY_PROJECT_NAME']
       : path.basename(projectRoot);
-    if (deployProjectName === "__RANDOM") {
-      deployProjectName = "gcn-adm-test-project" + (Math.random() + 1).toString(36).substring(7);
+    if (deployProjectName === '__RANDOM') {
+      deployProjectName = 'gcn-adm-test-project' + (Math.random() + 1).toString(36).substring(7);
     }
 
     const p = auth.getProvider();

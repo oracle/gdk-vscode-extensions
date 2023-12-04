@@ -13,11 +13,11 @@ export enum BuildTool {
   Unsupported = 'Unsupported',
 }
 
-export enum SupportedJava {// TODO: use from env property
+export enum SupportedJava { // TODO: use from env property
   AnyJava17 = 'java17',
   Unsupported = 'Unsupported',
   AnyJava = 'java',
-  JDK_17 = 'jdk-17'
+  JDK_17 = 'jdk-17',
 }
 
 export enum Feature {
@@ -38,10 +38,10 @@ export enum Extension {
   NBLS = 'asf.apache-netbeans-java',
   OCI = 'oracle-labs-graalvm.oci-devops',
   GCN = 'oracle-labs-graalvm.gcn',
-  GVM = 'oracle-labs-graalvm.graalvm'
-};
+  GVM = 'oracle-labs-graalvm.graalvm',
+}
 
-export type ExtensionName = typeof Extension[keyof typeof Extension];
+export type ExtensionName = (typeof Extension)[keyof typeof Extension];
 export type ExtensionMap<T> = { [Key in ExtensionName]?: T };
 
 export type ProjectDescription = GeneratedProject | CopiedProject;

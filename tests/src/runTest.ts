@@ -42,13 +42,13 @@ export async function runTest(args: string[]) {
 
   const vscodeExecutablePath = await prepareVSCode();
   let extensionList: string[] = [
-      'redhat.java',
-      Extension.GVM,
-      Extension.GCN,
-      Extension.NBLS,
-      Extension.OCI,
-      //'vscjava.vscode-java-pack',
-      'ms-kubernetes-tools.vscode-kubernetes-tools',
+    'redhat.java',
+    Extension.GVM,
+    Extension.GCN,
+    Extension.NBLS,
+    Extension.OCI,
+    //'vscjava.vscode-java-pack',
+    'ms-kubernetes-tools.vscode-kubernetes-tools',
   ]; // TODO each test can have own extension list
   await prepareExtensions(vscodeExecutablePath, extensionList);
 
@@ -58,17 +58,16 @@ export async function runTest(args: string[]) {
     try {
       const testWorkspace = directory;
       const launchArgs = testWorkspace ? [testWorkspace] : undefined;
-      
+
       const statusCode = await runTests({
         vscodeExecutablePath,
         extensionDevelopmentPath,
         extensionTestsPath,
         launchArgs,
-        extensionTestsEnv: getEnv(testRun[directory], testCases)
+        extensionTestsEnv: getEnv(testRun[directory], testCases),
       });
 
-      if (statusCode === 0)
-        fs.rmSync(directory, { recursive: true, force: true });
+      if (statusCode === 0) fs.rmSync(directory, { recursive: true, force: true });
 
       statusAll = statusAll && statusCode === 0;
     } catch (err) {
@@ -80,7 +79,9 @@ export async function runTest(args: string[]) {
   return statusAll;
 }
 function getEnv(testFiles: string[], testCases: TestFolders): Record<string, string> | undefined {
-  const tests: TestFolder | undefined = Object.values(testCases).find(tf => testFiles.some(t => tf[1].some(tst => t.includes(tst))));
+  const tests: TestFolder | undefined = Object.values(testCases).find((tf) =>
+    testFiles.some((t) => tf[1].some((tst) => t.includes(tst))),
+  );
   if (!tests) return undefined;
   const env = tests[0].getProjectEnvironment();
   return env;

@@ -101,7 +101,7 @@ function makeTag(project: ProjectDescription): string {
 }
 
 function doCopyProject(projPath: string, destination: string, makeUniq: boolean = false): string {
-  const dest = path.join(destination, path.basename(projPath) + (makeUniq ? "_" + generateUID() : ""));
+  const dest = path.join(destination, path.basename(projPath) + (makeUniq ? '_' + generateUID() : ''));
   copyRecursiveSync(projPath, dest, true);
   return dest;
 }

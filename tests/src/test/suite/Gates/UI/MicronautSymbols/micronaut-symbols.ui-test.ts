@@ -5,11 +5,7 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
-import {
-  Workbench,
-  EditorView,
-  InputBox,
-} from 'vscode-extension-tester';
+import { Workbench, EditorView, InputBox } from 'vscode-extension-tester';
 import { TestDescriptor } from './testDescriptor';
 import * as assert from 'assert';
 const forEach = require('mocha-each');
@@ -23,7 +19,6 @@ describe('Go to Micronaut symbols test', async () => {
 
   forEach(getAllProjects(new TestDescriptor().projectsPath))
     .describe('Extension Go to Micronaut symbols tests for %(prectName)s', function (project: Project) {
-
       before(() => {
         if (!fs.existsSync(project.projetPath)) {
           assert.fail('Folder does not exist ' + project);
