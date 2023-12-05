@@ -92,8 +92,7 @@ export async function runTest(args: string[]) {
 }
 function getEnv(projDir: string, testCases: TestFolders): Record<string, string> | undefined {
   const tests: TestFolder | undefined = testCases[path.dirname(projDir)];
-  if (!tests)
-    return undefined;
+  if (!tests) return undefined;
   return tests[0].getProjectEnvironment();
 }
 
