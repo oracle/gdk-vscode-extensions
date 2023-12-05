@@ -5,15 +5,11 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
-import { TestHelper, Tests, convertStringToInt, createGcnProjectNiTest } from './NItest';
-
-import { BuildTool, Feature, SupportedJava } from '../../../../../Common/types';
-
+import { TestHelper, Tests, convertStringToInt, createMicronautProjectNiTest } from './NItest';
+import { BuildTool, SupportedJava } from '../../../../../Common/types';
 import * as vscode from 'vscode';
 import * as os from 'os';
 import * as path from 'path';
-import * as Common from '../../../../../../../gcn/out/common';
-import * as assert from 'assert';
 
 /**
  * Returns parametrs for spawn method
@@ -36,13 +32,13 @@ function getRunParameters(buildTool: BuildTool, test: Tests): [string, string[]]
     program += 'mvnw';
     switch (test) {
       case Tests.NativeComp:
-        argument = ['install', '-pl lib', '-am', '--no-transfer-progress'];
+        argument = ['install', '-am', '--no-transfer-progress'];
         break;
       case Tests.NativePackage:
-        argument = ['install', '-pl oci', '-X', '--no-transfer-progress', '-Dpackaging=native-image'];
+        argument = ['install', '-X', '--no-transfer-progress', '-Dpackaging=native-image'];
         break;
       case Tests.Run:
-        argument = ['-pl oci', 'mn:run'];
+        argument = ['mn:run'];
         break;
       default:
         throw new Error('Invalid arguement');
@@ -51,10 +47,10 @@ function getRunParameters(buildTool: BuildTool, test: Tests): [string, string[]]
     program += 'gradlew';
     switch (test) {
       case Tests.NativeComp:
-        argument = ['oci:nativeCompile'];
+        argument = ['nativeCompile'];
         break;
       case Tests.Run:
-        argument = ['oci:run'];
+        argument = ['run'];
         break;
       default:
         throw new Error('Invalid arguement');
@@ -81,16 +77,15 @@ function getRunParameters(buildTool: BuildTool, test: Tests): [string, string[]]
  */
 async function testAll(
   creator: TestHelper,
-  services: Feature[],
   runTest: boolean = true,
   compileTest: boolean = true,
   maven: boolean = true,
   gradle: boolean = true,
-  java: SupportedJava = SupportedJava.JDK_17,
+  java: SupportedJava = SupportedJava.AnyJava17,
 ) {
   await creator.CreateProject(
     async (tool: BuildTool) => await createProject(tool),
-    services.join('; '),
+    'micronaut',
     runTest,
     compileTest,
     maven,
@@ -98,7 +93,7 @@ async function testAll(
   );
 
   async function createProject(buildTool: BuildTool): Promise<string> {
-    const value = await createGcnProjectNiTest(buildTool, services, creator.getFolder(buildTool).split('/'), java);
+    const value = await createMicronautProjectNiTest(buildTool, creator.getFolder(buildTool).split('/'), java);
     return value;
   }
 }
@@ -106,7 +101,7 @@ async function testAll(
 /**
  * Main suite test function
  */
-suite('GCN Extension Test Suite', () => {
+suite('Micronaut Extension Test Suite', () => {
   const multiplicator = convertStringToInt(process.env.TIMEOUT_MULTIPLICATOR, 1);
   const timeInterval = 12000000;
   const testTimeout = timeInterval * multiplicator;
@@ -114,20 +109,10 @@ suite('GCN Extension Test Suite', () => {
     getRunParameters,
     testTimeout,
     path.resolve(__dirname, '../../../my-proj/'),
-    path.join('oci', 'src', 'main', 'java', 'com', 'example'),
+    path.join('src', 'main', 'java', 'com', 'example'),
   );
 
   vscode.window.showInformationMessage('Start all tests.');
 
-  test('Features are same', async () => {
-    await Common.initialize();
-    assert.deepStrictEqual(
-      Common.__getServices().map((x) => x.value),
-      Object.values(Feature),
-      'Features are not same',
-    );
-  });
-
-  testAll(creator, [Feature.OBJECTSTORE], true, true, true, true);
-  testAll(creator, [Feature.DATABASE], false, true, true, true);
+  testAll(creator, true, true, true, true);
 });

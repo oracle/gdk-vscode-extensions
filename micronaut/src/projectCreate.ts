@@ -16,8 +16,8 @@ import { getJavaHome, getJavaVMs } from "../../common/lib/utils";
 import { simpleProgress, MultiStepInput, handleNewGCNProject } from "../../common/lib/dialogs";
 import { downloadJSON } from "../../common/lib/connections";
 
-const HTTP_PROTOCOL: string = 'http://';
-const HTTPS_PROTOCOL: string = 'https://';
+export const HTTP_PROTOCOL: string = 'http://';
+export const HTTPS_PROTOCOL: string = 'https://';
 const MICRONAUT_LAUNCH_URL: string = 'https://launch.micronaut.io';
 const MICRONAUT_SNAPSHOT_URL: string = 'https://snapshot.micronaut.io';
 const APPLICATION_TYPES: string = '/application-types';
@@ -50,9 +50,28 @@ export async function creatorInit() {
     }
 }
 
+export interface CreateOptions {
+    url: string;
+    args?: string[];
+    name: string;
+    target: string;
+    buildTool: string;
+    java?: string;
+}
+
 export async function createProject(context: vscode.ExtensionContext) {
     const options = await selectCreateOptions(context);
-    if (options) {
+    if (options && await __writeProject(options)) {
+        const uri = vscode.Uri.file(options.target);
+        handleNewGCNProject(context, uri, "Micronaut");
+    }
+}
+
+/**
+ * Exported so it can be tested 
+ * */
+export async function __writeProject(options: CreateOptions, openDialog: boolean = true): Promise<boolean> {
+{
         let created = false;
         if (options.url.startsWith(HTTP_PROTOCOL) || options.url.startsWith(HTTPS_PROTOCOL)) {
             try {
@@ -72,16 +91,19 @@ export async function createProject(context: vscode.ExtensionContext) {
                 vscode.window.showErrorMessage(`Cannot create Micronaut project: ${e.message}`);
             }
         }
-        if (created) {
-            if (options.java) {
-                const commands: string[] = await vscode.commands.getCommands();
-                if (commands.includes('extension.graalvm.selectGraalVMHome')) {
-                    await vscode.commands.executeCommand('extension.graalvm.selectGraalVMHome', options.java, true);
-                }
-            }
-            const uri = vscode.Uri.file(options.target);
-            handleNewGCNProject(context, uri, "Micronaut");
+
+        if (!created) {
+            return false;
         }
+        if (!options.java || !openDialog) {
+            return true;
+        }
+
+        const commands: string[] = await vscode.commands.getCommands();
+        if (commands.includes('extension.graalvm.selectGraalVMHome')) {
+            await vscode.commands.executeCommand('extension.graalvm.selectGraalVMHome', options.java, true);
+        }
+        return true;
     }
 }
 

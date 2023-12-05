@@ -230,6 +230,9 @@ export async function setupCommandSpecArtifactAndDeployConfigArtifact(
 }
 
 export async function createJVMDeploymentPipeline(deploy: DeploymentResources): Promise<string> {
+  assert.ok(deploy, 'deploy is null');
+  assert.ok(deploy.pipeline, 'pipeline is null');
+
   return await vscode.window.withProgress(
     {
       title: 'Start creating Deployment Pipeline...',
@@ -238,7 +241,7 @@ export async function createJVMDeploymentPipeline(deploy: DeploymentResources): 
     },
     (_progress, _token) => {
       return new Promise(async (resolve) => {
-        const codeRepoPrefix = deploy.pipeline.freeformTags?.devops_tooling_codeRepoPrefix || '';
+        const codeRepoPrefix = deploy?.pipeline?.freeformTags?.devops_tooling_codeRepoPrefix || '';
         const displayNamePrefix = codeRepoPrefix + 'Build ';
         const displayName = deploy.pipeline.displayName?.startsWith(displayNamePrefix)
           ? deploy.pipeline.displayName.slice(displayNamePrefix.length)

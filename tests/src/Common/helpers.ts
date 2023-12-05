@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
 import { v4 as uuidv4 } from 'uuid';
-import type { Arg } from './types';
+import type { Arg, BuildTool, CopiedProject, Feature, GeneratedProject, SupportedJava } from './types';
 
 /**
  * Return list of names of sub directories in parent folder
@@ -55,6 +55,19 @@ export function findFiles(testFolder: string, ...globPatterns: string[]): { [dir
  * @param dest destination folder
  * @param cleanif true the destination folder will be removed before copy
  */
+export function genGcnProj(
+  buildTool: BuildTool,
+  features: Feature[],
+  name?: string,
+  java?: SupportedJava,
+): GeneratedProject {
+  return { _type: 'generated', buildTool, features, java, name };
+}
+
+export function copProj(copyPath: string, name?: string): CopiedProject {
+  return { _type: 'copied', copyPath, name };
+}
+
 export function copyRecursiveSync(src: string, dest: string, clean: boolean = false) {
   if (!fs.existsSync(src)) {
     throw new Error("Src doesn't exist: " + src);
