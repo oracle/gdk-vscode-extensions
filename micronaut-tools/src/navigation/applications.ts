@@ -17,9 +17,9 @@ import * as controlPanel from './management/controlPanel';
 
 
 export enum RunMode {
-    RUN = 'java.project.run',
-    RUN_DEV = 'java.project.runDev',
-    DEBUG = 'java.project.debug'
+    RUN = 'nbls.project.run',
+    RUN_DEV = 'nbls.project.runDev',
+    DEBUG = 'nbls.project.debug'
 }
 
 const PROJECT_INFO = 'nbls.project.info';
