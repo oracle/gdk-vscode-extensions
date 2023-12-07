@@ -15,6 +15,7 @@ import { /* ConfigFileAuthenticationDetailsProvider, */ devops } from 'oci-sdk';
 import { DeployOptions } from '../../../../../../../oci-devops/out/oci/deployUtils';
 
 import * as adm from 'oci-adm';
+import { waitForStatup } from '../helpers';
 
 let wf = vscode.workspace.workspaceFolders;
 
@@ -30,33 +31,6 @@ const COMPARTMENT_OCID: string = process.env['TEST_DEPLOY_COMPARTMENT_OCID']
   ? process.env['TEST_DEPLOY_COMPARTMENT_OCID']
   : 'ocid1.compartment.oc1..aaaaaaaa7thgaondgokuwyujlq4tosnpfaohdivlbbr64izsx5jxfxrezxca';
 const DEPLOY_ACTION_NAME = 'Deploy to OCI';
-
-export async function waitForStatup(wf?: vscode.WorkspaceFolder): Promise<void> {
-  if (!wf) {
-    return;
-  }
-  let wf2 = wf;
-  let counter = 0;
-  let p: Promise<void> = new Promise(async (resolve, reject) => {
-    async function dowait() {
-      try {
-        await vscode.commands.executeCommand('nbls.project.info', wf2.uri.toString(), { projectStructure: true });
-        resolve();
-      } catch (e) {
-        if (counter < 60) {
-          counter++;
-          console.log(`Still waiting for NBLS start, ${counter} seconds elapsed.`);
-          setTimeout(dowait, 1000);
-          return;
-        } else {
-          reject(e);
-        }
-      }
-    }
-    setTimeout(dowait, 1000);
-  });
-  return p;
-}
 
 /**
  * Name of the deployed project.
@@ -161,7 +135,7 @@ function findCacheTime() {
   return fs.statSync(path.resolve(p, 'audit-report.json')).ctimeMs;
 }
 
-suite('ADM Test Suite', function () {
+suite('ADM Test Suite: ' + wf![0].name, function () {
   vscode.window.showInformationMessage('Start ADM tests.');
 
   /* Wait for the NBLS to start */
@@ -233,6 +207,9 @@ suite('ADM Test Suite', function () {
     deployProjectName = process.env['TEST_DEPLOY_PROJECT_NAME']
       ? process.env['TEST_DEPLOY_PROJECT_NAME']
       : path.basename(projectRoot);
+    if (deployProjectName === '__RANDOM') {
+      deployProjectName = 'gcn-adm-test-project' + (Math.random() + 1).toString(36).substring(7);
+    }
 
     const p = auth.getProvider();
     assert.ok(p);

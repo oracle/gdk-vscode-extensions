@@ -13,10 +13,11 @@ export enum BuildTool {
   Unsupported = 'Unsupported',
 }
 
-export enum SupportedJava {
+export enum SupportedJava { // TODO: use from env property
   AnyJava17 = 'java17',
   Unsupported = 'Unsupported',
   AnyJava = 'java',
+  JDK_17 = 'jdk-17',
 }
 
 export enum Feature {
@@ -32,6 +33,16 @@ export enum Feature {
   STREAMING = 'STREAMING',
   TRACING = 'TRACING',
 }
+
+export enum Extension {
+  NBLS = 'asf.apache-netbeans-java',
+  OCI = 'oracle-labs-graalvm.oci-devops',
+  GCN = 'oracle-labs-graalvm.gcn',
+  GVM = 'oracle-labs-graalvm.graalvm',
+}
+
+export type ExtensionName = (typeof Extension)[keyof typeof Extension];
+export type ExtensionMap<T> = { [Key in ExtensionName]?: T };
 
 export type ProjectDescription = GeneratedProject | CopiedProject;
 type NamedProject<T extends string> = { name?: string; _type: T };
@@ -49,5 +60,12 @@ export type Arg<T extends string> = {
   args: string[];
 };
 
+/**
+ * Tuple of [{@link AbstractTestDescriptor}, list of names of test files]
+ */
 export type TestFolder = [AbstractTestDescriptor, string[]];
+
+/**
+ * Object where key is directory containing the {@link AbstractTestDescriptor} and tests files and values is {@link TestFolder}
+ */
 export type TestFolders = { [directory: string]: TestFolder };

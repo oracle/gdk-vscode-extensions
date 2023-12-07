@@ -6,14 +6,20 @@
  */
 
 import path from 'path';
-import { GeneratedProject, ProjectDescription, TestFolder, TestFolders } from './types';
-import { copyRecursiveSync, getSubDirs } from './helpers';
+import type { GeneratedProject, ProjectDescription, TestFolder, TestFolders } from './types';
+import { copyRecursiveSync, generateUID, getSubDirs } from './helpers';
 import { AbstractTestDescriptor } from './abstractTestDescriptor';
 
 const rootPath = path.resolve(__dirname, '..', '..');
 const generatedProjectsPath = path.join(rootPath, 'generated-projects');
 const testProjectsPath = path.join(rootPath, 'out', 'test-projects');
 export type TestRun = { [projectPath: string]: string[] };
+
+/**
+ * Prepare projects to be used by API tests
+ * @param testCases tests to be run
+ * @returns object where key is path to project and value is list of tests to run
+ */
 export function prepareAPITests(testCases: TestFolders): TestRun {
   const out: TestRun = {};
   const splitted: [TestFolders, TestFolders] = [{}, {}];
@@ -52,6 +58,10 @@ function prepareUndestructiveTests(out: TestRun, testCases: TestFolders) {
   for (const prep of Object.values(tmp)) out[copyTestProject(prep.project, testProjectsPath)] = prep.tests;
 }
 
+/**
+ * Prepare projects to be used by UI tests
+ * @param testCases tests to be run
+ */
 export function prepareUITests(testCases: TestFolders) {
   for (const directory of Object.keys(testCases)) {
     prepareTest(testCases[directory]);
@@ -90,8 +100,8 @@ function makeTag(project: ProjectDescription): string {
     : relativeGeneratedProjectPath(project).join(',');
 }
 
-function doCopyProject(projPath: string, destination: string): string {
-  const dest = path.join(destination, path.basename(projPath));
+function doCopyProject(projPath: string, destination: string, makeUniq: boolean = false): string {
+  const dest = path.join(destination, path.basename(projPath) + (makeUniq ? '_' + generateUID() : ''));
   copyRecursiveSync(projPath, dest, true);
   return dest;
 }
@@ -103,6 +113,11 @@ function relativeGeneratedProjectPath(project: GeneratedProject): string[] {
   return parts;
 }
 
+/**
+ * Gathers all unique {@link GeneratedProject} from {@link AbstractTestDescriptor AbstractTestDescriptors}
+ * @param descriptors list of {@link AbstractTestDescriptor} to be processed
+ * @returns list of all {@link GeneratedProject} described by {@link AbstractTestDescriptor AbstractTestDescriptors}
+ */
 export function gatherProjectsToGenerate(descriptors: AbstractTestDescriptor[]): GeneratedProject[] {
   const out: GeneratedProject[] = [];
   for (const proj of unifyProjects(descriptors))
@@ -131,6 +146,10 @@ function isAlreadyGeneratedProject(project: GeneratedProject): boolean {
   return false;
 }
 
+/**
+ * Generates all {@link GeneratedProject GeneratedProjects} using [project-generator](./project-generator.ts)
+ * @param projects to be generated
+ */
 export async function generateProjects(projects: GeneratedProject[]) {
   const generator = require('./project-generator');
   for (const project of projects) {

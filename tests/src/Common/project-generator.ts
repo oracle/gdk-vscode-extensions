@@ -13,18 +13,12 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
 import { BuildTool, Feature, SupportedJava } from './types';
+import { generateUID } from './helpers';
 
 interface CreateOptions {
   homeDir: string;
   options: Common.CreateOptions;
-}
-
-function generateUID(): string {
-  const fullUUID = uuidv4();
-  const shortUUID = fullUUID.substr(0, 8);
-  return shortUUID;
 }
 
 export async function getCreateOptions(
@@ -38,14 +32,11 @@ export async function getCreateOptions(
 
   const selectedJavaRuntime = javaRuntimes.find((x) => x.homedir.includes(java));
 
-  // javaRuntimes.forEach(x => console.log(x.homedir));
-
   if (selectedJavaRuntime === null || selectedJavaRuntime === undefined) {
     throw new Error(
       `${java} was not found, only these GraalVMs are present:` + javaRuntimes.map((x) => x.homedir).join(';\n'),
     );
   }
-  // console.log("selected runtime is: " + selectedJavaRuntime.homedir);
 
   return {
     homeDir: selectedJavaRuntime.homedir,

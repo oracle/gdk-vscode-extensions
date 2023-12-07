@@ -8,26 +8,32 @@
 import * as fs from 'fs';
 import path from 'path';
 import { AbstractTestDescriptor } from './abstractTestDescriptor';
-import { findFiles, getSubDirs } from './helpers';
-import { CopiedProject, GeneratedProject, BuildTool, Feature, SupportedJava, TestFolders } from './types';
+import { findFiles } from './helpers';
+import type { BuildTool, CopiedProject, Feature, GeneratedProject, SupportedJava, TestFolders } from './types';
 
-export function getDescriptors(testFolder: string): AbstractTestDescriptor[] {
-  return getSubDirs(testFolder)
-    .map((dir) => getDescriptor(path.join(testFolder, dir)))
-    .filter((td) => td !== undefined);
-}
-
-export function getDescriptor(dir: string): AbstractTestDescriptor {
+function getDescriptor(dir: string): AbstractTestDescriptor {
   const tsFile = path.join(dir, 'testDescriptor');
   return fs.existsSync(tsFile + '.js') ? new (require(tsFile).TestDescriptor)() : undefined;
 }
 
+/**
+ * Finds all {@link AbstractTestDescriptor AbstractTestDescriptors} in folders that have files found by glob pattern
+ * @param testFolder parent folder
+ * @param globPatterns glob patters by which to find {@link AbstractTestDescriptor AbstractTestDescriptors}
+ * @returns list of {@link AbstractTestDescriptor AbstractTestDescriptors}
+ */
 export function findDescriptors(testFolder: string, ...globPatterns: string[]) {
   return Object.keys(findFiles(testFolder, ...globPatterns))
     .map(getDescriptor)
     .filter((d) => d !== undefined);
 }
 
+/**
+ * Gathers test files and {@link AbstractTestDescriptor} in {@link TestFolders} object found by glob patterns
+ * @param testFolder parent folder
+ * @param globPatterns glob patterns to find test files by
+ * @returns {@link TestFolders} object
+ */
 export function gatherTestFolders(testFolder: string, ...globPatterns: string[]): TestFolders {
   const tmp: { [directory: string]: string[] } = findFiles(testFolder, ...globPatterns);
   const out: TestFolders = {};
@@ -43,6 +49,14 @@ export function gatherTestFolders(testFolder: string, ...globPatterns: string[])
   return out;
 }
 
+/**
+ * Helper function to create {@link GeneratedProject} object
+ * @param buildTool {@link BuildTool} to be used for generation
+ * @param features list of {@link Feature} to be included in generated project
+ * @param name optional project name
+ * @param java optional java version {@link SupportedJava}
+ * @returns {@link GeneratedProject} object
+ */
 export function genProj(
   buildTool: BuildTool,
   features: Feature[],
@@ -52,6 +66,12 @@ export function genProj(
   return { _type: 'generated', buildTool, features, java, name };
 }
 
+/**
+ * Helper function to create {@link CopiedProject} object
+ * @param copyPath path wrom which the project will be copied from root folder (tests project)
+ * @param name optional project name
+ * @returns {@link CopiedProject} object
+ */
 export function copProj(copyPath: string, name?: string): CopiedProject {
   return { _type: 'copied', copyPath, name };
 }

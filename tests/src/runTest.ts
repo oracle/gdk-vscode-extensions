@@ -6,17 +6,17 @@
  */
 
 import * as path from 'path';
-import * as cp from 'child_process';
 // @ts-ignore
 import * as marge from 'mochawesome-report-generator';
 // @ts-ignore
 import { merge } from 'mochawesome-merge';
-import { runTests, downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron';
+import { runTests } from '@vscode/test-electron';
 import { AbortController } from 'node-abort-controller';
 import { gatherTestFolders } from './Common/testHelper';
 import { prepareAPITests } from './Common/projectHelper';
-import { TestFolders, TestFolder } from './Common/types';
+import { TestFolders, TestFolder, Extension } from './Common/types';
 import * as fs from 'fs';
+import { prepareExtensions, prepareVSCode } from './Common/vscodeHelper';
 
 export async function runTest(args: string[]) {
   // BuildBot Abort controller fix
@@ -24,6 +24,7 @@ export async function runTest(args: string[]) {
   global.AbortController = AbortController;
 
   fs.rmSync(path.resolve(__dirname, '..', 'mochawesome-report'), { recursive: true, force: true });
+  fs.rmSync(path.resolve(__dirname, '..', 'out', 'test-projects'), { recursive: true, force: true });
 
   // The folder containing the Extension Manifest package.json
   // Passed to `--extensionDevelopmentPath`
@@ -39,38 +40,23 @@ export async function runTest(args: string[]) {
   const testRun = prepareAPITests(testCases);
   let statusAll: boolean = true;
 
+  const vscodeExecutablePath = await prepareVSCode();
+  let extensionList: string[] = [
+    'redhat.java',
+    Extension.GVM,
+    Extension.GCN,
+    Extension.NBLS,
+    Extension.OCI,
+    //'vscjava.vscode-java-pack',
+    'ms-kubernetes-tools.vscode-kubernetes-tools',
+  ]; // TODO each test can have own extension list
+  await prepareExtensions(vscodeExecutablePath, extensionList);
+
   for (const directory in testRun) {
     process.env['test'] = directory;
     process.env['tests'] = testRun[directory].join(';');
     try {
       const testWorkspace = directory;
-
-      // Install NBLS extension
-      const vscodeExecutablePath = await downloadAndUnzipVSCode('1.76.0');
-      const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
-
-      let extensionList: string[] = [
-        'redhat.java',
-        'oracle-labs-graalvm.graalvm',
-        'oracle-labs-graalvm.gcn',
-        'asf.apache-netbeans-java',
-        'oracle-labs-graalvm.oci-devops',
-        'vscjava.vscode-java-pack',
-        'ms-kubernetes-tools.vscode-kubernetes-tools',
-      ]; // TODO each test can have own extension list
-
-      // download additional extensions
-      if (process.env['MOCHA_EXTENSION_LIST']) {
-        extensionList = extensionList.concat(process.env['MOCHA_EXTENSION_LIST'].split(','));
-      }
-
-      for (const extensionId of extensionList) {
-        cp.spawnSync(cli, [...args, '--install-extension', extensionId], {
-          encoding: 'utf-8',
-          stdio: 'inherit',
-        });
-      }
-
       const launchArgs = testWorkspace ? [testWorkspace] : undefined;
 
       const statusCode = await runTests({
@@ -78,8 +64,10 @@ export async function runTest(args: string[]) {
         extensionDevelopmentPath,
         extensionTestsPath,
         launchArgs,
-        extensionTestsEnv: getEnv(directory, testCases),
+        extensionTestsEnv: getEnv(testRun[directory], testCases),
       });
+
+      if (statusCode === 0) fs.rmSync(directory, { recursive: true, force: true });
 
       statusAll = statusAll && statusCode === 0;
     } catch (err) {
@@ -90,10 +78,13 @@ export async function runTest(args: string[]) {
   await generateReport();
   return statusAll;
 }
-function getEnv(projDir: string, testCases: TestFolders): Record<string, string> | undefined {
-  const tests: TestFolder | undefined = testCases[path.dirname(projDir)];
+function getEnv(testFiles: string[], testCases: TestFolders): Record<string, string> | undefined {
+  const tests: TestFolder | undefined = Object.values(testCases).find((tf) =>
+    testFiles.some((t) => tf[1].some((tst) => t.includes(tst))),
+  );
   if (!tests) return undefined;
-  return tests[0].getProjectEnvironment();
+  const env = tests[0].getProjectEnvironment();
+  return env;
 }
 
 async function generateReport() {

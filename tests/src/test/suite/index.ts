@@ -15,15 +15,15 @@ export function run(): Promise<void> {
     reporter: 'mochawesome',
     reporterOptions: {
       // disable overwrite to generate many JSON reports
-      "overwrite": false,
+      overwrite: false,
       // do not generate intermediate HTML reports
-      "html": false,
+      html: false,
       // generate intermediate JSON reports
-      "json": true
-    }
+      json: true,
+    },
   });
 
-  process.env['tests']?.split(';').forEach(file => mocha.addFile(file));
+  process.env['tests']?.split(';').forEach((file) => mocha.addFile(file));
 
   return new Promise((resolve, reject) => {
     try {

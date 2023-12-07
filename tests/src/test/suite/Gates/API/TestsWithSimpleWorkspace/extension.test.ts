@@ -32,9 +32,9 @@ function valueExists(arrayOfValues: Common.ValueAndLabel[], search: string): boo
   return false;
 }
 
-suite('Extension Test Suite', () => {
+suite('Extension Test Suite', function () {
   vscode.window.showInformationMessage('Start all tests.');
-
+  this.timeout(10 * 1000);
   // This test must be run first, in order to activate the extension (and wait for the activation to complete)
   test('Extension loaded', async () => {
     // let java = vscode.extensions.getExtension("vscjava.vscode-java-pack");
@@ -99,7 +99,7 @@ suite('Extension Test Suite', () => {
     const clouds = Common.getClouds();
     assert.ok(clouds.length, 'No cloud platforms found');
     assert.ok(valueExists(clouds, 'OCI'));
-  });
+  }).timeout(60 * 1000);
 
   // create OCI project
   test('Create GCN project - Create project', async () => {
@@ -111,6 +111,6 @@ suite('Extension Test Suite', () => {
     }
     await Common.writeProjectContents(options, new NodeFileHandler(vscode.Uri.file(projFolder)));
 
-    fs.rmdirSync(projFolder, { recursive: true });
-  });
+    fs.rmSync(projFolder, { recursive: true });
+  }).timeout(60 * 1000);
 });
