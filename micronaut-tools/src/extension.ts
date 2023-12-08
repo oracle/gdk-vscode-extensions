@@ -18,6 +18,7 @@ import * as symbols from './navigation/symbols';
 import * as workspaceFolders from './navigation/workspaceFolders';
 import * as views from './navigation/views';
 import * as actions from './navigation/actions';
+import * as settings from './navigation/settings';
 import * as restQueries from './navigation/restQueries';
 import * as codeLens from './navigation/codeLens';
 import * as kubernetes from 'vscode-kubernetes-tools-api';
@@ -34,6 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
 	workspaceFolders.initialize(context);
 	views.initialize(context);
 	actions.initialize(context);
+	settings.initialize(context);
 	restQueries.initialize(context);
 	codeLens.initialize(context);
 

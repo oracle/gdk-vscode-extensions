@@ -8,7 +8,7 @@
 import * as vscode from 'vscode';
 import * as logUtils from '../../../common/lib/logUtils';
 import * as nodes from './nodes';
-import * as applications from './applications';
+import * as projectUtils from './projectUtils';
 import * as symbols from './symbols';
 import * as targetAddress from './targetAddress';
 
@@ -42,19 +42,19 @@ export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_RUN_APPLICATION, (node: nodes.ApplicationFolderNode) => {
         if (node) {
             const application = node.getFolderData().getApplication();
-            application.startDebugSession(applications.RunMode.RUN);
+            application.startDebugSession(projectUtils.RunMode.RUN);
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_RUN_DEV_APPLICATION, (node: nodes.ApplicationFolderNode) => {
         if (node) {
             const application = node.getFolderData().getApplication();
-            application.startDebugSession(applications.RunMode.RUN_DEV);
+            application.startDebugSession(projectUtils.RunMode.RUN_DEV);
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_DEBUG_APPLICATION, (node: nodes.ApplicationFolderNode) => {
         if (node) {
             const application = node.getFolderData().getApplication();
-            application.startDebugSession(applications.RunMode.DEBUG);
+            application.startDebugSession(projectUtils.RunMode.DEBUG);
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_CONNECT_APPLICATION, (node: nodes.ApplicationFolderNode) => {

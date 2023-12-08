@@ -9,8 +9,6 @@ import * as vscode from 'vscode';
 import * as logUtils from '../../../common/lib/logUtils';
 
 
-const CONTEXT_NBLS_READY = 'extension.micronaut-tools.navigation.nbls.ready';
-
 const COMMAND_RELOAD_ALL = 'extension.micronaut-tools.navigation.reloadAll';
 
 const CONTEXT_RELOADING_BEANS = 'extension.micronaut-tools.navigation.reloadingBeans';
@@ -26,7 +24,6 @@ export const PREFIX_ENDPOINTS = '@/';
 
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_RELOAD_ALL, () => {
-        vscode.commands.executeCommand('setContext', CONTEXT_NBLS_READY, true);
         reloadAll();
 	}));
     vscode.commands.executeCommand(COMMAND_NBLS_ADD_EVENT_LISTENER, PARAM_EVENT_TYPE_SCAN_FINSIHED, COMMAND_RELOAD_ALL);

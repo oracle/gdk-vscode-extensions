@@ -206,7 +206,7 @@ export class ApplicationFolderNode extends BaseNode {
             new ApplicationMonitoringNode(folder.getApplication(), treeChanged),
             new ApplicationControlPanelNode(folder.getApplication(), treeChanged)
         ];
-        if (folder.getApplication().getModule()) {
+        if (folder.getApplication().getSelectedModule().isSingleModule() === false) {
             children.unshift(new ApplicationModuleNode(folder.getApplication(), treeChanged));
         }
         this.setChildren(children);
@@ -227,6 +227,16 @@ export class ApplicationFolderNode extends BaseNode {
             this.updateIcon();
             this.updateContext();
             treeChanged(this);
+        });
+        application.getSelectedModule().onModuleChanged(singleModule => {
+            if (singleModule === false) {
+                const children = this.children;
+                if (children && !(children[0] instanceof ApplicationModuleNode)) {
+                    children.unshift(new ApplicationModuleNode(folder.getApplication(), treeChanged));
+                    this.setChildren(children);
+                    treeChanged(this);
+                }
+            }
         });
         application.getManagement().onFeaturesAvailableChanged((refreshAvailable, serverStopAvailable) => {
             this.updateContext(refreshAvailable, serverStopAvailable);
@@ -283,29 +293,33 @@ export class ApplicationModuleNode extends BaseNode {
     private static readonly BASE_CONTEXT = 'extension.micronaut-tools.navigation.ApplicationModuleNode';
 
     private readonly application: applications.Application;
+    private editable: boolean;
 
     constructor(application: applications.Application, treeChanged: TreeChanged) {
-        super('Subproject:', application.getModule() || 'application', ApplicationModuleNode.BASE_CONTEXT, null, undefined);
+        super('Subproject:', application.getSelectedModule().getName() || 'reading...', ApplicationModuleNode.BASE_CONTEXT, null, undefined);
         this.tooltip = 'Subproject of the GCN application';
         this.application = application;
+        this.editable = application.getSelectedModule().getTotalModules() > 1;
 
-        this.updateContext(this.application.getState());
+        this.updateContext(this.application.getState(), this.editable);
         this.application.onStateChanged(state => {
-            this.updateContext(state);
+            this.updateContext(state, this.editable);
             treeChanged(this);
         });
-        this.application.onModuleChanged(module => {
-            this.description = module;
+        this.application.getSelectedModule().onModuleChanged((_singleModule, _uri, name, editable) => {
+            this.description = name || 'not available';
+            this.editable = editable > 1;
+            this.updateContext(this.application.getState(), this.editable);
             treeChanged(this);
         });
     }
 
     editModule() {
-        this.application.editModule();
+        this.application.selectModule();
     }
 
-    private updateContext(state: applications.State) {
-        this.contextValue = `${ApplicationModuleNode.BASE_CONTEXT}.${state}.`;
+    private updateContext(state: applications.State, editable: boolean) {
+        this.contextValue = `${ApplicationModuleNode.BASE_CONTEXT}.${editable ? 'editable' : 'fixed'}.${state}.`;
     }
 
 }

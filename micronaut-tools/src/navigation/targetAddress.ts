@@ -7,15 +7,21 @@
 
 import * as vscode from 'vscode';
 import * as symbols from './symbols';
+import * as settings from './settings';
 
 
-const SETTINGS_MICRONAUT_TOOLS_CONFIG = 'micronaut-tools';
 const SETTING_TARGET_ADDRESS_KEY = 'targetApplicationAddress';
 export const SETTING_TARGET_ADDRESS_DEFAULT = 'http://localhost:8080';
 
 export function getBaseAddress(uri: vscode.Uri): string {
-    const targetAddress = vscode.workspace.getConfiguration(SETTINGS_MICRONAUT_TOOLS_CONFIG, uri).get<string>(SETTING_TARGET_ADDRESS_KEY) || SETTING_TARGET_ADDRESS_DEFAULT;
-    return targetAddress;
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
+    if (workspaceFolder) {
+        const address = settings.getForUri<string>(workspaceFolder.uri, SETTING_TARGET_ADDRESS_KEY);
+        if (address) {
+            return address;
+        }
+    }
+    return SETTING_TARGET_ADDRESS_DEFAULT;
 }
 
 export async function getEndpointAddress(endpoint: symbols.Endpoint, actionName: string | undefined = undefined, defineParameters: boolean = true): Promise<string | undefined> {
@@ -42,9 +48,12 @@ export async function getEndpointAddress(endpoint: symbols.Endpoint, actionName:
     return address;
 }
 
-export async function saveAddress(uri: vscode.Uri, address: string) {
-    const value = address === SETTING_TARGET_ADDRESS_DEFAULT ? undefined : address;
-    return vscode.workspace.getConfiguration(SETTINGS_MICRONAUT_TOOLS_CONFIG, uri).update(SETTING_TARGET_ADDRESS_KEY, value, vscode.ConfigurationTarget.WorkspaceFolder);
+export async function saveAddress(uri: vscode.Uri, address: string): Promise<void> {
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
+    if (workspaceFolder) {
+        const addressValue = address === SETTING_TARGET_ADDRESS_DEFAULT ? undefined : address; // delete record with default address
+        return settings.setForUri(workspaceFolder.uri, SETTING_TARGET_ADDRESS_KEY, addressValue);
+    }
 }
 
 export function normalizeAddress(address: string): string {

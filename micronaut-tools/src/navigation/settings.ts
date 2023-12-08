@@ -8,6 +8,29 @@
 import * as vscode from 'vscode';
 
 
+const SETTINGS_MICRONAUT_TOOLS_CONFIG = 'micronaut-tools';
+
+let storage: vscode.Memento;
+
+export function initialize(context: vscode.ExtensionContext) {
+    storage = context.globalState;
+}
+
+export function getForUri<T>(uri: vscode.Uri, key: string): T | undefined {
+    const uriKey = buildUriKey(uri, key);
+    return storage.get(uriKey);
+}
+
+export function setForUri(uri: vscode.Uri, key: string, value: any): Thenable<void> {
+    const uriKey = buildUriKey(uri, key);
+    return storage.update(uriKey, value);
+}
+
+function buildUriKey(uri: vscode.Uri, key: string): string {
+    // NOTE: workspaceFolder.uri.path sometimes returns /c: and sometimes /C: for the same folder!
+    return `${SETTINGS_MICRONAUT_TOOLS_CONFIG}::${uri.fsPath}::${key}`;
+}
+
 // Represents a persistent global/workspace boolean setting, also sets a runtime context value
 export class BooleanSetting {
 

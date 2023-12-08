@@ -9,22 +9,14 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as logUtils from '../../../common/lib/logUtils';
+import * as projectUtils from './projectUtils';
 import * as workspaceFolders from './workspaceFolders';
 import * as targetAddress from './targetAddress';
 import * as hosts from './hosts';
+import * as applicationModules from './applicationModules';
 import * as management from './management/management';
 import * as controlPanel from './management/controlPanel';
 
-
-export enum RunMode {
-    RUN = 'nbls.project.run',
-    RUN_DEV = 'nbls.project.runDev',
-    DEBUG = 'nbls.project.debug'
-}
-
-const PROJECT_INFO = 'nbls.project.info';
-const DEV_MAVEN = 'Micronaut: dev mode';
-const DEV_GRADLE = 'Continuous Mode';
 
 const SUPPORTED_CONFIG_FILES = [
     '.properties',   // Java properties
@@ -51,7 +43,6 @@ export function isConnected(state: State) {
 
 export type OnStateChanged = (state: State, previousState: State) => void;
 export type OnAliveTick = (counter: number) => void;
-export type OnModuleChanged = (module: string) => void;
 export type OnAddressChanged = (address: string) => void;
 export type OnDefinedEnvironmentsChanged = (definedEnvironments: string[] | undefined) => void;
 
@@ -93,74 +84,53 @@ export class Application {
     private static readonly REMOTE_HEARTBEAT_TIMEOUT = 5000;
 
     private folder: vscode.WorkspaceFolder;
-    private module: string | null | undefined;
     private state: State = State.IDLE;
     private debugSession: vscode.DebugSession | undefined;
     private host: hosts.Host | undefined;
     private definedEnvironments: string[] | undefined;
+
+    private projectInfo: projectUtils.ProjectInfo | null | undefined;
+    private applicationModule: applicationModules.SelectedModule;
 
     private management: management.Management;
     private controlPanel: controlPanel.ControlPanel;
 
     constructor(folder: vscode.WorkspaceFolder) {
         this.folder = folder;
+        this.applicationModule = applicationModules.forApplication(this);
         this.management = management.forApplication(this);
         this.controlPanel = controlPanel.forApplication(this);
+
+        this.refreshModules();
     }
 
     getFolder(): vscode.WorkspaceFolder {
         return this.folder;
     }
 
-    allModules(): string[] | undefined { // should be Promise<string[]> | undefined, will be computed by NBLS for GCN (undefined for Micronaut)
-        const baseFolder = this.folder.uri.fsPath;
-        const srcJavaFolder = path.join('src', 'main', 'java');
-
-        const baseSrcJava = path.join(baseFolder, srcJavaFolder);
-        if (fs.existsSync(baseSrcJava)) {
-            return undefined;
-        }
-
-        const modules: string[] = [];
-        const dirs = fs.readdirSync(baseFolder, { withFileTypes: true }).filter(dir => dir.isDirectory()).map(dir => dir.name);
-        for (const dir of dirs) {
-            const dirSrcJava = path.join(baseFolder, dir, srcJavaFolder);
-            if (fs.existsSync(dirSrcJava)) {
-                modules.push(dir);
-            }
-        }
-        
-        return modules;
+    private refreshModules() {
+        projectUtils.waitForProjectInfoAvailable().then(() => {
+            projectUtils.getProjectInfo(this.folder.uri).then(projectInfo => {
+                this.projectInfo = projectInfo;
+                this.applicationModule.update(projectInfo);
+            });
+        }).catch(err => {
+            this.projectInfo = null;
+            vscode.window.showErrorMessage(err);
+        });
     }
     
-    getModule(): string | undefined {
-        if (this.module === undefined) {
-            const allModules = this.allModules();
-            if (allModules?.length) {
-                if (allModules.includes('oci')) {
-                    this.module = 'oci';
-                } else {
-                    this.module = allModules[0];
-                }
-            } else {
-                this.module = null;
-            }
-        }
-        return this.module ? this.module : undefined;
+    getSelectedModule(): applicationModules.SelectedModule {
+        return this.applicationModule;
     }
 
-    async editModule() {
-        const items: vscode.QuickPickItem[] = [];
-        for (const module of this.allModules() || []) {
-            items.push({ label: module });
-        }
-        const selected = await vscode.window.showQuickPick(items, {
-            title: 'Change Subproject',
-            placeHolder: 'Pick the application subproject'
-        });
-        if (selected) {
-            this.module = selected.label;
-            this.notifyModuleChanged(this.module);
+    selectModule() {
+        if (this.projectInfo === undefined) {
+            vscode.window.showWarningMessage('Project inspection not ready yet, try again later.');
+        } else if (this.projectInfo === null) {
+            vscode.window.showErrorMessage('Project inspection not available.');
+        } else {
+            this.applicationModule.select(this.projectInfo);
         }
     }
 
@@ -212,38 +182,39 @@ export class Application {
     }
 
     async configureDefinedEnvironments() {
-        // const folderPath = this.folder.uri.fsPath;
-        const folderPath = this.module ? path.join(this.folder.uri.fsPath, this.module) : this.folder.uri.fsPath;
-        const resourcesPath = path.join(folderPath, 'src', 'main', 'resources');
-        this.readConfigurationFiles(resourcesPath).then(allFiles => {
-            this.getConfigurationFiles(allFiles, this.definedEnvironments).then(async files => {
-                const preferredExt = this.getPreferredExtension(allFiles[1]);
-                const items: (vscode.QuickPickItem & { file: string, createForEnvironment: string | undefined })[] = [];
-                for (let i = 0; i < files.length; i++) {
-                    const create = files[i][1] === '---';
-                    const icon = create ? '$(new-file)' : '$(file)';
-                    const action = create ? 'Create' : 'Edit';
-                    const file = `${files[i][0]}${create ? preferredExt : files[i][1]}`;
-                    const environment = this.definedEnvironments?.length ? `'${this.definedEnvironments[i]}'` : 'default';
-                    items.push({
-                        label: `${icon} ${action} ${file}`,
-                        detail: `${action} ${create ? 'new' : 'existing'} configuration file for the ${environment} environment`,
-                        file: file,
-                        createForEnvironment: create ? environment : undefined
+        const folderPath = this.applicationModule.getUri()?.fsPath;
+        if (folderPath) {
+            const resourcesPath = path.join(folderPath, 'src', 'main', 'resources');
+            this.readConfigurationFiles(resourcesPath).then(allFiles => {
+                this.getConfigurationFiles(allFiles, this.definedEnvironments).then(async files => {
+                    const preferredExt = this.getPreferredExtension(allFiles[1]);
+                    const items: (vscode.QuickPickItem & { file: string, createForEnvironment: string | undefined })[] = [];
+                    for (let i = 0; i < files.length; i++) {
+                        const create = files[i][1] === '---';
+                        const icon = create ? '$(new-file)' : '$(file)';
+                        const action = create ? 'Create' : 'Edit';
+                        const file = `${files[i][0]}${create ? preferredExt : files[i][1]}`;
+                        const environment = this.definedEnvironments?.length ? `'${this.definedEnvironments[i]}'` : 'default';
+                        items.push({
+                            label: `${icon} ${action} ${file}`,
+                            detail: `${action} ${create ? 'new' : 'existing'} configuration file for the ${environment} environment`,
+                            file: file,
+                            createForEnvironment: create ? environment : undefined
+                        });
+                    }
+                    const selected = items.length === 1 ? items[0] : await vscode.window.showQuickPick(items, {
+                        title: 'Configure Environment Properties',
+                        placeHolder: 'Select action'
                     });
-                }
-                const selected = items.length === 1 ? items[0] : await vscode.window.showQuickPick(items, {
-                    title: 'Configure Environment Properties',
-                    placeHolder: 'Select action'
-                });
-                if (selected) {
-                    const createForEnvironment = items.length === 1 ? selected.createForEnvironment : undefined;
-                    this.openFile(resourcesPath, selected.file, createForEnvironment);
-                }
-            })
-        }).catch(err => {
-            console.log(err);
-        });
+                    if (selected) {
+                        const createForEnvironment = items.length === 1 ? selected.createForEnvironment : undefined;
+                        this.openFile(resourcesPath, selected.file, createForEnvironment);
+                    }
+                })
+            }).catch(err => {
+                console.log(err);
+            });
+        }
     }
 
     private async openFile(resourcesPath: string, file: string, createForEnvironment?: string) {
@@ -385,8 +356,14 @@ export class Application {
         return isConnected(this.state);
     }
 
-    startDebugSession(runMode: RunMode) {
+    startDebugSession(runMode: projectUtils.RunMode) {
         if (this.state === State.IDLE) {
+            const moduleUri = this.applicationModule.getUri();
+            const buildSystem = this.projectInfo?.buildSystem;
+            if (!moduleUri || !buildSystem) {
+                vscode.window.showErrorMessage('Cannot run this project.');
+                return;
+            }
             this.setState(State.CONNECTING_LAUNCH);
             const address = this.getPlainAddress();
             const host = hosts.forAddress(address);
@@ -404,29 +381,13 @@ export class Application {
                         return;
                     }
                 }
-                const runTarget = this.module ? vscode.Uri.file(path.join(this.folder.uri.fsPath, this.module)) : this.folder.uri;
-                // console.log('>>> RUN TARGET')
-                // console.log(runTarget)
-                if (runMode === RunMode.RUN_DEV) {
-                    try {
-                        const projectInfo: any = await vscode.commands.executeCommand(PROJECT_INFO, this.folder.uri.toString());
-                        // console.log(projectInfo)
-                        const projectType = projectInfo[0].projectType;
-                        if (projectType.includes('maven')) {
-                            vscode.commands.executeCommand(RunMode.RUN, runTarget, DEV_MAVEN);
-                        } else if (projectType.includes('gradle')) {
-                            vscode.commands.executeCommand(RunMode.RUN, runTarget, DEV_GRADLE);
-                        } else {
-                            vscode.window.showErrorMessage('Running in Dev mode not supported for this project.');
-                        }
-                    } catch (err) {
-                        logUtils.logError('' + err);
-                        console.log(err);
-                        vscode.window.showErrorMessage('Failed to run project in Dev mode.');
-                    }
-                } else {
-                    vscode.commands.executeCommand(runMode, runTarget);
-                }
+                // TODO: timeout connecting if starting fails?
+                projectUtils.runModule(runMode, moduleUri, buildSystem).catch(err => {
+                    logUtils.logError(err);
+                    console.log(err);
+                    this.cleanupDebugSession();
+                    vscode.window.showErrorMessage('Failed to start project: ' + err);
+                });
             });
         }
     }
@@ -463,11 +424,15 @@ export class Application {
 
     unregisterDebugSession(session: vscode.DebugSession) {
         if (this.debugSession === session) {
-            this.debugSession = undefined;
-            this.setState(State.IDLE);
-            this.host?.stopMonitoring();
-            this.host = undefined;
+            this.cleanupDebugSession();
         }
+    }
+
+    private cleanupDebugSession() {
+        this.debugSession = undefined;
+        this.setState(State.IDLE);
+        this.host?.stopMonitoring();
+        this.host = undefined;
     }
 
     getDebugSession(): vscode.DebugSession | undefined {
@@ -552,7 +517,6 @@ export class Application {
 
     private readonly onStateChangedListeners: OnStateChanged[] = [];
     private readonly onAliveTickListeners: OnAliveTick[] = [];
-    private readonly onModuleChangedListeners: OnModuleChanged[] = [];
     private readonly onAddressChangedListeners: OnAddressChanged[] = [];
     private readonly onDefinedEnvironmentsChangedListeners: OnDefinedEnvironmentsChanged[] = [];
 
@@ -562,10 +526,6 @@ export class Application {
 
     onAliveTick(listener: OnAliveTick) {
         this.onAliveTickListeners.push(listener);
-    }
-
-    onModuleChanged(listener: OnModuleChanged) {
-        this.onModuleChangedListeners.push(listener);
     }
 
     onAddressChanged(listener: OnAddressChanged) {
@@ -588,12 +548,6 @@ export class Application {
         }
     }
 
-    private notifyModuleChanged(module: string) {
-        for (const listener of this.onModuleChangedListeners) {
-            listener(module);
-        }
-    }
-
     private notifyAddressChanged(address: string) {
         for (const listener of this.onAddressChangedListeners) {
             listener(address);
@@ -610,13 +564,15 @@ export class Application {
 
 class RunCustomizer implements vscode.DebugConfigurationProvider {
 
-    resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefined, config: vscode.DebugConfiguration, _token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration> {
+    resolveDebugConfigurationWithSubstitutedVariables?(folder: vscode.WorkspaceFolder | undefined, config: vscode.DebugConfiguration, _token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration> {
         return new Promise<vscode.DebugConfiguration>(resolve => {
             workspaceFolders.getFolderData().then(folderData => {
                 for (const data of folderData) {
                     if (data.getWorkspaceFolder() === folder) {
+                        // console.log(config)
                         const vmArgs = data.getApplication().buildVmArgs();
-                        // console.log('VMARGS ' + vmArgs)
+                        // console.log('VMARGS existing ' + config.vmArgs)
+                        // console.log('VMARGS updated ' + vmArgs)
                         if (vmArgs) {
                             if (!config.vmArgs) {
                                 config.vmArgs = vmArgs;
@@ -634,21 +590,5 @@ class RunCustomizer implements vscode.DebugConfigurationProvider {
             });
         });
     }
-
-    // resolveDebugConfigurationWithSubstitutedVariables?(_folder: vscode.WorkspaceFolder | undefined, config: vscode.DebugConfiguration, _token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration> {
-    //     return new Promise<vscode.DebugConfiguration>(resolve => {
-    //         if (handleProjectProcess) {
-    //             const displayName: string = defineDisplayName();
-    //             const attach: string = attachVisualVM();
-    //             const vmArgs = `${displayName} ${attach}`;
-    //             if (!config.vmArgs) {
-    //                 config.vmArgs = vmArgs;
-    //             } else {
-    //                 config.vmArgs = `${config.vmArgs} ${vmArgs}`;
-    //             }
-    //         }
-    //         resolve(config);
-    //     });
-    // }
 
 }
