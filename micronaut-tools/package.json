@@ -478,6 +478,10 @@
 					"when": "false"
 				},
 				{
+					"command": "extension.micronaut-tools.navigation.cancelConnectApplication",
+					"when": "false"
+				},
+				{
 					"command": "extension.micronaut-tools.navigation.stopApplication",
 					"when": "false"
 				},
@@ -534,6 +538,10 @@
 					"when": "false"
 				},
 				{
+					"command": "extension.micronaut-tools.navigation.openApplicationInBrowser",
+					"when": "false"
+				},
+				{
 					"command": "extension.micronaut-tools.navigation.searchBeans",
 					"when": "extension.micronaut-tools.navigation.beansInitialized"
 				},
@@ -577,32 +585,32 @@
 			"view/item/context": [
 				{
 					"command": "extension.micronaut-tools.navigation.runApplication",
-					"when": "extension.micronaut-tools.navigation.nblsInitialized && viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.startable.",
 					"group": "inline@1"
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.runApplication",
-					"when": "extension.micronaut-tools.navigation.nblsInitialized && viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.startable.",
 					"group": "context@1"
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.debugApplication",
-					"when": "extension.micronaut-tools.navigation.nblsInitialized && viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.startable.",
 					"group": "inline@3"
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.debugApplication",
-					"when": "extension.micronaut-tools.navigation.nblsInitialized && viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.startable.",
 					"group": "context@3"
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.runDevApplication",
-					"when": "extension.micronaut-tools.navigation.nblsInitialized && viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.startable.",
 					"group": "inline@2"
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.runDevApplication",
-					"when": "extension.micronaut-tools.navigation.nblsInitialized && viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.startable.",
 					"group": "context@2"
 				},
 				{
@@ -657,12 +665,12 @@
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.editModule",
-					"when": "extension.micronaut-tools.navigation.nblsInitialized && viewItem == extension.micronaut-tools.navigation.ApplicationModuleNode.editable.idle.",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationModuleNode.idle.editable.",
 					"group": "inline@4"
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.editModule",
-					"when": "extension.micronaut-tools.navigation.nblsInitialized && viewItem == extension.micronaut-tools.navigation.ApplicationModuleNode.editable.idle.",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationModuleNode.idle.editable.",
 					"group": "context@4"
 				},
 				{
@@ -677,22 +685,22 @@
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.configureEnvironments",
-					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.moduleSet.",
 					"group": "inline@3"
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.configureEnvironments",
-					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.moduleSet.",
 					"group": "context@3"
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.editEnvironments",
-					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.moduleSet.",
 					"group": "inline@4"
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.editEnvironments",
-					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.moduleSet.",
 					"group": "context@4"
 				},
 				{

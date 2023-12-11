@@ -15,7 +15,6 @@ const COMMAND_GET_PROJECT_INFO = 'nbls.project.info';
 const TIMEOUT_COMMAND_GET_PROJECT_INFO = 30; // wait for NBLS & projectInfo up to 30 seconds
 const RUN_DEV_MAVEN = 'Micronaut: dev mode';
 const RUN_DEV_GRADLE = 'Continuous Mode';
-const CONTEXT_NBLS_INITIALIZED = 'extension.micronaut-tools.navigation.nblsInitialized';
 
 export enum RunMode {
     RUN = 'nbls.project.run',
@@ -62,8 +61,6 @@ export async function waitForProjectInfoAvailable() {
 
 export async function getProjectInfo(uri: vscode.Uri): Promise<ProjectInfo> {
     const infos: any[] = await vscode.commands.executeCommand(COMMAND_GET_PROJECT_INFO, uri.toString(), { projectStructure: true });
-    setTimeout(() => { vscode.commands.executeCommand('setContext', CONTEXT_NBLS_INITIALIZED, true); }, 0);
-    
     if (infos?.length && infos[0]) {
         const buildSystem: BuildSystemType = resolveBuildSystemType(uri, infos[0].projectType);
         const runnableModules: string[] = [];
@@ -75,7 +72,6 @@ export async function getProjectInfo(uri: vscode.Uri): Promise<ProjectInfo> {
         for (const subproject of infos[0].subprojects) { // multimodule - most likely GCN
             if (isRunnableUri(vscode.Uri.parse(subproject))) {
                 runnableModules.push(subproject);
-                // runnableModuleNames.push(path.parse(subUri.fsPath).base);
             }
         }
 

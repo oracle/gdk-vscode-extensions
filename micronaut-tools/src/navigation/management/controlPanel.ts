@@ -22,19 +22,13 @@ export class ControlPanel extends beanHandler.BeanHandler {
         super(application, RELATIVE_ADDRESS);
         this.application.onStateChanged(state => {
             this.checkAvailable(state);
-            // if (state === applications.State.CONNECTED_LAUNCH || state === applications.State.CONNECTED_ATTACH) {
-            //     this.setAvailable(undefined);
-            //     this.checkAvailable();
-            // } else {
-            //     this.setAvailable(false)
-            // }
         });
     }
 
     protected doEnable() {
         this.checkConfigured().then(configured => {
             if (configured) {
-                if (this.application.getDefinedEnvironments()?.length) {
+                if (this.application.getDefinedEnvironments().get()?.length) {
                     super.doEnable();
                 } else {
                     const useDevOption = 'Use \'dev\'';
@@ -42,10 +36,10 @@ export class ControlPanel extends beanHandler.BeanHandler {
                     const cancelOption = 'Cancel';
                     vscode.window.showWarningMessage('Micronaut Control Panel requires at least one defined environment. Which environment should be used?', useDevOption, setCustomOption, cancelOption).then(selectedOption => {
                         if (selectedOption === useDevOption) {
-                            this.application.setDefinedEnvironments(['dev']);
+                            this.application.getDefinedEnvironments().set(['dev']);
                             super.doEnable();
                         } else if (selectedOption === setCustomOption) {
-                            this.application.editDefinedEnvironments();
+                            this.application.getDefinedEnvironments().edit();
                         }
                     });
                 }
@@ -99,7 +93,7 @@ export class ControlPanel extends beanHandler.BeanHandler {
         if (!this.isEnabled()) {
             return undefined;
         }
-        const definedEnvironments = this.application.getDefinedEnvironments();
+        const definedEnvironments = this.application.getDefinedEnvironments().get();
         if (!definedEnvironments?.length) {
             return undefined;
         }

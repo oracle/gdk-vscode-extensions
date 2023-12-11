@@ -37,6 +37,8 @@ export class SelectedModule {
 
         // Resolve previously saved module, resolves to undefined if not saved yet
         this.module = settings.getForUri(this.applicationUri, SETTING_SELECTED_MODULE_KEY);
+        
+        // Single module (Micronaut) saved as null => this.module set means it's a multi-module project (GCN)
         if (this.module) {
             this.singleModule = false;
         }

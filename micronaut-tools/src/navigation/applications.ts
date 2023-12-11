@@ -6,27 +6,16 @@
  */
 
 import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
 import * as logUtils from '../../../common/lib/logUtils';
 import * as projectUtils from './projectUtils';
 import * as workspaceFolders from './workspaceFolders';
 import * as targetAddress from './targetAddress';
 import * as hosts from './hosts';
 import * as applicationModules from './applicationModules';
+import * as applicationEnvironments from './applicationEnvironments';
 import * as management from './management/management';
 import * as controlPanel from './management/controlPanel';
 
-
-const SUPPORTED_CONFIG_FILES = [
-    '.properties',   // Java properties
-    '.json',         // JavaScript JSON
-    '.yml',          // Yaml -- org.yaml:snakeyaml required
-    '.yaml',         // Yaml -- org.yaml:snakeyaml required
-    '.toml',         // Toml -- io.micronaut.toml:micronaut-toml required
-    '.groovy',       // Groovy -- io.micronaut.groovy:micronaut-runtime-groovy required
-    '.conf'          // Hocon -- io.micronaut.kotlin:micronaut-kotlin-runtime required
-];
 
 export enum State {
     IDLE = 'idle',
@@ -44,7 +33,6 @@ export function isConnected(state: State) {
 export type OnStateChanged = (state: State, previousState: State) => void;
 export type OnAliveTick = (counter: number) => void;
 export type OnAddressChanged = (address: string) => void;
-export type OnDefinedEnvironmentsChanged = (definedEnvironments: string[] | undefined) => void;
 
 export function initialize(context: vscode.ExtensionContext) {
     const runCustomizer = new RunCustomizer();
@@ -87,17 +75,20 @@ export class Application {
     private state: State = State.IDLE;
     private debugSession: vscode.DebugSession | undefined;
     private host: hosts.Host | undefined;
-    private definedEnvironments: string[] | undefined;
 
     private projectInfo: projectUtils.ProjectInfo | null | undefined;
     private applicationModule: applicationModules.SelectedModule;
+    private definedEnvironments: applicationEnvironments.DefinedEnvironments;
 
     private management: management.Management;
     private controlPanel: controlPanel.ControlPanel;
 
     constructor(folder: vscode.WorkspaceFolder) {
         this.folder = folder;
+        
         this.applicationModule = applicationModules.forApplication(this);
+        this.definedEnvironments = applicationEnvironments.forApplication(this);
+
         this.management = management.forApplication(this);
         this.controlPanel = controlPanel.forApplication(this);
 
@@ -175,171 +166,6 @@ export class Application {
 
     getPort(): number {
         return targetAddress.getPort(this.getAddress());
-    }
-
-    getDefinedEnvironments(): string[] | undefined {
-        return this.definedEnvironments;
-    }
-
-    async configureDefinedEnvironments() {
-        const folderPath = this.applicationModule.getUri()?.fsPath;
-        if (folderPath) {
-            const resourcesPath = path.join(folderPath, 'src', 'main', 'resources');
-            this.readConfigurationFiles(resourcesPath).then(allFiles => {
-                this.getConfigurationFiles(allFiles, this.definedEnvironments).then(async files => {
-                    const preferredExt = this.getPreferredExtension(allFiles[1]);
-                    const items: (vscode.QuickPickItem & { file: string, createForEnvironment: string | undefined })[] = [];
-                    for (let i = 0; i < files.length; i++) {
-                        const create = files[i][1] === '---';
-                        const icon = create ? '$(new-file)' : '$(file)';
-                        const action = create ? 'Create' : 'Edit';
-                        const file = `${files[i][0]}${create ? preferredExt : files[i][1]}`;
-                        const environment = this.definedEnvironments?.length ? `'${this.definedEnvironments[i]}'` : 'default';
-                        items.push({
-                            label: `${icon} ${action} ${file}`,
-                            detail: `${action} ${create ? 'new' : 'existing'} configuration file for the ${environment} environment`,
-                            file: file,
-                            createForEnvironment: create ? environment : undefined
-                        });
-                    }
-                    const selected = items.length === 1 ? items[0] : await vscode.window.showQuickPick(items, {
-                        title: 'Configure Environment Properties',
-                        placeHolder: 'Select action'
-                    });
-                    if (selected) {
-                        const createForEnvironment = items.length === 1 ? selected.createForEnvironment : undefined;
-                        this.openFile(resourcesPath, selected.file, createForEnvironment);
-                    }
-                })
-            }).catch(err => {
-                console.log(err);
-            });
-        }
-    }
-
-    private async openFile(resourcesPath: string, file: string, createForEnvironment?: string) {
-        if (createForEnvironment) {
-            const createOption = 'Create File';
-            const cancelOption = 'Cancel';
-            const selectedOption = await vscode.window.showInformationMessage(`Create new configuration file ${file} for the ${createForEnvironment} environment?`, createOption, cancelOption);
-            if (selectedOption !== createOption) {
-                return;
-            }
-        }
-        const configFile = path.join(resourcesPath, file);
-        if (!fs.existsSync(configFile)) {
-            try {
-                fs.closeSync(fs.openSync(configFile, 'a'));
-            } catch (err) {
-                console.log(err);
-                return;
-            }
-        }
-        vscode.workspace.openTextDocument(configFile).then(document => vscode.window.showTextDocument(document));
-    }
-
-    private async getConfigurationFiles(allConfigFiles: string[][], environments: string[] | undefined): Promise<string[][]> {
-        const fileNames = allConfigFiles[0];
-        const fileExts = allConfigFiles[1];
-        const configFiles: string[][] = [];
-        if (environments?.length) {
-            for (const environment of environments) {
-                const fileName = `application-${environment}`; // TODO: lowercase?
-                const idx = fileNames.indexOf(fileName);
-                const fileExt = idx >= 0 ? fileExts[idx] : '---';
-                configFiles.push([fileName, fileExt]);
-            }
-        } else {
-            const fileName = 'application';
-            const idx = fileNames.indexOf(fileName);
-            const fileExt = idx >= 0 ? fileExts[idx] : '---';
-            configFiles.push([fileName, fileExt]);
-        }
-        return configFiles;
-    }
-
-    private async readConfigurationFiles(resourcesPath: string): Promise<string[][]> {
-        return new Promise((resolve, reject) => {
-            fs.readdir(resourcesPath, (err, files) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    const fileNames: string[] = [];
-                    const fileExts: string[] = [];
-                    for (const file of files) {
-                        if (file.startsWith('application.') || file.startsWith('application-')) {
-                            const ext = path.extname(file).toLowerCase();
-                            // console.log('>>> ' + ext + ' --- ' + file)
-                            if (SUPPORTED_CONFIG_FILES.includes(ext)) {
-                                const name = file.slice(0, -ext.length);
-                                // console.log('... file ' + file + ' --- name ' + name)
-                                fileNames.push(name);
-                                fileExts.push(ext);
-                            }
-                        }
-                    }
-                    resolve([fileNames, fileExts]);
-                }
-            });
-        });
-    }
-
-    private getPreferredExtension(exts: string[]): string {
-        const allExtensions = this.allExtensions(exts);
-        if (allExtensions.length === 1) {
-            return allExtensions[0];
-        } else if (allExtensions.length > 1) {
-            for (const supportedExt of SUPPORTED_CONFIG_FILES) {
-                if (allExtensions.includes(supportedExt)) {
-                    return supportedExt;
-                }
-            }
-        }
-        return SUPPORTED_CONFIG_FILES[0];
-    }
-
-    private allExtensions(exts: string[]): string[] {
-        const extensions: any = {};
-        for (const ext of exts) {
-            extensions[ext] = true;
-        }
-        return Object.keys(extensions);
-    }
-
-    async editDefinedEnvironments() {
-        // const projectInfo: any = await vscode.commands.executeCommand(PROJECT_INFO, this.folder.uri.toString());
-        // console.log(projectInfo)
-        vscode.window.showInputBox({
-            title: 'Edit Application Environments',
-            placeHolder: vscode.l10n.t('Provide comma-separated environments (like \'dev,test\')'),
-            value: this.definedEnvironments?.join(','),
-            prompt: 'Leave blank to inherit from context.'
-        }).then(address => {
-            if (address !== undefined) {
-                address = address.replace(/\s/g, '');
-                const environments = address ? address.split(',') : [];
-                if (environments.length || !this.controlPanel.isEnabled()) {
-                    this.setDefinedEnvironments(environments);
-                } else {
-                    const defineDevOption = 'Define Environments';
-                    const disableCpOption = 'Disable Control Panel';
-                    const cancelOption = 'Cancel';
-                    vscode.window.showWarningMessage('Micronaut Control Panel requires at least one defined environment. How to proceed?', defineDevOption, disableCpOption, cancelOption).then(selectedOption => {
-                        if (selectedOption === defineDevOption) {
-                            this.editDefinedEnvironments();
-                        } else if (selectedOption === disableCpOption) {
-                            this.controlPanel.setEnabled(false);
-                            this.setDefinedEnvironments(environments);
-                        }
-                    });
-                }
-            }
-        });
-    }
-
-    setDefinedEnvironments(definedEnvironments: string[] | undefined) {
-        this.definedEnvironments = definedEnvironments;
-        this.notifyDefinedEvironmentsChanged(this.definedEnvironments);
     }
 
     getState(): State {
@@ -489,9 +315,9 @@ export class Application {
             vmArgs.push(`-Dmicronaut.server.port=${this.getPort()}`);
         }
 
-        if (this.definedEnvironments?.length) {
-            const definedEnvironments = this.definedEnvironments.join(',');
-            vmArgs.push(`-Dmicronaut.environments=${definedEnvironments}`);
+        const environmentsVmArgs = this.definedEnvironments.buildVmArgs();
+        if (environmentsVmArgs) {
+            vmArgs.push(environmentsVmArgs);
         }
 
         const managementVmArgs = this.management.buildVmArgs();
@@ -507,6 +333,10 @@ export class Application {
         return vmArgs.length ? vmArgs.join(' ') : undefined;
     }
 
+    getDefinedEnvironments(): applicationEnvironments.DefinedEnvironments {
+        return this.definedEnvironments;
+    }
+
     getManagement(): management.Management {
         return this.management;
     }
@@ -518,7 +348,6 @@ export class Application {
     private readonly onStateChangedListeners: OnStateChanged[] = [];
     private readonly onAliveTickListeners: OnAliveTick[] = [];
     private readonly onAddressChangedListeners: OnAddressChanged[] = [];
-    private readonly onDefinedEnvironmentsChangedListeners: OnDefinedEnvironmentsChanged[] = [];
 
     onStateChanged(listener: OnStateChanged) {
         this.onStateChangedListeners.push(listener);
@@ -530,10 +359,6 @@ export class Application {
 
     onAddressChanged(listener: OnAddressChanged) {
         this.onAddressChangedListeners.push(listener);
-    }
-
-    onDefinedEnvironmentsChanged(listener: OnDefinedEnvironmentsChanged) {
-        this.onDefinedEnvironmentsChangedListeners.push(listener);
     }
 
     private notifyStateChanged(previousState: State) {
@@ -554,12 +379,6 @@ export class Application {
         }
     }
 
-    private notifyDefinedEvironmentsChanged(definedEnvironments: string[] | undefined) {
-        for (const listener of this.onDefinedEnvironmentsChangedListeners) {
-            listener(definedEnvironments);
-        }
-    }
-
 }
 
 class RunCustomizer implements vscode.DebugConfigurationProvider {
@@ -577,6 +396,7 @@ class RunCustomizer implements vscode.DebugConfigurationProvider {
                             if (!config.vmArgs) {
                                 config.vmArgs = vmArgs;
                             } else {
+                                // TODO: override defined args where necessary (port, env, etc.)
                                 config.vmArgs = `${config.vmArgs} ${vmArgs}`;
                             }
                         }

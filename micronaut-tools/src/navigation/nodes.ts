@@ -197,6 +197,7 @@ export class ApplicationFolderNode extends BaseNode {
     private static readonly BASE_CONTEXT = 'extension.micronaut-tools.navigation.ApplicationFolderNode';
 
     private readonly folderData: workspaceFolders.FolderData;
+    private startable: boolean = false;
 
     constructor(folder: workspaceFolders.FolderData, _iconsFolder: vscode.Uri, treeChanged: TreeChanged) {
         super(folder.getWorkspaceFolder().name, undefined, ApplicationFolderNode.BASE_CONTEXT, [], true);
@@ -228,15 +229,17 @@ export class ApplicationFolderNode extends BaseNode {
             this.updateContext();
             treeChanged(this);
         });
-        application.getSelectedModule().onModuleChanged(singleModule => {
+        application.getSelectedModule().onModuleChanged((singleModule, uri, _name, totalModules) => {
             if (singleModule === false) {
                 const children = this.children;
                 if (children && !(children[0] instanceof ApplicationModuleNode)) {
                     children.unshift(new ApplicationModuleNode(folder.getApplication(), treeChanged));
                     this.setChildren(children);
-                    treeChanged(this);
                 }
             }
+            this.startable = uri !== undefined && totalModules > 0; // totalModules > 0 only after resolving projectInfo (NBLS ready)
+            this.updateContext();
+            treeChanged(this);
         });
         application.getManagement().onFeaturesAvailableChanged((refreshAvailable, serverStopAvailable) => {
             this.updateContext(refreshAvailable, serverStopAvailable);
@@ -277,6 +280,9 @@ export class ApplicationFolderNode extends BaseNode {
         const location = targetAddress.isLocal(application.getAddress()) ? 'local' : 'remote';
         const state = application.getState().toString();
         let contextValue = `${ApplicationFolderNode.BASE_CONTEXT}.${location}.${state}.`;
+        if (this.startable) {
+            contextValue += 'startable.';
+        }
         if (refreshAvailable) {
             contextValue += 'refreshable.';
         }
@@ -306,9 +312,9 @@ export class ApplicationModuleNode extends BaseNode {
             this.updateContext(state, this.editable);
             treeChanged(this);
         });
-        this.application.getSelectedModule().onModuleChanged((_singleModule, _uri, name, editable) => {
+        this.application.getSelectedModule().onModuleChanged((_singleModule, _uri, name, totalModules) => {
             this.description = name || 'not available';
-            this.editable = editable > 1;
+            this.editable = totalModules > 1;
             this.updateContext(this.application.getState(), this.editable);
             treeChanged(this);
         });
@@ -319,7 +325,7 @@ export class ApplicationModuleNode extends BaseNode {
     }
 
     private updateContext(state: applications.State, editable: boolean) {
-        this.contextValue = `${ApplicationModuleNode.BASE_CONTEXT}.${editable ? 'editable' : 'fixed'}.${state}.`;
+        this.contextValue = `${ApplicationModuleNode.BASE_CONTEXT}.${state}.${editable ? 'editable.' : ''}`;
     }
 
 }
@@ -386,7 +392,11 @@ export class ApplicationEnvironmentsNode extends BaseNode {
             this.update();
             treeChanged(this);
         });
-        this.application.onDefinedEnvironmentsChanged(() => {
+        this.application.getSelectedModule().onModuleChanged(() => {
+            this.update();
+            treeChanged(this);
+        });
+        this.application.getDefinedEnvironments().onDefinedEnvironmentsChanged(() => {
             this.update();
             treeChanged(this);
         });
@@ -405,19 +415,18 @@ export class ApplicationEnvironmentsNode extends BaseNode {
     }
 
     configureEnvironments() {
-        this.application.configureDefinedEnvironments();
+        this.application.getDefinedEnvironments().configure();
     }
 
     editEnvironments() {
-        this.application.editDefinedEnvironments();
+        this.application.getDefinedEnvironments().edit();
     }
 
     private update(data?: any) {
-        const environment = this.application.getManagement().getEnvironmentEndpoint();
         switch (this.application.getState()) {
             case applications.State.CONNECTED_LAUNCH:
             case applications.State.CONNECTED_ATTACH:
-                switch (environment.isAvailable()) {
+                switch (this.application.getManagement().getEnvironmentEndpoint().isAvailable()) {
                     case true:
                         if (data) {
                             const activeEnvironments = environmentEndpoint.activeEnvironments(data);
@@ -446,7 +455,7 @@ export class ApplicationEnvironmentsNode extends BaseNode {
                 this.contextValue = ApplicationEnvironmentsNode.BASE_CONTEXT + '.updating.';
                 break;
             default:
-                const definedEnvironments = this.application.getDefinedEnvironments();
+                const definedEnvironments = this.application.getDefinedEnvironments().get();
                 if (definedEnvironments?.length) {
                     this.description = definedEnvironments.join(',');
                 } else {
@@ -454,6 +463,9 @@ export class ApplicationEnvironmentsNode extends BaseNode {
                 }
                 this.tooltip = 'Environments to be active in the launched application';
                 this.contextValue = ApplicationEnvironmentsNode.BASE_CONTEXT + '.idle.';
+                if (this.application.getSelectedModule().getUri()) {
+                    this.contextValue += 'moduleSet.';
+                }
         }
     }
 
