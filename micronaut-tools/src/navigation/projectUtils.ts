@@ -133,6 +133,8 @@ export async function checkConfigured(uri: vscode.Uri, subject: string, ...depen
         if (selected === updateDependenciesOption) {
             await addMissingDependencies(uri, ...missingDependencies);
             return true;
+        } else {
+            return false;
         }
     }
     return true;
@@ -152,10 +154,12 @@ async function getMissingDependencies(uri: vscode.Uri, ...dependencies: ProjectD
                 }
             }
             return missingDependencies;
+        } else {
+            throw new Error('Failed to determine project build file.');
         }
-        throw new Error('Failed to determine project build file.');
+    } else {
+        throw new Error('Failed to determine project build system.');
     }
-    throw new Error('Failed to determine project build system.');
 }
 
 async function addMissingDependencies(uri: vscode.Uri, ...dependencies: ProjectDependency[]) {
@@ -168,8 +172,9 @@ async function addMissingDependencies(uri: vscode.Uri, ...dependencies: ProjectD
             dependencyStrings.push(`${dependency.group}:${dependency.artifact}`);
         }
         vscode.window.showInformationMessage(`Add the following modules as runtime dependencies to ${buildFile}: ${dependencyStrings.join(', ')}`);
+    } else {
+        throw new Error('Failed to determine project build system.');
     }
-    throw new Error('Failed to add required dependencies.')
 }
 
 function delay(ms: number) {

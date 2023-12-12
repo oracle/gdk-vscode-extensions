@@ -128,14 +128,14 @@ export class Management extends beanHandler.BeanHandler {
                 super.doEnable();
             }
         }).catch(err => {
-            console.log('Failed to configure project for Management & Monitoring: ' + err)
+            console.log('Failed to configure project for Monitoring & Management: ' + err)
             console.log(err)
         });
     }
 
     private async checkConfigured(): Promise<boolean> {
         const moduleUri = this.application.getSelectedModule().getUri();
-        return moduleUri ? projectUtils.checkConfigured(moduleUri, 'Management & Monitoring', ...REQUIRED_DEPENDENCIES) : false;
+        return moduleUri ? projectUtils.checkConfigured(moduleUri, 'Monitoring & Management', ...REQUIRED_DEPENDENCIES) : false;
     }
 
     getRefreshEndpoint(): refreshEndpoint.RefreshEndpoint {
