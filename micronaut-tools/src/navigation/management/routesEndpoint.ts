@@ -12,6 +12,7 @@ import * as symbols from '../symbols';
 import * as beanHandler from './beanHandler';
 
 
+const SETTING_ENABLED_KEY = 'routesEndpointEnabled';
 const RELATIVE_ADDRESS = '/routes';
 
 export type OnEndpointsResolved = (endpoints: symbols.Endpoint[] | null | undefined) => void;
@@ -25,7 +26,7 @@ export class RoutesEndpoint extends beanHandler.BeanHandler {
     private runtimeEndpoints: symbols.Endpoint[] | null | undefined;
 
     constructor(application: applications.Application) {
-        super(application, RELATIVE_ADDRESS)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS)
     }
 
     getRuntimeEndpoints(): symbols.Endpoint[] | null | undefined {

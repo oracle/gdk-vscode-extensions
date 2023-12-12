@@ -5,7 +5,9 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
+import * as vscode from 'vscode';
 import * as applications from '../applications';
+import * as settings from '../settings';
 import * as rest from '../rest';
 
 
@@ -14,6 +16,7 @@ export type OnAvailableChanged = (available: boolean | undefined) => void;
 
 export abstract class BeanHandler {
 
+    private readonly settingsAvailableKey: string;
     protected readonly application: applications.Application;
 
     public readonly relativeAddress: string | undefined;
@@ -22,10 +25,20 @@ export abstract class BeanHandler {
     private enabled: boolean = false;
     private available: boolean | undefined = false;
 
-    protected constructor(application: applications.Application, relativeAddress: string | undefined = undefined, availableCode: number = 200) {
+    protected constructor(application: applications.Application, settingsAvailableKey: string, relativeAddress: string | undefined = undefined, availableCode: number = 200) {
         this.application = application;
+        this.settingsAvailableKey = settingsAvailableKey;
         this.relativeAddress = relativeAddress;
         this.availableCode = availableCode;
+
+        // Restore the enabled state "later" as it calls doEnable() / doDisable() overriden by the subclasses
+        setTimeout(() => {
+            const moduleUri = application.getSelectedModule().getUri();
+            this.loadFromUri(moduleUri);
+            application.getSelectedModule().onModuleChanged((_singleModule, uri) => {
+                this.loadFromUri(uri);
+            });
+        }, 0);
     }
 
     getAddress(): string {
@@ -46,14 +59,31 @@ export abstract class BeanHandler {
         }
     }
 
+    private loadFromUri(moduleUri: vscode.Uri | undefined) {
+        const persistedEnabled = moduleUri ? settings.getForUri<boolean>(moduleUri, this.settingsAvailableKey) === true : false;
+        if (persistedEnabled) {
+            this.doEnable();
+        } else {
+            this.doDisable();
+        }
+    }
+
     protected doEnable() {
         this.enabled = true;
         this.notifyEnabledChanged();
+        const moduleUri = this.application.getSelectedModule().getUri();
+        if (moduleUri) {
+            settings.setForUri(moduleUri, this.settingsAvailableKey, true);
+        }
     }
 
     protected doDisable() {
         this.enabled = false;
         this.notifyEnabledChanged();
+        const moduleUri = this.application.getSelectedModule().getUri();
+        if (moduleUri) {
+            settings.setForUri(moduleUri, this.settingsAvailableKey, undefined);
+        }
     }
 
     isAvailable(): boolean | undefined {

@@ -9,6 +9,7 @@ import * as applications from '../applications';
 import * as beanHandler from './beanHandler';
 
 
+const SETTING_ENABLED_KEY = 'healthEndpointEnabled';
 const RELATIVE_ADDRESS = '/health';
 const DOWN_CODE = 503;
 
@@ -19,7 +20,7 @@ export function forApplication(application: applications.Application) {
 export class HealthEndpoint extends beanHandler.UpdatableBeanHandler {
 
     constructor(application: applications.Application) {
-        super(application, RELATIVE_ADDRESS)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS)
     }
 
     protected availableResp(response: { code: number | undefined; headers: any; data: any; }): boolean {

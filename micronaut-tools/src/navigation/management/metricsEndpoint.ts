@@ -9,6 +9,8 @@ import * as rest from '../rest';
 import * as applications from '../applications';
 import * as beanHandler from './beanHandler';
 
+
+const SETTING_ENABLED_KEY = 'metricsEndpointEnabled';
 const RELATIVE_ADDRESS = '/metrics';
 
 export const MEMORY_MAX_HEAP = 'jvm.memory.max?tag=area:heap';
@@ -36,7 +38,7 @@ export function forApplication(application: applications.Application) {
 export class MetricsEndpoint extends beanHandler.UpdatableBeanHandler {
 
     constructor(application: applications.Application) {
-        super(application, RELATIVE_ADDRESS)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS)
     }
 
     // protected async processResponse(response: { code: number | undefined; headers: any; data: any }) {

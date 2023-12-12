@@ -12,6 +12,7 @@ import * as symbols from '../symbols';
 import * as beanHandler from './beanHandler';
 
 
+const SETTING_ENABLED_KEY = 'beansEndpointEnabled';
 const RELATIVE_ADDRESS = '/beans';
 
 export type OnBeansResolved = (beans: symbols.Bean[] | null | undefined) => void;
@@ -25,7 +26,7 @@ export class BeansEndpoint extends beanHandler.BeanHandler {
     private runtimeBeans: symbols.Bean[] | null | undefined;
 
     constructor(application: applications.Application) {
-        super(application, RELATIVE_ADDRESS)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS)
     }
 
     getRuntimeBeans(): symbols.Bean[] | null | undefined {

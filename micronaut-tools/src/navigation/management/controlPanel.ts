@@ -7,10 +7,18 @@
 
 import * as vscode from 'vscode';
 import * as applications from '../applications';
+import * as projectUtils from '../projectUtils';
 import * as beanHandler from './beanHandler';
 
 
+const SETTING_ENABLED_KEY = 'controlPanelEnabled';
 const RELATIVE_ADDRESS = '/control-panel';
+
+const REQUIRED_DEPENDENCIES: projectUtils.ProjectDependency[] = [
+    { group: 'io.micronaut', artifact: 'micronaut-management'}, // https://docs.micronaut.io/latest/guide/#management
+    { group: 'io.micronaut.controlpanel', artifact: 'micronaut-control-panel-ui'}, // https://micronaut-projects.github.io/micronaut-control-panel/snapshot/guide/#quickStart
+    { group: 'io.micronaut.controlpanel', artifact: 'micronaut-control-panel-management'} // https://micronaut-projects.github.io/micronaut-control-panel/snapshot/guide/#quickStart
+]
 
 export function forApplication(application: applications.Application) {
     return new ControlPanel(application);
@@ -19,7 +27,7 @@ export function forApplication(application: applications.Application) {
 export class ControlPanel extends beanHandler.BeanHandler {
 
     constructor(application: applications.Application) {
-        super(application, RELATIVE_ADDRESS);
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS);
         this.application.onStateChanged(state => {
             this.checkAvailable(state);
         });
@@ -45,48 +53,14 @@ export class ControlPanel extends beanHandler.BeanHandler {
                 }
             }
         }).catch(err => {
-            console.log('Failed to configure project for Micronaut Control Panel:')
+            console.log('Failed to configure project for Micronaut Control Panel: ' + err)
             console.log(err)
         });
     }
 
-    fakeConfiguredFlag: boolean = false;
     private async checkConfigured(): Promise<boolean> {
-        // TODO:
-        // https://micronaut-projects.github.io/micronaut-control-panel/snapshot/guide/#quickStart
-        // --- Maven ---
-        // check whether pom.xml contains these dependencies:
-        // <dependency>
-        //     <groupId>io.micronaut</groupId>
-        //     <artifactId>micronaut-management</artifactId>
-        //     <scope>runtime</scope> ??
-        // </dependency>
-        // <dependency>
-        //     <groupId>io.micronaut.controlpanel</groupId>
-        //     <artifactId>micronaut-control-panel-ui</artifactId>
-        //     <scope>runtime</scope> ??
-        // </dependency>
-        // <dependency>
-        //     <groupId>io.micronaut.controlpanel</groupId>
-        //     <artifactId>micronaut-control-panel-management</artifactId>
-        //     <scope>runtime</scope> ??
-        // </dependency>
-        // --- Gradle ---
-        // check whether ... TBD
-
-        if (!this.fakeConfiguredFlag) {
-            const updateDependenciesOption = 'Update Dependencies';
-            const cancelOption = 'Cancel';
-            const selected = await vscode.window.showWarningMessage('Project dependencies must be updated to enable this functionality.', updateDependenciesOption, cancelOption);
-            if (selected === updateDependenciesOption) {
-                this.fakeConfiguredFlag = true;
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return true;
-        }
+        const moduleUri = this.application.getSelectedModule().getUri();
+        return moduleUri ? projectUtils.checkConfigured(moduleUri, 'Micronaut Control Panel', ...REQUIRED_DEPENDENCIES) : false;
     }
 
     buildVmArgs(): string | undefined {
@@ -98,7 +72,6 @@ export class ControlPanel extends beanHandler.BeanHandler {
             return undefined;
         }
         return `-Dmicronaut.control-panel.enabled=true -Dmicronaut.control-panel.allowed-environments=${definedEnvironments.join(',')}`;
-        // return '-Dmicronaut.control-panel.allowed-environments=vscode -Dmicronaut.environments=vscode';
     }
 
 }

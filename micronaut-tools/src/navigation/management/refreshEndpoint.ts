@@ -11,6 +11,7 @@ import * as rest from '../rest';
 import * as beanHandler from './beanHandler';
 
 
+const SETTING_ENABLED_KEY = 'refreshEndpointEnabled';
 const RELATIVE_ADDRESS = '/refresh';
 const AVAILABLE_CODE = 405; // Method Not Allowed (only POST supported)
 
@@ -21,7 +22,7 @@ export function forApplication(application: applications.Application) {
 export class RefreshEndpoint extends beanHandler.BeanHandler {
 
     constructor(application: applications.Application) {
-        super(application, RELATIVE_ADDRESS, AVAILABLE_CODE)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS, AVAILABLE_CODE)
     }
 
     async refresh(): Promise<boolean> {

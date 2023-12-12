@@ -11,6 +11,7 @@ import * as rest from '../rest';
 import * as beanHandler from './beanHandler';
 
 
+const SETTING_ENABLED_KEY = 'stopEndpointEnabled';
 const RELATIVE_ADDRESS = '/stop';
 const AVAILABLE_CODE = 405; // Method Not Allowed (only POST supported)
 
@@ -21,7 +22,7 @@ export function forApplication(application: applications.Application) {
 export class ServerStopEndpoint extends beanHandler.BeanHandler {
 
     constructor(application: applications.Application) {
-        super(application, RELATIVE_ADDRESS, AVAILABLE_CODE)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS, AVAILABLE_CODE)
     }
 
     async stopServer(): Promise<boolean> {

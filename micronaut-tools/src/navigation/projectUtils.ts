@@ -33,6 +33,13 @@ export interface ProjectInfo {
     readonly runnableModules: string[];
 }
 
+export interface ProjectDependency {
+    readonly group: string;
+    readonly artifact: string;
+    // readonly version?: string;
+    // readonly scope?: string;
+}
+
 export function isRunnableUri(uri: vscode.Uri): boolean {
     try {
         const rootDir = uri.fsPath;
@@ -101,20 +108,68 @@ export async function runModule(mode: RunMode, uri: vscode.Uri, build: BuildSyst
     }
 }
 
-function resolveBuildSystemType(uri: vscode.Uri, projectType: string | undefined): BuildSystemType {
+function resolveBuildSystemType(uri: vscode.Uri, projectType?: string): BuildSystemType {
     if (projectType?.includes('gradle')) {
         return BuildSystemType.GRADLE;
     }
     if (projectType?.includes('maven')) {
         return BuildSystemType.MAVEN;
     }
-    if (fs.existsSync(path.join(uri.fsPath, 'gradlew'))) {
+    if (fs.existsSync(path.join(uri.fsPath, 'build.gradle'))) {
         return BuildSystemType.GRADLE;
     }
-    if (fs.existsSync(path.join(uri.fsPath, 'mvnw'))) {
+    if (fs.existsSync(path.join(uri.fsPath, 'pom.xml'))) {
         return BuildSystemType.MAVEN;
     }
     return BuildSystemType.UNKNOWN;
+}
+
+export async function checkConfigured(uri: vscode.Uri, subject: string, ...dependencies: ProjectDependency[]): Promise<boolean> {
+    const missingDependencies = await getMissingDependencies(uri, ...dependencies);
+    if (missingDependencies.length) {
+        const updateDependenciesOption = 'Update Dependencies';
+        const cancelOption = 'Cancel';
+        const selected = await vscode.window.showWarningMessage(`Project dependencies must be updated to enable ${subject}.`, updateDependenciesOption, cancelOption);
+        if (selected === updateDependenciesOption) {
+            await addMissingDependencies(uri, ...missingDependencies);
+            return true;
+        }
+    }
+    return true;
+}
+
+async function getMissingDependencies(uri: vscode.Uri, ...dependencies: ProjectDependency[]): Promise<ProjectDependency[]> {
+    // TODO: replace by a real implementation!
+    const buildSystem = resolveBuildSystemType(uri);
+    if (buildSystem !== BuildSystemType.UNKNOWN) {
+        const buildFile = path.join(uri.fsPath, buildSystem === BuildSystemType.MAVEN ? 'pom.xml' : 'build.gradle');
+        if (fs.existsSync(buildFile)) {
+            const content = fs.readFileSync(buildFile).toString();
+            const missingDependencies = [];
+            for (const dependency of dependencies) {
+                if (!content.includes(dependency.artifact)) {
+                    missingDependencies.push(dependency);
+                }
+            }
+            return missingDependencies;
+        }
+        throw new Error('Failed to determine project build file.');
+    }
+    throw new Error('Failed to determine project build system.');
+}
+
+async function addMissingDependencies(uri: vscode.Uri, ...dependencies: ProjectDependency[]) {
+    // TODO: replace by a real implementation!
+    const buildSystem = resolveBuildSystemType(uri);
+    if (buildSystem !== BuildSystemType.UNKNOWN) {
+        const buildFile = path.join(uri.fsPath, buildSystem === BuildSystemType.MAVEN ? 'pom.xml' : 'build.gradle');
+        const dependencyStrings = [];
+        for (const dependency of dependencies) {
+            dependencyStrings.push(`${dependency.group}:${dependency.artifact}`);
+        }
+        vscode.window.showInformationMessage(`Add the following modules as runtime dependencies to ${buildFile}: ${dependencyStrings.join(', ')}`);
+    }
+    throw new Error('Failed to add required dependencies.')
 }
 
 function delay(ms: number) {

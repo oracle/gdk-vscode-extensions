@@ -11,6 +11,7 @@ import * as rest from '../rest';
 import * as beanHandler from './beanHandler';
 
 
+const SETTING_ENABLED_KEY = 'loggersEndpointEnabled';
 const RELATIVE_ADDRESS = '/loggers';
 
 const LEVEL_NOT_SPECIFIED = 'NOT_SPECIFIED';
@@ -22,7 +23,7 @@ export function forApplication(application: applications.Application) {
 export class LoggersEndpoint extends beanHandler.UpdatableBeanHandler {
 
     constructor(application: applications.Application) {
-        super(application, RELATIVE_ADDRESS)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS)
     }
 
     editLoggers() {

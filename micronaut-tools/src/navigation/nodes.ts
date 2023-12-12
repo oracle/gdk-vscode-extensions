@@ -201,24 +201,27 @@ export class ApplicationFolderNode extends BaseNode {
 
     constructor(folder: workspaceFolders.FolderData, _iconsFolder: vscode.Uri, treeChanged: TreeChanged) {
         super(folder.getWorkspaceFolder().name, undefined, ApplicationFolderNode.BASE_CONTEXT, [], true);
+        const application = folder.getApplication();
         const children: BaseNode[] = [
-            new ApplicationAddressNode(folder.getApplication(), treeChanged),
-            new ApplicationEnvironmentsNode(folder.getApplication(), treeChanged),
-            new ApplicationMonitoringNode(folder.getApplication(), treeChanged),
-            new ApplicationControlPanelNode(folder.getApplication(), treeChanged)
+            new ApplicationAddressNode(application, treeChanged),
+            new ApplicationEnvironmentsNode(application, treeChanged),
+            new ApplicationMonitoringNode(application, treeChanged),
+            new ApplicationControlPanelNode(application, treeChanged)
         ];
-        if (folder.getApplication().getSelectedModule().isSingleModule() === false) {
-            children.unshift(new ApplicationModuleNode(folder.getApplication(), treeChanged));
+        if (application.getSelectedModule().isSingleModule() === false) {
+            children.unshift(new ApplicationModuleNode(application, treeChanged));
         }
         this.setChildren(children);
         this.tooltip = folder.getWorkspaceFolder().uri.fsPath;
         this.folderData = folder;
         // this.iconPath = vscode.Uri.joinPath(iconsFolder, 'micronaut.png');
 
+        const selectedModule = application.getSelectedModule();
+        this.startable = selectedModule.getUri() !== undefined && selectedModule.getTotalModules() > 0; // totalModules > 0 only after resolving projectInfo (NBLS ready)
+
         this.updateIcon();
         this.updateContext();
 
-        const application = this.folderData.getApplication();
         application.onAddressChanged(() => {
             this.updateIcon();
             this.updateContext();
@@ -233,7 +236,7 @@ export class ApplicationFolderNode extends BaseNode {
             if (singleModule === false) {
                 const children = this.children;
                 if (children && !(children[0] instanceof ApplicationModuleNode)) {
-                    children.unshift(new ApplicationModuleNode(folder.getApplication(), treeChanged));
+                    children.unshift(new ApplicationModuleNode(application, treeChanged));
                     this.setChildren(children);
                 }
             }
@@ -464,7 +467,7 @@ export class ApplicationEnvironmentsNode extends BaseNode {
                 this.tooltip = 'Environments to be active in the launched application';
                 this.contextValue = ApplicationEnvironmentsNode.BASE_CONTEXT + '.idle.';
                 if (this.application.getSelectedModule().getUri()) {
-                    this.contextValue += 'moduleSet.';
+                    this.contextValue += 'editable.';
                 }
         }
     }
@@ -485,7 +488,10 @@ export class ApplicationMonitoringNode extends BaseNode {
             this.update();
             treeChanged(this);
         });
-        
+        this.application.getSelectedModule().onModuleChanged(() => {
+            this.update();
+            treeChanged(this);
+        });
         const management = this.application.getManagement();
         management.onEnabledChanged(() => {
             this.update();
@@ -565,6 +571,9 @@ export class ApplicationMonitoringNode extends BaseNode {
                 this.description = management.isEnabled() ? 'enabled' : 'inherited';
                 this.tooltip = 'Monitoring and management capabilities for the launched application';
                 this.contextValue = ApplicationMonitoringNode.BASE_CONTEXT + '.idle.';
+                if (this.application.getSelectedModule().getUri()) {
+                    this.contextValue += 'editable.';
+                }
         }
     }
 
@@ -584,7 +593,10 @@ export class ApplicationControlPanelNode extends BaseNode {
             this.update();
             treeChanged(this);
         });
-        
+        this.application.getSelectedModule().onModuleChanged(() => {
+            this.update();
+            treeChanged(this);
+        });
         const controlPanel = this.application.getControlPanel();
         controlPanel.onEnabledChanged(() => {
             this.update();
@@ -641,6 +653,9 @@ export class ApplicationControlPanelNode extends BaseNode {
                 this.description = controlPanel.isEnabled() ? 'enabled' : 'inherited';
                 this.tooltip = 'Micronaut Control Panel availability for the launched application';
                 this.contextValue = ApplicationControlPanelNode.BASE_CONTEXT + '.idle.';
+                if (this.application.getSelectedModule().getUri()) {
+                    this.contextValue += 'editable.';
+                }
         }
     }
 

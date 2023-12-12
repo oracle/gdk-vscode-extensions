@@ -5,8 +5,8 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
-import * as vscode from 'vscode';
 import * as applications from '../applications';
+import * as projectUtils from '../projectUtils';
 import * as beanHandler from './beanHandler';
 import * as refreshEndpoint from './refreshEndpoint';
 import * as serverStopEndpoint from './serverStopEndpoint';
@@ -18,6 +18,15 @@ import * as metricsEndpoint from './metricsEndpoint';
 import * as loggersEndpoint from './loggersEndpoint';
 import * as cachesEndpoint from './cachesEndpoint';
 
+
+const SETTING_ENABLED_KEY = 'managementMonitoringEnabled';
+
+const REQUIRED_DEPENDENCIES: projectUtils.ProjectDependency[] = [
+    { group: 'io.micronaut', artifact: 'micronaut-management'}, // https://docs.micronaut.io/latest/guide/#management
+    { group: 'io.micronaut.cache', artifact: 'micronaut-cache-management'}, // https://micronaut-projects.github.io/micronaut-cache/latest/guide/index.html#endpoint
+    { group: 'io.micrometer', artifact: 'micrometer-core'}, // https://micrometer.io/docs/concepts#_dependencies
+    { group: 'io.micronaut.micrometer', artifact: 'micronaut-micrometer-core'} // https://micronaut-projects.github.io/micronaut-micrometer/latest/guide/#metricsEndpoint
+]
 
 export type OnFeaturesAvailableChanged = (refreshAvailable: boolean, serverStopAvailable: boolean) => void;
 
@@ -42,7 +51,7 @@ export class Management extends beanHandler.BeanHandler {
     private cachesEndpoint: cachesEndpoint.CachesEndpoint;
 
     constructor(application: applications.Application) {
-        super(application);
+        super(application, SETTING_ENABLED_KEY);
         this.refreshEndpoint = refreshEndpoint.forApplication(application);
         this.serverStopEndpoint = serverStopEndpoint.forApplication(application);
         this.environmentEndpoint = environmentEndpoint.forApplication(application);
@@ -68,23 +77,14 @@ export class Management extends beanHandler.BeanHandler {
                 ];
                 Promise.all(available).then(available => {
                     const refreshEndpointAvailable = available[0];
-                    // console.log('>>> refreshEndpointAvailable: ' + refreshEndpointAvailable)
                     const serverStopEndpointAvailable = available[1];
-                    // console.log('>>> serverStopEndpointAvailable: ' + serverStopEndpointAvailable)
                     const environmentEndpoint = available[2];
-                    // console.log('>>> beansEndpointAvailable: ' + beansEndpointAvailable)
                     const beansEndpointAvailable = available[3];
-                    // console.log('>>> beansEndpointAvailable: ' + beansEndpointAvailable)
                     const routesEndpointAvailable = available[4];
-                    // console.log('>>> routesEndpointAvailable: ' + routesEndpointAvailable)
                     const healthEndpointAvailable = available[5];
-                    // console.log('>>> healthEndpointAvailable: ' + healthEndpointAvailable)
                     const metricsEndpointAvailable = available[6];
-                    // console.log('>>> metricsEndpointAvailable: ' + metricsEndpointAvailable)
                     const loggersEndpointAvailable = available[7];
-                    // console.log('>>> loggersEndpointAvailable: ' + loggersEndpointAvailable)
                     const cachesEndpointAvailable = available[8];
-                    // console.log('>>> cachesEndpointAvailable: ' + cachesEndpointAvailable)
                     this.setAvailable(
                         refreshEndpointAvailable ||
                         serverStopEndpointAvailable ||
@@ -128,9 +128,14 @@ export class Management extends beanHandler.BeanHandler {
                 super.doEnable();
             }
         }).catch(err => {
-            console.log('Failed to configure project for Micronaut Control Panel:')
+            console.log('Failed to configure project for Management & Monitoring: ' + err)
             console.log(err)
         });
+    }
+
+    private async checkConfigured(): Promise<boolean> {
+        const moduleUri = this.application.getSelectedModule().getUri();
+        return moduleUri ? projectUtils.checkConfigured(moduleUri, 'Management & Monitoring', ...REQUIRED_DEPENDENCIES) : false;
     }
 
     getRefreshEndpoint(): refreshEndpoint.RefreshEndpoint {
@@ -167,45 +172,6 @@ export class Management extends beanHandler.BeanHandler {
 
     getCachesEndpoint(): cachesEndpoint.CachesEndpoint {
         return this.cachesEndpoint;
-    }
-
-    fakeConfiguredFlag: boolean = false;
-    private async checkConfigured(): Promise<boolean> {
-        // TODO:
-        // https://micronaut-projects.github.io/micronaut-control-panel/snapshot/guide/#quickStart
-        // --- Maven ---
-        // check whether pom.xml contains these dependencies:
-        // <dependency>
-        //     <groupId>io.micronaut</groupId>
-        //     <artifactId>micronaut-management</artifactId>
-        //     <scope>runtime</scope> ??
-        // </dependency>
-        // <dependency>
-        //     <groupId>io.micrometer</groupId>
-        //     <artifactId>micrometer-core</artifactId>
-        //     <scope>runtime</scope> ??
-        // </dependency>
-        // <dependency>
-        //     <groupId>io.micronaut.micrometer</groupId>
-        //     <artifactId>micronaut-micrometer-core</artifactId>
-        //     <scope>runtime</scope> ??
-        // </dependency>
-        // --- Gradle ---
-        // check whether ... TBD
-
-        if (!this.fakeConfiguredFlag) {
-            const updateDependenciesOption = 'Update Dependencies';
-            const cancelOption = 'Cancel';
-            const selected = await vscode.window.showWarningMessage('Project dependencies must be updated to enable this functionality.', updateDependenciesOption, cancelOption);
-            if (selected === updateDependenciesOption) {
-                this.fakeConfiguredFlag = true;
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return true;
-        }
     }
 
     buildVmArgs(): string | undefined {

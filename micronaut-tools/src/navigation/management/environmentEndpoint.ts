@@ -9,6 +9,7 @@ import * as applications from '../applications';
 import * as beanHandler from './beanHandler';
 
 
+const SETTING_ENABLED_KEY = 'environmentEndpointEnabled';
 const RELATIVE_ADDRESS = '/env';
 
 export function forApplication(application: applications.Application) {
@@ -18,7 +19,7 @@ export function forApplication(application: applications.Application) {
 export class EnvironmentEndpoint extends beanHandler.UpdatableBeanHandler {
 
     constructor(application: applications.Application) {
-        super(application, RELATIVE_ADDRESS)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS)
     }
 
     protected async processResponse(response: { code: number | undefined; headers: any; data: any }) {

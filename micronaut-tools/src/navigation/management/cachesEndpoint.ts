@@ -11,6 +11,7 @@ import * as rest from '../rest';
 import * as beanHandler from './beanHandler';
 
 
+const SETTING_ENABLED_KEY = 'cachesEndpointEnabled';
 const RELATIVE_ADDRESS = '/caches';
 
 export function forApplication(application: applications.Application) {
@@ -20,7 +21,7 @@ export function forApplication(application: applications.Application) {
 export class CachesEndpoint extends beanHandler.UpdatableBeanHandler {
 
     constructor(application: applications.Application) {
-        super(application, RELATIVE_ADDRESS)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS)
     }
 
     clearCaches() {
@@ -143,8 +144,8 @@ export class CachesEndpoint extends beanHandler.UpdatableBeanHandler {
         // if (!this.isEnabled()) {
         //     return undefined;
         // }
-        // return '-Dendpoints.caches.enabled=true -Dendpoints.caches.sensitive=false -Dendpoints.caches.write-sensitive=false';
-        return '-Dendpoints.caches.enabled=true -Dendpoints.caches.sensitive=false';
+        return '-Dendpoints.caches.enabled=true -Dendpoints.caches.sensitive=false -Dendpoints.caches.write-sensitive=false';
+        // return '-Dendpoints.caches.enabled=true -Dendpoints.caches.sensitive=false';
     }
 
 }
