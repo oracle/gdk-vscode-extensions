@@ -7,48 +7,21 @@
 
 import * as vscode from 'vscode';
 import * as symbols from './symbols';
-import * as nodes from './nodes';
+import * as settings from './settings';
 
 
-const COMMAND_EDIT_TARGET_ADDRESS_GLOBAL = 'extension.micronaut-tools.navigation.editTargetAddressGlobal';
-const COMMAND_EDIT_TARGET_ADDRESS_FOLDER = 'extension.micronaut-tools.navigation.editTargetAddressFolder';
-const COMMAND_NAME_EDIT_TARGET_ADDRESS = vscode.l10n.t('Edit Target Application Address');
-
-const SETTINGS_MICRONAUT_TOOLS_CONFIG = 'micronaut-tools';
 const SETTING_TARGET_ADDRESS_KEY = 'targetApplicationAddress';
-const SETTING_TARGET_ADDRESS_DEFAULT = 'http://localhost:8080';
-
-export function initialize(context: vscode.ExtensionContext) {
-    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_EDIT_TARGET_ADDRESS_GLOBAL, async () => {
-        const folders = vscode.workspace.workspaceFolders;
-        let folder: vscode.WorkspaceFolder | undefined;
-        if (folders?.length === 1) {
-            folder = folders[0];
-        } else {
-            folder = await vscode.window.showWorkspaceFolderPick({
-                placeHolder: vscode.l10n.t('Pick workspace folder for which to edit the target address')
-            });
-        }
-        if (!folder) {
-            return;
-        }
-        const address = await editTargetAddress(folder);
-        if (address) {
-            await saveTargetAddress(folder, address);
-        }
-	}));
-    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_EDIT_TARGET_ADDRESS_FOLDER, async (node: nodes.EndpointsFolderNode) => {
-        const folder = node.getFolderData().getWorkspaceFolder();
-        const address = await editTargetAddress(folder);
-        if (address) {
-            await saveTargetAddress(folder, address);
-        }
-	}));
-}
+export const SETTING_TARGET_ADDRESS_DEFAULT = 'http://localhost:8080';
 
 export function getBaseAddress(uri: vscode.Uri): string {
-    const targetAddress = vscode.workspace.getConfiguration(SETTINGS_MICRONAUT_TOOLS_CONFIG, uri).get<string>(SETTING_TARGET_ADDRESS_KEY) || SETTING_TARGET_ADDRESS_DEFAULT;
-    return targetAddress;
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
+    if (workspaceFolder) {
+        const address = settings.getForUri<string>(workspaceFolder.uri, SETTING_TARGET_ADDRESS_KEY);
+        if (address) {
+            return address;
+        }
+    }
+    return SETTING_TARGET_ADDRESS_DEFAULT;
 }
 
 export async function getEndpointAddress(endpoint: symbols.Endpoint, actionName: string | undefined = undefined, defineParameters: boolean = true): Promise<string | undefined> {
@@ -75,15 +48,50 @@ export async function getEndpointAddress(endpoint: symbols.Endpoint, actionName:
     return address;
 }
 
-async function editTargetAddress(folder: vscode.WorkspaceFolder): Promise<string | undefined> {
-    return vscode.window.showInputBox({
-        title: COMMAND_NAME_EDIT_TARGET_ADDRESS,
-        placeHolder: vscode.l10n.t('Provide address of the target application ({0})', SETTING_TARGET_ADDRESS_DEFAULT),
-        value: getBaseAddress(folder.uri)
-    });
+export async function saveAddress(uri: vscode.Uri, address: string): Promise<void> {
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
+    if (workspaceFolder) {
+        const addressValue = address === SETTING_TARGET_ADDRESS_DEFAULT ? undefined : address; // delete record with default address
+        return settings.setForUri(workspaceFolder.uri, SETTING_TARGET_ADDRESS_KEY, addressValue);
+    }
 }
 
-async function saveTargetAddress(folder: vscode.WorkspaceFolder, address: string) {
-    const value = address === SETTING_TARGET_ADDRESS_DEFAULT ? undefined : address;
-    return vscode.workspace.getConfiguration(SETTINGS_MICRONAUT_TOOLS_CONFIG, folder.uri).update(SETTING_TARGET_ADDRESS_KEY, value, vscode.ConfigurationTarget.WorkspaceFolder);
+export function normalizeAddress(address: string): string {
+    address = address.trim();
+    if (address.length === 0 || address === 'localhost') {
+        return SETTING_TARGET_ADDRESS_DEFAULT;
+    }
+    if (address.startsWith(':')) {
+        const port = parseInt(address.substring(1));
+        if (!isNaN(port)) {
+            return `http://localhost:${port}`;
+        }
+    }
+    if (!address.includes('://')) {
+        address = `http://${address}`;
+    }
+    const maskedProtocol = address.replace('://', '~~~');
+    if (!maskedProtocol.includes(':')) {
+        address = `${address}:8080`;
+    }
+    return address;
+}
+
+export function getProtocol(address: string): string {
+    const protocolIdx = address.indexOf('://');
+    return protocolIdx < 0 ? 'http' : address.substring(0, protocolIdx);
+}
+
+export function getPlainAddress(address: string): string {
+    const protocolIdx = address.indexOf('://');
+    return protocolIdx < 0 ? address : address.substring(protocolIdx + 3);
+}
+
+export function getPort(address: string): number {
+    const portIdx = address.lastIndexOf(':');
+    return portIdx < 0 ? Number.NaN : Number.parseInt(address.substring(portIdx + 1));
+}
+
+export function isLocal(address: string): boolean {
+    return address.endsWith('://localhost') || address.includes('://localhost:');
 }

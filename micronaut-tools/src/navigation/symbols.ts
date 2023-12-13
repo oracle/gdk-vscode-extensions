@@ -31,65 +31,101 @@ export function initialize(context: vscode.ExtensionContext) {
 }
 
 export abstract class Symbol {
+    static readonly NO_POSITION = new vscode.Position(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
     constructor(
         readonly def: string,
+        readonly name: string,
+        readonly description: string,
         readonly uri: vscode.Uri,
         readonly startPos: vscode.Position,
         readonly endPos: vscode.Position
     ) {}
 }
 
-export class Bean extends Symbol {
+export abstract class Bean extends Symbol {
     static KIND = 'BEAN';
 }
 
-export class Endpoint extends Symbol {
-    static KIND = 'ENDPOINT';
-
-    static TYPE_GET = 'GET';
-    static TYPE_POST = 'POST';
-    static TYPE_PATCH = 'PATCH';
-    static TYPE_PUT = 'PUT';
-    static TYPE_DELETE = 'DELETE';
-    static TYPE_ERROR = 'ERROR';
-    static TYPE_UNKNOWN = 'UNKNOWN';
-
-    readonly name: string;
-    readonly type: string;
+class SourceBean extends Bean {
 
     constructor(def: string, uri: vscode.Uri, startPos: vscode.Position, endPos: vscode.Position) {
-        super(def, uri, startPos, endPos);
-        this.name = Endpoint.nameFromDef(def);
-        this.type = Endpoint.typeFromDef(def);
+        super(def, SourceBean.nameFromDef(def), SourceBean.descriptionFromUri(uri), uri, startPos, endPos);
     }
 
     static nameFromDef(def: string): string {
-        let name = def.substring('@'.length);
-        const nameEndIdx = name.indexOf(' -- ');
-        return name.substring(0, nameEndIdx);
+        let namePart = def.substring('@+ \''.length);
+        const nameEndIdx = namePart.indexOf('\'');
+        return namePart.substring(0, nameEndIdx);
+    }
+
+    static descriptionFromUri(uri: vscode.Uri): string {
+        return vscode.workspace.asRelativePath(uri, false);
+    }
+
+}
+
+export enum EndpointType {
+    TYPE_GET = 'GET',
+    TYPE_HEAD = 'HEAD',
+    TYPE_POST = 'POST',
+    TYPE_PATCH = 'PATCH',
+    TYPE_PUT = 'PUT',
+    TYPE_DELETE = 'DELETE',
+    TYPE_ERROR = 'ERROR',
+    TYPE_UNKNOWN = 'UNKNOWN'
+}
+
+export abstract class Endpoint extends Symbol {
+    
+    static KIND = 'ENDPOINT';
+
+    readonly type: EndpointType;
+
+    constructor(def: string, name: string, description: string, type: string, uri: vscode.Uri, startPos: vscode.Position, endPos: vscode.Position) {
+        super(def, name, description, uri, startPos, endPos);
+        this.type = Endpoint.typeFromString(type);
+    }
+
+    public static typeFromString(type: string): EndpointType {
+        switch (type.toUpperCase()) {
+            case 'GET': return EndpointType.TYPE_GET;
+            case 'HEAD': return EndpointType.TYPE_HEAD;
+            case 'POST': return EndpointType.TYPE_POST;
+            case 'PATCH': return EndpointType.TYPE_PATCH;
+            case 'PUT': return EndpointType.TYPE_PUT;
+            case 'DELETE': return EndpointType.TYPE_DELETE;
+            case 'ERROR': return EndpointType.TYPE_ERROR;
+        }
+        return EndpointType.TYPE_UNKNOWN;
+    }
+    
+}
+
+export class SourceEndpoint extends Endpoint {
+
+    constructor(def: string, uri: vscode.Uri, startPos: vscode.Position, endPos: vscode.Position) {
+        super(def, SourceEndpoint.nameFromDef(def), SourceEndpoint.descriptionFromUri(uri), SourceEndpoint.typeFromDef(def), uri, startPos, endPos);
+        // console.log('>>> DEF |' + def + '| -- NAME |' + this.name + '|')
+    }
+
+    static nameFromDef(def: string): string {
+        const typeSeparator = ' -- ';
+        const typeIdx = def.lastIndexOf(typeSeparator);
+        const name = def.substring('@'.length, typeIdx);
+        return name.endsWith('/') ? name.slice(0, -1) : name;
+    }
+
+    static descriptionFromUri(uri: vscode.Uri): string {
+        return vscode.workspace.asRelativePath(uri, false);
     }
 
     static typeFromDef(def: string): string {
-        if (def.endsWith(' -- GET')) {
-            return Endpoint.TYPE_GET;
-        }
-        if (def.endsWith(' -- POST')) {
-            return Endpoint.TYPE_POST;
-        }
-        if (def.endsWith(' -- PATCH')) {
-            return Endpoint.TYPE_PATCH;
-        }
-        if (def.endsWith(' -- PUT')) {
-            return Endpoint.TYPE_PUT;
-        }
-        if (def.endsWith(' -- DELETE')) {
-            return Endpoint.TYPE_DELETE;
-        }
-        if (def.endsWith(' -- ERROR')) {
-            return Endpoint.TYPE_ERROR;
-        }
-        return Endpoint.TYPE_UNKNOWN;
+        const typeSeparator = ' -- ';
+        const typeIdx = def.lastIndexOf(typeSeparator);
+        const type = typeIdx >= 0 ? def.substring(typeIdx + typeSeparator.length) : def;
+        return SourceEndpoint.typeFromString(type);
     }
+
 }
 
 export function isBeanKind(kind: string[]) {
@@ -218,11 +254,11 @@ async function reload(kind: string[]) {
 }
 
 async function readBeans(): Promise<Bean[]> {
-    return obtainWorkspaceSymbols(PREFIX_BEANS, Bean);
+    return obtainWorkspaceSymbols(PREFIX_BEANS, SourceBean);
 }
 
 async function readEndpoints(): Promise<Endpoint[]> {
-    return obtainWorkspaceSymbols(PREFIX_ENDPOINTS, Endpoint);
+    return obtainWorkspaceSymbols(PREFIX_ENDPOINTS, SourceEndpoint);
 }
 
 async function obtainWorkspaceSymbols<T extends Symbol>(ENDPOINT: typeof PREFIX_ENDPOINTS | typeof PREFIX_BEANS, constructor: new (def: string, uri: vscode.Uri, startPos: vscode.Position, endPos: vscode.Position) => T): Promise<T[]> {

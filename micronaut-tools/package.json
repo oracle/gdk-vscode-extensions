@@ -130,12 +130,6 @@
 					"default": true,
 					"description": "Use build system (Maven or Gradle) to run or debug applications.",
 					"scope": "window"
-				},
-				"micronaut-tools.targetApplicationAddress": {
-					"type": "string",
-					"default": "http://localhost:8080",
-					"description": "Default Micronaut or Graal Cloud Native application address",
-					"scope": "resource"
 				}
 			}
 		},
@@ -181,6 +175,108 @@
 				"category": "Micronaut Tools"
 			},
 			{
+				"command": "extension.micronaut-tools.navigation.runApplication",
+				"title": "%extension.micronaut-tools.navigation.runApplication.title%",
+				"icon": "$(play)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.debugApplication",
+				"title": "%extension.micronaut-tools.navigation.debugApplication.title%",
+				"icon": "$(debug-alt-small)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.runDevApplication",
+				"title": "%extension.micronaut-tools.navigation.runDevApplication.title%",
+				"icon": "$(debug-rerun)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.connectApplication",
+				"title": "%extension.micronaut-tools.navigation.connectApplication.title%",
+				"icon": "$(plug)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.disconnectApplication",
+				"title": "%extension.micronaut-tools.navigation.disconnectApplication.title%",
+				"icon": "$(debug-disconnect)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.cancelConnectApplication",
+				"title": "%extension.micronaut-tools.navigation.cancelConnectApplication.title%",
+				"icon": "$(close)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.stopApplication",
+				"title": "%extension.micronaut-tools.navigation.stopApplication.title%",
+				"icon": "$(error)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.editModule",
+				"title": "%extension.micronaut-tools.navigation.editModule.title%",
+				"icon": "$(edit)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.editAddress",
+				"title": "%extension.micronaut-tools.navigation.editAddress.title%",
+				"icon": "$(edit)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.configureEnvironments",
+				"title": "%extension.micronaut-tools.navigation.configureEnvironments.title%",
+				"icon": "$(tools)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.editEnvironments",
+				"title": "%extension.micronaut-tools.navigation.editEnvironments.title%",
+				"icon": "$(edit)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.configureManagement",
+				"title": "%extension.micronaut-tools.navigation.configureManagement.title%",
+				"icon": "$(settings)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.editManagement",
+				"title": "%extension.micronaut-tools.navigation.editManagement.title%",
+				"icon": "$(symbol-boolean)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.openControlPanelInBrowser",
+				"title": "%extension.micronaut-tools.navigation.openControlPanelInBrowser.title%",
+				"icon": "$(link-external)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.editControlPanel",
+				"title": "%extension.micronaut-tools.navigation.editControlPanel.title%",
+				"icon": "$(symbol-boolean)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.refreshServer",
+				"title": "%extension.micronaut-tools.navigation.refreshServer.title%",
+				"icon": "$(refresh)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.stopServer",
+				"title": "%extension.micronaut-tools.navigation.stopServer.title%",
+				"icon": "$(error)",
+				"category": "Micronaut Tools"
+			},
+			{
 				"command": "extension.micronaut-tools.navigation.goToDefinition",
 				"title": "%extension.micronaut-tools.navigation.goToDefinition.title%",
 				"icon": "$(go-to-file)",
@@ -193,21 +289,15 @@
 				"category": "Micronaut Tools"
 			},
 			{
+				"command": "extension.micronaut-tools.navigation.openApplicationInBrowser",
+				"title": "%extension.micronaut-tools.navigation.openApplicationInBrowser.title%",
+				"icon": "$(link-external)",
+				"category": "Micronaut Tools"
+			},
+			{
 				"command": "extension.micronaut-tools.navigation.composeRestQuery",
 				"title": "%extension.micronaut-tools.navigation.composeRestQuery.title%",
 				"icon": "$(export)",
-				"category": "Micronaut Tools"
-			},
-			{
-				"command": "extension.micronaut-tools.navigation.editTargetAddressGlobal",
-				"title": "%extension.micronaut-tools.navigation.editTargetAddressGlobal.title%",
-				"icon": "$(location)",
-				"category": "Micronaut Tools"
-			},
-			{
-				"command": "extension.micronaut-tools.navigation.editTargetAddressFolder",
-				"title": "%extension.micronaut-tools.navigation.editTargetAddressFolder.title%",
-				"icon": "$(location)",
 				"category": "Micronaut Tools"
 			},
 			{
@@ -220,6 +310,30 @@
 				"command": "extension.micronaut-tools.navigation.searchEndpoints",
 				"title": "%extension.micronaut-tools.navigation.searchEndpoints.title%",
 				"icon": "$(search)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.updateLoggers",
+				"title": "%extension.micronaut-tools.navigation.updateLoggers.title%",
+				"icon": "$(refresh)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.editLoggers",
+				"title": "%extension.micronaut-tools.navigation.editLoggers.title%",
+				"icon": "$(settings)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.updateCaches",
+				"title": "%extension.micronaut-tools.navigation.updateCaches.title%",
+				"icon": "$(refresh)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.clearCaches",
+				"title": "%extension.micronaut-tools.navigation.clearCaches.title%",
+				"icon": "$(trash)",
 				"category": "Micronaut Tools"
 			},
 			{
@@ -246,6 +360,11 @@
 		"views": {
 			"extension-micronaut-tools": [
 				{
+					"id": "extension-micronaut-tools-applications",
+					"name": "%extension.micronaut-tools.navigation.applicationsView.title%",
+					"icon": "images/micronaut.png"
+				},
+				{
 					"id": "extension-micronaut-tools-beans",
 					"name": "%extension.micronaut-tools.navigation.beansView.title%",
 					"icon": "images/micronaut.png"
@@ -254,10 +373,25 @@
 					"id": "extension-micronaut-tools-endpoints",
 					"name": "%extension.micronaut-tools.navigation.endpointsView.title%",
 					"icon": "images/micronaut.png"
+				},
+				{
+					"id": "extension-micronaut-tools-management",
+					"name": "%extension.micronaut-tools.navigation.managementView.title%",
+					"icon": "images/micronaut.png"
 				}
 			]
 		},
 		"viewsWelcome": [
+			{
+				"view": "extension-micronaut-tools-applications",
+				"contents": "%extension.micronaut-tools.navigation.welcomeView.noFolders.content%",
+				"when": "workspaceFolderCount == 0"
+			},
+			{
+				"view": "extension-micronaut-tools-applications",
+				"contents": "%extension.micronaut-tools.navigation.welcomeView.loadingView.content%",
+				"when": "workspaceFolderCount > 0"
+			},
 			{
 				"view": "extension-micronaut-tools-beans",
 				"contents": "%extension.micronaut-tools.navigation.welcomeView.noFolders.content%",
@@ -275,6 +409,16 @@
 			},
 			{
 				"view": "extension-micronaut-tools-endpoints",
+				"contents": "%extension.micronaut-tools.navigation.welcomeView.loadingView.content%",
+				"when": "workspaceFolderCount > 0"
+			},
+			{
+				"view": "extension-micronaut-tools-management",
+				"contents": "%extension.micronaut-tools.navigation.welcomeView.noFolders.content%",
+				"when": "workspaceFolderCount == 0"
+			},
+			{
+				"view": "extension-micronaut-tools-management",
 				"contents": "%extension.micronaut-tools.navigation.welcomeView.loadingView.content%",
 				"when": "workspaceFolderCount > 0"
 			}
@@ -314,6 +458,74 @@
 					"when": "kubectl.available && graalVMExt.available"
 				},
 				{
+					"command": "extension.micronaut-tools.navigation.runApplication",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.debugApplication",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.runDevApplication",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.connectApplication",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.disconnectApplication",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.cancelConnectApplication",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.stopApplication",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editModule",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editAddress",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.configureEnvironments",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editEnvironments",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editManagement",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.configureManagement",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editControlPanel",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.openControlPanelInBrowser",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.refreshServer",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.stopServer",
+					"when": "false"
+				},
+				{
 					"command": "extension.micronaut-tools.navigation.goToDefinition",
 					"when": "false"
 				},
@@ -326,11 +538,7 @@
 					"when": "false"
 				},
 				{
-					"command": "extension.micronaut-tools.navigation.editTargetAddressGlobal",
-					"when": "workspaceFolderCount > 0"
-				},
-				{
-					"command": "extension.micronaut-tools.navigation.editTargetAddressFolder",
+					"command": "extension.micronaut-tools.navigation.openApplicationInBrowser",
 					"when": "false"
 				},
 				{
@@ -342,16 +550,27 @@
 					"when": "extension.micronaut-tools.navigation.endpointsInitialized"
 				},
 				{
+					"command": "extension.micronaut-tools.navigation.updateLoggers",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editLoggers",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.updateCaches",
+					"when": "false"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.clearCaches",
+					"when": "false"
+				},
+				{
 					"command": "extension.micronaut-tools.database.register",
 					"when": "odt.extension.enabled"
 				}
 			],
 			"view/title": [
-				{
-					"command": "extension.micronaut-tools.navigation.editTargetAddressGlobal",
-					"when": "workspaceFolderCount == 1 && view == extension-micronaut-tools-endpoints",
-					"group": "navigation@3"
-				},
 				{
 					"command": "extension.micronaut-tools.navigation.searchBeans",
 					"when": "view == extension-micronaut-tools-beans && extension.micronaut-tools.navigation.beansInitialized",
@@ -365,38 +584,248 @@
 			],
 			"view/item/context": [
 				{
-					"command": "extension.micronaut-tools.navigation.goToDefinition",
-					"when": "viewItem == extension.micronaut-tools.navigation.BeanNode || viewItem == extension.micronaut-tools.navigation.EndpointNodeGET || viewItem == extension.micronaut-tools.navigation.EndpointNodePOST || viewItem == extension.micronaut-tools.navigation.EndpointNodeUNKNOWN",
-					"group": "context@1"
-				},
-				{
-					"command": "extension.micronaut-tools.navigation.editTargetAddressFolder",
-					"when": "workspaceFolderCount > 1 && extension.micronaut-tools.navigation.endpointsInitialized && viewItem == extension.micronaut-tools.navigation.EndpointsFolderNode",
+					"command": "extension.micronaut-tools.navigation.runApplication",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.startable.",
 					"group": "inline@1"
 				},
 				{
-					"command": "extension.micronaut-tools.navigation.editTargetAddressFolder",
-					"when": "workspaceFolderCount > 1 && extension.micronaut-tools.navigation.endpointsInitialized && viewItem == extension.micronaut-tools.navigation.EndpointsFolderNode",
+					"command": "extension.micronaut-tools.navigation.runApplication",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.startable.",
 					"group": "context@1"
 				},
 				{
-					"command": "extension.micronaut-tools.navigation.composeRestQuery",
-					"when": "viewItem == extension.micronaut-tools.navigation.EndpointNodeGET || viewItem == extension.micronaut-tools.navigation.EndpointNodePOST || viewItem == extension.micronaut-tools.navigation.EndpointNodePATCH || viewItem == extension.micronaut-tools.navigation.EndpointNodePUT || viewItem == extension.micronaut-tools.navigation.EndpointNodeDELETE",
-					"group": "inline@1"
+					"command": "extension.micronaut-tools.navigation.debugApplication",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.startable.",
+					"group": "inline@3"
 				},
 				{
-					"command": "extension.micronaut-tools.navigation.composeRestQuery",
-					"when": "viewItem == extension.micronaut-tools.navigation.EndpointNodeGET || viewItem == extension.micronaut-tools.navigation.EndpointNodePOST || viewItem == extension.micronaut-tools.navigation.EndpointNodePATCH || viewItem == extension.micronaut-tools.navigation.EndpointNodePUT || viewItem == extension.micronaut-tools.navigation.EndpointNodeDELETE",
-					"group": "context@2"
+					"command": "extension.micronaut-tools.navigation.debugApplication",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.startable.",
+					"group": "context@3"
 				},
 				{
-					"command": "extension.micronaut-tools.navigation.openInBrowser",
-					"when": "viewItem == extension.micronaut-tools.navigation.EndpointNodeGET",
+					"command": "extension.micronaut-tools.navigation.runDevApplication",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.startable.",
 					"group": "inline@2"
 				},
 				{
+					"command": "extension.micronaut-tools.navigation.runDevApplication",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationFolderNode.local.idle.startable.",
+					"group": "context@2"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.connectApplication",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationFolderNode\\.(local|remote)\\.idle\\./",
+					"group": "inline@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.connectApplication",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationFolderNode\\.(local|remote)\\.idle\\./",
+					"group": "context@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.disconnectApplication",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationFolderNode\\.(local|remote)\\.connected-attach\\./",
+					"group": "inline@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.disconnectApplication",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationFolderNode\\.(local|remote)\\.connected-attach\\./",
+					"group": "context@8"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.cancelConnectApplication",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationFolderNode\\.(local|remote)\\.connecting-attach\\./",
+					"group": "inline@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.cancelConnectApplication",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationFolderNode\\.(local|remote)\\.connecting-attach\\./",
+					"group": "context@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.stopApplication",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationFolderNode\\.local\\.connected-launch\\./",
+					"group": "inline@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.stopApplication",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationFolderNode\\.local\\.connected-launch\\./",
+					"group": "context@7"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.openApplicationInBrowser",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationFolderNode\\.(local|remote)\\.connected-/",
+					"group": "inline@1"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.openApplicationInBrowser",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationFolderNode/",
+					"group": "context@5"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editModule",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationModuleNode.idle.editable.",
+					"group": "inline@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editModule",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationModuleNode.idle.editable.",
+					"group": "context@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editAddress",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationAddressNode.idle.",
+					"group": "inline@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editAddress",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationAddressNode.idle.",
+					"group": "context@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.configureEnvironments",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.editable.",
+					"group": "inline@3"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.configureEnvironments",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.editable.",
+					"group": "context@3"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editEnvironments",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.editable.",
+					"group": "inline@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editEnvironments",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.editable.",
+					"group": "context@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.configureManagement",
+					"when": "false && viewItem == extension.micronaut-tools.navigation.ApplicationMonitoringNode.idle.editable.",
+					"group": "inline@1"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.configureManagement",
+					"when": "false && viewItem == extension.micronaut-tools.navigation.ApplicationMonitoringNode.idle.editable.",
+					"group": "context@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editManagement",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationMonitoringNode.idle.editable.",
+					"group": "inline@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editManagement",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationMonitoringNode.idle.editable.",
+					"group": "context@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.openControlPanelInBrowser",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationControlPanelNode.available.",
+					"group": "inline@1"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.openControlPanelInBrowser",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationControlPanelNode/",
+					"group": "context@1"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editControlPanel",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationControlPanelNode.idle.editable.",
+					"group": "inline@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editControlPanel",
+					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationControlPanelNode.idle.editable.",
+					"group": "context@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.refreshServer",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationFolderNode\\.(local|remote)\\.connected-/ && viewItem =~ /\\.refreshable\\./",
+					"group": "inline@2"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.refreshServer",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationFolderNode\\.(local|remote)\\.connected-/ && viewItem =~ /\\.refreshable\\./",
+					"group": "context@6"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.stopServer",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationFolderNode\\.(local|remote)\\.connected-attach\\./ && viewItem =~ /\\.serverStoppable\\./",
+					"group": "inline@3"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.stopServer",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationFolderNode\\.(local|remote)\\.connected-attach\\./ && viewItem =~ /\\.serverStoppable\\./",
+					"group": "context@7"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.goToDefinition",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.(Bean|Endpoint)Node/",
+					"group": "context@1"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.composeRestQuery",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.EndpointNode\\.(GET|HEAD|POST|PATCH|PUT|DELETE)\\.(available|unknown)\\./",
+					"group": "inline@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.composeRestQuery",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.EndpointNode\\.(GET|HEAD|POST|PATCH|PUT|DELETE)/",
+					"group": "context@4"
+				},
+				{
 					"command": "extension.micronaut-tools.navigation.openInBrowser",
-					"when": "viewItem == extension.micronaut-tools.navigation.EndpointNodeGET",
+					"when": "viewItem == extension.micronaut-tools.navigation.EndpointNode.GET.available. || viewItem == extension.micronaut-tools.navigation.EndpointNode.GET.unknown.",
+					"group": "inline@3"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.openInBrowser",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.EndpointNode\\.GET/",
+					"group": "context@3"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.updateLoggers",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementLoggersNode.available.disabled",
+					"group": "inline@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.updateLoggers",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementLoggersNode.available.disabled",
+					"group": "context@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editLoggers",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementLoggersNode.available.",
+					"group": "inline@3"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.editLoggers",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementLoggersNode.available.",
+					"group": "context@3"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.updateCaches",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementCachesNode.available.disabled",
+					"group": "inline@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.updateCaches",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementCachesNode.available.disabled",
+					"group": "context@4"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.clearCaches",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementCachesNode.available.",
+					"group": "inline@3"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.clearCaches",
+					"when": "viewItem == extension.micronaut-tools.navigation.ManagementCachesNode.available.",
 					"group": "context@3"
 				},
 				{

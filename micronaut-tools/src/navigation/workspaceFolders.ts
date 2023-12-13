@@ -7,6 +7,7 @@
 
 import * as vscode from 'vscode';
 import * as logUtils from '../../../common/lib/logUtils';
+import * as applications from './applications';
 import * as symbols from './symbols';
 
 
@@ -27,6 +28,7 @@ export class FolderData {
 
     private readonly workspaceFolder: vscode.WorkspaceFolder;
     
+    private application: applications.Application;
     private beans: symbols.Bean[] | undefined;
     private endpoints: symbols.Endpoint[] | undefined;
 
@@ -36,10 +38,15 @@ export class FolderData {
     
     constructor(workspaceFolder: vscode.WorkspaceFolder) {
         this.workspaceFolder = workspaceFolder;
+        this.application = new applications.Application(workspaceFolder);
     };
 
     getWorkspaceFolder(): vscode.WorkspaceFolder {
         return this.workspaceFolder;
+    }
+
+    getApplication(): applications.Application {
+        return this.application;
     }
 
     getBeans(): symbols.Bean[] | undefined {
