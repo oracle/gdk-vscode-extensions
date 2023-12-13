@@ -12,16 +12,21 @@ export function formatPercent(value: number): string {
 
 export function formatTime(seconds: number): string {
     var result = '';
+    
     const days = Math.floor(seconds / (3600 * 24));
     if (days) result += `${days.toLocaleString()} d `;
     seconds -= days * 3600 * 24;
+    
     const hours = Math.floor(seconds / 3600);
-    if (days || hours) result += `${hours} h `;
+    if (days || hours) result += `${days ? hours.toString().padStart(2, '0') : hours} h `;
     seconds -= hours * 3600;
+    
     const minutes = Math.floor(seconds / 60);
-    if (days || hours || minutes) result += `${minutes} m `;
+    if (days || hours || minutes) result += `${days || hours ? minutes.toString().padStart(2, '0') : minutes} m `;
     seconds  -= minutes * 60;
-    result += `${seconds} s`;
+    
+    result += `${days || hours || minutes ? seconds.toString().padStart(2, '0') : seconds} s`;
+    
     return result;
 }
 
