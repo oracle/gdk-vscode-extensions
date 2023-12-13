@@ -131,7 +131,7 @@ export abstract class BeanHandler {
         return rest.getDataRetry(this.getAddress());
     }
 
-    protected async processResponse(response: { code: number | undefined; headers: any; data: any }) {}
+    protected async processResponse(_response: { code: number | undefined; headers: any; data: any }) {}
 
     buildVmArgs(): string | undefined {
         return undefined;
