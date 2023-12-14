@@ -136,14 +136,20 @@ export class DefinedEnvironments {
                 const fileExt = idx >= 0 ? fileExts[idx] : '---';
                 configFiles.push([fileName, fileExt]);
             }
+            const defaultFileName = 'application';
+            const defaultIdx = fileNames.indexOf(defaultFileName);
+            const defaultFileExt = defaultIdx >= 0 ? fileExts[defaultIdx] : '---';
+            configFiles.push([defaultFileName, defaultFileExt]);
         } else {
-            const fileName = 'application';
-            const idx = fileNames.indexOf(fileName);
-            const fileExt = idx >= 0 ? fileExts[idx] : '---';
-            configFiles.push([fileName, fileExt]);
-            for (let i = 0; i < fileNames.length; i++) {
-                if (i !== idx) {
-                    configFiles.push([fileNames[i], fileExts[i]]);
+            const defaultFileName = 'application';
+            const defaultIdx = fileNames.indexOf(defaultFileName);
+            const defaultFileExt = defaultIdx >= 0 ? fileExts[defaultIdx] : '---';
+            configFiles.push([defaultFileName, defaultFileExt]);
+            if (this.application.getState() === applications.State.IDLE) {
+                for (let i = 0; i < fileNames.length; i++) {
+                    if (i !== defaultIdx) {
+                        configFiles.push([fileNames[i], fileExts[i]]);
+                    }
                 }
             }
         }

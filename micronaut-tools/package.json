@@ -685,12 +685,12 @@
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.configureEnvironments",
-					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.editable.",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationEnvironmentsNode\\./ && viewItem =~ /\\.editable\\./",
 					"group": "inline@3"
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.configureEnvironments",
-					"when": "viewItem == extension.micronaut-tools.navigation.ApplicationEnvironmentsNode.idle.editable.",
+					"when": "viewItem =~ /extension\\.micronaut-tools\\.navigation\\.ApplicationEnvironmentsNode\\./ && viewItem =~ /\\.editable\\./",
 					"group": "context@3"
 				},
 				{
