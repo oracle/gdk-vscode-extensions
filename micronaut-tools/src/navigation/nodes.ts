@@ -436,6 +436,9 @@ export class ApplicationEnvironmentsNode extends BaseNode {
                             this.description = activeEnvironments?.length ? activeEnvironments.join(',') : 'default';
                             this.tooltip = 'Environments active in the running application';
                             this.contextValue = ApplicationEnvironmentsNode.BASE_CONTEXT + '.available.';
+                            if (this.application.getSelectedModule().getUri()) {
+                                this.contextValue += 'editable.';
+                            }
                         }
                         break;
                     case false:
