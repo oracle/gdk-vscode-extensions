@@ -140,22 +140,83 @@ export async function checkConfigured(uri: vscode.Uri, subject: string, ...depen
     return true;
 }
 
+/**
+ * Artifact specification
+ */
+interface NbArtifactSpec {
+    artifactId? : string;
+    groupId?: string;
+    versionSpec?: string,
+}
+
+/**
+ * Dependency specification
+ */
+interface NbProjectDependency {
+    artifact: NbArtifactSpec;
+    scope?: string;
+};
+
+/**
+ * Result of find artifacts operation.
+ */
+interface FindArtifactResult {
+    /**
+     * The project's product artifact
+     */
+    project : NbArtifactSpec;
+
+    /**
+     * Dependencies, that match the artifacts
+     */
+    matches: NbProjectDependency[];
+}
+
+interface DependencyChange {
+    kind: 'add' | 'remove';
+    options?: ('skipConflicts' | 'ignoreVersions')[];
+    dependencies: NbProjectDependency[];
+}
+
+/*
+interface DependencyChangeResult {
+    edit : vscode.WorkspaceEdit;
+    modifiedUris : string[];
+}
+*/
+
 async function getMissingDependencies(uri: vscode.Uri, ...dependencies: ProjectDependency[]): Promise<ProjectDependency[]> {
     // TODO: replace by a real implementation!
     const buildSystem = resolveBuildSystemType(uri);
     if (buildSystem !== BuildSystemType.UNKNOWN) {
-        const buildFile = path.join(uri.fsPath, buildSystem === BuildSystemType.MAVEN ? 'pom.xml' : 'build.gradle');
-        if (fs.existsSync(buildFile)) {
-            const content = fs.readFileSync(buildFile).toString();
-            const missingDependencies = [];
-            for (const dependency of dependencies) {
-                if (!content.includes(dependency.artifact)) {
-                    missingDependencies.push(dependency);
-                }
+        if ((await vscode.commands.getCommands()).includes('nbls.project.dependencies.change')) {
+            let arts : NbArtifactSpec[] = dependencies.map(dep => ({ groupId: dep.group, artifactId: dep.artifact}));
+            try {
+                let found : FindArtifactResult = await vscode.commands.executeCommand('nbls.project.dependencies.find', {
+                    uri: uri.toString(),
+                    scopes: [ 'runtime'],
+                    artifacts: arts
+                });
+                return dependencies.filter(d => 
+                    found?.matches?.filter(f => d.group == f.artifact.groupId && d.artifact == f.artifact.artifactId).length == 0
+                );
+            } catch (err : any) {
+                throw new Error('Failed to determine dependencies.');
             }
-            return missingDependencies;
         } else {
-            throw new Error('Failed to determine project build file.');
+            const buildFile = path.join(uri.fsPath, buildSystem === BuildSystemType.MAVEN ? 'pom.xml' : 'build.gradle');
+            if (fs.existsSync(buildFile)) {
+                const content = fs.readFileSync(buildFile).toString();
+                const missingDependencies = [];
+                for (const dependency of dependencies) {
+                    if (!content.includes(dependency.artifact)) {
+                        missingDependencies.push(dependency);
+                    }
+                }
+                return missingDependencies;
+            } else {
+                 throw new Error('Failed to determine project build file.');
+            }
         }
     } else {
         throw new Error('Failed to determine project build system.');
@@ -171,7 +232,35 @@ async function addMissingDependencies(uri: vscode.Uri, ...dependencies: ProjectD
         for (const dependency of dependencies) {
             dependencyStrings.push(`${dependency.group}:${dependency.artifact}`);
         }
-        vscode.window.showInformationMessage(`Add the following modules as runtime dependencies to ${buildFile}: ${dependencyStrings.join(', ')}`);
+
+        if ((await vscode.commands.getCommands()).includes('nbls.project.dependencies.change')) {
+            let depChanges : NbProjectDependency[] = dependencies.map(d => ({
+                kind: 'add',
+                artifact : {
+                    groupId: d.group,
+                    artifactId : d.artifact,
+                },
+                scope: 'runtime'
+            }));
+            let changeRequest : DependencyChange = {
+                kind: 'add',
+                // BUG in deseralization: options: [ 'skipConflicts' ],
+                dependencies: depChanges
+            }
+            try {
+                await vscode.commands.executeCommand('nbls.project.dependencies.change', {
+                    uri: uri.toString(),
+                    applyChanges: true,
+                    changes: {
+                        operations: [ changeRequest ]
+                    }
+                });
+            } catch (err : any) {
+                throw new Error('Failed to add dependencies.');
+            }
+        } else {
+            vscode.window.showInformationMessage(`Add the following modules as runtime dependencies to ${buildFile}: ${dependencyStrings.join(', ')}`);
+        }
     } else {
         throw new Error('Failed to determine project build system.');
     }
