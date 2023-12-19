@@ -81,6 +81,49 @@ function constructLaunchConfigName(mainClass: string, cache: { [key: string]: an
     }
 }
 
+class InterruptJavaLaunch implements DebugConfigurationProvider {
+    launchConfig? : DebugConfiguration;
+
+    resolveDebugConfigurationWithSubstitutedVariables?(_folder: WorkspaceFolder | undefined, debugConfiguration: DebugConfiguration, _token?: CancellationToken): ProviderResult<DebugConfiguration> {
+        this.launchConfig = debugConfiguration;
+        return undefined;
+    }
+}
+
+export class FallbackToJDTConfigurationProvider implements DebugConfigurationProvider {
+
+    resolveDebugConfiguration(folder: WorkspaceFolder | undefined, debugConfiguration: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
+        const nblsDebugEnabled = vscode.workspace.getConfiguration('netbeans')?.get('javaSupport.enabled') as boolean;
+        if (folder === undefined || nblsDebugEnabled || debugConfiguration?.type !== 'java+') {
+            return debugConfiguration;
+        }
+        return this.resolveConfigurationAsync(folder, debugConfiguration, token);
+    }
+
+    async resolveConfigurationAsync(folder: WorkspaceFolder | undefined, config: DebugConfiguration, _token?: CancellationToken): Promise<DebugConfiguration> {
+        const stopper = new InterruptJavaLaunch();
+        const unreg = vscode.debug.registerDebugConfigurationProvider('java', stopper);
+        try {
+            config.type = 'java';
+            await vscode.debug.startDebugging(folder, config);
+        } finally {
+            unreg.dispose();
+        }
+        if (!stopper.launchConfig) {
+            return config;
+        }
+        config = stopper.launchConfig;
+        // Hack: detect NBLS configurations & convert into env var:
+        if (config.launchConfiguration === 'Micronaut: dev mode' || config.launchConfiguration === 'Continuous Mode') {
+            if (!config.env) {
+                config.env = {};
+            }
+            config.env['JDT_LAUNCHWRAP_MICRONAUT_CONTINUOUS'] = 'true';
+        }
+        return config;
+    }
+}
+
 export class ProjectDebugConfigurationProvider implements DebugConfigurationProvider {
     readonly extensionPath : string;
 
