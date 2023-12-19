@@ -251,6 +251,7 @@ async function addMissingDependencies(uri: vscode.Uri, ...dependencies: ProjectD
                 await vscode.commands.executeCommand('nbls.project.dependencies.change', {
                     uri: uri.toString(),
                     applyChanges: true,
+                    saveFromServer: false,
                     changes: {
                         operations: [ changeRequest ]
                     }
