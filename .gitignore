@@ -20,3 +20,6 @@
 /*/mochawesome-report/
 **/projects
 tests/generated-projects/
+tests/test-projects/**/.gradle
+tests/test-projects/**/build/tmp
+tests/test-projects/**/buildSrc/build
