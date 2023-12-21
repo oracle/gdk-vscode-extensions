@@ -11,6 +11,6 @@ metadata:
   name: {{{app_name}}}
 data:
   bootstrap-oraclecloud.properties: |
-    oci.config.instance-principal.enabled=true  
+    oci.config.instance-principal.enabled=true
   application-oraclecloud.properties: |
     # placeholder
