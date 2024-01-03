@@ -14,10 +14,10 @@ import * as beanHandler from './beanHandler';
 const SETTING_ENABLED_KEY = 'controlPanelEnabled';
 const RELATIVE_ADDRESS = '/control-panel';
 
-const REQUIRED_DEPENDENCIES: projectUtils.ProjectDependency[] = [
-    { group: 'io.micronaut', artifact: 'micronaut-management'}, // https://docs.micronaut.io/latest/guide/#management
-    { group: 'io.micronaut.controlpanel', artifact: 'micronaut-control-panel-ui'}, // https://micronaut-projects.github.io/micronaut-control-panel/snapshot/guide/#quickStart
-    { group: 'io.micronaut.controlpanel', artifact: 'micronaut-control-panel-management'} // https://micronaut-projects.github.io/micronaut-control-panel/snapshot/guide/#quickStart
+const REQUIRED_DEPENDENCIES: projectUtils.NbArtifactSpec[] = [
+    { groupId: 'io.micronaut', artifactId: 'micronaut-management'}, // https://docs.micronaut.io/latest/guide/#management
+    { groupId: 'io.micronaut.controlpanel', artifactId: 'micronaut-control-panel-ui'}, // https://micronaut-projects.github.io/micronaut-control-panel/snapshot/guide/#quickStart
+    { groupId: 'io.micronaut.controlpanel', artifactId: 'micronaut-control-panel-management'} // https://micronaut-projects.github.io/micronaut-control-panel/snapshot/guide/#quickStart
 ]
 
 export function forApplication(application: applications.Application) {

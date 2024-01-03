@@ -22,11 +22,11 @@ import * as cachesEndpoint from './cachesEndpoint';
 
 const SETTING_ENABLED_KEY = 'managementMonitoringEnabled';
 
-const REQUIRED_DEPENDENCIES: projectUtils.ProjectDependency[] = [
-    { group: 'io.micronaut', artifact: 'micronaut-management'}, // https://docs.micronaut.io/latest/guide/#management
-    { group: 'io.micronaut.cache', artifact: 'micronaut-cache-management'}, // https://micronaut-projects.github.io/micronaut-cache/latest/guide/index.html#endpoint
-    { group: 'io.micrometer', artifact: 'micrometer-core'}, // https://micrometer.io/docs/concepts#_dependencies
-    { group: 'io.micronaut.micrometer', artifact: 'micronaut-micrometer-core'} // https://micronaut-projects.github.io/micronaut-micrometer/latest/guide/#metricsEndpoint
+const REQUIRED_DEPENDENCIES: projectUtils.NbArtifactSpec[] = [
+    { groupId: 'io.micronaut', artifactId: 'micronaut-management'}, // https://docs.micronaut.io/latest/guide/#management
+    { groupId: 'io.micronaut.cache', artifactId: 'micronaut-cache-management'}, // https://micronaut-projects.github.io/micronaut-cache/latest/guide/index.html#endpoint
+    { groupId: 'io.micrometer', artifactId: 'micrometer-core'}, // https://micrometer.io/docs/concepts#_dependencies
+    { groupId: 'io.micronaut.micrometer', artifactId: 'micronaut-micrometer-core'} // https://micronaut-projects.github.io/micronaut-micrometer/latest/guide/#metricsEndpoint
 ]
 
 export type OnFeaturesAvailableChanged = (refreshAvailable: boolean, serverStopAvailable: boolean) => void;

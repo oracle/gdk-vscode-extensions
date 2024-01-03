@@ -33,11 +33,13 @@ export interface ProjectInfo {
     readonly runnableModules: string[];
 }
 
-export interface ProjectDependency {
-    readonly group: string;
-    readonly artifact: string;
-    // readonly version?: string;
-    // readonly scope?: string;
+/**
+ * Artifact specification
+ */
+export interface NbArtifactSpec {
+    artifactId? : string;
+    groupId?: string;
+    versionSpec?: string,
 }
 
 export function isRunnableUri(uri: vscode.Uri): boolean {
@@ -128,7 +130,7 @@ export async function dependencyCheckingAvailable(): Promise<boolean> {
     return (await vscode.commands.getCommands()).includes('nbls.project.dependencies.find');
 }
 
-export async function checkConfigured(uri: vscode.Uri, subject: string, addMissing: boolean, ...dependencies: ProjectDependency[]): Promise<boolean> {
+export async function checkConfigured(uri: vscode.Uri, subject: string, addMissing: boolean, ...dependencies: NbArtifactSpec[]): Promise<boolean> {
     const missingDependencies = await getMissingDependencies(uri, addMissing, ...dependencies);
     if (missingDependencies.length) {
         if (addMissing) {
@@ -143,15 +145,6 @@ export async function checkConfigured(uri: vscode.Uri, subject: string, addMissi
         return false;
     }
     return true;
-}
-
-/**
- * Artifact specification
- */
-interface NbArtifactSpec {
-    artifactId? : string;
-    groupId?: string;
-    versionSpec?: string,
 }
 
 /**
@@ -190,18 +183,17 @@ interface DependencyChangeResult {
 }
 */
 
-async function getMissingDependencies(uri: vscode.Uri, showProgress: boolean, ...dependencies: ProjectDependency[]): Promise<ProjectDependency[]> {
-    async function impl(): Promise<ProjectDependency[]> {
+async function getMissingDependencies(uri: vscode.Uri, showProgress: boolean, ...dependencies: NbArtifactSpec[]): Promise<NbArtifactSpec[]> {
+    async function impl(): Promise<NbArtifactSpec[]> {
         if (await dependencyCheckingAvailable()) {
-            let arts : NbArtifactSpec[] = dependencies.map(dep => ({ groupId: dep.group, artifactId: dep.artifact}));
             try {
                 let found : FindArtifactResult = await vscode.commands.executeCommand('nbls.project.dependencies.find', {
                     uri: uri.toString(),
-                    scopes: [ 'runtime'],
-                    artifacts: arts
+                    scopes: [ 'runtime'], // runtime scope hardcoded for now
+                    artifacts: dependencies
                 });
                 return dependencies.filter(d => 
-                    found?.matches?.filter(f => d.group == f.artifact.groupId && d.artifact == f.artifact.artifactId).length == 0
+                    found?.matches?.filter(f => d.groupId == f.artifact.groupId && d.artifactId == f.artifact.artifactId).length == 0
                 );
             } catch (err : any) {
                 throw new Error('Failed to determine dependencies.');
@@ -217,24 +209,16 @@ async function getMissingDependencies(uri: vscode.Uri, showProgress: boolean, ..
     ) : impl();
 }
 
-async function addMissingDependencies(uri: vscode.Uri, ...dependencies: ProjectDependency[]) {
+async function addMissingDependencies(uri: vscode.Uri, ...dependencies: NbArtifactSpec[]) {
     return vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification, 
         title: 'Adding required dependencies...' },
         async () => {
-            const dependencyStrings = [];
-            for (const dependency of dependencies) {
-                dependencyStrings.push(`${dependency.group}:${dependency.artifact}`);
-            }
-
             if ((await vscode.commands.getCommands()).includes('nbls.project.dependencies.change')) {
                 let depChanges : NbProjectDependency[] = dependencies.map(d => ({
-                    kind: 'add',
-                    artifact : {
-                        groupId: d.group,
-                        artifactId : d.artifact,
-                    },
-                    scope: 'runtime'
+                    // kind: 'add',
+                    artifact : d,
+                    scope: 'runtime' // runtime scope hardcoded for now
                 }));
                 let changeRequest : DependencyChange = {
                     kind: 'add',
