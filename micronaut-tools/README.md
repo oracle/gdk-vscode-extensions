@@ -11,6 +11,7 @@ It is recommended to install [Graal Cloud Native Extension Pack](https://marketp
 * [Navigate Micronaut Source Code](#navigate-micronaut-source-code)
 * [View Defined Beans and Endpoints](#view-defined-beans-and-endpoints)
 * [Compose REST Queries](#compose-rest-queries)
+* [Editor Support for Micronaut Expression Language](#editor-support-for-micronaut-expression-language)
 * [Run Your Micronaut Application](#run-your-micronaut-application) 
 * [Live Reloading of Applications](#live-reloading-of-applications)
 * [Debug Your Micronaut Application](#debug-your-micronaut-application)
@@ -87,6 +88,15 @@ To start composing a REST query, invoke the Compose REST Query action for an end
 Note: If the REST Client extension is not installed when invoking the Compose REST Query action, a notification is displayed offering to quick install it.
 
 ![Compose REST Query](images/compose_rest_query.png)
+
+### Editor Support for Micronaut Expression Language
+Since 4.0, Micronaut framework supports embedding evaluated expressions in annotation values using `#{…​}` syntax. The extension provides a full editor support for the [Micronaut Expression Language](https://docs.micronaut.io/latest/guide/#evaluatedExpressions) including:
+* Code completion
+* Documentation hovers for used Java elements and Micronaut configuration properties
+* Code navigation to used Java elements and Micronaut configuration properties
+* Syntax coloring
+
+![Micronaut Expression Language Code Completion](images/micronaut-expression-language.png)
 
 ### Run Your Micronaut Application
 
