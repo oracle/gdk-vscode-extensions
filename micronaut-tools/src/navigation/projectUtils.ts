@@ -124,18 +124,23 @@ function resolveBuildSystemType(uri: vscode.Uri, projectType?: string): BuildSys
     return BuildSystemType.UNKNOWN;
 }
 
-export async function checkConfigured(uri: vscode.Uri, subject: string, ...dependencies: ProjectDependency[]): Promise<boolean> {
-    const missingDependencies = await getMissingDependencies(uri, ...dependencies);
+export async function dependencyCheckingAvailable(): Promise<boolean> {
+    return (await vscode.commands.getCommands()).includes('nbls.project.dependencies.find');
+}
+
+export async function checkConfigured(uri: vscode.Uri, subject: string, addMissing: boolean, ...dependencies: ProjectDependency[]): Promise<boolean> {
+    const missingDependencies = await getMissingDependencies(uri, addMissing, ...dependencies);
     if (missingDependencies.length) {
-        const updateDependenciesOption = 'Update Dependencies';
-        const cancelOption = 'Cancel';
-        const selected = await vscode.window.showWarningMessage(`Project dependencies must be updated to enable ${subject}.`, updateDependenciesOption, cancelOption);
-        if (selected === updateDependenciesOption) {
-            await addMissingDependencies(uri, ...missingDependencies);
-            return true;
-        } else {
-            return false;
+        if (addMissing) {
+            const updateDependenciesOption = 'Update Dependencies';
+            const cancelOption = 'Cancel';
+            const selected = await vscode.window.showWarningMessage(`Project dependencies must be updated to enable ${subject}.`, updateDependenciesOption, cancelOption);
+            if (selected === updateDependenciesOption) {
+                await addMissingDependencies(uri, ...missingDependencies);
+                return true;
+            }
         }
+        return false;
     }
     return true;
 }
@@ -185,11 +190,9 @@ interface DependencyChangeResult {
 }
 */
 
-async function getMissingDependencies(uri: vscode.Uri, ...dependencies: ProjectDependency[]): Promise<ProjectDependency[]> {
-    // TODO: replace by a real implementation!
-    const buildSystem = resolveBuildSystemType(uri);
-    if (buildSystem !== BuildSystemType.UNKNOWN) {
-        if ((await vscode.commands.getCommands()).includes('nbls.project.dependencies.change')) {
+async function getMissingDependencies(uri: vscode.Uri, showProgress: boolean, ...dependencies: ProjectDependency[]): Promise<ProjectDependency[]> {
+    async function impl(): Promise<ProjectDependency[]> {
+        if (await dependencyCheckingAvailable()) {
             let arts : NbArtifactSpec[] = dependencies.map(dep => ({ groupId: dep.group, artifactId: dep.artifact}));
             try {
                 let found : FindArtifactResult = await vscode.commands.executeCommand('nbls.project.dependencies.find', {
@@ -204,67 +207,57 @@ async function getMissingDependencies(uri: vscode.Uri, ...dependencies: ProjectD
                 throw new Error('Failed to determine dependencies.');
             }
         } else {
-            const buildFile = path.join(uri.fsPath, buildSystem === BuildSystemType.MAVEN ? 'pom.xml' : 'build.gradle');
-            if (fs.existsSync(buildFile)) {
-                const content = fs.readFileSync(buildFile).toString();
-                const missingDependencies = [];
-                for (const dependency of dependencies) {
-                    if (!content.includes(dependency.artifact)) {
-                        missingDependencies.push(dependency);
-                    }
-                }
-                return missingDependencies;
-            } else {
-                 throw new Error('Failed to determine project build file.');
-            }
+            throw new Error('Java support not ready yet to check project dependencies.');
         }
-    } else {
-        throw new Error('Failed to determine project build system.');
     }
+    return showProgress ? vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification, 
+        title: 'Verifying required dependencies...' },
+        impl
+    ) : impl();
 }
 
 async function addMissingDependencies(uri: vscode.Uri, ...dependencies: ProjectDependency[]) {
-    // TODO: replace by a real implementation!
-    const buildSystem = resolveBuildSystemType(uri);
-    if (buildSystem !== BuildSystemType.UNKNOWN) {
-        const buildFile = path.join(uri.fsPath, buildSystem === BuildSystemType.MAVEN ? 'pom.xml' : 'build.gradle');
-        const dependencyStrings = [];
-        for (const dependency of dependencies) {
-            dependencyStrings.push(`${dependency.group}:${dependency.artifact}`);
-        }
+    return vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification, 
+        title: 'Adding required dependencies...' },
+        async () => {
+            const dependencyStrings = [];
+            for (const dependency of dependencies) {
+                dependencyStrings.push(`${dependency.group}:${dependency.artifact}`);
+            }
 
-        if ((await vscode.commands.getCommands()).includes('nbls.project.dependencies.change')) {
-            let depChanges : NbProjectDependency[] = dependencies.map(d => ({
-                kind: 'add',
-                artifact : {
-                    groupId: d.group,
-                    artifactId : d.artifact,
-                },
-                scope: 'runtime'
-            }));
-            let changeRequest : DependencyChange = {
-                kind: 'add',
-                // BUG in deseralization: options: [ 'skipConflicts' ],
-                dependencies: depChanges
+            if ((await vscode.commands.getCommands()).includes('nbls.project.dependencies.change')) {
+                let depChanges : NbProjectDependency[] = dependencies.map(d => ({
+                    kind: 'add',
+                    artifact : {
+                        groupId: d.group,
+                        artifactId : d.artifact,
+                    },
+                    scope: 'runtime'
+                }));
+                let changeRequest : DependencyChange = {
+                    kind: 'add',
+                    // BUG in deseralization: options: [ 'skipConflicts' ],
+                    dependencies: depChanges
+                }
+                try {
+                    await vscode.commands.executeCommand('nbls.project.dependencies.change', {
+                        uri: uri.toString(),
+                        applyChanges: true,
+                        saveFromServer: false,
+                        changes: {
+                            operations: [ changeRequest ]
+                        }
+                    });
+                } catch (err : any) {
+                    throw new Error('Failed to add dependencies.');
+                }
+            } else {
+                throw new Error('Java support not ready yet to add missing dependencies.');
             }
-            try {
-                await vscode.commands.executeCommand('nbls.project.dependencies.change', {
-                    uri: uri.toString(),
-                    applyChanges: true,
-                    saveFromServer: false,
-                    changes: {
-                        operations: [ changeRequest ]
-                    }
-                });
-            } catch (err : any) {
-                throw new Error('Failed to add dependencies.');
-            }
-        } else {
-            vscode.window.showInformationMessage(`Add the following modules as runtime dependencies to ${buildFile}: ${dependencyStrings.join(', ')}`);
         }
-    } else {
-        throw new Error('Failed to determine project build system.');
-    }
+    );
 }
 
 function delay(ms: number) {

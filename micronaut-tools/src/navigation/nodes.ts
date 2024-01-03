@@ -465,7 +465,7 @@ export class ApplicationEnvironmentsNode extends BaseNode {
                 if (definedEnvironments?.length) {
                     this.description = definedEnvironments.join(',');
                 } else {
-                    this.description = 'inherited';
+                    this.description = 'by project';
                 }
                 this.tooltip = 'Environments to be active in the launched application';
                 this.contextValue = ApplicationEnvironmentsNode.BASE_CONTEXT + '.idle.';
@@ -482,6 +482,7 @@ export class ApplicationMonitoringNode extends BaseNode {
     private static readonly BASE_CONTEXT = 'extension.micronaut-tools.navigation.ApplicationMonitoringNode';
 
     private readonly application: applications.Application;
+    private applicationModuleInitialized: boolean = false;
 
     constructor(application: applications.Application, treeChanged: TreeChanged) {
         super('Monitoring & Management:', '...', ApplicationMonitoringNode.BASE_CONTEXT, null, undefined);
@@ -492,6 +493,7 @@ export class ApplicationMonitoringNode extends BaseNode {
             treeChanged(this);
         });
         this.application.getSelectedModule().onModuleChanged(() => {
+            this.applicationModuleInitialized = true;
             this.update();
             treeChanged(this);
         });
@@ -510,7 +512,7 @@ export class ApplicationMonitoringNode extends BaseNode {
     
     toggleEnabled() {
         const management = this.application.getManagement();
-        management.setEnabled(!management.isEnabled());
+        management.editEnabled();
     }
 
     private update() {
@@ -571,10 +573,10 @@ export class ApplicationMonitoringNode extends BaseNode {
                 this.contextValue = ApplicationMonitoringNode.BASE_CONTEXT + '.updating.';
                 break;
             default:
-                this.description = management.isEnabled() ? 'enabled' : 'inherited';
+                this.description = management.isEnabled() ? 'enabled' : 'by project';
                 this.tooltip = 'Monitoring and management capabilities for the launched application';
                 this.contextValue = ApplicationMonitoringNode.BASE_CONTEXT + '.idle.';
-                if (this.application.getSelectedModule().getUri()) {
+                if (this.applicationModuleInitialized && this.application.getSelectedModule().getUri()) {
                     this.contextValue += 'editable.';
                 }
         }
@@ -587,6 +589,7 @@ export class ApplicationControlPanelNode extends BaseNode {
     private static readonly BASE_CONTEXT = 'extension.micronaut-tools.navigation.ApplicationControlPanelNode';
 
     private readonly application: applications.Application;
+    private applicationModuleInitialized: boolean = false;
 
     constructor(application: applications.Application, treeChanged: TreeChanged) {
         super('Micronaut Control Panel:', '...', ApplicationControlPanelNode.BASE_CONTEXT, null, undefined);
@@ -597,6 +600,7 @@ export class ApplicationControlPanelNode extends BaseNode {
             treeChanged(this);
         });
         this.application.getSelectedModule().onModuleChanged(() => {
+            this.applicationModuleInitialized = true;
             this.update();
             treeChanged(this);
         });
@@ -619,7 +623,7 @@ export class ApplicationControlPanelNode extends BaseNode {
 
     toggleEnabled() {
         const controlPanel = this.application.getControlPanel();
-        controlPanel.setEnabled(!controlPanel.isEnabled());
+        controlPanel.editEnabled();
     }
 
     private update() {
@@ -653,10 +657,10 @@ export class ApplicationControlPanelNode extends BaseNode {
                 this.contextValue = ApplicationControlPanelNode.BASE_CONTEXT + '.updating.';
                 break;
             default:
-                this.description = controlPanel.isEnabled() ? 'enabled' : 'inherited';
+                this.description = controlPanel.isEnabled() ? 'enabled' : 'by project';
                 this.tooltip = 'Micronaut Control Panel availability for the launched application';
                 this.contextValue = ApplicationControlPanelNode.BASE_CONTEXT + '.idle.';
-                if (this.application.getSelectedModule().getUri()) {
+                if (this.applicationModuleInitialized && this.application.getSelectedModule().getUri()) {
                     this.contextValue += 'editable.';
                 }
         }

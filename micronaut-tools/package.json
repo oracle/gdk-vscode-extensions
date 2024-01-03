@@ -249,7 +249,7 @@
 			{
 				"command": "extension.micronaut-tools.navigation.editManagement",
 				"title": "%extension.micronaut-tools.navigation.editManagement.title%",
-				"icon": "$(symbol-boolean)",
+				"icon": "$(edit)",
 				"category": "Micronaut Tools"
 			},
 			{
@@ -261,7 +261,7 @@
 			{
 				"command": "extension.micronaut-tools.navigation.editControlPanel",
 				"title": "%extension.micronaut-tools.navigation.editControlPanel.title%",
-				"icon": "$(symbol-boolean)",
+				"icon": "$(edit)",
 				"category": "Micronaut Tools"
 			},
 			{

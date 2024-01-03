@@ -204,31 +204,40 @@ export class DefinedEnvironments {
         return Object.keys(extensions);
     }
 
-    async edit() {
-        vscode.window.showInputBox({
-            title: 'Edit Application Environments',
-            placeHolder: vscode.l10n.t('Provide comma-separated environments (like \'dev,test\')'),
-            value: toString(this.definedEnvironments),
-            prompt: 'Leave blank to inherit from context.'
-        }).then(provided => {
-            if (provided !== undefined) {
-                const environments = fromString(provided);
-                if (environments?.length || !this.application.getControlPanel().isEnabled()) {
-                    this.set(environments);
+    // returns true if edit was performed, false if canceled
+    async edit(): Promise<boolean> {
+        return new Promise(resolve => {
+            vscode.window.showInputBox({
+                title: 'Edit Active Environments',
+                placeHolder: vscode.l10n.t('Provide comma-separated environments for the launched application (like \'dev,test\')'),
+                value: toString(this.definedEnvironments),
+                prompt: 'Leave blank to use project configuration.'
+            }).then(provided => {
+                if (provided !== undefined) {
+                    const environments = fromString(provided);
+                    if (environments?.length || !this.application.getControlPanel().isEnabled()) {
+                        this.set(environments);
+                        resolve(true);
+                    } else {
+                        const defineDevOption = 'Define Environments';
+                        const disableCpOption = 'Disable Control Panel';
+                        const cancelOption = 'Cancel';
+                        vscode.window.showWarningMessage('Micronaut Control Panel requires at least one defined active environment.', defineDevOption, disableCpOption, cancelOption).then(selectedOption => {
+                            if (selectedOption === defineDevOption) {
+                                resolve(this.edit());
+                            } else if (selectedOption === disableCpOption) {
+                                this.application.getControlPanel().setEnabled(false);
+                                this.set(environments);
+                                resolve(true);
+                            } else {
+                                resolve(false);
+                            }
+                        });
+                    }
                 } else {
-                    const defineDevOption = 'Define Environments';
-                    const disableCpOption = 'Disable Control Panel';
-                    const cancelOption = 'Cancel';
-                    vscode.window.showWarningMessage('Micronaut Control Panel requires at least one defined environment. How to proceed?', defineDevOption, disableCpOption, cancelOption).then(selectedOption => {
-                        if (selectedOption === defineDevOption) {
-                            this.edit();
-                        } else if (selectedOption === disableCpOption) {
-                            this.application.getControlPanel().setEnabled(false);
-                            this.set(environments);
-                        }
-                    });
+                    resolve(false);
                 }
-            }
+            });
         });
     }
 
