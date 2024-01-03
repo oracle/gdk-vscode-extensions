@@ -18,12 +18,20 @@ export function forApplication(application: applications.Application) {
 
 export class EnvironmentEndpoint extends beanHandler.UpdatableBeanHandler {
 
+    private lastActiveEnvironments: string[] | undefined;
+
     constructor(application: applications.Application) {
         super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS)
     }
 
     protected async processResponse(response: { code: number | undefined; headers: any; data: any }) {
-        this.notifyUpdated(JSON.parse(response.data));
+        const data = JSON.parse(response.data);
+        this.lastActiveEnvironments = activeEnvironments(data);
+        this.notifyUpdated(data);
+    }
+
+    getLastActiveEnvironments(): string[] | undefined {
+        return this.lastActiveEnvironments;
     }
 
     buildVmArgs(): string | undefined {

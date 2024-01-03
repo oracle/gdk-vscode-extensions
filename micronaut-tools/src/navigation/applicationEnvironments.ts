@@ -71,7 +71,10 @@ export class DefinedEnvironments {
         if (folderPath) {
             const resourcesPath = path.join(folderPath, 'src', 'main', 'resources');
             this.readConfigurationFiles(resourcesPath).then(allFiles => {
-                this.getConfigurationFiles(allFiles, this.definedEnvironments).then(async files => {
+                const environmentEndpoint = this.application.getManagement().getEnvironmentEndpoint();
+                const liveMode = environmentEndpoint.isAvailable();
+                const environments = liveMode ? environmentEndpoint.getLastActiveEnvironments() : this.definedEnvironments;
+                this.getConfigurationFiles(allFiles, environments).then(async files => {
                     const preferredExt = this.getPreferredExtension(allFiles[1]);
                     const items: (vscode.QuickPickItem & { file: string, createForEnvironment: string | undefined })[] = [];
                     for (let i = 0; i < files.length; i++) {
