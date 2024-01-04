@@ -20,6 +20,9 @@ It is recommended to install [Graal Cloud Native Extension Pack](https://marketp
 * [Deploy Your Application to Oracle Cloud Infrastructure](#deploy-your-application-to-oracle-cloudinfrastructure)
 * [Connect to an Oracle Autonomous Database](#connect-to-an-oracle-autonomous-database)
 * [Create Entity and Repository Classes From an Existing Database Schema](#create-entity-and-repository-classes-from-an-existing-database-schema)
+* [Create Micronaut Controller Classes from Micronaut Data Repositories](#create-micronaut-controller-classes-from-micronaut-data-repositories)
+
+If you would like to request a feature, or find a bug, please [let us know](#feedback).
 
 ## Requirements
 - VS Code (version 1.76.0 or later).
@@ -82,9 +85,9 @@ The base address of the running Micronaut or GCN application is by default confi
 ### Compose REST Queries
 To easily debug and test the application REST API, the Endpoints view provides a smooth integration with a third party extension [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client).
 
-To start composing a REST query, invoke the Compose REST Query action for an endpoint either from the Endpoints view or using the corresponding Code Lens action in code editor. A dedicated text document is opened and the corresponding query is inserted. Use the REST Client features to invoke and process the query.
+To compose a REST query, invoke the Compose REST Query action for an endpoint either from the Endpoints view or using the corresponding Code Lens action in code editor. A dedicated text document is opened and the corresponding query is inserted. Use the REST Client features to invoke and process the query.
 
-Note: If the REST Client extension is not installed when invoking the Compose REST Query action, a notification is displayed offering to quick install it.
+> **Note**: If the REST Client extension is not installed when invoking the Compose REST Query action, a notification is displayed offering to quick install it.
 
 ![Compose REST Query](images/compose_rest_query.png)
 
@@ -93,6 +96,8 @@ Note: If the REST Client extension is not installed when invoking the Compose RE
 The easiest way to run your Micronaut application is to view the `Application` class in the editor and click **Run** above the `main()` method, as shown here.
 
 ![Run Micronaut Application](images/run_main_method.png)
+
+> **Note**: If you have defined a database connection, see [Connect to an Oracle Autonomous Database](#connect-to-an-oracle-autonomous-database), then the database connection details will be passed to your running application through an argument file when running the application in this way.
 
 Alternatively, select **Run Without Debugging** from the **Run** menu.
 
@@ -199,10 +204,12 @@ For more information about using the OCI DevOps Tools Extension, see [Using OCI 
 
 ### Connect to an Oracle Autonomous Database
 
+By connecting to an Oracle Autonomous Database in VS Code you can browse the schemas of any existing databases you may have and then quickly create a REST API that exposes it.
+
 **Prerequisites:**
 * An Oracle Cloud Infrastructure (OCI) account.
 
-To create a new connection to an Oracle Autonomous Database, follow the steps below:
+To connect to an Oracle Autonomous Database:
 
 1. Expand the **DATABASES** view in the Explorer panel and click **Add Oracle Autonomous DB**.
 If there are existing databases in the view, you can skip to step **6**.
@@ -219,17 +226,17 @@ To change the properties of a database connection, select the database in the **
 
 To select a database as the _Default Connection_, select the database in the **DATABASES** view, right-click and then select **Set as Default Connection** from the menu.
 
-Database Password is stored in OS specific safe storage - macOS keychain, KDE Wallet, GNOME/Keyring, Windows Data Protection API.
-For Debug / Run of micronaut application, VSCode creates temporary file with Micronaut properties incl. Database Username and Password.
-This temporary file is readable only by user running VSCode and is deleted as soon as debugging session ends.
+> **Note**: The database password is stored in an OS specific secure storage mechanism. This will be one the following: macOS keychain; KDE Wallet; GNOME/Keyring; Windows Data Protection API;
+When running, or debugging, a micronaut application from within the editor, a temporary argument file will be created that contains any properties required by the running applicaiton. This may include the database username and password. This file is used pass the required application configuration properties ot the application when it is started. It should be noted that this temporary file is only readable by user running VSCode and it is deleted as soon as run/debug session finishes.
 
-### Use OCI Vault to Store Database Connection Properties
-[Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) provides an easy and secure way to run Micronaut Database applications using Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) and Vault services.
+### Using the OCI Vault to Store Database Connection Properties
+The Micronuat Tools VS Code extension now supports storing an application's database configuration within an [OCI Vault](https://docs.oracle.com/en-us/iaas/Content/KeyManagement/Concepts/keyoverview.htm_). The Vault is a secure service within OCI for managing application secrets.
 
+In order to make use of this new feature you are required to first create an [OCI Vault](https://docs.oracle.com/iaas/Content/KeyManagement/Tasks/managingvaults_topic-To_create_a_new_vault.htm) and [Master Encryption Key](https://docs.oracle.com/iaas/Content/KeyManagement/Tasks/managingkeys_topic-To_create_a_new_key.htm) using the Oracle Cloud Console. Plese consult the OCI documentaiton, previously linked, on how to do this.
 
-Prior to using this feature, a user is required to create an [OCI Vault](https://docs.oracle.com/iaas/Content/KeyManagement/Tasks/managingvaults_topic-To_create_a_new_vault.htm) and [Master Encryption Key](https://docs.oracle.com/iaas/Content/KeyManagement/Tasks/managingkeys_topic-To_create_a_new_key.htm) using the Oracle Cloud Console. To achieve this, do the following:
+>If your project is already stored in the [OCI DevOps service](https://www.oracle.com/devops/devops-service/), then make sure the [OKE Deployments Pipelines are created](https://graal.cloud/gcn/vscode-tools/oci-devops-tools/#build-and-deploy-project-artifacts) before you proceed.
 
->If your project is already stored in the [OCI DevOps service](https://www.oracle.com/devops/devops-service/), then make sure the [OKE Deployments Pipelines are created](https://graal.cloud/gcn/vscode-tools/oci-devops-tools/#build-and-deploy-project-artifacts) before you proceed. 
+In order to store you application database connection details in the vault and for these to be made avilable to your application when you deploy to OKE using the OCI DevOps service, you must:
 
 1. Connect to an Oracle Automonous Database as described in *Connect to an Oracle Autonomous Database* section above.
 2. Make sure your Micronaut project configuration file contains the _micronaut-oraclecloud-vault_ dependency.
@@ -258,13 +265,15 @@ Prior to using this feature, a user is required to create an [OCI Vault](https:/
 
 ### Create Entity and Repository Classes From an Existing Database Schema
 
+With a connection to an Oracle Autonomous Database created, see the previous section, you can quickly create [Micronaut Data](https://micronaut-projects.github.io/micronaut-data/latest/guide/) entity classes for the tables within the database.
+
 **Prerequisites:**
 * You have created a connection to a database with an existing schema. 
 (See above.)
 * You have selected the database as the _Default Connection_.
 (See above.)
 
-To create entity classes, follow these steps:
+To create Micronaut Data entity classes:
 1. Create a new Micronaut project in VS Code (or open an existing one).
 2. Create a new Java package in your project, for example, `com.example.micronaut.entities`.
 3. Right-click the package name and select **New From Template...** from the menu.
@@ -272,7 +281,9 @@ To create entity classes, follow these steps:
 5. From the list of tables, select the tables for which you want to create corresponding entities. 
 6. Click **Enter**.
 
-To create repository classes, follow these steps:
+![Create Micronaut Data Entitiy Classes](./images/create-entities.gif)
+
+In a similar way we can also create Micronaut Data repository classes - note this requires that you have already created entity classes (see above):
 1. Create a new Micronaut project in VS Code (or open an existing one).
 2. Create a new Java package in your project, for example, `com.example.micronaut.repositories`.
 3. Right-click the package name and select **New From Template...** from the menu.
@@ -281,18 +292,24 @@ To create repository classes, follow these steps:
 6. From the list of entities, select the entities for which you want to create corresponding repositories.
 7. Click **Enter**.
 
-### Create Micronaut Controller Classes from Data Repositories
-The Micronaut Tools extension can create new Micronaut controller classes which are bound to selected Data Repositories&mdash;this jumpstarts the development of Micronaut Database applications. 
-1. Complete the steps above to generate Micronaut Repository interfaces.
-2. Right-click the package name and select **New From Template...** from the menu.
-3. When prompted, select **Micronaut**, then **Micronaut Controller Classes (from Data Repositories)**.
-4. From the list of repositories select one or more items.
-5. Click **Enter**
+![Create Micronaut Data Repository Classes](./images/create-repositories.gif)
 
-A controller is generated with access to the specified repository. By default it contains a REST endpoint to access Repository `findAll()` in its `list()` method by default.
+### Create Micronaut Controller Classes from Micronaut Data Repositories
 
-Other REST Endpoints accessing Repository members can be added to Controller using editor actions. Either invoke **code completion** (select desired method from list) or use editor  **Source Action... | Generata Data Endpoint...**. 
-Currently provided are  `delete()` and `get()` both using Data Entity member annotated with `@id` as their parameter. 
+By creating Controllers that expose your Micronaut Data repository classes, you can quickly turn them into a REST API. Create your Micronaut Data entity and repository classes first and then:
+
+1. Right-click the package name and select **New From Template...** from the menu.
+2. When prompted, select **Micronaut**, then **Micronaut Controller Classes (from Data Repositories)**.
+3. From the list of repositories select one or more items.
+4. Click **Enter**
+
+A controller is then generated that has access to the data repository. By default it contains a REST endpoint to access the repository's `findAll()` method in its `list()` method.
+
+Other REST Endpoints accessing Repository members can be added to the controller. This can be done either through **code completion** (select the desired method from the list) or directly form the editor:  **Source Action... | Generata Data Endpoint...**.
+
+Currently `delete()` and `get()` methods are provided, both are annotated with the Data Entity `@id` parameter. 
+
+![Create Micronaut Data Repository Classes](./images/create-controllers.gif)
 
 ## Extension Settings
 
