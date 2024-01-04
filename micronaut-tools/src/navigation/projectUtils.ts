@@ -8,10 +8,13 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { LAUNCH_COMMAND } from '../launcher/extension';
 
 
 const EXTENSION_NBLS_ID = 'asf.apache-netbeans-java';
 const COMMAND_GET_PROJECT_INFO = 'nbls.project.info';
+const COMMAND_DEBUG_FROM_PROJECT_VIEW = 'java.debug.debugFromProjectView';
+const COMMAND_RUN_FROM_PROJECT_VIEW = 'java.debug.runFromProjectView';
 const TIMEOUT_COMMAND_GET_PROJECT_INFO = 30; // wait for NBLS & projectInfo up to 30 seconds
 const RUN_DEV_MAVEN = 'Micronaut: dev mode';
 const RUN_DEV_GRADLE = 'Continuous Mode';
@@ -96,17 +99,35 @@ export async function getProjectInfo(uri: vscode.Uri): Promise<ProjectInfo> {
     }
 }
 
-export async function runModule(mode: RunMode, uri: vscode.Uri, build: BuildSystemType) {
-    if (mode === RunMode.RUN_DEV) {
-        if (build === BuildSystemType.MAVEN) {
-            vscode.commands.executeCommand(RunMode.RUN, uri, RUN_DEV_MAVEN);
-        } else if (build === BuildSystemType.GRADLE) {
-            vscode.commands.executeCommand(RunMode.RUN, uri, RUN_DEV_GRADLE);
+export async function runModule(mode: RunMode, uri: vscode.Uri, name: string, build: BuildSystemType) {
+    const nblsDebugEnabled = vscode.workspace.getConfiguration('netbeans')?.get('javaSupport.enabled') as boolean;
+    if (nblsDebugEnabled) {
+        if (mode === RunMode.RUN_DEV) {
+            if (build === BuildSystemType.MAVEN) {
+                vscode.commands.executeCommand(RunMode.RUN, uri, RUN_DEV_MAVEN);
+            } else if (build === BuildSystemType.GRADLE) {
+                vscode.commands.executeCommand(RunMode.RUN, uri, RUN_DEV_GRADLE);
+            } else {
+                throw new Error('Running in Dev mode not supported for this project.');
+            }
         } else {
-            throw new Error('Running in Dev mode not supported for this project.');
+            vscode.commands.executeCommand(mode, uri);
         }
     } else {
-        vscode.commands.executeCommand(mode, uri);
+        const ext = vscode.extensions.getExtension('vscjava.vscode-java-debug');
+        if (!ext) {
+            throw new Error('No Run/Debug support found for this project.');
+        }
+        if (!ext.isActive) {
+            await ext.activate();
+        }
+        if (mode === RunMode.DEBUG) {
+            vscode.commands.executeCommand(COMMAND_DEBUG_FROM_PROJECT_VIEW, {name, uri});
+        } else if (mode === RunMode.RUN) {
+            vscode.commands.executeCommand(COMMAND_RUN_FROM_PROJECT_VIEW, {name, uri});
+        } else {
+            vscode.commands.executeCommand(LAUNCH_COMMAND, uri, true);
+        }
     }
 }
 
