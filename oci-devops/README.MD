@@ -85,6 +85,19 @@ To deploy a built container artifact, invoke the Run Deployment Pipeline action 
 
 ![Build and Deployment Pipelines](images/oke_test_app.png)
 
+### Use an OCI Vault for a Deployed Database Application
+The [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) provides an easy and secure way to run Micronaut Database applications in the Oracle Kubernetes Environment (OKE) using OCI Vault.
+
+1. Install the [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack).
+2. GCN or Micronaut application is already deployed to OCI DevOps service using this extension
+3. Right-click on a database name in the Databases panel and choose **Add to OCI Vault**. Follow the steps.
+
+   ![Add to OCI Vault](images/add_to_oci_vault.png)
+
+All details, including prerequisites, can be found in the [Micronaut Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) extension documentation. See the section *Use OCI Vault to Store Database Connection Properties*.
+
+This action creates new a project artifact named <_project_name_>__oke_configmap_, which contains the `datasources.default.*` properties stored in your OCI Vault. It also extends both predefined Deployment Pipelines to use this Kubernetes manifest in order to run a database application in OKE in a secure and seamless way.
+
 </details>
 
 <details>

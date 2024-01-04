@@ -223,6 +223,39 @@ Database Password is stored in OS specific safe storage - macOS keychain, KDE Wa
 For Debug / Run of micronaut application, VSCode creates temporary file with Micronaut properties incl. Database Username and Password.
 This temporary file is readable only by user running VSCode and is deleted as soon as debugging session ends.
 
+### Use OCI Vault to Store Database Connection Properties
+[Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) provides an easy and secure way to run Micronaut Database applications using Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) and Vault services.
+
+
+Prior to using this feature, a user is required to create an [OCI Vault](https://docs.oracle.com/iaas/Content/KeyManagement/Tasks/managingvaults_topic-To_create_a_new_vault.htm) and [Master Encryption Key](https://docs.oracle.com/iaas/Content/KeyManagement/Tasks/managingkeys_topic-To_create_a_new_key.htm) using the Oracle Cloud Console. To achieve this, do the following:
+
+>If your project is already stored in the [OCI DevOps service](https://www.oracle.com/devops/devops-service/), then make sure the [OKE Deployments Pipelines are created](https://graal.cloud/gcn/vscode-tools/oci-devops-tools/#build-and-deploy-project-artifacts) before you proceed. 
+
+1. Connect to an Oracle Automonous Database as described in *Connect to an Oracle Autonomous Database* section above.
+2. Make sure your Micronaut project configuration file contains the _micronaut-oraclecloud-vault_ dependency.
+   * _pom.xml_
+   ```
+    <dependency>
+     <groupId>io.micronaut.oraclecloud</groupId>
+     <artifactId>micronaut-oraclecloud-vault</artifactId>
+    </dependency>
+    ```
+   * _build.gradle_
+   ```
+     implementation("io.micronaut.oraclecloud:micronaut-oraclecloud-vault")
+   ```
+3. Right click the database name in the Databases panel and choose **Add to OCI Vault**
+
+   ![Add to OCI Vault](images/add_to_oci_vault.png)
+
+4. From the list of Compartments select the compartment with an existing Vault. (If there is more than one Vault, select the one to store your database properties.)
+5. From the list of keys, select the key to be used to encrypt your database properties. If there is only one key, this step is skipped and the encryption key is automatically used.
+6. Provide a custom **Datasource Name**.
+7. Click **Enter**. The database properties are stored in your OCI Vault. There is a notification shown at the bottom of the VS Code window.
+8. If the project is stored in OCI DevOps then running Deployment Pipelines from the OCI DevOps panel will use the Database properties stored in OCI Vault in previous steps.
+
+> Note: If OKE Deployment Pipelines were modified as described above, the OKE ConfigMap named <_project_name_>__oke_configmap_ will be used. The deployment uses then the database properties stored in your OCI Vault to run a Micronaut application in OKE in a secure and seamless way. Learn more about this in the [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops) extension documentation.
+
 ### Create Entity and Repository Classes From an Existing Database Schema
 
 **Prerequisites:**
@@ -247,6 +280,19 @@ To create repository classes, follow these steps:
 5. Choose if **Repository Interfaces** should to be based on **CRUD**, or **Pageable**. The default is **CRUD**.
 6. From the list of entities, select the entities for which you want to create corresponding repositories.
 7. Click **Enter**.
+
+### Create Micronaut Controller Classes from Data Repositories
+The Micronaut Tools extension can create new Micronaut controller classes which are bound to selected Data Repositories&mdash;this jumpstarts the development of Micronaut Database applications. 
+1. Complete the steps above to generate Micronaut Repository interfaces.
+2. Right-click the package name and select **New From Template...** from the menu.
+3. When prompted, select **Micronaut**, then **Micronaut Controller Classes (from Data Repositories)**.
+4. From the list of repositories select one or more items.
+5. Click **Enter**
+
+A controller is generated with access to the specified repository. By default it contains a REST endpoint to access Repository `findAll()` in its `list()` method by default.
+
+Other REST Endpoints accessing Repository members can be added to Controller using editor actions. Either invoke **code completion** (select desired method from list) or use editor  **Source Action... | Generata Data Endpoint...**. 
+Currently provided are  `delete()` and `get()` both using Data Entity member annotated with `@id` as their parameter. 
 
 ## Extension Settings
 
