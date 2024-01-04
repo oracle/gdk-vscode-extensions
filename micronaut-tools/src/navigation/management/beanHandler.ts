@@ -49,8 +49,8 @@ export abstract class BeanHandler {
         return this.enabled;
     }
 
-    setEnabled(enabled: boolean) {
-        if (this.enabled !== enabled) {
+    setEnabled(enabled: boolean, forceSet: boolean = false) {
+        if (this.enabled !== enabled || forceSet) {
             if (enabled) {
                 this.doEnable();
             } else {

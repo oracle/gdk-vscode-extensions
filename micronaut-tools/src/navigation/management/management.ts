@@ -138,7 +138,7 @@ export class Management extends beanHandler.BeanHandler {
             placeHolder: 'Select Monitoring & Management availability for the launched application'
         }).then(selected => {
             if (selected) {
-                this.setEnabled(selected === items[0]);
+                this.setEnabled(selected === items[0], true);
             }
         })
     }

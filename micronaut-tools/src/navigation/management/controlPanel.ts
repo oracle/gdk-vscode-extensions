@@ -48,7 +48,7 @@ export class ControlPanel extends beanHandler.BeanHandler {
             placeHolder: 'Select Micronaut Control Panel availability for the launched application'
         }).then(selected => {
             if (selected) {
-                this.setEnabled(selected === items[0]);
+                this.setEnabled(selected === items[0], true);
             }
         })
     }
