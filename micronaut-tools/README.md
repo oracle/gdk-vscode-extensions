@@ -76,7 +76,7 @@ The request mapping nodes in the Endpoints view also provide two additional acti
 
 Similar actions are also available in the code editor as Code Lens actions.
 
-For endpoints requiring parameters to be passed in, a dialogue will be opened enabling you to enter values for the parameters before calling the endpoint. Tip: Type a parameter value and submit by Enter to move to another parameter.
+For endpoints requiring parameters to be passed in, a dialog box will be opened enabling you to enter values for the parameters before calling the endpoint. Tip: Type a parameter value and submit by Enter to move to another parameter.
 
 The default URL of the running Micronaut or GCN application is `http://localhost:8080`, but this can be customized using the **Edit Target Application Address** action in the Endpoints view.
 
@@ -316,7 +316,7 @@ By creating Controllers that expose your Micronaut Data repository interfaces, y
 3. From the list of repositories, select one or more items. You can select all, a selection of them.
 4. Click **Enter**
 
-A controller that has access to the data repository is generated for each of the Micronaut Data repository interface that you selected in the wizard. By default, it contains a REST endpoint to access the repository's `findAll()` method in its `list()` method. 
+A controller that has access to the data repository is generated for each of the Micronaut Data repository interfaces that you selected in the wizard. By default, it contains a REST endpoint to access the repository's `findAll()` method in its `list()` method. 
 
 Other REST Endpoints accessing a repository can be added to the controller. It is possible to add a _delete_ endpoint method, or different _find_ methods. This can be done either through **code completion** (select the desired method from the list) or directly from the editor:  **Source Action... | Generata Data Endpoint...**.
 
@@ -359,7 +359,7 @@ This extension modifies the **Java** environment so that the application is laun
 To enable or disable the enhanced Run feature, navigate to `File - Preferences - Settings`, locate `Micronaut Tools` extension section and turn on/off the `Use build system to run or debug applications`. The relevant setting (in JSON format) is `micronaut-tools.buildsystemExecution`
 
 In some configurations the Enhanced Run feature code lenses, `Run | Debug | Run with Micronaut Continuous Mode`, are not displayed for **Gradle** projects when **Gradle for Java extension** is enabled. 
-To resolve this it is necessary to disable Gradle for Java extension, reload VSCode and then enable Gradle for Java again. 
+To resolve this, disable Gradle for Java extension, reload VS Code, and then enable Gradle for Java again.
 
 The Apache NetBeans Language Server for Java fails on Linux and macOS if the path of VSCode extensions directory contains a space, for example _/User/great code/.vscode/extensions_. (The extensions directory contains all VSCode extensions are installed.) The default path is:
 
