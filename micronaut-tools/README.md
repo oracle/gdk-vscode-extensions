@@ -90,7 +90,8 @@ Note: If the REST Client extension is not installed when invoking the Compose RE
 ![Compose REST Query](images/compose_rest_query.png)
 
 ### Editor Support for Micronaut Expression Language
-Since 4.0, Micronaut framework supports embedding evaluated expressions in annotation values using `#{…​}` syntax. The extension provides a full editor support for the [Micronaut Expression Language](https://docs.micronaut.io/latest/guide/#evaluatedExpressions) including:
+Since 4.0, Micronaut framework supports embedding evaluated expressions in annotation values using the `#{…​}` syntax. 
+The extension provides a full editor support for the [Micronaut Expression Language](https://docs.micronaut.io/latest/guide/#evaluatedExpressions) including:
 * Code completion
 * Documentation hovers for used Java elements and Micronaut configuration properties
 * Code navigation to used Java elements and Micronaut configuration properties
