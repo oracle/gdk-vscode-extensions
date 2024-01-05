@@ -93,12 +93,13 @@ To compose a REST query, invoke the Compose REST Query action for an endpoint ei
 ![Compose REST Query](images/compose_rest_query.png)
 
 ### Editor Support for Micronaut Expression Language
-Since 4.0, Micronaut framework supports embedding evaluated expressions in annotation values using the `#{…​}` syntax. 
-The extension provides a full editor support for the [Micronaut Expression Language](https://docs.micronaut.io/latest/guide/#evaluatedExpressions) including:
+Since 4.0, the Micronaut framework supports embedding evaluated expressions in annotation values using the `#{…​}` syntax, this is known as the [Micronaut Expression Language](https://docs.micronaut.io/latest/guide/#evaluatedExpressions).
+
+The extension provides full editor support for the Micronaut Expression Language, including:
 * Code completion
-* Documentation hovers for used Java elements and Micronaut configuration properties
-* Code navigation to used Java elements and Micronaut configuration properties
-* Syntax coloring
+* Syntax highlighting
+* Documentation hovers for Java elements and Micronaut configuration properties
+* Code navigation to Java elements and Micronaut configuration properties
 
 ![Micronaut Expression Language Code Completion](images/micronaut-expression-language.png)
 
