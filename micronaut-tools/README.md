@@ -4,7 +4,7 @@
 ## Overview
 Micronaut Tools is a powerful extension for using [GraalVM](https://www.oracle.com/java/graalvm/) to develop [Micronaut framework](https://micronaut.io/) and [Graal Cloud Native](https://graal.cloud/) applications within VS Code.
 
-It is recommended to install [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which contains this extension and others.
+Install the [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack), which contains this extension and others.
 
 ## Features
 * [View Suggested Code Completions](#view-suggested-code-completions)
@@ -20,17 +20,20 @@ It is recommended to install [Graal Cloud Native Extension Pack](https://marketp
 * [Build a Container Image and Deploy Your Micronaut Application to a Container Registry](#build-a-container-image-and-deploy-your-micronaut-application-to-a-container-registry)
 * [Deploy Your Application to Oracle Cloud Infrastructure](#deploy-your-application-to-oracle-cloudinfrastructure)
 * [Connect to an Oracle Autonomous Database](#connect-to-an-oracle-autonomous-database)
-* [Create Entity and Repository Classes From an Existing Database Schema](#create-entity-and-repository-classes-from-an-existing-database-schema)
+* [Create Entity and Repository Classes from an Existing Database Schema](#create-entity-and-repository-classes-from-an-existing-database-schema)
+* [Create Micronaut Controller Classes from Micronaut Data Repositories](#create-micronaut-controller-classes-from-micronaut-data-repositories)
+
+To request a feature or report a bug, please [contact us](#feedback).
 
 ## Requirements
 - VS Code (version 1.76.0 or later).
 - The [Extension Pack for Java from Microsoft](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack).
 VS Code will prompt you to install the extension when you open a Micronaut project (for more information, see [Java in VS Code](https://code.visualstudio.com/docs/languages/java)).
-- (Optional.) The A Java Development Kit (JDK) installation (JDK 17 or later).
+- (Optional.) An installed Java Development Kit (JDK) (JDK 17 or later).
 [Oracle GraalVM](https://www.oracle.com/java/graalvm/) is a fast and efficient JDK from Oracle.
 
 ## Installing the Extension
-Click **Install** on the banner above, or from the Extensions side bar in VS Code, by searching for "Micronaut Tools".
+Click **Install** on the banner above or from the Extensions sidebar in VS Code by searching for "Micronaut Tools".
 
 You can also find the extension listed on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut).
 
@@ -62,40 +65,41 @@ Run the **Go to Symbol in Workspace** command using Ctrl+T (Cmd+T on macOS) and 
 ### View Defined Beans and Endpoints
 All beans and request mappings defined by a Micronaut or GCN application can be displayed in the Beans and Endpoints views of the Micronaut Tools activity.
 
-The items of these views can be searched/filtered using a dedicated action available in the view captions, or invoked using the Ctrl+F shortcut.
+The items of these views can be searched/filtered using a dedicated action available in the view captions or invoked using the Ctrl+F shortcut.
 
-Clicking a node in one of these views navigates to the corresponding source code similar to the Go to Symbol in Workspace command. This can be also invoked using a dedicated context menu action:
+Clicking a node in one of these views navigates to the corresponding source code, similar to the **Go to Symbol in Workspace** command. This can also be invoked using a dedicated context menu action:
 * **Go to Symbol** to open the bean or request mapping source code
 
-Request mapping nodes in the Endpoints view provide two additional actions:
+The request mapping nodes in the Endpoints view also provide two additional actions:
 * **Open in Browser** to open the GET endpoint in a web browser
-* **Compose REST Query** to insert the corresponding query into a dedicated text document. See the following section Compose REST Queries for details.
+* **Compose REST Query** to insert the corresponding query into a dedicated text document. For details, see the section _Compose REST Queries_.
 
-Similar actions are available also in the code editor as Code Lens actions.
+Similar actions are also available in the code editor as Code Lens actions.
 
-For endpoints containing parameters a dialog is opened to provide concrete values before opening in a browser or generating a REST query. Tip: type a parameter value and submit by Enter to move to another parameter.
+For endpoints requiring parameters to be passed in, a dialog box will be opened enabling you to enter values for the parameters before calling the endpoint. Tip: Type a parameter value and submit by Enter to move to another parameter.
 
-The base address of the running Micronaut or GCN application is by default configured to `http://localhost:8080` and can be customized using the Edit Target Application Address action in the Endpoints view caption or next to a folder node in case multiple folders are opened in the workspace.
+The default URL of the running Micronaut or GCN application is `http://localhost:8080`, but this can be customized using the **Edit Target Application Address** action in the Endpoints view.
 
 ![Beans and Endpoints views](images/beans_endpoints_view.png)
 
 
 ### Compose REST Queries
-To easily debug and test the application REST API, the Endpoints view provides a smooth integration with a third party extension [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client).
+To easily debug and test the REST API of your application, the Endpoints view provides a smooth integration with a third-party extension [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client).
 
-To start composing a REST query, invoke the Compose REST Query action for an endpoint either from the Endpoints view or using the corresponding Code Lens action in code editor. A dedicated text document is opened and the corresponding query is inserted. Use the REST Client features to invoke and process the query.
+To compose a REST query, invoke the **Compose REST Query** action for an endpoint either from the **Endpoints** view or by using the corresponding Code Lens action in the code editor. A dedicated text document is opened, and the corresponding query is inserted. Use the REST Client features to invoke and process the query.
 
-Note: If the REST Client extension is not installed when invoking the Compose REST Query action, a notification is displayed offering to quick install it.
+> **Note**: If the REST Client extension is not installed when invoking the **Compose REST Query** action, a notification is displayed offering to quickly install it.
 
 ![Compose REST Query](images/compose_rest_query.png)
 
 ### Editor Support for Micronaut Expression Language
-Since 4.0, Micronaut framework supports embedding evaluated expressions in annotation values using the `#{…​}` syntax. 
-The extension provides a full editor support for the [Micronaut Expression Language](https://docs.micronaut.io/latest/guide/#evaluatedExpressions) including:
+Since 4.0, the Micronaut Framework enables you to embed an evaluated expression in an annotation value using the `#{…​}` syntax. This is known as the [Micronaut Expression Language](https://docs.micronaut.io/latest/guide/#evaluatedExpressions).
+
+The extension provides full editor support for the Micronaut Expression Language, including:
 * Code completion
-* Documentation hovers for used Java elements and Micronaut configuration properties
-* Code navigation to used Java elements and Micronaut configuration properties
-* Syntax coloring
+* Syntax highlighting
+* Documentation hovers for Java elements and Micronaut configuration properties
+* Code navigation to Java elements and Micronaut configuration properties
 
 ![Micronaut Expression Language Code Completion](images/micronaut-expression-language.png)
 
@@ -105,26 +109,28 @@ The easiest way to run your Micronaut application is to view the `Application` c
 
 ![Run Micronaut Application](images/run_main_method.png)
 
+> **Note**: If you have defined a database connection, see [Connect to an Oracle Autonomous Database](#connect-to-an-oracle-autonomous-database), then the database connection details will be passed to your running application through an argument file when running the application in this way.
+
 Alternatively, select **Run Without Debugging** from the **Run** menu.
 
 ### Live Reloading of Applications
 
-Micronaut has the ability to automatically recompile and restart your application (or its parts) when it detects changes to your source code.
+Micronaut can automatically recompile and restart your application (or its parts) when it detects changes to your source code.
 (This is called "Continuous Mode".)
 To run your Micronaut application in this mode, view the `Application` class in the editor and click **Run with Micronaut Continuous Mode** above the `main()` method, as shown here.
 
 ![Run Micronaut Application in Continuous Mode](images/run-continuous.png)
 
-Alternatively, select **Run and Debug** in the activity bar and click **create a launch.json file**.
+Alternatively, select **Run and Debug** in the activity bar and click **Create a launch.json file**.
 When prompted, select **Java** as the debugger.
-A configuration that will be labeled with "Continuous" will be created for your Micronaut application main class(es), similar to this example:
+A configuration labeled with "Continuous" will be created for your Micronaut application main class(es), similar to this example:
 ![Select Launch Configuration to Run Micronaut Application in Continuous Mode](images/run-continuous-config.png)
 
-Select the newly added configuration in the **Run and Debug** view, and finally click **Run**.
+Select the newly added configuration in the **Run and Debug** view, then click **Run**.
 
 ### Debug Your Micronaut Application
 
-The easiest way to run your Micronaut application is to view the `Application` class in the editor and click **Debug** above the `main()` method, as shown here.
+The easiest way to debug your Micronaut application is to view the `Application` class in the editor and click **Debug** above the `main()` method, as shown here.
 
 ![Debug Micronaut Application](images/debug_main_method.png)
 
@@ -141,14 +147,14 @@ Enter "Micronaut Tools" and invoke the **Micronaut Tools: Build...** command.
 
     ![Micronaut Build Commands](images/micronaut-build-commands.png)
 
-3. When the compilation completes, invoke the **Micronaut Tools: Build...** command again.
+3. When the compilation is complete, invoke the **Micronaut Tools: Build...** command again.
 This time, select the **package** goal, which will package your application into a JAR file.
 
 ### Create a Native Executable from Your Micronaut Application
 
 If you have installed Oracle GraalVM, you can use GraalVM Native Image to create a native executable from your application.
 GraalVM Native Image creates an executable file with all the application classes, dependent library classes, dependent JDK classes, and a snapshot of the application heap. 
-Whilst building a native executable can take some time, the benefits include a dramatic reduction in startup time and reduced overall memory consumption.
+The benefits include a dramatic reduction in startup time and lower overall memory consumption.
 
 > **Note**: The time to build an executable depends on application size and complexity.
 
@@ -161,14 +167,14 @@ Enter "Micronaut Tools" and invoke the **Micronaut Tools: Build...** command.
 
     ![Micronaut Build Commands](images/micronaut-build-commands.png)
 
-3. When the compilation completes, invoke the **Micronaut Tools: Build...** command again.
+3. When the compilation is complete, invoke the **Micronaut Tools: Build...** command again.
 This time, select the **nativeImage** goal, which creates a native executable from your application.
 
     * If your application is built with Maven, the goal runs the command `mvnw package -Dpackaging=native-image`.
-    The resulting native executable will in the _target/native-image/_ directory.
+    The resulting native executable will be in the _target/native-image/_ directory.
 
     * If your application is built with Gradle, the goal runs the command `gradlew nativeCompile`.
-    The resulting native executable will in the _build/native/nativeCompile/_ directory.
+    The resulting native executable will be in the _build/native/nativeCompile/_ directory.
 
 To run your Micronaut application as a native executable, open a terminal by selecting **New Terminal** from the **Terminal** menu, then run the following command: 
 
@@ -210,14 +216,16 @@ For more information about using the OCI DevOps Tools Extension, see [Using OCI 
 
 ### Connect to an Oracle Autonomous Database
 
+By connecting to an Oracle Autonomous Database in VS Code, you can browse the schemas of any existing databases you may have and then quickly create a REST API that exposes them.
+
 **Prerequisites:**
 * An Oracle Cloud Infrastructure (OCI) account.
 
-To create a new connection to an Oracle Autonomous Database, follow the steps below:
+To connect to an Oracle Autonomous Database:
 
 1. Expand the **DATABASES** view in the Explorer panel and click **Add Oracle Autonomous DB**.
-If there are existing databases in the view, you can skip to step **6**.
-2. From the list of compartments, select the compartment that contains your database.
+If the view contains existing databases, skip to step **6**.
+2. Select the compartment containing your database from the list of compartments.
 3. From the list of databases, select your database.
 4. Enter the username for the database.
 5. Enter the password for the database.
@@ -230,20 +238,21 @@ To change the properties of a database connection, select the database in the **
 
 To select a database as the _Default Connection_, select the database in the **DATABASES** view, right-click and then select **Set as Default Connection** from the menu.
 
-Database Password is stored in OS specific safe storage - macOS keychain, KDE Wallet, GNOME/Keyring, Windows Data Protection API.
-For Debug / Run of micronaut application, VSCode creates temporary file with Micronaut properties incl. Database Username and Password.
-This temporary file is readable only by user running VSCode and is deleted as soon as debugging session ends.
+> **Note**: The database password is stored using an OS-specific secure storage mechanism. This will be one of the following: macOS keychain; KDE Wallet; GNOME/Keyring; Windows Data Protection API;
 
-### Use OCI Vault to Store Database Connection Properties
-[Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) provides an easy and secure way to run Micronaut Database applications using Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) and Vault services.
+When running or debugging a Micronaut application from within the editor, a temporary argument file is created that contains any properties required by the application. This may include the database username and password. The contents of this file are provided to the application when it is started. This temporary file is readable only by the user running VSCode and is deleted as soon as the run/debug session finishes.
 
+### Using OCI Vault to Store Database Connection Properties
+The Micronaut Tools VS Code extension can store an application's database configuration using [OCI Vault](https://docs.oracle.com/iaas/Content/KeyManagement/Concepts/keyoverview.htm_). Vault is a service within OCI for securely managing secrets.
 
-Prior to using this feature, a user is required to create an [OCI Vault](https://docs.oracle.com/iaas/Content/KeyManagement/Tasks/managingvaults_topic-To_create_a_new_vault.htm) and [Master Encryption Key](https://docs.oracle.com/iaas/Content/KeyManagement/Tasks/managingkeys_topic-To_create_a_new_key.htm) using the Oracle Cloud Console. To achieve this, do the following:
+To make use of this feature, first create an [OCI Vault](https://docs.oracle.com/iaas/Content/KeyManagement/Tasks/managingvaults_topic-To_create_a_new_vault.htm) and [Master Encryption Key](https://docs.oracle.com/iaas/Content/KeyManagement/Tasks/managingkeys_topic-To_create_a_new_key.htm) using the Oracle Cloud Console. Please consult the OCI documentation, previously linked, on how to do this.
 
->If your project is already stored in the [OCI DevOps service](https://www.oracle.com/devops/devops-service/), then make sure the [OKE Deployments Pipelines are created](https://graal.cloud/gcn/vscode-tools/oci-devops-tools/#build-and-deploy-project-artifacts) before you proceed. 
+>If your project uses the [OCI DevOps service](https://www.oracle.com/devops/devops-service/), then make sure the [OKE Deployments Pipelines are created](https://graal.cloud/gcn/vscode-tools/oci-devops-tools/#build-and-deploy-project-artifacts) before you proceed.
 
-1. Connect to an Oracle Automonous Database as described in *Connect to an Oracle Autonomous Database* section above.
-2. Make sure your Micronaut project configuration file contains the _micronaut-oraclecloud-vault_ dependency.
+To store your application database connection details using OCI Vault and for these to be made available to your application when you deploy to OKE using the OCI DevOps service, you must:
+
+1. Connect to an Oracle Autonomous Database as described above in the *Connect to an Oracle Autonomous Database* section.
+2. Ensure your Micronaut project configuration file contains the _micronaut-oraclecloud-vault_ dependency.
    * _pom.xml_
    ```
     <dependency>
@@ -255,19 +264,21 @@ Prior to using this feature, a user is required to create an [OCI Vault](https:/
    ```
      implementation("io.micronaut.oraclecloud:micronaut-oraclecloud-vault")
    ```
-3. Right click the database name in the Databases panel and choose **Add to OCI Vault**
+3. Right-click the database name in the Databases panel and choose **Add to OCI Vault**
 
    ![Add to OCI Vault](images/add_to_oci_vault.png)
 
-4. From the list of Compartments select the compartment with an existing Vault. (If there is more than one Vault, select the one to store your database properties.)
-5. From the list of keys, select the key to be used to encrypt your database properties. If there is only one key, this step is skipped and the encryption key is automatically used.
+4. From the list of compartments, select one with an existing vault. (If there is more than one vault, select the one to store your database properties.)
+5. From the list of keys, select the key to encrypt your database properties. If there is only one key, this step is skipped and the default encryption key is used.
 6. Provide a custom **Datasource Name**.
-7. Click **Enter**. The database properties are stored in your OCI Vault. There is a notification shown at the bottom of the VS Code window.
-8. If the project is stored in OCI DevOps then running Deployment Pipelines from the OCI DevOps panel will use the Database properties stored in OCI Vault in previous steps.
+7. Click **Enter**. The database properties are stored in your vault. A notification is shown at the bottom of the VS Code window.
+8. If the project is stored in OCI DevOps, then running the deployment pipelines from within the OCI DevOps panel will use the Database properties stored in the vault from the previous steps.
 
-> Note: If OKE Deployment Pipelines were modified as described above, the OKE ConfigMap named <_project_name_>__oke_configmap_ will be used. The deployment uses then the database properties stored in your OCI Vault to run a Micronaut application in OKE in a secure and seamless way. Learn more about this in the [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops) extension documentation.
+> Note: If OKE Deployment Pipelines were modified as described above, the OKE ConfigMap named _\<project\_name\>\_oke\_configmap_ would be used. The deployment then uses the database properties stored in your OCI Vault to run a Micronaut application in OKE securely and seamlessly. Learn more about this in the [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops) extension documentation.
 
-### Create Entity and Repository Classes From an Existing Database Schema
+### Create Entity Classes and Repository Interfaces From an Existing Database Schema
+
+After you have created a connection to an Oracle Autonomous Database, you can quickly create [Micronaut Data](https://micronaut-projects.github.io/micronaut-data/latest/guide/) entity classes for the tables within the database.
 
 **Prerequisites:**
 * You have created a connection to a database with an existing schema. 
@@ -275,7 +286,7 @@ Prior to using this feature, a user is required to create an [OCI Vault](https:/
 * You have selected the database as the _Default Connection_.
 (See above.)
 
-To create entity classes, follow these steps:
+To create Micronaut Data entity classes:
 1. Create a new Micronaut project in VS Code (or open an existing one).
 2. Create a new Java package in your project, for example, `com.example.micronaut.entities`.
 3. Right-click the package name and select **New From Template...** from the menu.
@@ -283,35 +294,43 @@ To create entity classes, follow these steps:
 5. From the list of tables, select the tables for which you want to create corresponding entities. 
 6. Click **Enter**.
 
-To create repository classes, follow these steps:
+![Create Micronaut Data Entitiy Classes](./images/create-entities.gif)
+
+In a similar way, we can also create Micronaut Data repository interfaces - note this requires that you have already created entity classes (see above):
 1. Create a new Micronaut project in VS Code (or open an existing one).
 2. Create a new Java package in your project, for example, `com.example.micronaut.repositories`.
 3. Right-click the package name and select **New From Template...** from the menu.
 4. When prompted, select **Micronaut**, then **Micronaut Data Repository Interfaces from Entity**.
-5. Choose if **Repository Interfaces** should to be based on **CRUD**, or **Pageable**. The default is **CRUD**.
-6. From the list of entities, select the entities for which you want to create corresponding repositories.
+5. Choose if **Repository Interfaces** should be based on **CRUD** or **Pageable**. The default is **CRUD**.
+6. From the list of entities, select the entities for which you want to create corresponding repository interfaces.
 7. Click **Enter**.
 
-### Create Micronaut Controller Classes from Data Repositories
-The Micronaut Tools extension can create new Micronaut controller classes which are bound to selected Data Repositories&mdash;this jumpstarts the development of Micronaut Database applications. 
-1. Complete the steps above to generate Micronaut Repository interfaces.
-2. Right-click the package name and select **New From Template...** from the menu.
-3. When prompted, select **Micronaut**, then **Micronaut Controller Classes (from Data Repositories)**.
-4. From the list of repositories select one or more items.
-5. Click **Enter**
+![Create Micronaut Data Repository Classes](./images/create-repositories.gif)
 
-A controller is generated with access to the specified repository. By default it contains a REST endpoint to access Repository `findAll()` in its `list()` method by default.
+### Create Micronaut Controller Classes from Micronaut Data Repositories
 
-Other REST Endpoints accessing Repository members can be added to Controller using editor actions. Either invoke **code completion** (select desired method from list) or use editor  **Source Action... | Generata Data Endpoint...**. 
-Currently provided are  `delete()` and `get()` both using Data Entity member annotated with `@id` as their parameter. 
+By creating Controllers that expose your Micronaut Data repository interfaces, you can quickly turn them into a REST API. Create your Micronaut Data entity and repository interfaces first and then:
+
+1. Right-click the package name and select **New From Template...** from the menu.
+2. When prompted, select **Micronaut**, then **Micronaut Controller Classes (from Data Repositories)**.
+3. From the list of repositories, select one or more items. You can select all, a selection of them.
+4. Click **Enter**
+
+A controller that has access to the data repository is generated for each of the Micronaut Data repository interfaces that you selected in the wizard. By default, it contains a REST endpoint to access the repository's `findAll()` method in its `list()` method. 
+
+Other REST Endpoints accessing a repository can be added to the controller. It is possible to add a _delete_ endpoint method, or different _find_ methods. This can be done either through **code completion** (select the desired method from the list) or directly from the editor:  **Source Action... | Generata Data Endpoint...**.
+
+Currently, `delete()` and `get()` methods are provided; both are annotated with the Data Entity `@id` parameter. 
+
+![Create Micronaut Controller Classes](./images/create-controllers.gif)
 
 ## Extension Settings
 
 The extension contributes the following settings:
 
-* __micronaut-tools.showWelcomePage__ - when set to `true` (default), show the Micronaut Tools page on extension activation.
+* __micronaut-tools.showWelcomePage__ - when set to `true` (default), show the Micronaut Tools when the extension is activated.
 * __micronaut-tools.jdt.buildsystemExecution__ - if set to `true` (default), enables enhanced Run support for Micronaut applications.
-* __micronaut-tools.targetApplicationAddress__ - default Micronaut or Graal Cloud Native application address, by default configured to `http://localhost:8080` (to be customized in `settings.json` in project folder).
+* __micronaut-tools.targetApplicationAddress__ - default Micronaut or Graal Cloud Native application URL, by default configured to `http://localhost:8080` (to be customized in `settings.json` in project folder).
 
 ## Micronaut Commands
 
@@ -323,50 +342,51 @@ The following commands are available for Micronaut project development:
 * **Micronaut Tools: Show Micronaut Tools Page**: show the Micronaut Tools page with basic information describing this extension
 * **Micronaut Tools: Build Native Executable**: build a native executable of your application using GraalVM native image
 * **Micronaut Tools: Build...**: offers several the most important build tasks/targets wrapped as predefined commands for your Micronaut project
-* **Micronaut Tools: Deploy...**: deploys either a JVM container or native executable container into Container registry.
-Container registry MUST be configured in docker toolchain on the machine from which deployment is initiated.
+* **Micronaut Tools: Deploy...**: deploys a container to a container registry.
+The container registry **MUST** be configured in the docker toolchain on the machine from which deployment is initiated.
 See your docker tools documentation.
-* **Micronaut Tools: Create Kubernetes Deployment Resource**: create a Kubernetes deployment resource for your application
-* **Micronaut Tools: Create Kubernetes Service Resource**: create a Kubernetes service resource for your application
-* **Micronaut Tools: Deploy to Kubernetes**: deploy to running Kubernetes services. The service must be configured in Kubernetes tools (kubectl) on the machine from which deployment is initiated.
-See your Kubernetes tools documentation.
-* **Micronaut Tools: Run in Kubernetes**:  run already deployed application in Kubernetes service.
-Command performs port forwarding at the end and running application can be accessed from browser on your machine.
-* **Micronaut Tools: Edit Target Application Address**: Customization of the base address of the running Micronaut or GCN application, default is `http://localhost:8080`
-* **Micronaut Tools: Search/Filter Beans**: Search or filter the items of the Beans view
-* **Micronaut Tools: Search/Filter Endpoints**:  Search or filter the items of the Endpoints view
+* **Micronaut Tools: Create Kubernetes Deployment Resource**: create a Kubernetes deployment resource for your application.
+* **Micronaut Tools: Create Kubernetes Service Resource**: create a Kubernetes service resource for your application.
+* **Micronaut Tools: Deploy to Kubernetes**: deploy to a running Kubernetes service. The service must be configured using the Kubernetes tools (`kubectl`) on the machine from which deployment is initiated.
+* **Micronaut Tools: Run in Kubernetes**:  run already deployed application in Kubernetes service. This command automatically forwards the port of the container, so the application can be accessed from the browser on your local machine.
+* **Micronaut Tools: Edit Target Application Address**: To customise the base URL of the running Micronaut or GCN application; the default is _http://localhost:8080_.
+* **Micronaut Tools: Search/Filter Beans**: Search or filter the items in the Beans view.
+* **Micronaut Tools: Search/Filter Endpoints**:  Search or filter the items in the Endpoints view.
 
 ## Troubleshooting
-This extension modifies Run for **Java** environment so that the application is launched using the build system (Gradle, Maven). These are so called *Code lenses* shown above `main()` method `Run | Debug | Run with Micronaut Continuous Mode`. In some scenarios the support may not support all customizations necessary for the user project and has to be turned off.
+This extension modifies the **Java** environment so that the application is launched using the build system (Gradle, Maven). Not all environment customizations are supported and for some projects this functionality may need to be turned off.
 
 To enable or disable the enhanced Run feature, navigate to `File - Preferences - Settings`, locate `Micronaut Tools` extension section and turn on/off the `Use build system to run or debug applications`. The relevant setting (in JSON format) is `micronaut-tools.buildsystemExecution`
 
-In some configurations of VSCode extensions Enhanced Run feature - code lenses for Micronaut and GCN applications `Run | Debug | Run with Micronaut Continuous Mode` are not displayed for **Gradle** projects when **Gradle for Java extension** is Enabled. In such a case it is necessary to disable Gradle for Java extension, reload VSCode and then enable Gradle for Java again. After this action Enhanced Run feature starts working and code lenses `Run | Debug | Run with Micronaut Continuous Mode` appears.
+In some configurations the Enhanced Run feature code lenses, `Run | Debug | Run with Micronaut Continuous Mode`, are not displayed for **Gradle** projects when **Gradle for Java extension** is enabled. 
+To resolve this, disable Gradle for Java extension, reload VS Code, and then enable Gradle for Java again.
 
-Apache NetBeans Language Server for Java does not work on Linux and macOS when VSCode extensions directory contains space in path, e.g. `/User/great code/.vscode/extensions`. This extension depends on Apache NetBeans Lang Server. Extensions directory is where all VSCode extensions are installed. Default location is:
-* Windows `%USERPROFILE%\.vscode\extensions`
-* macOS `~/.vscode/extensions`
-* Linux `~/.vscode/extensions`
+The Apache NetBeans Language Server for Java fails on Linux and macOS if the path of VSCode extensions directory contains a space, for example _/User/great code/.vscode/extensions_. (The extensions directory contains all VSCode extensions are installed.) The default path is:
 
-This location can be changed to path without space:
-* Permanently by setting environment variable `VSCODE_EXTENSIONS` for OS shell (bash, zsh, sh,...) modifying corresponding profile file (`.bash_profile`, `.zshrc`,...). Or
-* Temporarily by launching VSCode from command line with switch `--extensions-dir`, e.g. `$ code --extensions-dir "/User/code_user/extensions_dir"`
+* Windows _%USERPROFILE%\.vscode\extensions_
+* macOS _~/.vscode/extensions_
+* Linux _~/.vscode/extensions_
+
+Change the path by removing any spaces:
+* Permanently, by setting the environment variable `VSCODE_EXTENSIONS` in the appropriate profile file (for example, _.bash_profile_); or
+* Temporarily by launching VSCode from the command line with the option `--extensions-dir`, for example `$ code --extensions-dir "/User/code_user/extensions_dir"`.
 * It cannot be changed in VSCode Settings.
 
 ## Feedback
 
-If you have suggestions for new features, or if you have found a bug or issue, we would love to hear from you. Use the links below:
+We would love to hear from you if you have suggestions for new features or if you have found a bug or issue. Use the links below:
 
 * [Request a feature](https://github.com/oracle/gcn-vscode-extensions/issues/new?labels=enhancement)
 * [File a bug](https://github.com/oracle/gcn-vscode-extensions/issues/new?labels=bug)
 
 ## Contributing
 
-To submit pull requests to vscode-extensions, first sign the [Oracle Contributor Agreement](http://www.oracle.com/technetwork/community/oca-486395.html).
+To submit pull requests to vscode-extensions, sign the [Oracle Contributor Agreement](http://www.oracle.com/technetwork/community/oca-486395.html).
 
 Project members with write access to the repository will identify and assign an appropriate [Assignee](https://help.github.com/articles/assigning-issues-and-pull-requests-to-other-github-users/) for the pull request.
 The assignee will work with the pull request owner to address any issues and then merge the pull request.
 
 ## Release Notes
 
-Refer to [CHANGELOG](CHANGELOG.md).
+Refer to [CHANGELOG](https://github.com/oracle/gcn-vscode-extensions/blob/main/micronaut-tools/CHANGELOG.md).
+
