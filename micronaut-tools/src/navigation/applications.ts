@@ -185,6 +185,7 @@ export class Application {
     startDebugSession(runMode: projectUtils.RunMode) {
         if (this.state === State.IDLE) {
             const moduleUri = this.applicationModule.getUri();
+            const moduleName = this.applicationModule.getName() || "Unknown";
             const buildSystem = this.projectInfo?.buildSystem;
             if (!moduleUri || !buildSystem) {
                 vscode.window.showErrorMessage('Cannot run this project.');
@@ -208,7 +209,7 @@ export class Application {
                     }
                 }
                 // TODO: timeout connecting if starting fails?
-                projectUtils.runModule(runMode, moduleUri, buildSystem).catch(err => {
+                projectUtils.runModule(runMode, moduleUri, moduleName, buildSystem).catch(err => {
                     logUtils.logError(err);
                     console.log(err);
                     this.cleanupDebugSession();

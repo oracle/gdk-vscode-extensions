@@ -5,6 +5,7 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
+import * as vscode from 'vscode';
 import * as applications from '../applications';
 import * as projectUtils from '../projectUtils';
 import * as beanHandler from './beanHandler';
@@ -21,11 +22,11 @@ import * as cachesEndpoint from './cachesEndpoint';
 
 const SETTING_ENABLED_KEY = 'managementMonitoringEnabled';
 
-const REQUIRED_DEPENDENCIES: projectUtils.ProjectDependency[] = [
-    { group: 'io.micronaut', artifact: 'micronaut-management'}, // https://docs.micronaut.io/latest/guide/#management
-    { group: 'io.micronaut.cache', artifact: 'micronaut-cache-management'}, // https://micronaut-projects.github.io/micronaut-cache/latest/guide/index.html#endpoint
-    { group: 'io.micrometer', artifact: 'micrometer-core'}, // https://micrometer.io/docs/concepts#_dependencies
-    { group: 'io.micronaut.micrometer', artifact: 'micronaut-micrometer-core'} // https://micronaut-projects.github.io/micronaut-micrometer/latest/guide/#metricsEndpoint
+const REQUIRED_DEPENDENCIES: projectUtils.NbArtifactSpec[] = [
+    { groupId: 'io.micronaut', artifactId: 'micronaut-management'}, // https://docs.micronaut.io/latest/guide/#management
+    { groupId: 'io.micronaut.cache', artifactId: 'micronaut-cache-management'}, // https://micronaut-projects.github.io/micronaut-cache/latest/guide/index.html#endpoint
+    { groupId: 'io.micrometer', artifactId: 'micrometer-core'}, // https://micrometer.io/docs/concepts#_dependencies
+    { groupId: 'io.micronaut.micrometer', artifactId: 'micronaut-micrometer-core'} // https://micronaut-projects.github.io/micronaut-micrometer/latest/guide/#metricsEndpoint
 ]
 
 export type OnFeaturesAvailableChanged = (refreshAvailable: boolean, serverStopAvailable: boolean) => void;
@@ -122,20 +123,48 @@ export class Management extends beanHandler.BeanHandler {
         });
     }
 
-    protected doEnable() {
-        this.checkConfigured().then(configured => {
-            if (configured) {
+    editEnabled() {
+        const items: vscode.QuickPickItem[] = [];
+        items.push({
+            label: 'Enabled',
+            detail: 'Always enabled, independent on the current project configuration.'
+        });
+        items.push({
+            label: 'By Project',
+            detail: 'Enabled or not available, based on the current the project configuration.'
+        });
+        vscode.window.showQuickPick(items, {
+            title: 'Monitoring & Management Availability',
+            placeHolder: 'Select Monitoring & Management availability for the launched application'
+        }).then(selected => {
+            if (selected) {
+                this.setEnabled(selected === items[0], true);
+            }
+        })
+    }
+
+    protected doEnable(restoringPersisted: boolean) {
+        projectUtils.dependencyCheckingAvailable().then(available => {
+            if (available || !restoringPersisted) { // restoring persisted state on startup with NBLS ready to report the dependencies, or setting enabled later
+                this.checkConfigured(!restoringPersisted).then(configured => { // will (intentionally) throw exception if NBLS not ready to report the dependencies
+                    if (configured) {
+                        super.doEnable();
+                    } else {
+                        super.doDisable(); // silently disable when (restoring persisted state and) dependencies not available
+                    }
+                }).catch(err => {
+                    console.log('Failed to configure project for Monitoring & Management: ' + err)
+                    console.log(err)
+                });
+            } else { // restoring persisted state on startup while NBLS not ready yet to report the dependencies
                 super.doEnable();
             }
-        }).catch(err => {
-            console.log('Failed to configure project for Monitoring & Management: ' + err)
-            console.log(err)
         });
     }
 
-    private async checkConfigured(): Promise<boolean> {
+    private async checkConfigured(addMissing: boolean): Promise<boolean> {
         const moduleUri = this.application.getSelectedModule().getUri();
-        return moduleUri ? projectUtils.checkConfigured(moduleUri, 'Monitoring & Management', ...REQUIRED_DEPENDENCIES) : false;
+        return moduleUri ? projectUtils.checkConfigured(moduleUri, 'Monitoring & Management', addMissing, ...REQUIRED_DEPENDENCIES) : false;
     }
 
     getRefreshEndpoint(): refreshEndpoint.RefreshEndpoint {

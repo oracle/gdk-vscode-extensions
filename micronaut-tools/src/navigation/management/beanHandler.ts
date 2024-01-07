@@ -34,7 +34,7 @@ export abstract class BeanHandler {
         // Restore the enabled state "later" as it calls doEnable() / doDisable() overriden by the subclasses
         setTimeout(() => {
             const moduleUri = application.getSelectedModule().getUri();
-            this.loadFromUri(moduleUri);
+            this.loadFromUri(moduleUri); // primarily to update the UI - any dependency checks will be performed for 'onModuleChanged' below
             application.getSelectedModule().onModuleChanged((_singleModule, uri) => {
                 this.loadFromUri(uri);
             });
@@ -49,8 +49,8 @@ export abstract class BeanHandler {
         return this.enabled;
     }
 
-    setEnabled(enabled: boolean) {
-        if (this.enabled !== enabled) {
+    setEnabled(enabled: boolean, forceSet: boolean = false) {
+        if (this.enabled !== enabled || forceSet) {
             if (enabled) {
                 this.doEnable();
             } else {
@@ -62,13 +62,13 @@ export abstract class BeanHandler {
     private loadFromUri(moduleUri: vscode.Uri | undefined) {
         const persistedEnabled = moduleUri ? settings.getForUri<boolean>(moduleUri, this.settingsAvailableKey) === true : false;
         if (persistedEnabled) {
-            this.doEnable();
+            this.doEnable(true);
         } else {
-            this.doDisable();
+            this.doDisable(true);
         }
     }
 
-    protected doEnable() {
+    protected doEnable(_restoringPersisted: boolean = false) {
         this.enabled = true;
         this.notifyEnabledChanged();
         const moduleUri = this.application.getSelectedModule().getUri();
@@ -77,7 +77,7 @@ export abstract class BeanHandler {
         }
     }
 
-    protected doDisable() {
+    protected doDisable(_restoringPersisted: boolean = false) {
         this.enabled = false;
         this.notifyEnabledChanged();
         const moduleUri = this.application.getSelectedModule().getUri();
@@ -106,9 +106,6 @@ export abstract class BeanHandler {
         this.setAvailable(undefined);
         return new Promise(resolve => {
             this.getData().then(response => {
-                // console.log('>>> PROCESS RESPONSE')
-                // console.log(this)
-                // console.log(response)
                 const available = this.availableResp(response);
                 this.setAvailable(available);
                 resolve(available);

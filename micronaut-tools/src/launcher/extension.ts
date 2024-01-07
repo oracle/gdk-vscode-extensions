@@ -12,7 +12,7 @@ import { ProjectDebugConfigurationProvider, InitialMicronautContinuousConfigurat
 
 const EXECUTE_WORKSPACE_COMMAND: string = 'java.execute.workspaceCommand';
 const JAVA_CODE_LENS_COMMAND: string = 'extension.micronaut-tools.java.codeLens';
-const LAUNCH_COMMAND: string = 'extension.micronaut-tools.launch.continuous';
+export const LAUNCH_COMMAND: string = 'extension.micronaut-tools.launch.continuous';
 
 export function activateLauncher(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.languages.registerCodeLensProvider('java', new CodeLensesProvider()));

@@ -8,10 +8,13 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { LAUNCH_COMMAND } from '../launcher/extension';
 
 
 const EXTENSION_NBLS_ID = 'asf.apache-netbeans-java';
 const COMMAND_GET_PROJECT_INFO = 'nbls.project.info';
+const COMMAND_DEBUG_FROM_PROJECT_VIEW = 'java.debug.debugFromProjectView';
+const COMMAND_RUN_FROM_PROJECT_VIEW = 'java.debug.runFromProjectView';
 const TIMEOUT_COMMAND_GET_PROJECT_INFO = 30; // wait for NBLS & projectInfo up to 30 seconds
 const RUN_DEV_MAVEN = 'Micronaut: dev mode';
 const RUN_DEV_GRADLE = 'Continuous Mode';
@@ -33,11 +36,13 @@ export interface ProjectInfo {
     readonly runnableModules: string[];
 }
 
-export interface ProjectDependency {
-    readonly group: string;
-    readonly artifact: string;
-    // readonly version?: string;
-    // readonly scope?: string;
+/**
+ * Artifact specification
+ */
+export interface NbArtifactSpec {
+    artifactId? : string;
+    groupId?: string;
+    versionSpec?: string,
 }
 
 export function isRunnableUri(uri: vscode.Uri): boolean {
@@ -94,17 +99,35 @@ export async function getProjectInfo(uri: vscode.Uri): Promise<ProjectInfo> {
     }
 }
 
-export async function runModule(mode: RunMode, uri: vscode.Uri, build: BuildSystemType) {
-    if (mode === RunMode.RUN_DEV) {
-        if (build === BuildSystemType.MAVEN) {
-            vscode.commands.executeCommand(RunMode.RUN, uri, RUN_DEV_MAVEN);
-        } else if (build === BuildSystemType.GRADLE) {
-            vscode.commands.executeCommand(RunMode.RUN, uri, RUN_DEV_GRADLE);
+export async function runModule(mode: RunMode, uri: vscode.Uri, name: string, build: BuildSystemType) {
+    const nblsDebugEnabled = vscode.workspace.getConfiguration('netbeans')?.get('javaSupport.enabled') as boolean;
+    if (nblsDebugEnabled) {
+        if (mode === RunMode.RUN_DEV) {
+            if (build === BuildSystemType.MAVEN) {
+                vscode.commands.executeCommand(RunMode.RUN, uri, RUN_DEV_MAVEN);
+            } else if (build === BuildSystemType.GRADLE) {
+                vscode.commands.executeCommand(RunMode.RUN, uri, RUN_DEV_GRADLE);
+            } else {
+                throw new Error('Running in Dev mode not supported for this project.');
+            }
         } else {
-            throw new Error('Running in Dev mode not supported for this project.');
+            vscode.commands.executeCommand(mode, uri);
         }
     } else {
-        vscode.commands.executeCommand(mode, uri);
+        const ext = vscode.extensions.getExtension('vscjava.vscode-java-debug');
+        if (!ext) {
+            throw new Error('No Run/Debug support found for this project.');
+        }
+        if (!ext.isActive) {
+            await ext.activate();
+        }
+        if (mode === RunMode.DEBUG) {
+            vscode.commands.executeCommand(COMMAND_DEBUG_FROM_PROJECT_VIEW, {name, uri});
+        } else if (mode === RunMode.RUN) {
+            vscode.commands.executeCommand(COMMAND_RUN_FROM_PROJECT_VIEW, {name, uri});
+        } else {
+            vscode.commands.executeCommand(LAUNCH_COMMAND, uri, true);
+        }
     }
 }
 
@@ -124,57 +147,122 @@ function resolveBuildSystemType(uri: vscode.Uri, projectType?: string): BuildSys
     return BuildSystemType.UNKNOWN;
 }
 
-export async function checkConfigured(uri: vscode.Uri, subject: string, ...dependencies: ProjectDependency[]): Promise<boolean> {
-    const missingDependencies = await getMissingDependencies(uri, ...dependencies);
+export async function dependencyCheckingAvailable(): Promise<boolean> {
+    return (await vscode.commands.getCommands()).includes('nbls.project.dependencies.find');
+}
+
+export async function checkConfigured(uri: vscode.Uri, subject: string, addMissing: boolean, ...dependencies: NbArtifactSpec[]): Promise<boolean> {
+    const missingDependencies = await getMissingDependencies(uri, addMissing, ...dependencies);
     if (missingDependencies.length) {
-        const updateDependenciesOption = 'Update Dependencies';
-        const cancelOption = 'Cancel';
-        const selected = await vscode.window.showWarningMessage(`Project dependencies must be updated to enable ${subject}.`, updateDependenciesOption, cancelOption);
-        if (selected === updateDependenciesOption) {
-            await addMissingDependencies(uri, ...missingDependencies);
-            return true;
-        } else {
-            return false;
+        if (addMissing) {
+            const updateDependenciesOption = 'Update Dependencies';
+            const cancelOption = 'Cancel';
+            const selected = await vscode.window.showWarningMessage(`Project dependencies must be updated to enable ${subject}.`, updateDependenciesOption, cancelOption);
+            if (selected === updateDependenciesOption) {
+                await addMissingDependencies(uri, ...missingDependencies);
+                return true;
+            }
         }
+        return false;
     }
     return true;
 }
 
-async function getMissingDependencies(uri: vscode.Uri, ...dependencies: ProjectDependency[]): Promise<ProjectDependency[]> {
-    // TODO: replace by a real implementation!
-    const buildSystem = resolveBuildSystemType(uri);
-    if (buildSystem !== BuildSystemType.UNKNOWN) {
-        const buildFile = path.join(uri.fsPath, buildSystem === BuildSystemType.MAVEN ? 'pom.xml' : 'build.gradle');
-        if (fs.existsSync(buildFile)) {
-            const content = fs.readFileSync(buildFile).toString();
-            const missingDependencies = [];
-            for (const dependency of dependencies) {
-                if (!content.includes(dependency.artifact)) {
-                    missingDependencies.push(dependency);
-                }
-            }
-            return missingDependencies;
-        } else {
-            throw new Error('Failed to determine project build file.');
-        }
-    } else {
-        throw new Error('Failed to determine project build system.');
-    }
+/**
+ * Dependency specification
+ */
+interface NbProjectDependency {
+    artifact: NbArtifactSpec;
+    scope?: string;
+};
+
+/**
+ * Result of find artifacts operation.
+ */
+interface FindArtifactResult {
+    /**
+     * The project's product artifact
+     */
+    project : NbArtifactSpec;
+
+    /**
+     * Dependencies, that match the artifacts
+     */
+    matches: NbProjectDependency[];
 }
 
-async function addMissingDependencies(uri: vscode.Uri, ...dependencies: ProjectDependency[]) {
-    // TODO: replace by a real implementation!
-    const buildSystem = resolveBuildSystemType(uri);
-    if (buildSystem !== BuildSystemType.UNKNOWN) {
-        const buildFile = path.join(uri.fsPath, buildSystem === BuildSystemType.MAVEN ? 'pom.xml' : 'build.gradle');
-        const dependencyStrings = [];
-        for (const dependency of dependencies) {
-            dependencyStrings.push(`${dependency.group}:${dependency.artifact}`);
+interface DependencyChange {
+    kind: 'add' | 'remove';
+    options?: ('skipConflicts' | 'ignoreVersions')[];
+    dependencies: NbProjectDependency[];
+}
+
+/*
+interface DependencyChangeResult {
+    edit : vscode.WorkspaceEdit;
+    modifiedUris : string[];
+}
+*/
+
+async function getMissingDependencies(uri: vscode.Uri, showProgress: boolean, ...dependencies: NbArtifactSpec[]): Promise<NbArtifactSpec[]> {
+    async function impl(): Promise<NbArtifactSpec[]> {
+        if (await dependencyCheckingAvailable()) {
+            try {
+                let found : FindArtifactResult = await vscode.commands.executeCommand('nbls.project.dependencies.find', {
+                    uri: uri.toString(),
+                    scopes: [ 'runtime'], // runtime scope hardcoded for now
+                    artifacts: dependencies
+                });
+                return dependencies.filter(d => 
+                    found?.matches?.filter(f => d.groupId == f.artifact.groupId && d.artifactId == f.artifact.artifactId).length == 0
+                );
+            } catch (err : any) {
+                throw new Error('Failed to determine dependencies.');
+            }
+        } else {
+            throw new Error('Java support not ready yet to check project dependencies.');
         }
-        vscode.window.showInformationMessage(`Add the following modules as runtime dependencies to ${buildFile}: ${dependencyStrings.join(', ')}`);
-    } else {
-        throw new Error('Failed to determine project build system.');
     }
+    return showProgress ? vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification, 
+        title: 'Verifying required dependencies...' },
+        impl
+    ) : impl();
+}
+
+async function addMissingDependencies(uri: vscode.Uri, ...dependencies: NbArtifactSpec[]) {
+    return vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification, 
+        title: 'Adding required dependencies...' },
+        async () => {
+            if ((await vscode.commands.getCommands()).includes('nbls.project.dependencies.change')) {
+                let depChanges : NbProjectDependency[] = dependencies.map(d => ({
+                    // kind: 'add',
+                    artifact : d,
+                    scope: 'runtime' // runtime scope hardcoded for now
+                }));
+                let changeRequest : DependencyChange = {
+                    kind: 'add',
+                    // BUG in deseralization: options: [ 'skipConflicts' ],
+                    dependencies: depChanges
+                }
+                try {
+                    await vscode.commands.executeCommand('nbls.project.dependencies.change', {
+                        uri: uri.toString(),
+                        applyChanges: true,
+                        saveFromServer: false,
+                        changes: {
+                            operations: [ changeRequest ]
+                        }
+                    });
+                } catch (err : any) {
+                    throw new Error('Failed to add dependencies.');
+                }
+            } else {
+                throw new Error('Java support not ready yet to add missing dependencies.');
+            }
+        }
+    );
 }
 
 function delay(ms: number) {
