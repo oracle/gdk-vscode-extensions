@@ -108,7 +108,7 @@ export async function runModule(mode: RunMode, uri: vscode.Uri, name: string, bu
             } else if (build === BuildSystemType.GRADLE) {
                 vscode.commands.executeCommand(RunMode.RUN, uri, RUN_DEV_GRADLE);
             } else {
-                throw new Error('Running in Dev mode not supported for this project.');
+                throw new Error('Running in continuous mode not supported for this project.');
             }
         } else {
             vscode.commands.executeCommand(mode, uri);
