@@ -220,7 +220,7 @@ class ManagementNodeProvider extends NodeProvider {
     async buildNodes(roots: nodes.BaseNode[], added: workspaceFolders.FolderData[], removed: workspaceFolders.FolderData[], _current: workspaceFolders.FolderData[]) {
         for (const remove of removed) {
             for (let index = 0; index < roots.length; index++) {
-                if ((roots[index] as nodes.BeansFolderNode).getFolderData().getWorkspaceFolder() === remove.getWorkspaceFolder()) {
+                if ((roots[index] as nodes.ManagementFolderNode).getFolderData().getWorkspaceFolder() === remove.getWorkspaceFolder()) {
                     roots.splice(index, 1);
                     break;
                 }

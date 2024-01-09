@@ -33,6 +33,7 @@
     "extension.micronaut-tools.navigation.managementView.title": "Monitoring & Management",
     "extension.micronaut-tools.navigation.welcomeView.noFolders.content": "No folder opened yet.",
     "extension.micronaut-tools.navigation.welcomeView.loadingView.content": "Loading view...",
+    "extension.micronaut-tools.navigation.welcomeView.emptyView.content": "No supported folder opened yet.",
     "extension.micronaut-tools.launch.continuous.title": "Run with Micronaut Continuous Mode",
     "micronaut.debugger.snippet.launch.description": "Add a new configuration for launching a Micronaut-based program in Continuous mode"
 }
