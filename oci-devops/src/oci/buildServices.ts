@@ -14,7 +14,6 @@ import * as gitUtils from '../gitUtils';
 import * as graalvmUtils from '../graalvmUtils';
 import * as servicesView from '../servicesView';
 import * as logUtils from '../../../common/lib/logUtils';
-import * as persistenceUtils from '../persistenceUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
 import * as ociDialogs from './ociDialogs';
@@ -407,24 +406,8 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
                     }
                 }
                 const buildName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
-                const useLocalGvmVersion: boolean = persistenceUtils.getWorkspaceConfiguration().get('useLocalGraalvmVersion', false);
                 const params: { name: string; value: string }[] = [];
-                let localGvmVersion: string[] | undefined;
-                if (useLocalGvmVersion) {
-                    logUtils.logInfo('[build] Using local active GraalVM version for the build');
-                    // TODO: might reflect Java version from a non-GraalVM Java installation
-                    localGvmVersion = await graalvmUtils.getActiveGVMVersion();
-                    if (localGvmVersion) {
-                        if (localGvmVersion[1].endsWith('-dev')) {
-                            logUtils.logInfo(`[build] Local active GraalVM devbuild detected: ${localGvmVersion[1]}, using stable release for the build`);
-                        }
-                    } else {
-                        logUtils.logInfo('[build] No local active GraalVM detected, fallback to the latest stable GraalVM version for the build');
-                    }
-                } else {
-                    logUtils.logInfo('[build] Using the latest stable GraalVM version for the build');
-                }
-                const targetGvmVersion = graalvmUtils.getBuildRunGVMVersion(localGvmVersion);
+                const targetGvmVersion = graalvmUtils.getBuildRunGVMVersion();
                 const gvmParams = graalvmUtils.getGVMBuildRunParameters(targetGvmVersion);
                 if (gvmParams) {
                     params.push(...gvmParams);

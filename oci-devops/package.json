@@ -54,12 +54,6 @@
 					"description": "Profile to access the shared knowledge base for audits",
 					"scope": "machine"
 				},
-				"oci.devops.useLocalGraalvmVersion": {
-					"type": "boolean",
-					"default": false,
-					"description": "Use local active GraalVM (major) version for the remote build",
-					"scope": "machine"
-				},
 				"oci.devops.bypassDeliverArtifactsStage": {
 					"type": "boolean",
 					"default": true,
