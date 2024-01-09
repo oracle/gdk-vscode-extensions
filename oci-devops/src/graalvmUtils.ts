@@ -5,24 +5,10 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
-import * as fs from 'fs';
-import { findExecutable } from '../../common/lib/utils';
-import * as cp from 'child_process';
-import * as vscode from 'vscode';
-
-
 // NOTE: should be updated whenever the defaults change
 // TODO: could this be automated somehow based on the GitHub/GDS catalogs?
 export const DEFAULT_JAVA_VERSION = '21';
 export const DEFAULT_GRAALVM_VERSION = '23';
-
-export async function getActiveGVMVersion(): Promise<string[] | undefined> {
-    const gvm = getActiveGVM();
-    if (!gvm) {
-        return undefined;
-    }
-    return getGraalVMVersions(gvm);
-}
 
 export function getBuildRunGVMVersion(activeGVMVersions?: string[]): string[] {
     const activeJavaVersion = activeGVMVersions?.[0];
@@ -66,61 +52,4 @@ export function getGVMBuildRunParameters(versions: string[]): { name: string; va
         }
     }
     return parameters;
-}
-
-function getActiveGVM(): string | undefined {
-    const gvm = vscode.workspace.getConfiguration('graalvm').get('home');
-    return gvm ? gvm as string : undefined;
-}
-
-async function getGraalVMVersions(homeFolder: string): Promise<string[] | undefined> {
-    return new Promise<string[] | undefined>(resolve => {
-        if (homeFolder && fs.existsSync(homeFolder)) {
-            const executable: string | undefined = findExecutable('java', homeFolder);
-            if (executable) {
-                cp.execFile(executable, ['-version'], { encoding: 'utf8' }, (_error, _stdout, stderr) => {
-                    if (stderr) {
-                        let javaVersion: string | undefined;
-                        let graalVMVersion: string | undefined;
-                        stderr.split('\n').forEach((line: string) => {
-							const javaInfo: string[] | null = line.match(/version\s+"(\S+)"/);
-							const vmInfo = line.match(/(GraalVM.*)\s+\(/);
-							if (javaInfo && javaInfo.length > 1) {
-								javaVersion = javaInfo[1];
-							}
-							if (vmInfo && vmInfo.length > 1) {
-								graalVMVersion = vmInfo[1];
-							}
-                        });
-                        if (javaVersion && graalVMVersion) {
-                            if (javaVersion.startsWith('1.')) {
-                                javaVersion = javaVersion.slice(2);
-                            }
-                            let i = javaVersion.indexOf('.');
-                            if (i > -1) {
-                                javaVersion = javaVersion.slice(0, i);
-                            }
-                            const versionStrings = graalVMVersion.split(' ');
-                            if (versionStrings.length !== 3) {
-                                resolve(undefined);
-                            }
-                            if (versionStrings[0] !== 'GraalVM') {
-                                resolve(undefined);
-                            }
-                            graalVMVersion = versionStrings[2];
-                            resolve([ javaVersion, graalVMVersion ]);
-                        } else {
-                            resolve(undefined);
-                        }
-                    } else {
-                        resolve(undefined);
-                    }
-                });
-            } else {
-                resolve(undefined);
-            }
-        } else {
-            resolve(undefined);
-        }
-    });
 }
