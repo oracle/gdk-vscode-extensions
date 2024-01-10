@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,6 +26,8 @@ import java.util.Map;
  * @author sdedic
  */
 public class LauncherDelegate {
+    static final Path LOGFILE = Paths.get(System.getProperty("java.io.tmpdir"), "maven-launcher.log");
+    
     private Path cwd;
     private Path projectDirectory;
     private Path projectRootDirectory;
@@ -52,6 +56,31 @@ public class LauncherDelegate {
         return environment;
     }
     
+    static void LOG(String msg, Object... args) {
+        String formatted = MessageFormat.format(msg, args);
+        System.err.println("Launcher> " + formatted);
+        try {
+            Files.write(LOGFILE, Arrays.asList(
+                    formatted), StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.SYNC);
+        } catch (IOException ex) {
+            // swallow
+            ex.printStackTrace();
+        }
+        
+    }
+    
+    static void LOG2(String msg, Object... args) {
+        String formatted = MessageFormat.format(msg, args);
+        try {
+            Files.write(LOGFILE, Arrays.asList(
+                    formatted), StandardOpenOption.CREATE, StandardOpenOption.APPEND, StandardOpenOption.SYNC);
+        } catch (IOException ex) {
+            // swallow
+            ex.printStackTrace();
+        }
+        
+    }
+    
     void clear() {
         cmdLine = new ArrayList<>();
         parts = new ArrayList<>();
@@ -63,6 +92,10 @@ public class LauncherDelegate {
     
     protected String env(String key, String def) {
         return environment.getOrDefault(key, def);
+    }
+    
+    protected void prependCommand(String... s) {
+        cmdLine.addAll(0, Arrays.asList(s));
     }
     
     protected void addCommand(String... s) {
