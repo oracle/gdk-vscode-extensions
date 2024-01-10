@@ -390,7 +390,12 @@
 			{
 				"view": "extension-micronaut-tools-applications",
 				"contents": "%extension.micronaut-tools.navigation.welcomeView.loadingView.content%",
-				"when": "workspaceFolderCount > 0"
+				"when": "workspaceFolderCount > 0 && !micronautFoldersComputed"
+			},
+			{
+				"view": "extension-micronaut-tools-applications",
+				"contents": "%extension.micronaut-tools.navigation.welcomeView.emptyView.content%",
+				"when": "workspaceFolderCount > 0 && micronautFoldersComputed"
 			},
 			{
 				"view": "extension-micronaut-tools-beans",
@@ -400,7 +405,12 @@
 			{
 				"view": "extension-micronaut-tools-beans",
 				"contents": "%extension.micronaut-tools.navigation.welcomeView.loadingView.content%",
-				"when": "workspaceFolderCount > 0"
+				"when": "workspaceFolderCount > 0 && !micronautFoldersComputed"
+			},
+			{
+				"view": "extension-micronaut-tools-beans",
+				"contents": "%extension.micronaut-tools.navigation.welcomeView.emptyView.content%",
+				"when": "workspaceFolderCount > 0 && micronautFoldersComputed"
 			},
 			{
 				"view": "extension-micronaut-tools-endpoints",
@@ -410,7 +420,12 @@
 			{
 				"view": "extension-micronaut-tools-endpoints",
 				"contents": "%extension.micronaut-tools.navigation.welcomeView.loadingView.content%",
-				"when": "workspaceFolderCount > 0"
+				"when": "workspaceFolderCount > 0 && !micronautFoldersComputed"
+			},
+			{
+				"view": "extension-micronaut-tools-endpoints",
+				"contents": "%extension.micronaut-tools.navigation.welcomeView.emptyView.content%",
+				"when": "workspaceFolderCount > 0 && micronautFoldersComputed"
 			},
 			{
 				"view": "extension-micronaut-tools-management",
@@ -420,7 +435,12 @@
 			{
 				"view": "extension-micronaut-tools-management",
 				"contents": "%extension.micronaut-tools.navigation.welcomeView.loadingView.content%",
-				"when": "workspaceFolderCount > 0"
+				"when": "workspaceFolderCount > 0 && !micronautFoldersComputed"
+			},
+			{
+				"view": "extension-micronaut-tools-management",
+				"contents": "%extension.micronaut-tools.navigation.welcomeView.emptyView.content%",
+				"when": "workspaceFolderCount > 0 && micronautFoldersComputed"
 			}
 		],
 		"menus": {

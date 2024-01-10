@@ -7,6 +7,7 @@
 
 import * as vscode from 'vscode';
 import * as logUtils from '../../../common/lib/logUtils';
+import * as projectUtils from './projectUtils';
 import * as applications from './applications';
 import * as symbols from './symbols';
 
@@ -98,32 +99,40 @@ const onUpdatedListeners: OnUpdated[] = [];
 
 function foldersChanged(added: readonly vscode.WorkspaceFolder[], removed: readonly vscode.WorkspaceFolder[], initialChange: boolean = false) {
     if (initialChange || added.length || removed.length) {
-        if (firstFolderDataPromise) {
-            firstFolderDataPromise = false;
-        } else {
-            folderDataPromise = new Promise(resolve => {
-                folderDataPromiseResolve = resolve;
-            });
-        }
-
+        vscode.commands.executeCommand('setContext', 'micronautFoldersComputed', false);
         try {
-            notifyUpdating();
-        } catch (err) {
-            logUtils.logError(`[workspaceFolders] notifyUpdating: ${err}`);
-        }
+            if (firstFolderDataPromise) {
+                firstFolderDataPromise = false;
+            } else {
+                folderDataPromise = new Promise(resolve => {
+                    folderDataPromiseResolve = resolve;
+                });
+            }
 
-        const removedFD = removeFolders(removed);
-        const addedFD = addFolders(added);
-        folderDataPromiseResolve(folderData);
-        
-        try {
-            notifyUpdated(addedFD, removedFD, folderData);
-        } catch (err) {
-            logUtils.logError(`[workspaceFolders] notifyUpdated: ${err}`);
-        }
+            try {
+                notifyUpdating();
+            } catch (err) {
+                logUtils.logError(`[workspaceFolders] notifyUpdating: ${err}`);
+            }
 
-        if (addedFD.length) {
-            symbols.reloadAll();
+            const removedFD = removeFolders(removed);
+            const addedFD = addFolders(added);
+            folderDataPromiseResolve(folderData);
+
+            try {
+                notifyUpdated(addedFD, removedFD, folderData);
+            } catch (err) {
+                logUtils.logError(`[workspaceFolders] notifyUpdated: ${err}`);
+            }
+
+            if (addedFD.length) {
+                symbols.reloadAll();
+            }
+        } finally {
+            // invoke a bit later to prevent temporary UI synchronization issues
+            setTimeout(() => {
+                vscode.commands.executeCommand('setContext', 'micronautFoldersComputed', true);
+            }, 500);
         }
     }
 }
@@ -132,7 +141,7 @@ function addFolders(folders: readonly vscode.WorkspaceFolder[]): FolderData[] {
     const added: FolderData[] = [];
     for (const folder of folders) {
         const index = workspaceFolders.indexOf(folder);
-        if (index < 0) {
+        if (index < 0 && projectUtils.isSupportedFolder(folder)) {
             const data = new FolderData(folder);
             added.push(data);
             workspaceFolders.push(folder);

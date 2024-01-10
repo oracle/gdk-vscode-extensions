@@ -45,6 +45,103 @@ export interface NbArtifactSpec {
     versionSpec?: string,
 }
 
+// Tries to guess whether the folder contains a supported Micronaut or Graal Cloud Native project
+export function isSupportedFolder(workspaceFolder: vscode.WorkspaceFolder): boolean {
+    const micronautCli = getMicronautCli(workspaceFolder);
+    if (micronautCli) {
+        return true;
+    }
+
+    const gradleProperties = getGradleProperties(workspaceFolder);
+    if (gradleProperties) {
+        return isMicronautGradleProperties(gradleProperties);
+    }
+
+    const pomXml = getRootPomXml(workspaceFolder);
+    if (pomXml) {
+        return isMicronautPomXml(pomXml);
+    }
+    
+    return false;
+}
+
+function getMicronautCli(workspaceFolder: vscode.WorkspaceFolder): vscode.Uri | undefined {
+    const workspacePath = workspaceFolder.uri.fsPath;
+    const micronautCliPath = path.join(workspacePath, 'micronaut-cli.yml');
+    if (fs.existsSync(micronautCliPath)) {
+        return vscode.Uri.file(micronautCliPath);
+    }
+    // TODO: check nested folders?
+    // NOTE: getMicronautCli() can't currently be async
+    // const micronautCliPattern = new vscode.RelativePattern(workspaceFolder, '**/micronaut-cli.yml');
+    // const micronautCliUris = await vscode.workspace.findFiles(micronautCliPattern);
+    // if (micronautCliUris?.length === 1) {
+    //     return micronautCliUris[0];
+    // }
+    return undefined;
+}
+
+function getGradleProperties(workspaceFolder: vscode.WorkspaceFolder): vscode.Uri | undefined {
+    const workspacePath = workspaceFolder.uri.fsPath;
+    const gradlePropertiesPath = path.join(workspacePath, 'gradle.properties');
+    if (fs.existsSync(gradlePropertiesPath)) {
+        return vscode.Uri.file(gradlePropertiesPath);
+    }
+    // TODO: check nested folders?
+    // NOTE: getGradleProperties() can't currently be async
+    // const gradlePropertiesPattern = new vscode.RelativePattern(workspaceFolder, '**/gradle.properties');
+    // const gradlePropertiesUris = await vscode.workspace.findFiles(gradlePropertiesPattern);
+    // if (gradlePropertiesUris?.length === 1) {
+    //     return gradlePropertiesUris[0];
+    // }
+    return undefined;
+}
+
+function isMicronautGradleProperties(gradleProperties: vscode.Uri): boolean {
+    return containsSome(gradleProperties, 'micronautVersion=');
+}
+
+function getRootPomXml(workspaceFolder: vscode.WorkspaceFolder): vscode.Uri | undefined {
+    const workspacePath = workspaceFolder.uri.fsPath;
+    const rootPomXmlPath = path.join(workspacePath, 'pom.xml');
+    if (fs.existsSync(rootPomXmlPath)) {
+        return vscode.Uri.file(rootPomXmlPath);
+    }
+    // TODO: check nested folders?
+    // NOTE: getRootPomXml() can't currently be async
+    // const rootPomXmlPattern = new vscode.RelativePattern(workspaceFolder, '**/pom.xml');
+    // const rootPomXmlUris = await vscode.workspace.findFiles(gradlePropertiesPattern);
+    // if (rootPomXmlUris?.lengt) {
+    //     return rootPomXmlUris[0];
+    // }
+    return undefined;
+}
+
+function isMicronautPomXml(pomXml: vscode.Uri): boolean {
+    return containsSome(pomXml, '<artifactId>micronaut-parent</artifactId>', '</micronaut.version>');
+}
+
+function containsSome(file: vscode.Uri, ...strings: string[]): boolean {
+    const text = getText(file);
+    if (text) {
+        for (const string of strings) {
+            if (text.includes(string)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function getText(file: vscode.Uri): string | undefined {
+    try {
+        return fs.readFileSync(file.fsPath).toString();
+    } catch (err) {
+        console.log(err)
+    }
+    return undefined;
+}
+
 export function isRunnableUri(uri: vscode.Uri): boolean {
     try {
         const rootDir = uri.fsPath;

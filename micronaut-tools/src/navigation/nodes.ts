@@ -825,12 +825,12 @@ export class ManagementFolderNode extends BaseNode {
 
     private static readonly CONTEXT = 'extension.micronaut-tools.navigation.ManagementFolderNode';
 
-    // private readonly folderData: workspaceFolders.FolderData;
+    private readonly folderData: workspaceFolders.FolderData;
 
     constructor(folder: workspaceFolders.FolderData, treeChanged: TreeChanged) {
         super(folder.getWorkspaceFolder().name, undefined, ManagementFolderNode.CONTEXT, [], true);
         this.tooltip = folder.getWorkspaceFolder().uri.fsPath;
-        // this.folderData = folder;
+        this.folderData = folder;
 
         const management = folder.getApplication().getManagement();
         const monitoringNode = new MonitoringNode(management, treeChanged);
@@ -838,9 +838,9 @@ export class ManagementFolderNode extends BaseNode {
         this.setChildren([ monitoringNode, managementNode ]);
     }
 
-    // getFolderData(): workspaceFolders.FolderData {
-    //     return this.folderData;
-    // }
+    getFolderData(): workspaceFolders.FolderData {
+        return this.folderData;
+    }
 
 }
 
