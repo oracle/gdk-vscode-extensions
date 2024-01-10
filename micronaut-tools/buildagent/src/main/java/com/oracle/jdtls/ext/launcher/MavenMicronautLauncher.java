@@ -38,7 +38,7 @@ public class MavenMicronautLauncher extends MavenLauncher {
                     getProgramArgs().stream().map(a -> quote(a)).collect(Collectors.joining(" ")));
         }
         
-        if (env(LauncherBuilder.ORACLE_MICRONAUT_CONTINUOUS, null) == null) {
+        if (!Boolean.parseBoolean(env(LauncherBuilder.ORACLE_MICRONAUT_CONTINUOUS, "false"))) {
             addCommand("-Dmn.watch=false");
         }
 

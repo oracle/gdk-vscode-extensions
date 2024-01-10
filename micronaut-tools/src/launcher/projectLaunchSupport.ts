@@ -114,11 +114,13 @@ export class FallbackToJDTConfigurationProvider implements DebugConfigurationPro
         }
         config = stopper.launchConfig;
         // Hack: detect NBLS configurations & convert into env var:
+        if (!config.env) {
+            config.env = {};
+        }
         if (config.launchConfiguration === 'Micronaut: dev mode' || config.launchConfiguration === 'Continuous Mode') {
-            if (!config.env) {
-                config.env = {};
-            }
             config.env['JDT_LAUNCHWRAP_MICRONAUT_CONTINUOUS'] = 'true';
+        } else {
+            config.env['JDT_LAUNCHWRAP_MICRONAUT_CONTINUOUS'] = 'false';
         }
         return config;
     }
@@ -190,6 +192,9 @@ export async function resolveConfigurationAsync(folder: vscode.Uri | undefined, 
     config['env']['JDT_LAUNCHWRAP_PROJECT_LAUNCHER'] = path.join(extensionPath, 'agent');
     if (config['build-maven-dependencies'] !== undefined) {
         config['env']['JDT_LAUNCHWRAP_MAVEN_DEPENDENCIES'] = config['build-maven-dependencies'] as string;
+    }
+    if (!config['env']['JDT_LAUNCHWRAP_MICRONAUT_CONTINUOUS']) {
+        config['env']['JDT_LAUNCHWRAP_MICRONAUT_CONTINUOUS'] = 'false';
     }
     logUtils.logInfo(`[launchSupport] provided debug configuration for: ${folder}: ${JSON.stringify({container, projectDir, root}, undefined, 2)}`);
     return config;

@@ -49,7 +49,7 @@ public class MavenTerminator {
         parent.onExit().thenAccept(x -> {
             try {
                 // an arbitrary delay to potentially allow the processes to complete
-                Thread.sleep(2000);
+                Thread.sleep(500);
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
