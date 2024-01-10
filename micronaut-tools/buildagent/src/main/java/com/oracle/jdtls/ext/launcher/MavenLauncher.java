@@ -7,7 +7,12 @@
 
 package com.oracle.jdtls.ext.launcher;
 
+import static com.oracle.jdtls.ext.launcher.LauncherDelegate.LOG;
+import static com.oracle.jdtls.ext.launcher.LauncherDelegate.LOG2;
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -58,6 +63,7 @@ public class MavenLauncher extends LauncherDelegate {
         }
         
         processBuilder = new ProcessBuilder();
+        processBuilder.inheritIO();
         processBuilder.directory(getProjectDirectory().toFile());
         // maven executable
         addCommand(exec.toAbsolutePath().toString());
@@ -135,7 +141,7 @@ public class MavenLauncher extends LauncherDelegate {
         
         pb.command(commands()).inheritIO();
         
-        System.err.println("Running: " + pb.command());
+        LOG("Running: " + pb.command());
         return pb;
     }
     
@@ -167,7 +173,7 @@ public class MavenLauncher extends LauncherDelegate {
     public int execute() throws InterruptedException, IOException {
         ProcessBuilder installBuilder = configureInstallBuilder();
         if (installBuilder != null) {
-            System.err.println("Compiling before execution: " + installBuilder.command());
+            LOG("Compiling before execution: " + installBuilder.command());
             Process install = installBuilder.start();
             int result = install.waitFor();
             if (result != 0) {
@@ -178,13 +184,34 @@ public class MavenLauncher extends LauncherDelegate {
         }
         
         Process p = configureProcessBuilder().start();
+        LOG("Maven execution started, process:{0}", p);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
+                LOG("Shutdown hook initiated for {0}", p);
                 ProcessesImpl.killTree(p);
             }
         });
-        return p.waitFor();
+        
+        if (System.getProperty("os.name").toLowerCase().contains("win")) {
+            URL u = getClass().getProtectionDomain().getCodeSource().getLocation();
+            try {
+                // this miracuously eliminates the leading / from uri.getPath() and translates / into \ on Win.
+                String path = new File(u.toURI()).getAbsoluteFile().toString();
+                ProcessBuilder b = new ProcessBuilder(getJvmBinaryPath(), 
+                        "-classpath", path, 
+                        MavenTerminator.class.getName());
+                b.inheritIO();
+                LOG2("Launching terminator with command: {0}", b.command());
+                b.start();
+            } catch (URISyntaxException ex) {
+                LOG("Cannot convert URL to file: {0}", u);
+            }
+        }
+        
+        int exitcode = p.waitFor();
+        LOG("Child process: {0} exited with code {1}", p, exitcode);
+        return exitcode;
     }
     
 }

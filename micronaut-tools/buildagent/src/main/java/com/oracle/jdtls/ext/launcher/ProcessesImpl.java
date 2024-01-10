@@ -7,6 +7,8 @@
 
 package com.oracle.jdtls.ext.launcher;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
@@ -21,55 +23,31 @@ public class ProcessesImpl {
 
     private static final Logger LOGGER = Logger.getLogger(ProcessesImpl.class.getName());
 
-    private static final boolean ENABLED;
-
-    private static final Method PROCESS_TO_HANDLE;
-
-    private static final Method PROCESS_HANDLE_DESCENDANTS;
-
-    private static final Method PROCESS_HANDLE_DESTROY;
-
-    static {
-        Method toHandle = null;
-        Method descendants = null;
-        Method destroy = null;
-        try {
-            toHandle = Process.class.getDeclaredMethod("toHandle", new Class[]{}); // NOI18N
-            if (toHandle != null) {
-                Class processHandle = Class.forName("java.lang.ProcessHandle"); // NOI18N
-                descendants = processHandle.getDeclaredMethod("descendants", new Class[]{}); // NOI18N
-                destroy = processHandle.getDeclaredMethod("destroy", new Class[]{}); // NOI18N
-            }
-        } catch (NoClassDefFoundError | Exception ex) {
-            LOGGER.log(Level.WARNING, null, ex);
-        }
-
-        ENABLED = toHandle != null && descendants != null && destroy != null;
-        PROCESS_TO_HANDLE = toHandle;
-        PROCESS_HANDLE_DESCENDANTS = descendants;
-        PROCESS_HANDLE_DESTROY = destroy;
-    }
-
     public static void killTree(Process process) {
-        if (!ENABLED) {
-            throw new UnsupportedOperationException("The JDK 9 way of killing process tree is not supported"); // NOI18N
-        }
-
-        try {
-            Object handle = PROCESS_TO_HANDLE.invoke(process, (Object[]) null);
-            try (Stream<?> s = (Stream<?>) PROCESS_HANDLE_DESCENDANTS.invoke(handle, (Object[]) null)) {
-                destroy(handle);
-                s.forEach(ch -> destroy(ch));
-            }
-        } catch (IllegalAccessException | IllegalArgumentException |InvocationTargetException ex) {
-            throw new UnsupportedOperationException("The JDK 9 way of killing process tree has failed", ex); // NOI18N
+        ProcessHandle handle = process.toHandle();
+        LauncherDelegate.LOG("Process to be killed: {0}", handle);
+        try (Stream<ProcessHandle> s = handle.descendants()) {
+            destroy(handle);
+            s.forEach(ch -> {
+                destroy(ch);
+            });
         }
     }
 
-    private static void destroy(Object handle) {
+    private static void destroy(ProcessHandle handle) {
+        if (!handle.isAlive()) {
+            return;
+        }
         try {
-            PROCESS_HANDLE_DESTROY.invoke(handle, (Object[]) null);
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+            LauncherDelegate.LOG("Trying to destroy handle: {0}", handle);
+            handle.destroy();
+            LauncherDelegate.LOG("-> Success: {0}", handle);
+        } catch (IllegalStateException ex) {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            ex.printStackTrace(pw);
+            pw.flush();
+            LauncherDelegate.LOG("-> Failure: {0}", sw.toString());
             LOGGER.log(Level.INFO, null, ex);
         }
     }

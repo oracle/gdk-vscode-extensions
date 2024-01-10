@@ -7,8 +7,8 @@
     <packaging>jar</packaging>
     <properties>
         <gradle.version>7.3-20210825160000+0000</gradle.version>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
     </properties>
     
     <dependencies>

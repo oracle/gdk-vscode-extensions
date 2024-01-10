@@ -94,7 +94,7 @@ public class GradleLauncher extends LauncherDelegate {
             addCommand("--continuous");
         } 
         
-        System.err.println("Running gradle with:  " + commands());
+        LOG("Running gradle with:  " + commands());
         launcher.setEnvironmentVariables(filterEnvironment());
         launcher.
                 addArguments("-I", Paths.get(scriptDir).resolve("launcher.groovy").toAbsolutePath().toString()).

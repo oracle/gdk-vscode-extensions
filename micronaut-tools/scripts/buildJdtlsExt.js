@@ -19,7 +19,7 @@ copy(path.join(server_dir, 'com.oracle.jdtls.ext.core/target'), path.resolve('se
     return /^com.oracle.jdtls.ext.core.*.jar$/.test(file);
 });
 
-cp.execSync(mvnw()+ ' package', {cwd:build_agent, stdio:[0,1,2]} );
+cp.execSync(mvnw()+ ' -DskipTests clean package', {cwd:build_agent, stdio:[0,1,2]} );
 copy(path.join(build_agent, 'target'), path.resolve('agent'), (file) => {
     return /^build-agent-.*\.jar$/.test(file);
 });
