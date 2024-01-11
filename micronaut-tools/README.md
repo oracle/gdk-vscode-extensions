@@ -1,8 +1,8 @@
-# Micronaut® Tools
+# Micronaut&reg; Tools
 *** Technology Preview ***
 
 ## Overview
-Micronaut Tools is a powerful extension for using [GraalVM](https://www.oracle.com/java/graalvm/) to develop [Micronaut framework](https://micronaut.io/) and [Graal Cloud Native](https://graal.cloud/) applications within VS Code.
+Micronaut Tools is a powerful extension for using [GraalVM](https://www.oracle.com/java/graalvm/) to develop [Micronaut framework](https://micronaut.io/) and [Graal Cloud Native](https://graal.cloud/) (GCN) applications within VS Code.
 
 Install the [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack), which contains this extension and others.
 
@@ -12,15 +12,19 @@ Install the [Graal Cloud Native Extension Pack](https://marketplace.visualstudio
 * [View Defined Beans and Endpoints](#view-defined-beans-and-endpoints)
 * [Compose REST Queries](#compose-rest-queries)
 * [Editor Support for Micronaut Expression Language](#editor-support-for-micronaut-expression-language)
+* [Configure and Control Your Micronaut Application](#configure-and-control-your-micronaut-application)
 * [Run Your Micronaut Application](#run-your-micronaut-application) 
-* [Live Reloading of Applications](#live-reloading-of-applications)
+* [Live Reload Your Micronaut Application](#live-reload-your-micronaut-application)
 * [Debug Your Micronaut Application](#debug-your-micronaut-application)
+* [Connect to Your Running Micronaut Application](#connect-to-your-running-micronaut-application)
+* [Monitor and Manage Your Micronaut Application](#monitor-and-manage-your-micronaut-application)
+* [Observe Your Micronaut Application Using the Micronaut Control Panel](#observe-your-micronaut-application-using-the-micronaut-control-panel)
 * [Package Your Micronaut Application](#package-your-micronaut-application)
 * [Create a Native Executable from Your Micronaut Application](#create-a-native-executable-from-your-micronaut-application)
 * [Build a Container Image and Deploy Your Micronaut Application to a Container Registry](#build-a-container-image-and-deploy-your-micronaut-application-to-a-container-registry)
-* [Deploy Your Application to Oracle Cloud Infrastructure](#deploy-your-application-to-oracle-cloudinfrastructure)
+* [Deploy Your Micronaut Application to Oracle Cloud Infrastructure](#deploy-your-micronaut-application-to-oracle-cloud-infrastructure)
 * [Connect to an Oracle Autonomous Database](#connect-to-an-oracle-autonomous-database)
-* [Create Entity and Repository Classes from an Existing Database Schema](#create-entity-and-repository-classes-from-an-existing-database-schema)
+* [Create Entity Classes and Repository Interfaces from an Existing Database Schema](#create-entity-classes-and-repository-interfaces-from-an-existing-database-schema)
 * [Create Micronaut Controller Classes from Micronaut Data Repositories](#create-micronaut-controller-classes-from-micronaut-data-repositories)
 
 To request a feature or report a bug, please [contact us](#feedback).
@@ -33,14 +37,16 @@ VS Code will prompt you to install the extension when you open a Micronaut proje
 [Oracle GraalVM](https://www.oracle.com/java/graalvm/) is a fast and efficient JDK from Oracle.
 
 ## Installing the Extension
-Click **Install** on the banner above or from the Extensions sidebar in VS Code by searching for "Micronaut Tools".
+Click **Install** on the banner above or from the **Extensions** activity in the VS Code Activity Bar by searching for "Micronaut Tools".
 
 You can also find the extension listed on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut).
 
 The Micronaut Tools page opens as soon as the extension is installed.
 You can also open this page using the Command Palette command **Micronaut Tools: Show Micronaut Tools Page**.
 
-> Note: This extension is part of the [Graal Cloud Native Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack). We recommend you install the Graal Cloud Native Extensions Pack as it provides additional extensions for Micronaut development, including the [Micronaut Launch](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extension.
+> **Note**: This extension is part of the [Graal Cloud Native Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack). We recommend you install the Graal Cloud Native Extensions Pack as it provides additional extensions for Micronaut development, including the [Micronaut Launch](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extension.
+
+> **Note**: This extension includes the _Apache NetBeans Language Server for Java_ to provide hints and code completion. It occasionally takes some time to start, its status is displayed in the VS Code Status Bar. 
 
 ## Usage
 
@@ -63,45 +69,87 @@ Run the **Go to Symbol in Workspace** command using Ctrl+T (Cmd+T on macOS) and 
 ![Navigate Micronaut Source Code](images/micronaut-navigation.png)
 
 ### View Defined Beans and Endpoints
-All beans and request mappings defined by a Micronaut or GCN application can be displayed in the Beans and Endpoints views of the Micronaut Tools activity.
+You can display all beans and request mappings defined by a Micronaut or GCN application in the **BEANS** and **ENDPOINTS** views of the Micronaut Tools activity bar.
 
-The items of these views can be searched/filtered using a dedicated action available in the view captions or invoked using the Ctrl+F shortcut.
+If Monitoring and Management capabilities are enabled when the extension launches an application (or connects to an existing application), beans and endpoints available in the application are indicated with a green icon. Disabled beans are indicated with an orange icon, and their tooltips provide additional information. See [Monitor and Manage Your Micronaut Application](#monitor-and-manage-micronaut-application) for details.
 
-Clicking a node in one of these views navigates to the corresponding source code, similar to the **Go to Symbol in Workspace** command. This can also be invoked using a dedicated context menu action:
-* **Go to Symbol** to open the bean or request mapping source code
+You can search/filter the items in these views using a dedicated action available in the view captions or using the find shortcut (Ctrl+F or Cmd+F on macOS).
 
-The request mapping nodes in the Endpoints view also provide two additional actions:
-* **Open in Browser** to open the GET endpoint in a web browser
+Clicking a node in one of these views navigates to the corresponding source code, similar to the **Go to Symbol in Workspace** command. You can also use the dedicated context menu action **Go to Symbol** to open the source code for the bean or request mapping.
+
+The request mapping nodes in the **ENDPOINTS** view also provide two additional actions:
+* **Open in Browser** to open the GET endpoint in a web browser.
 * **Compose REST Query** to insert the corresponding query into a dedicated text document. For details, see the section _Compose REST Queries_.
 
 Similar actions are also available in the code editor as Code Lens actions.
 
-For endpoints requiring parameters to be passed in, a dialog box will be opened enabling you to enter values for the parameters before calling the endpoint. Tip: Type a parameter value and submit by Enter to move to another parameter.
+If an endpoint require parameters, a dialog box is provided for you to enter parameter values before calling the endpoint.
 
-The default URL of the running Micronaut or GCN application is `http://localhost:8080`, but this can be customized using the **Edit Target Application Address** action in the Endpoints view.
-
-![Beans and Endpoints views](images/beans_endpoints_view.png)
-
+![BEANS and ENDPOINTS views](images/beans_endpoints_view.png)
 
 ### Compose REST Queries
-To easily debug and test the REST API of your application, the Endpoints view provides a smooth integration with a third-party extension [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client).
+To easily debug and test the REST API of your application, the **ENDPOINTS** view provides smooth integration with a third-party extension [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client).
 
-To compose a REST query, invoke the **Compose REST Query** action for an endpoint either from the **Endpoints** view or by using the corresponding Code Lens action in the code editor. A dedicated text document is opened, and the corresponding query is inserted. Use the REST Client features to invoke and process the query.
-
-> **Note**: If the REST Client extension is not installed when invoking the **Compose REST Query** action, a notification is displayed offering to quickly install it.
+To compose a REST query, invoke the **Compose REST Query** action for an endpoint either from the **ENDPOINTS** view or by using the corresponding Code Lens action in the code editor. A dedicated text document is opened, and the corresponding query is inserted. Use the REST Client features to invoke and process the query.
 
 ![Compose REST Query](images/compose_rest_query.png)
 
+> **Note**: If the REST Client extension is not installed when you invoke the **Compose REST Query** action, a notification is displayed offering to quickly install it.
+
 ### Editor Support for Micronaut Expression Language
-Since 4.0, the Micronaut Framework enables you to embed an evaluated expression in an annotation value using the `#{…​}` syntax. This is known as the [Micronaut Expression Language](https://docs.micronaut.io/latest/guide/#evaluatedExpressions).
+Since version 4.0, Micronaut Framework enables you to embed an evaluated expression in an annotation value using the `#{...​}` syntax. This is known as the [Micronaut Expression Language](https://docs.micronaut.io/latest/guide/#evaluatedExpressions).
 
 The extension provides full editor support for the Micronaut Expression Language, including:
-* Code completion
+* Code completion (as shown below)
 * Syntax highlighting
 * Documentation hovers for Java elements and Micronaut configuration properties
 * Code navigation to Java elements and Micronaut configuration properties
 
 ![Micronaut Expression Language Code Completion](images/micronaut-expression-language.png)
+
+### Configure and Control Your Micronaut Application
+
+You can visually configure and control your Micronaut or GCN application using the **APPLICATIONS** view of the Micronaut Tools activity. The view displays all Micronaut and GCN applications in the current workspace:
+
+![APPLICATIONS view](images/applications-view.png)
+
+You can invoke the following actions and configure the following settings:
+
+#### _Application_ Node (for example, "micronaut-petclinic")
+Represents the logical application, and provides the following actions based on the state of your application:
+* **Run Application Without Debugging**: to run your application with no debugging, see [Run Your Micronaut Application](#run-your-micronaut-application).
+* **Run Application in Continuous Mode**: to run your application in continuous mode, see [Live Reload Your Application](#live-reload-your-application).
+* **Start Debugging Application**: to run your application with debugging, see [Debug Your Micronaut Application](#debug-your-micronaut-application).
+* **Connect to Externally Started Application**: to connect to a local or remote application that is already running, based on the `address:port` defined by the **Address** node, see [Connect to Your Running Micronaut Application](#connect-to-your-running-micronaut-application).
+* **Stop Application**: to stop an application you launched.
+* **Disconnect from Application**: to disconnect from an application to which you connected.
+* **Open Application in Browser**: to open your application in a web browser using the `address:port` defined by the **Address** node.
+
+#### _Subproject_ Node (GCN applications only)
+Represents a subproject/module of a modular GCN application. All the settings you configure in this view are stored and used in context of this subproject. It provides the following action:
+* **Change Subproject**: to switch the subproject context.
+
+#### _Address_ Node
+Defines the `address:port` to start a local application, or to connect to an application that is already running. It provides the following action:
+* **Edit Application Address**: to customize the application address. To restore the default value (_http://localhost:8080_), enter an empty address.
+
+#### _Environments_ Node
+Defines the active Micronaut environment(s) for an application you launched, and provides shortcuts to the corresponding configuration files. The default `by project` value means the environments are defined by the project. A custom value forces the application to start with the defined active environments. It provides the following actions:
+* **Edit Active Environments**: to define which environments will be active for the application you launch - enter an empty value to accept the default (`by project`).
+* **Configure Environment Properties**: shortcuts to create new (or edit existing) configuration files for application environments.
+
+> **Note**: For more information about Micronaut Environments, see [The Environment](https://docs.micronaut.io/latest/guide/#environments).
+
+#### _Monitoring & Management_ Node
+Enables you to configure the monitoring and management capabilities for an application you launched (for more information, see [Monitor and Manage Your Micronaut Application](#monitor-and-manage-your-micronaut-application)).
+The default `by project` value means the monitoring and management capabilities are defined by the project. Change the value to `enabled` to add the required dependencies (if needed) to the project build file, and configure the required properties to enable the monitoring and management capabilities. It provides the following action:
+* **Edit Monitoring & Management Availability**: to force the application to launch with the monitoring and management capabilities enabled (`enabled`). The default `by project` value means the monitoring and management capabilities will be available as configured by the project.
+
+#### _Micronaut Control Panel_ Node
+Enables you to configure the [Micronaut Control Panel](https://micronaut-projects.github.io/micronaut-control-panel/latest/guide/index.html) to view and manage the state of an application you launched (for more information, see [Observe Your Application using the Micronaut Control Panel](#observe-your-application-using-the-micronaut-control-panel)).
+The default `by project` value means the Micronaut Control Panel will be available as defined by the project. Change the value to `enabled` to add the required dependencies (if needed) to the project build file, and configure the required properties to enable the Micronaut Control Panel. It provides the following actions:
+* **Edit Micronaut Control Panel Availability**: to force the application to launch with the Micronaut Control Panel enabled (`enabled`). The default `by project` value means the Micronaut Control Panel will be available as configured by the project.
+* **Open Micronaut Control Panel in Browser**: opens the Micronaut Control Panel in a web browser.
 
 ### Run Your Micronaut Application
 
@@ -109,11 +157,11 @@ The easiest way to run your Micronaut application is to view the `Application` c
 
 ![Run Micronaut Application](images/run_main_method.png)
 
-> **Note**: If you have defined a database connection, see [Connect to an Oracle Autonomous Database](#connect-to-an-oracle-autonomous-database), then the database connection details will be passed to your running application through an argument file when running the application in this way.
+> **Note**: If you have defined a database connection, see [Connect to an Oracle Autonomous Database](#connect-to-an-oracle-autonomous-database), then the database connection details will be provided to your running application through an argument file when running the application in this way.
 
-Alternatively, select **Run Without Debugging** from the **Run** menu.
+Alternatively, use the **Run Application Without Debugging** action in the **APPLICATIONS** view of the Micronaut Tools activity, or invoke **Run Without Debugging** from the **Run** menu.
 
-### Live Reloading of Applications
+### Live Reload Your Micronaut Application
 
 Micronaut can automatically recompile and restart your application (or its parts) when it detects changes to your source code.
 (This is called "Continuous Mode".)
@@ -121,7 +169,9 @@ To run your Micronaut application in this mode, view the `Application` class in 
 
 ![Run Micronaut Application in Continuous Mode](images/run-continuous.png)
 
-Alternatively, select **Run and Debug** in the activity bar and click **Create a launch.json file**.
+Alternatively, use the **Run Application in Continuous Mode** action in the **APPLICATIONS** view of the Micronaut Tools activity.
+
+Alternatively, select **Run and Debug** from the Activity Bar and click **Create a launch.json file**.
 When prompted, select **Java** as the debugger.
 A configuration labeled with "Continuous" will be created for your Micronaut application main class(es), similar to this example:
 ![Select Launch Configuration to Run Micronaut Application in Continuous Mode](images/run-continuous-config.png)
@@ -134,7 +184,62 @@ The easiest way to debug your Micronaut application is to view the `Application`
 
 ![Debug Micronaut Application](images/debug_main_method.png)
 
-Alternatively, select **Start Debugging** from the **Run** menu.
+Alternatively, use the **Start Debugging Application** action in the **APPLICATIONS** view of the Micronaut Tools activity, or invoke **Start Debugging** from the **Run** menu.
+
+### Connect to Your Running Micronaut Application
+
+Use the **Connect to Externally Started Application** action in the **APPLICATIONS** view of the Micronaut Tools activity to observe an application. When you have connected to an application, you can:
+* Monitor basic telemetry, such as CPU/memory usage
+* Check active Micronaut environments
+* Check available management endpoints
+* Check the availability of the Micronaut Control Panel
+* Check the availability and status of defined beans
+* Check the availability of defined endpoints
+* Change runtime configuration (such as logging levels and caches)
+* Invoke management actions (such as **Refresh** and **Server Stop**)
+
+The application must already be running on the `address:port` defined by the Address node. 
+To stop observing the connected application, use the **Disconnect from Application** action.
+
+Based on the monitoring and management capabilities or the Micronaut Control Panel availability in the connected application, various information and actions will be displayed in the Micronaut Tools activity views. See [Monitor and Manage Your Micronaut Application](#monitor-and-manage-your-micronaut-application) and [Observe Your Application using Micronaut Control Panel](#observe-your-application-using-the-micronaut-control-panel) for details.
+
+### Monitor and Manage Your Micronaut Application
+The Micronaut Tools activity views can display data and invoke actions provided by the supported [Micronaut Management & Monitoring Endpoints](https://docs.micronaut.io/latest/guide/#management).
+
+The application must be set up and configured to provide the endpoints. This can be configured either manually (the _Monitoring & Management_ node displays `by project`), or automatically by setting the _Monitoring & Management_ node to `enabled`. This will add the required dependencies for the supported features to the project build file, and configure the launched application properties to enable the features in runtime.
+
+> **Note**: To fully disable all enabled monitoring & management capabilities for a project, the _Monitoring & Management_ node must be set to `by project`, and the added dependencies must be manually removed from the project build file.
+
+Based on the monitoring and management capabilities available in the launched or connected application, these information and actions will be displayed in the Micronaut Tools activity views:
+
+#### _APPLICATIONS_ view
+* **Refresh Application State action**: to destroy all refreshable beans in the context. The beans are re-instantiated upon further requests. (Requires the [Refresh endpoint](https://docs.micronaut.io/latest/guide/#refreshEndpoint).)
+* **Stop Server action**: to stop an application started externally (requires the [Server Stop endpoint](https://docs.micronaut.io/latest/guide/#stopEndpoint)).
+* **List of active environments**: displayed for the _Environments_ node (requires the [Environment endpoint](https://docs.micronaut.io/latest/guide/#environmentEndpoint)).
+* **Actual monitoring & management capabilities availability**: displayed for the _Monitoring & Management_ node, the tooltip displays all currently available endpoints.
+
+#### _BEANS_ and _ENDPOINTS_ Views
+The beans available in a running application are indicated with a green icon; disabled beans are indicated with an orange icon; their tooltips provide additional information from the underlying framework. (Requires the [Beans endpoint](https://docs.micronaut.io/latest/guide/#beansEndpoint).)
+
+The endpoints available in the running application are indicated with a green icon. (Requires the [Routes endpoint](https://docs.micronaut.io/latest/guide/#routesEndpoint).)
+
+#### _MONITORING & MANAGEMENT_ view
+* **_Monitoring_ node**:
+  - **Uptime, CPU, Heap, Non Heap**: requires the [Metrics endpoint](https://docs.micronaut.io/latest/guide/#metricsEndpoint) with basic [Micrometer core metrics](https://micronaut-projects.github.io/micronaut-micrometer/latest/guide/) configured.
+  - **Disk**: requires the [Health endpoint](https://docs.micronaut.io/latest/guide/#healthEndpoint).
+* **_Management_ node**:
+  - **Loggers**: displays number of configured loggers, with details in a tooltip. Use the **Configure Loggers** action to re-configure existing loggers, or create a new logger in the running process. (Requires the [Loggers endpoint](https://docs.micronaut.io/latest/guide/#loggersEndpoint).)
+  - **Caches**: displays number of available caches, with details in a tooltip. Use the **Invalidate Caches** action to invalidate selected caches in the running process. (Requires the [Caches endpoint](https://docs.micronaut.io/latest/guide/#cachesEndpoint).)
+
+### Observe Your Micronaut Application Using the Micronaut Control Panel
+The **APPLICATIONS** view of the Micronaut Tools activity provides a link to the [Micronaut Control Panel](https://micronaut-projects.github.io/micronaut-control-panel/latest/guide/index.html) if your application is set up and configured to provide the Micronaut Control Panel module. 
+You can configure your application either manually (the _Micronaut Control Panel_ node displays `by project`), or automatically by setting the _Micronaut Control Panel_ node to `enabled`. This will add the required dependencies to the project build file, and configure the launched application properties to enable the feature at run time.
+
+> **Note**: To fully disable the Micronaut Control Panel for a project, set the _Micronaut Control Panel_ node to `by project`, and manually remove the added dependencies from the project build file.
+
+If available, you can open the Micronaut Control Panel in a web browser using the **Open Micronaut Control Panel in Browser** action in the _Micronaut Control Panel_ node.
+
+> **Note**: The Micronaut Control Panel was first introduced as an experimental feature of the Micronaut 4 framework, and may not work correctly with some other Micronaut features such as databases, caches, and so on. If your application fails to start, or works incorrectly after enabling the Micronaut Control Panel, you must manually disable the Micronaut Control Panel.
 
 ### Package Your Micronaut Application
 
@@ -201,7 +306,7 @@ Enter "Micronaut Tools" and invoke the **Micronaut Tools: Deploy...** command.
 
 To configure your application's container registry, see the documentation for [Micronaut Maven Plugin](https://micronaut-projects.github.io/micronaut-maven-plugin/latest/)/[Micronaut Gradle Plugin](https://micronaut-projects.github.io/micronaut-gradle-plugin/latest/). 
 
-### Deploy Your Application to Oracle Cloud Infrastructure
+### Deploy Your Micronaut Application to Oracle Cloud Infrastructure
 
 **Prerequisites:**
 * An Oracle Cloud Infrastructure (OCI) account.
@@ -274,9 +379,9 @@ To store your application database connection details using OCI Vault and for th
 7. Click **Enter**. The database properties are stored in your vault. A notification is shown at the bottom of the VS Code window.
 8. If the project is stored in OCI DevOps, then running the deployment pipelines from within the OCI DevOps panel will use the Database properties stored in the vault from the previous steps.
 
-> Note: If OKE Deployment Pipelines were modified as described above, the OKE ConfigMap named _\<project\_name\>\_oke\_configmap_ would be used. The deployment then uses the database properties stored in your OCI Vault to run a Micronaut application in OKE securely and seamlessly. Learn more about this in the [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops) extension documentation.
+> **Note**: If OKE Deployment Pipelines are modified as described above, the OKE [ConfigMap](https://kubernetes.io/docs/concepts/configuration/configmap/) named _\<project\_name\>\_oke\_configmap_ is used. The deployment then uses the database properties stored in your OCI Vault to run a Micronaut application in OKE securely and seamlessly. Learn more about this in the [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops) extension documentation.
 
-### Create Entity Classes and Repository Interfaces From an Existing Database Schema
+### Create Entity Classes and Repository Interfaces from an Existing Database Schema
 
 After you have created a connection to an Oracle Autonomous Database, you can quickly create [Micronaut Data](https://micronaut-projects.github.io/micronaut-data/latest/guide/) entity classes for the tables within the database.
 
@@ -294,7 +399,7 @@ To create Micronaut Data entity classes:
 5. From the list of tables, select the tables for which you want to create corresponding entities. 
 6. Click **Enter**.
 
-![Create Micronaut Data Entitiy Classes](./images/create-entities.gif)
+![Create Micronaut Data Entity Classes](./images/create-entities.gif)
 
 In a similar way, we can also create Micronaut Data repository interfaces - note this requires that you have already created entity classes (see above):
 1. Create a new Micronaut project in VS Code (or open an existing one).
@@ -318,7 +423,7 @@ By creating Controllers that expose your Micronaut Data repository interfaces, y
 
 A controller that has access to the data repository is generated for each of the Micronaut Data repository interfaces that you selected in the wizard. By default, it contains a REST endpoint to access the repository's `findAll()` method in its `list()` method. 
 
-Other REST Endpoints accessing a repository can be added to the controller. It is possible to add a _delete_ endpoint method, or different _find_ methods. This can be done either through **code completion** (select the desired method from the list) or directly from the editor:  **Source Action... | Generata Data Endpoint...**.
+Other REST Endpoints accessing a repository can be added to the controller. It is possible to add a _delete_ endpoint method, or different _find_ methods. This can be done either through **code completion** (select the desired method from the list) or directly from the editor:  **Source Action... | Generate Data Endpoint...**.
 
 Currently, `delete()` and `get()` methods are provided; both are annotated with the Data Entity `@id` parameter. 
 
@@ -330,7 +435,6 @@ The extension contributes the following settings:
 
 * __micronaut-tools.showWelcomePage__ - when set to `true` (default), show the Micronaut Tools when the extension is activated.
 * __micronaut-tools.jdt.buildsystemExecution__ - if set to `true` (default), enables enhanced Run support for Micronaut applications.
-* __micronaut-tools.targetApplicationAddress__ - default Micronaut or Graal Cloud Native application URL, by default configured to `http://localhost:8080` (to be customized in `settings.json` in project folder).
 
 ## Micronaut Commands
 
@@ -349,7 +453,7 @@ See your docker tools documentation.
 * **Micronaut Tools: Create Kubernetes Service Resource**: create a Kubernetes service resource for your application.
 * **Micronaut Tools: Deploy to Kubernetes**: deploy to a running Kubernetes service. The service must be configured using the Kubernetes tools (`kubectl`) on the machine from which deployment is initiated.
 * **Micronaut Tools: Run in Kubernetes**:  run already deployed application in Kubernetes service. This command automatically forwards the port of the container, so the application can be accessed from the browser on your local machine.
-* **Micronaut Tools: Edit Target Application Address**: To customise the base URL of the running Micronaut or GCN application; the default is _http://localhost:8080_.
+* **Micronaut Tools: Edit Target Application Address**: To customize the base URL of the running Micronaut or GCN application; the default is _http://localhost:8080_.
 * **Micronaut Tools: Search/Filter Beans**: Search or filter the items in the Beans view.
 * **Micronaut Tools: Search/Filter Endpoints**:  Search or filter the items in the Endpoints view.
 
