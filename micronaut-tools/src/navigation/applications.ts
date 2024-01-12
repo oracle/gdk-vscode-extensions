@@ -43,8 +43,9 @@ export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.debug.onDidStartDebugSession((session: vscode.DebugSession) => {
         workspaceFolders.getFolderData().then(folderData => {
             for (const data of folderData) {
-                if (data.getWorkspaceFolder() === session.workspaceFolder) {
-                    data.getApplication().registerDebugSession(session);
+                const application = data.getApplication();
+                if (data.getWorkspaceFolder() === session.workspaceFolder && application.isLocal() && !application.getDebugSession()) {
+                    application.registerDebugSession(session);
                     break;
                 }
             }
@@ -388,7 +389,7 @@ class RunCustomizer implements vscode.DebugConfigurationProvider {
         return new Promise<vscode.DebugConfiguration>(resolve => {
             workspaceFolders.getFolderData().then(folderData => {
                 for (const data of folderData) {
-                    if (data.getWorkspaceFolder() === folder) {
+                    if (data.getWorkspaceFolder() === folder && data.getApplication().isLocal()) {
                         // console.log(config)
                         const vmArgs = data.getApplication().buildVmArgs();
                         // console.log('VMARGS existing ' + config.vmArgs)
