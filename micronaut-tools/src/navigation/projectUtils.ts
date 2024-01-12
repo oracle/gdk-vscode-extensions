@@ -15,7 +15,7 @@ const EXTENSION_NBLS_ID = 'asf.apache-netbeans-java';
 const COMMAND_GET_PROJECT_INFO = 'nbls.project.info';
 const COMMAND_DEBUG_FROM_PROJECT_VIEW = 'java.debug.debugFromProjectView';
 const COMMAND_RUN_FROM_PROJECT_VIEW = 'java.debug.runFromProjectView';
-const TIMEOUT_COMMAND_GET_PROJECT_INFO = 30; // wait for NBLS & projectInfo up to 30 seconds
+const TIMEOUT_COMMAND_GET_PROJECT_INFO = 60; // wait for NBLS & projectInfo up to 60 seconds
 const RUN_DEV_MAVEN = 'Micronaut: dev mode';
 const RUN_DEV_GRADLE = 'Continuous Mode';
 
