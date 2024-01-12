@@ -1,5 +1,8 @@
 # Change Log
 
+## Version 0.9.7
+* GCN Launcher update to 4.2.1 (Micronaut 4.2.1)
+
 ## Version 0.9.6
 * GCN Launcher update to 4.0.7 (Micronaut 4.0.7)
 

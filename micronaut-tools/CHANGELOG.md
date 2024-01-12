@@ -1,5 +1,14 @@
 # Change Log
 
+# Version 0.6.3
+* Micronaut:
+   * Application Panel added to support Managemement & Control Panel
+   * Expression Language support
+   * Controllers bound to data Repositories generated and available in code completion
+* OCI Vault can be used for OCI ATP connection properties storage and used in runtime on OKE via Configmap
+* Fixes in Run, Debug code lenses
+* Numerous bug fixes and improvements
+
 # Version 0.6.2
 * MySQL Connector/J updated to v. 8.2.0
 

@@ -1,5 +1,10 @@
 # Change Log
 
+## Version 0.9.6
+* JDK 21 is default Java for OCI DevOps pipeline builds.
+* Removed possibility to use local active GraalVM version for the remote build
+* `openjdk:21` container image used for JVM based containers
+
 ## Version 0.9.5
 * Open sourcing changes
 
