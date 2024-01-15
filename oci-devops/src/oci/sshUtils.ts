@@ -117,7 +117,7 @@ function writeSshConfigContents(newContents : string) {
         // owner: read-write-execute, group+others: 0
         mode: 0o700
     });
-    fs.writeFileSync(defaultConfigLocation, newContents);
+    fs.writeFileSync(defaultConfigLocation, newContents, { mode: 0o700 });
 }
 
 async function sshUtilitiesPresent() : Promise<boolean> {
