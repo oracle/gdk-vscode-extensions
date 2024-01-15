@@ -1,5 +1,8 @@
 # Change Log
 
+# Version 0.6.2
+* Labels wording changes
+
 # Version 0.6.1
 * Open sourcing changes
 
