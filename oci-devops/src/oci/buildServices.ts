@@ -379,7 +379,7 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
         return `https://cloud.oracle.com/devops-build/projects/${pipeline.projectId}/build-pipelines/${pipeline.id}`;
     }
 
-    async runPipeline() {
+    async runPipeline(tests: boolean = false) {
         const currentState = this.lastRun?.state;
         if (currentState === devops.models.BuildRun.LifecycleState.Canceling || !ociUtils.isRunning(currentState)) {
             const folder = servicesView.findWorkspaceFolderByNode(this)?.uri;
@@ -421,7 +421,7 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
                 }, (_progress, _token) => {
                     return new Promise(async resolve => {
                         try {
-                            if (!isRunBuildPipelineCustomShapeConfirmedPermanently() && await this.usesCustomRunnerShape()) {
+                            if (!tests && (!isRunBuildPipelineCustomShapeConfirmedPermanently() && await this.usesCustomRunnerShape())) {
                                 const confirm = await confirmRunBuildPipelineCustomShape();
                                 if (!confirm) {
                                     resolve(false);

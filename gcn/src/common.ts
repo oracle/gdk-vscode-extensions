@@ -214,7 +214,7 @@ export function getClouds() {
     return ret;
 }
 
-function getServices(): ValueAndLabel[] {
+export function __getServices(): ValueAndLabel[] {
     const ret = [];
     let ss = gcnApi.services().toArray();
     for (let i = 0; i < ss.length; i++) {
@@ -431,7 +431,7 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 	}
 
 	async function pickServices(input: dialogs.MultiStepInput, state: Partial<State>) {
-        const choices = state.micronautVersion && state.applicationType && state.javaVersion ? getServices() : [];
+        const choices = state.micronautVersion && state.applicationType && state.javaVersion ? __getServices() : [];
 		const selected: any = await input.showQuickPick({
 			title,
 			step: 6,

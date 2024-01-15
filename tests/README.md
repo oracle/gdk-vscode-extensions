@@ -96,6 +96,5 @@ export class TestDescriptor extends AbstractTestDescriptor {
 
 # Future improvements
 - Utility for handling env variables - passwords, etc.
-- Fix reporting with mocha awesome / change workspaces with `vscode.workspace.updateWorkspaceFolders.`
 - Make API for UI tests to run tests on multiple projects easily
 

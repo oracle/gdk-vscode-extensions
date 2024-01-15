@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
 import { v4 as uuidv4 } from 'uuid';
-import type { Arg } from './types';
+import type { Arg, CopiedProject } from './types';
 
 /**
  * Return list of names of sub directories in parent folder
@@ -49,11 +49,15 @@ export function findFiles(testFolder: string, ...globPatterns: string[]): { [dir
   return out;
 }
 
+export function copProj(copyPath: string, name?: string): CopiedProject {
+  return { _type: 'copied', copyPath, name };
+}
+
 /**
  * Copies src folder to dest folder if src folder exists
  * @param src source folder
  * @param dest destination folder
- * @param cleanif true the destination folder will be removed before copy
+ * @param clean true the destination folder will be removed before copy
  */
 export function copyRecursiveSync(src: string, dest: string, clean: boolean = false) {
   if (!fs.existsSync(src)) {

@@ -1,11 +1,11 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { containerengine, devops, identity } from 'oci-sdk';
+import { devops, identity } from 'oci-sdk';
+import * as path from 'path';
+
 import * as projectUtils from '../../../../../../../oci-devops/out/projectUtils';
 import * as ociAuthentication from '../../../../../../../oci-devops/out/oci/ociAuthentication';
 import * as ociUtils from '../../../../../../../oci-devops/out/oci/ociUtils';
-import * as vcnUtils from '../../../../../../../oci-devops/out/oci/vcnUtils';
-import * as path from 'path';
 import { DeployOptions } from '../../../../../../../oci-devops/out/oci/deployUtils';
 import { logError } from '../../../../../../../common/lib/logUtils';
 import { NodeProvider } from '../../../../../../../oci-devops/out/servicesView';
@@ -23,39 +23,120 @@ suite('Oci Combined pipelines test', function () {
     : 'ocid1.compartment.oc1..aaaaaaaa7thgaondgokuwyujlq4tosnpfaohdivlbbr64izsx5jxfxrezxca';
   const DEPLOY_COMPARTMENT_NAME: string = 'tests';
 
-  let deploy_project_name: string;
-  let selectedProfile = '';
-  let projectId: string = '';
-  let provider: any;
-  let comaprtmentOCID = '';
-  let codeRepositoryId = '';
-
-  let projectFolder: any;
-  let buildBipeline: any;
+  let deployProjectName: string;
+  let codeRepositoryId: string;
+  let projectFolder: projectUtils.ProjectFolder;
+  let selectedProfile: string;
+  let projectId: string;
   let project: any;
-  let item: any;
-  let image: any;
-  let subnet: any;
-  let okeClusterEnvironment: any;
-
-  let cluster: containerengine.models.Cluster;
-  let deployPipelineId = '';
-  let repositoryName: string;
-
-  let randNumber = '';
+  let provider: any;
+  let comaprtmentOCID: string;
+  let jvmItem: any;
+  let randomGuid: string;
 
   suite('Test configuaration', function () {
     suite('Prepare poject', async function () {
-      test('Create controller', async function () {
-        randNumber = generateUID();
-        assert.ok(wf);
-        assert.ok(wf.length === 1);
-        const project = wf[0];
-        const directoryName = project.uri.fsPath;
-        assert.ok(directoryName);
-        const controllerPath = path.join('oci', 'src', 'main', 'java', 'com', 'example');
-        assert.ok(helper.createController(directoryName, controllerPath, randNumber), 'controller created');
-        deploy_project_name = project.name;
+      let projectType: string;
+      suite('Extension testing', function () {
+        vscode.window.showInformationMessage('Start Extension testing');
+
+        /* Wait for the NBLS to start */
+        // the timeout will propagate to beforeAll hook
+        this.timeout(5 * 60 * 1000);
+        this.beforeAll(async () => {
+          await waitForStatup(wf![0]);
+        });
+
+        // This test must be run first, in order to activate the extension (and wait for the activation to complete)
+        test('Extension loaded', async () => {
+          let extension = vscode.extensions.getExtension('oracle-labs-graalvm.oci-devops');
+          assert.ok(extension, 'No OCI DevOps Tools extension found!');
+
+          await extension.activate();
+          assert.ok(extension.isActive, 'OCI DevOps extension failed to activate!');
+
+          await vscode.commands.executeCommand('git.close');
+        });
+
+        // Check if OCI DevOps Tools commands have been loaded
+        test('OCI DevOps Tools commands loaded', async () => {
+          let commands = await vscode.commands.getCommands(true);
+
+          let containsOciDevOpsCommands = false;
+          for (const command of commands) {
+            if (command.indexOf('oci.devops.') === 0) containsOciDevOpsCommands = true;
+          }
+
+          assert.ok(containsOciDevOpsCommands, 'No OCI DevOps Tools command has been loaded');
+        });
+
+        // Check if OCI DevOps Tools page opens
+        test('OCI DevOps Tools page', async () => {
+          await vscode.commands.executeCommand('oci.devops.showToolsPage');
+
+          // The marvellous vscode completes the command, but still has the active tab set to the previous content,
+          // so let's wait a while in a timeouted loop....
+          let res = new Promise((resolve, reject) => {
+            let counter = 3; // by default test timeout is 5 secs, increase if set to > 4.
+            function w() {
+              if (counter > 0 && vscode.window.tabGroups.activeTabGroup.activeTab?.label !== 'OCI DevOps Tools') {
+                counter--;
+                setTimeout(w, 1000);
+                return;
+              }
+              try {
+                assert.strictEqual(
+                  vscode.window.tabGroups.activeTabGroup.activeTab?.label,
+                  'OCI DevOps Tools',
+                  'Tools page is not being shown',
+                );
+                resolve(true);
+              } catch (err: any) {
+                reject(err);
+              }
+            }
+            w();
+          });
+          return res;
+        });
+
+        // Check if the workspace has an OCI deployable project inside
+        test('Contains OCI Project', async () => {
+          if (!wf?.length) {
+            assert.throws(() => logError('Extension host did not load any workspace folders!'));
+          } else {
+            projectFolder = await projectUtils.getProjectFolder(wf[0]);
+
+            projectType = projectFolder.projectType;
+            assert.ok(
+              projectType === 'GCN' || projectType === 'Micronaut',
+              'Specified project should be deployable to OCI',
+            );
+          }
+        });
+
+        test('Create controller', async function () {
+          randomGuid = generateUID();
+          assert.ok(wf);
+          assert.ok(wf.length === 1);
+          const project = wf[0];
+          const directoryName = project.uri.fsPath;
+          assert.ok(directoryName);
+          let controllerPath: string;
+          if (projectType === 'GCN') {
+            controllerPath = path.join('oci', 'src', 'main', 'java', 'com', 'example');
+          } else if (projectType === 'Micronaut') {
+            controllerPath = path.join('src', 'main', 'java', 'com', 'example');
+          } else {
+            assert.fail('unknown project type' + projectType);
+          }
+
+          assert.ok(
+            helper.createController(directoryName, controllerPath, randomGuid),
+            'controller created for ' + projectType,
+          );
+          deployProjectName = project.name;
+        });
       });
 
       suite('OCI configuration', async function () {
@@ -72,7 +153,7 @@ suite('Oci Combined pipelines test', function () {
 
           selectedProfile = helper.getProfile(profiles);
           assert.ok(
-            selectedProfile !== '',
+            selectedProfile && selectedProfile !== '',
             'Default profile cannot be determined. Make sure to have [DEFAULT] or [TESTS] profile in oci config.',
           );
         });
@@ -117,89 +198,11 @@ suite('Oci Combined pipelines test', function () {
         test('Check clusters', async function () {
           const clusters = await ociUtils.listClusters(provider, COMPARTMENT_OCID);
           assert.ok(clusters && clusters.length > 0, 'No cluster Found in your compartment');
-          cluster = clusters[0] as containerengine.models.Cluster;
-        });
-      });
-      suite('Extension testing', function () {
-        vscode.window.showInformationMessage('Start Extension testing');
-
-        /* Wait for the NBLS to start */
-        // the timeout will propagate to beforeAll hook
-        this.timeout(5 * 60 * 1000);
-        this.beforeAll(async () => {
-          await waitForStatup(wf![0]);
-        });
-
-        // This test must be run first, in order to activate the extension (and wait for the activation to complete)
-        test('Extension loaded', async () => {
-          let extension = vscode.extensions.getExtension('oracle-labs-graalvm.oci-devops');
-          assert.ok(extension, 'No OCI DevOps Tools extension found!');
-
-          await extension.activate();
-          assert.ok(extension.isActive, 'OCI DevOps extension failed to activate!');
-
-          await vscode.commands.executeCommand('git.close');
-        });
-
-        // Check if OCI DevOps Tools commands have been loaded
-        test('OCI DevOps Tools commands loaded', async () => {
-          let commands = await vscode.commands.getCommands(true);
-
-          let containsOciDevOpsCommands = false;
-          for (const command of commands) {
-            if (command.indexOf('oci.devops.') === 0) containsOciDevOpsCommands = true;
-          }
-
-          assert.ok(containsOciDevOpsCommands, 'No OCI DevOps Tools command has been loaded');
-        });
-
-        // Check if OCI DevOps Tools page opens
-        test('OCI DevOps Tools page', async () => {
-          await vscode.commands.executeCommand('oci.devops.showToolsPage');
-
-          // The marvellous vscode completes the command, but still has the active tab set to the previous content,
-          // so let's wait a while in a timeouted loop....
-          let res = new Promise((resolve, reject) => {
-            let counter = 3; // by default test timeout is 5 secs, increase if set to > 4.
-            function w() {
-              // let label = vscode.window.tabGroups.activeTabGroup.activeTab?.label;
-              // console.log(`Waiting for the active editor to change: counter=${counter}, label =${label}`)
-              if (counter > 0 && vscode.window.tabGroups.activeTabGroup.activeTab?.label !== 'OCI DevOps Tools') {
-                counter--;
-                setTimeout(w, 1000);
-                return;
-              }
-              try {
-                assert.strictEqual(
-                  vscode.window.tabGroups.activeTabGroup.activeTab?.label,
-                  'OCI DevOps Tools',
-                  'Tools page is not being shown',
-                );
-                resolve(true);
-              } catch (err: any) {
-                reject(err);
-              }
-            }
-            w();
-          });
-          return res;
-        });
-
-        // Check if the workspace has an OCI deployable project inside
-        test('Contains OCI Project', async () => {
-          if (!wf?.length) {
-            assert.throws(() => logError('Extension host did not load any workspace folders!'));
-          } else {
-            projectFolder = await projectUtils.getProjectFolder(wf[0]);
-            assert.strictEqual(projectFolder.projectType, 'GCN', 'Specified project should be deployable to OCI');
-          }
         });
       });
     });
 
     suite('Create OCI devops project', function () {
-      vscode.window.showInformationMessage('Start all tests.');
-
       // revert for tests (deployment/undeployment might take some time)
       this.timeout(5 * 60 * 1000);
 
@@ -214,7 +217,7 @@ suite('Oci Combined pipelines test', function () {
         for (let compartment of compartments) {
           if (compartment.name === DEPLOY_COMPARTMENT_NAME) comaprtmentOCID = compartment.id;
         }
-        assert.ok(comaprtmentOCID !== '', 'No comapartment ' + DEPLOY_COMPARTMENT_NAME + ' found!');
+        assert.ok(comaprtmentOCID && comaprtmentOCID !== '', 'No comapartment ' + DEPLOY_COMPARTMENT_NAME + ' found!');
       });
 
       // list devops projects inside a compartment
@@ -228,7 +231,7 @@ suite('Oci Combined pipelines test', function () {
 
         // left from previos unsuccessfull runs
         for (let project of DevOpsProjects) {
-          if (project.name === deploy_project_name) {
+          if (project.name === deployProjectName) {
             await vscode.commands.executeCommand('oci.devops.undeployFromCloudSync');
             await ociUtils.deleteDevOpsProject(provider, project.id, true);
           }
@@ -243,7 +246,7 @@ suite('Oci Combined pipelines test', function () {
             name: 'gcn-dev/' + DEPLOY_COMPARTMENT_NAME,
           },
           skipOKESupport: false,
-          projectName: deploy_project_name,
+          projectName: deployProjectName,
           selectProfile: selectedProfile,
           autoConfirmDeploy: true,
         };
@@ -252,11 +255,11 @@ suite('Oci Combined pipelines test', function () {
 
         const DevOpsProjects = await ociUtils.listDevOpsProjects(provider, comaprtmentOCID);
         for (let project of DevOpsProjects) {
-          if (project.name === deploy_project_name) {
+          if (project.name === deployProjectName) {
             projectId = project.id;
           }
         }
-        assert.ok(projectId !== '', 'Project not successfully deployed');
+        assert.ok(projectId && projectId !== '', 'Project not successfully deployed');
 
         project = await ociUtils.getDevopsProject(provider, projectId);
         assert.ok(project);
@@ -267,60 +270,78 @@ suite('Oci Combined pipelines test', function () {
         assert.ok(codeRepositories.length > 0, 'Code Repository Not Found');
         codeRepositoryId = codeRepositories[0].id;
         assert.ok(codeRepositoryId);
-        repositoryName = (await ociUtils.getCodeRepository(provider, codeRepositoryId)).name || project.name;
+        const repositoryName = (await ociUtils.getCodeRepository(provider, codeRepositoryId)).name || project.name;
         assert.ok(repositoryName, 'Repository Not Found');
       });
     });
 
     suite('Build pipeline Test Suite', function () {
-      vscode.window.showInformationMessage('Start all tests.');
       this.timeout(5 * 60 * 1000);
       let JVMContainerPipelineId: string = '';
+      let nativeExecutablePipelineId: string = '';
       test('List build pipelines', async () => {
         assert.ok(provider !== undefined, 'Authentication failed');
 
         const buildPipelinesList: any[] = await ociUtils.listBuildPipelines(provider, projectId);
         assert.ok(buildPipelinesList.length > 0, 'No build pipelines found!');
-
         let foundJVMContainer: boolean = false;
         let foundNativeExecutableContainer: boolean = false;
-        for (let buildPipeline of buildPipelinesList) {
-          if (buildPipeline.displayName?.indexOf('Build OCI JVM Container') !== -1) {
+        for (let buildPipe of buildPipelinesList) {
+          if (
+            buildPipe.displayName?.indexOf('Build OCI JVM Container') !== -1 ||
+            buildPipe.displayName?.indexOf('Build JVM Container') !== -1
+          ) {
             foundJVMContainer = true;
-            JVMContainerPipelineId = buildPipeline.id;
-          } else if (buildPipeline.displayName?.indexOf('Build OCI Native Executable Container') !== -1)
+            JVMContainerPipelineId = buildPipe.id;
+          } else if (
+            buildPipe.displayName?.indexOf('Build OCI Native Executable Container') !== -1 ||
+            buildPipe.displayName?.indexOf('Build Native Executable Container') !== -1
+          ) {
             foundNativeExecutableContainer = true;
+            nativeExecutablePipelineId = buildPipe.id;
+          }
         }
-        assert.ok(foundJVMContainer, 'Build pipeline `Build OCI JVM Container` not found');
-        assert.ok(foundNativeExecutableContainer, 'Build pipeline `Build OCI Native Executable Container` not found');
+        assert.ok(foundJVMContainer, 'Build pipeline `Build JVM Container` not found');
+        assert.ok(foundNativeExecutableContainer, 'Build pipeline `Build Native Executable Container` not found');
       });
 
       // List build stages
       test('List build stages', async () => {
         assert.ok(provider !== undefined, 'Authentication failed');
 
-        const stages = await ociUtils.listBuildPipelineStages(provider, JVMContainerPipelineId);
-        assert.ok(stages.length > 0, 'No build pipeline stages found!');
+        test('JVM build stage');
+        {
+          const stages = await ociUtils.listBuildPipelineStages(provider, JVMContainerPipelineId);
+          assert.ok(stages.length > 0, 'No JVM build pipeline stages found!');
 
-        item = stages.find(
-          (item1) => item1.buildPipelineStageType === devops.models.DeliverArtifactStageSummary.buildPipelineStageType,
-        ) as devops.models.DeliverArtifactStageSummary;
-        assert.ok(item?.deliverArtifactCollection.items.length, 'Item Not Found ');
+          jvmItem = stages.find(
+            (item1) =>
+              item1.buildPipelineStageType === devops.models.DeliverArtifactStageSummary.buildPipelineStageType,
+          ) as devops.models.DeliverArtifactStageSummary;
+          assert.ok(jvmItem?.deliverArtifactCollection.items.length, 'Jvm item Not Found ');
+        }
       });
 
       test('Artifact', async function () {
-        const artifact = await ociUtils.getDeployArtifact(provider, item.deliverArtifactCollection.items[0].artifactId);
-        assert.ok(
-          artifact.deployArtifactSource.deployArtifactSourceType ===
-            devops.models.OcirDeployArtifactSource.deployArtifactSourceType,
-          'Artifact Not Found',
-        );
-        image = (artifact.deployArtifactSource as devops.models.OcirDeployArtifactSource).imageUri;
-        assert.ok(image, 'No Image Found');
+        test('JVM artifact');
+        {
+          const jvmartifact = await ociUtils.getDeployArtifact(
+            provider,
+            jvmItem.deliverArtifactCollection.items[0].artifactId,
+          );
+          assert.ok(
+            jvmartifact.deployArtifactSource.deployArtifactSourceType ===
+              devops.models.OcirDeployArtifactSource.deployArtifactSourceType,
+            'Artifact Not Found',
+          );
+          const image = (jvmartifact.deployArtifactSource as devops.models.OcirDeployArtifactSource).imageUri;
+          assert.ok(image, 'No Image Found');
+        }
       });
 
-      // Start the build pipeline: Build OCI JVM Container
-      let buildState: string | undefined;
+      // Start the build pipelines
+      let jvmBuildState: string | undefined;
+      let nativeBuildState: string | undefined;
       test('Start build pipeline', async () => {
         const nodeProvider: NodeProvider = await vscode.commands.executeCommand('oci.devops.nodeProvider');
         assert.ok(nodeProvider !== undefined, 'Node provider is not initialized!');
@@ -328,32 +349,64 @@ suite('Oci Combined pipelines test', function () {
         const buildPipelines: BuildPipelineNode[] = nodeProvider.getChildren() as BuildPipelineNode[];
         assert.ok(buildPipelines.length > 0, 'No build pipelines found!');
 
-        let buildPipelineIndex = -1;
+        let JvmBuildPipelineIndex = -1;
+        let NativeBuildPipelineIndex = -1;
         for (let i = 0; i < buildPipelines.length; ++i) {
-          if (buildPipelines[i].label === 'Build OCI JVM Container') buildPipelineIndex = i;
+          if (
+            buildPipelines[i].label === 'Build OCI JVM Container' ||
+            buildPipelines[i].label === 'Build JVM Container'
+          )
+            JvmBuildPipelineIndex = i;
+          else if (
+            buildPipelines[i].label === 'Build OCI Native Executable Container' ||
+            buildPipelines[i].label === 'Build Native Executable Container'
+          )
+            NativeBuildPipelineIndex = i;
         }
-        assert.ok(buildPipelineIndex !== -1, 'Pipeline `Build OCI JVM Container` not found');
+        assert.ok(JvmBuildPipelineIndex !== -1, 'Pipeline `Build JVM Container` not found');
+        assert.ok(NativeBuildPipelineIndex !== -1, 'Pipeline `Build Native Executable Container` not found');
 
-        const buildPipeline: BuildPipelineNode = buildPipelines[buildPipelineIndex];
-        buildState = buildPipeline.contextValue;
+        const jvmbuildPipeline: BuildPipelineNode = buildPipelines[JvmBuildPipelineIndex];
+        jvmBuildState = jvmbuildPipeline.contextValue;
 
-        await vscode.commands.executeCommand('oci.devops.runBuildPipeline', buildPipeline);
+        const nativebuildPipeline: BuildPipelineNode = buildPipelines[NativeBuildPipelineIndex];
+        nativeBuildState = nativebuildPipeline.contextValue;
+
+        nativebuildPipeline.runPipeline(true); // TODO await
+        jvmbuildPipeline.runPipeline(true); // TODO await
 
         // wait for build pipeline to change states
-        buildState = await helper.waitForContextChange(buildState, buildPipeline, 60 * 30);
+        jvmBuildState = await helper.waitForContextChange(jvmBuildState, jvmbuildPipeline, 60 * 30);
+        nativeBuildState = await helper.waitForContextChange(nativeBuildState, nativebuildPipeline, 60 * 30);
 
-        assert.ok(buildState !== undefined, 'Build timeout in switching to running state');
+        assert.ok(jvmBuildState !== undefined, 'Build timeout in switching to running state');
+        assert.ok(nativeBuildState !== undefined, 'Build timeout in switching to running state');
+
         assert.strictEqual(
-          buildState,
+          jvmBuildState,
+          'oci.devops.buildPipelineNode-in-progress',
+          'Build switched to unexpected state',
+        );
+
+        assert.strictEqual(
+          nativeBuildState,
           'oci.devops.buildPipelineNode-in-progress',
           'Build switched to unexpected state',
         );
 
         // wait for build to finish
-        buildState = await helper.waitForContextChange(buildState, buildPipeline, 60 * 30);
-        assert.ok(buildState !== undefined, 'Build timeout in switching to finishing state');
+        jvmBuildState = await helper.waitForContextChange(jvmBuildState, jvmbuildPipeline, 60 * 30);
+        nativeBuildState = await helper.waitForContextChange(nativeBuildState, nativebuildPipeline, 60 * 30);
+
+        assert.ok(jvmBuildState !== undefined, 'Build timeout in switching to finishing state');
+        assert.ok(nativeBuildState !== undefined, 'Build timeout in switching to finishing state');
         assert.strictEqual(
-          buildState,
+          jvmBuildState,
+          'oci.devops.buildPipelineNode-single-image-available',
+          'Build switched to unexpected state',
+        );
+        assert.strictEqual(
+          nativeBuildState,
           'oci.devops.buildPipelineNode-single-image-available',
           'Build switched to unexpected state',
         );
@@ -363,11 +416,21 @@ suite('Oci Combined pipelines test', function () {
       test('List build runs', async () => {
         assert.ok(provider !== undefined, 'Authentication failed');
 
-        const runs: any[] = await ociUtils.listBuildRuns(provider, JVMContainerPipelineId);
-        assert.ok(runs.length > 0, 'No build runs');
+        test('JVMs', async () => {
+          const runs: any[] = await ociUtils.listBuildRuns(provider, JVMContainerPipelineId);
+          assert.ok(runs.length > 0, 'No build runs');
 
-        // Check latest run if succeeded
-        assert.ok(runs[0].lifecycleState === 'SUCCEEDED');
+          // Check latest run if succeeded
+          assert.ok(runs[0].lifecycleState === 'SUCCEEDED');
+        });
+
+        test('NATIVE', async () => {
+          const runs: any[] = await ociUtils.listBuildRuns(provider, nativeExecutablePipelineId);
+          assert.ok(runs.length > 0, 'No build runs');
+
+          // Check latest run if succeeded
+          assert.ok(runs[0].lifecycleState === 'SUCCEEDED');
+        });
       });
 
       test('List build runs by code repository', async () => {
@@ -379,46 +442,70 @@ suite('Oci Combined pipelines test', function () {
         );
         assert.ok(existingBuildPipelines.length > 0, 'Build Pipelines Not Created');
 
-        buildBipeline = existingBuildPipelines.filter((pipe) => pipe.displayName?.includes('JVM Container'))[0];
-        assert.ok(buildBipeline, 'Build Pipeline JVM Not Created');
+        test('JVM', async () => {
+          const buildPipeline = existingBuildPipelines.filter((pipe) => pipe.displayName?.includes('JVM Container'))[0];
+          assert.ok(buildPipeline, 'Build Pipeline JVM Not Created');
+        });
+
+        test('Native', async () => {
+          const nativeBuildPipeline = existingBuildPipelines.filter(
+            (pipe) => pipe.displayName?.includes('Native Executable Container'),
+          )[0];
+          assert.ok(nativeBuildPipeline, 'Native Executable JVM Not Created');
+        });
       }).timeout(1000 * 60 * 30);
     });
 
     suite('Deploy pipeline Test Suite', function () {
-      vscode.window.showInformationMessage('Start all tests.');
       this.timeout(5 * 60 * 1000);
       // List all build pipelines
       let JVMContainerPipelineId: string = '';
+      let nativeContainerPipelineId: string = '';
       test('List deploy pipelines', async () => {
         assert.ok(provider !== undefined, 'Authentication failed');
+        assert.ok(projectId !== undefined, 'Problem with projectId');
 
         const deployPipelinesList: any[] = await ociUtils.listDeployPipelines(provider, projectId);
         assert.ok(deployPipelinesList.length > 0, 'No deploy pipelines found!');
 
         let foundJVMContainer: boolean = false;
         let foundNativeExecutableContainer: boolean = false;
-        for (let buildPipeline of deployPipelinesList) {
-          if (buildPipeline.displayName?.indexOf('Deploy OCI JVM Container to OKE') !== -1) {
+        for (let deployPipeline of deployPipelinesList) {
+          if (
+            deployPipeline.displayName?.indexOf('Deploy OCI JVM Container to OKE') !== -1 ||
+            deployPipeline.displayName?.indexOf('Deploy JVM Container to OKE') !== -1
+          ) {
             foundJVMContainer = true;
-            JVMContainerPipelineId = buildPipeline.id;
-          } else if (buildPipeline.displayName?.indexOf('Deploy OCI Native Executable Container to OKE') !== -1)
+            JVMContainerPipelineId = deployPipeline.id;
+          } else if (
+            deployPipeline.displayName?.indexOf('Deploy OCI Native Executable Container to OKE') !== -1 ||
+            deployPipeline.displayName?.indexOf('Deploy Native Executable Container to OKE') !== -1
+          ) {
             foundNativeExecutableContainer = true;
+            nativeContainerPipelineId = deployPipeline.id;
+          }
         }
-        assert.ok(foundJVMContainer, 'Deploy pipeline `Deploy OCI JVM Container to OKE` not found');
-        assert.ok(foundNativeExecutableContainer, 'Deploy OCI Native Executable Container to OKE');
+
+        assert.ok(foundJVMContainer, 'Deploy pipeline `Deploy JVM Container to OKE` not found');
+        assert.ok(foundNativeExecutableContainer, 'Deploy Native Executable Container to OKE');
       });
 
       // List deploy stages
       test('List deploy stages', async () => {
         assert.ok(provider !== undefined, 'Authentication failed');
 
-        const stages = await ociUtils.listDeployStages(provider, JVMContainerPipelineId);
-        assert.ok(stages.length > 0, 'No deploy pipeline stages found!');
+        const JVMstages = await ociUtils.listDeployStages(provider, JVMContainerPipelineId);
+        assert.ok(JVMstages.length > 0, 'No deploy pipeline stages found!');
+
+        const NativeStages = await ociUtils.listDeployStages(provider, nativeContainerPipelineId);
+        assert.ok(NativeStages.length > 0, 'No deploy pipeline stages found!');
       });
 
-      // Start the build pipeline: Build OCI JVM Container
-      let buildState: string | undefined;
-      let deployPipeline: DeploymentPipelineNode;
+      // Start the deploy pipelines
+      let jvmBuildState: string | undefined;
+      let nativeBuildState: string | undefined;
+      let jvmDeployPipeline: DeploymentPipelineNode;
+      let nativeDeployPipeline: DeploymentPipelineNode;
       test('Start deploy pipeline', async () => {
         const nodeProvider: NodeProvider = await vscode.commands.executeCommand('oci.devops.nodeProvider');
         assert.ok(nodeProvider !== undefined, 'Node provider is not initialized!');
@@ -426,34 +513,64 @@ suite('Oci Combined pipelines test', function () {
         const deployPipelines: DeploymentPipelineNode[] = nodeProvider.getChildren() as DeploymentPipelineNode[];
         assert.ok(deployPipelines.length > 0, 'No build pipelines found!');
 
-        let buildPipelineIndex = -1;
+        let jvmBuildPipelineIndex = -1;
+        let nativeBuildPipelineIndex = -1;
         for (let i = 0; i < deployPipelines.length; ++i) {
-          if (deployPipelines[i].label === 'Deploy OCI JVM Container to OKE') buildPipelineIndex = i;
+          if (
+            deployPipelines[i].label === 'Deploy OCI JVM Container to OKE' ||
+            deployPipelines[i].label === 'Deploy JVM Container to OKE'
+          )
+            jvmBuildPipelineIndex = i;
+          else if (
+            deployPipelines[i].label === 'Deploy OCI Native Executable Container to OKE' ||
+            deployPipelines[i].label === 'Deploy Native Executable Container to OKE'
+          )
+            nativeBuildPipelineIndex = i;
         }
-        assert.ok(buildPipelineIndex !== -1, 'Pipeline `Deploy OCI JVM Container to OKE` not found');
+        assert.ok(jvmBuildPipelineIndex !== -1, 'Pipeline `Deploy OCI JVM Container to OKE` not found');
+        assert.ok(nativeBuildPipelineIndex !== -1, 'Deploy OCI Native Executable Container to OKE');
 
-        deployPipeline = deployPipelines[buildPipelineIndex];
-        assert.ok(deployPipeline);
-        buildState = deployPipeline.contextValue;
+        jvmDeployPipeline = deployPipelines[jvmBuildPipelineIndex];
+        nativeDeployPipeline = deployPipelines[nativeBuildPipelineIndex];
+        assert.ok(jvmDeployPipeline);
+        assert.ok(nativeDeployPipeline);
+        jvmBuildState = jvmDeployPipeline.contextValue;
+        nativeBuildState = jvmDeployPipeline.contextValue;
 
-        await vscode.commands.executeCommand('oci.devops.runDeployPipeline', deployPipeline);
+        await vscode.commands.executeCommand('oci.devops.runDeployPipeline', nativeDeployPipeline);
+        await vscode.commands.executeCommand('oci.devops.runDeployPipeline', jvmDeployPipeline);
 
         // wait for build pipeline to change states
-        buildState = await helper.waitForContextChange(buildState, deployPipeline, 60 * 30);
+        jvmBuildState = await helper.waitForContextChange(jvmBuildState, jvmDeployPipeline, 60 * 30);
+        nativeBuildState = await helper.waitForContextChange(nativeBuildState, nativeDeployPipeline, 60 * 30);
 
-        assert.ok(buildState !== undefined, 'Build timeout in switching to running state');
+        assert.ok(jvmBuildState !== undefined, 'Build timeout in switching to running state');
         assert.strictEqual(
-          buildState,
+          jvmBuildState,
+          'oci.devops.deploymentPipelineNode-in-progress',
+          'Build switched to unexpected state',
+        );
+
+        assert.ok(nativeBuildState !== undefined, 'Build timeout in switching to running state');
+        assert.strictEqual(
+          nativeBuildState,
           'oci.devops.deploymentPipelineNode-in-progress',
           'Build switched to unexpected state',
         );
 
         // wait for build to finish
-        buildState = await helper.waitForContextChange(buildState, deployPipeline, 60 * 30);
-        assert.ok(buildState !== undefined, 'Build timeout in switching to finishing state');
+        jvmBuildState = await helper.waitForContextChange(jvmBuildState, jvmDeployPipeline, 60 * 30);
+        nativeBuildState = await helper.waitForContextChange(nativeBuildState, nativeDeployPipeline, 60 * 30);
+        assert.ok(jvmBuildState !== undefined, 'Build timeout in switching to finishing state');
+        assert.ok(nativeBuildState !== undefined, 'Build timeout in switching to finishing state');
         assert.ok(
-          buildState === 'oci.devops.deploymentPipelineNode-has-lastdeployment' ||
-            buildState === 'oci.devops.deploymentPipelineNode-deployments-available',
+          jvmBuildState === 'oci.devops.deploymentPipelineNode-has-lastdeployment' ||
+            jvmBuildState === 'oci.devops.deploymentPipelineNode-deployments-available',
+          'Build switched to unexpected state',
+        );
+        assert.ok(
+          nativeBuildState === 'oci.devops.deploymentPipelineNode-has-lastdeployment' ||
+            nativeBuildState === 'oci.devops.deploymentPipelineNode-deployments-available',
           'Build switched to unexpected state',
         );
       }).timeout(1000 * 60 * 30);
@@ -462,82 +579,16 @@ suite('Oci Combined pipelines test', function () {
       test('List deploy runs', async () => {
         assert.ok(provider !== undefined, 'Authentication failed');
 
-        const runs: any[] = await ociUtils.listDeployments(provider, JVMContainerPipelineId);
-        assert.ok(runs.length > 0, 'No build runs');
+        const jvmRuns: any[] = await ociUtils.listDeployments(provider, JVMContainerPipelineId);
+        assert.ok(jvmRuns.length > 0, 'No build runs');
+        // Check if latest two runs succeeded
+        assert.strictEqual(jvmRuns[0].lifecycleState, 'SUCCEEDED');
 
-        // Check latest run if succeeded
-        assert.strictEqual(runs[0].lifecycleState, 'SUCCEEDED');
+        const nativeRuns: any[] = await ociUtils.listDeployments(provider, nativeContainerPipelineId);
+        assert.ok(nativeRuns.length > 0, 'No build runs');
+        // Check if latest two runs succeeded
+        assert.strictEqual(nativeRuns[0].lifecycleState, 'SUCCEEDED');
       });
-    });
-
-    suite('Create deploy pipeline', function () {
-      test('subne ok', async () => {
-        assert.ok(cluster);
-        assert.ok(cluster.vcnId, 'vcnID is Undefined');
-        subnet = await vcnUtils.selectNetwork(provider, cluster.vcnId);
-        assert.ok(subnet, ' subnet is Undefined');
-      }).timeout(1000 * 60 * 30);
-
-      test('oke cluster', async () => {
-        let deployEnvironments = await ociUtils.listDeployEnvironments(provider, project.id);
-
-        let existingDeployEnvironments = deployEnvironments.filter((env) => {
-          if (env.deployEnvironmentType === devops.models.OkeClusterDeployEnvironmentSummary.deployEnvironmentType) {
-            assert.ok(cluster, 'Cluster is undefined');
-            return (env as devops.models.OkeClusterDeployEnvironmentSummary).clusterId === cluster.id;
-          }
-          return;
-        });
-
-        assert.ok(cluster.id, 'Cluster Id is undefined');
-        okeClusterEnvironment = existingDeployEnvironments?.length
-          ? existingDeployEnvironments[0]
-          : await ociUtils.createOkeDeployEnvironment(provider, project.id, project.name, cluster.id);
-        assert.ok(okeClusterEnvironment, ' okeClusterEnvironment  Undefined');
-      }).timeout(1000 * 60 * 30);
-
-      test('oke cluster', async () => {
-        const secretName = `${repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')}-vscode-generated-ocirsecret`;
-
-        let repository: helper.Repository = {
-          id: codeRepositoryId,
-          name: repositoryName,
-        };
-
-        let ociResources: helper.OciResources = {
-          image: image,
-          secretName: secretName,
-          cluster: cluster,
-        };
-        let okeConfig: helper.OkeConfig = await helper.setupCommandSpecArtifactAndDeployConfigArtifact(
-          provider,
-          project,
-          repository,
-          ociResources,
-        );
-        okeConfig.okeClusterEnvironment = okeClusterEnvironment;
-
-        let projectInfo: helper.ProjectInfo = {
-          project: project,
-          projectFolder: projectFolder,
-        };
-
-        const auth = {
-          provider: provider,
-          compartmentID: COMPARTMENT_OCID,
-        };
-        let deployResources: helper.DeploymentResources = {
-          auth: auth,
-          okeConfig: okeConfig,
-          pipeline: buildBipeline,
-          projectInfo: projectInfo,
-          repository: repository,
-          subnet: subnet,
-        };
-
-        deployPipelineId = await helper.createJVMDeploymentPipeline(deployResources);
-        assert.ok(deployPipelineId);
-      }).timeout(1000 * 60 * 30);
     });
 
     suite('Clean', function () {
@@ -548,7 +599,7 @@ suite('Oci Combined pipelines test', function () {
         await new Promise((f) => setTimeout(f, 5000));
         let DevOpsProjects = await ociUtils.listDevOpsProjects(provider, comaprtmentOCID);
         for (let project of DevOpsProjects) {
-          if (project.name === deploy_project_name) {
+          if (project.name === deployProjectName) {
             assert.fail('Project not successfully undeployed');
           }
         }

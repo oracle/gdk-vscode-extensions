@@ -8,8 +8,9 @@
 import * as fs from 'fs';
 import path from 'path';
 import { AbstractTestDescriptor } from './abstractTestDescriptor';
-import { findFiles } from './helpers';
 import type { BuildTool, CopiedProject, Feature, GeneratedProject, SupportedJava, TestFolders } from './types';
+import { findFiles } from './helpers';
+import { Type } from './types';
 
 function getDescriptor(dir: string): AbstractTestDescriptor {
   const tsFile = path.join(dir, 'testDescriptor');
@@ -60,10 +61,11 @@ export function gatherTestFolders(testFolder: string, ...globPatterns: string[])
 export function genProj(
   buildTool: BuildTool,
   features: Feature[],
+  type: Type = Type.GCN,
   name?: string,
   java?: SupportedJava,
 ): GeneratedProject {
-  return { _type: 'generated', buildTool, features, java, name };
+  return { _type: 'generated', buildTool, features, java, name, type };
 }
 
 /**

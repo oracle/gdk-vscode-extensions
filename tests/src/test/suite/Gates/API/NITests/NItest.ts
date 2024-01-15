@@ -10,12 +10,13 @@ import * as fs from 'fs';
 import axios from 'axios';
 import { ChildProcess, exec, spawn } from 'child_process';
 import path = require('path');
-import { getCreateOptions } from '../../../../../Common/project-generator';
 import { NodeFileHandler } from '../../../../../../../gcn/out/gcnProjectCreate';
 import * as vscode from 'vscode';
-
 import * as Common from '../../../../../../../gcn/out/common';
 import { BuildTool, Feature, SupportedJava } from '../../../../../Common/types';
+import { getGcnCreateOptions } from '../../../../../Common/gcn-generator';
+import { getMicronautCreateOptions } from '../../../../../Common/micronaut-generator';
+import { __writeProject } from '../../../../../../../micronaut/out/projectCreate';
 
 /**
  * Creates GCN project with given specification
@@ -34,7 +35,7 @@ export async function createGcnProjectNiTest(
     await Common.initialize();
     relativePath = relativePath.slice(-5);
 
-    const options = await getCreateOptions(buildTool, java, services);
+    const options = await getGcnCreateOptions(buildTool, java, services);
     const relPath = path.join(...relativePath);
     const projFolder: string = path.resolve(relPath);
 
@@ -46,6 +47,35 @@ export async function createGcnProjectNiTest(
     await Common.writeProjectContents(options.options, new NodeFileHandler(vscode.Uri.file(projFolder)));
     assert.ok(fs.existsSync(projFolder));
     return options.homeDir;
+  } catch (e: any) {
+    assert.fail('Project options were not resolved properly: ' + e.message);
+  }
+}
+
+export async function createMicronautProjectNiTest(
+  buildTool: BuildTool,
+  relativePath: string[],
+  java: SupportedJava = SupportedJava.AnyJava,
+): Promise<string> {
+  try {
+    await Common.initialize();
+
+    relativePath = relativePath.slice(-5);
+
+    const options = await getMicronautCreateOptions(buildTool, java);
+
+    const relPath = path.join(...relativePath);
+    const projFolder: string = path.resolve(relPath);
+
+    if (!fs.existsSync(projFolder)) {
+      fs.mkdirSync(projFolder, { recursive: true });
+    }
+    assert.ok(fs.existsSync(projFolder));
+    options.target = projFolder;
+    await __writeProject(options, false);
+    assert.ok(fs.existsSync(options.target));
+    assert.ok(options.java);
+    return options.java;
   } catch (e: any) {
     assert.fail('Project options were not resolved properly: ' + e.message);
   }
@@ -92,7 +122,8 @@ export class TestHelper {
       assert.fail(e.message + 'mkdir');
     }
 
-    this.debug = process.env.DEBUGING?.toLowerCase() === 'true';
+    // process.env.DEBUG = 'true';
+    this.debug = process.env.DEBUG?.toLowerCase() === 'true';
   }
 
   /**
@@ -179,20 +210,19 @@ export class TestHelper {
     }
   }
 
-  private writeLog(message: string) {
-    if (true) return;
-    console.log('\x1b[36m', message);
-    console.log('\x1b[0m', '');
-  }
-
   private log(message: string) {
-    if (!process.env.DEBUG) return;
+    if (this.debug) return;
     console.log('\x1b[34m', message);
     console.log('\x1b[0m', '');
   }
 
+  private writeLog(message: string) {
+    if (this.debug) return;
+    console.log('\x1b[36m', message);
+    console.log('\x1b[0m', '');
+  }
+
   private removeFunc(projFolder: string) {
-    if (!process.env.DEBUG) return;
     this.log('deleting fodler' + projFolder);
     fs.rmSync(projFolder, { recursive: true });
   }
@@ -329,6 +359,7 @@ export class TestHelper {
 
       this.log('creating project');
       process.env.GRAALVM_HOME = await createMyProject(buildTool);
+      this.log('project created');
       assert.ok(fs.existsSync(projFolder), 'Project folder exists');
       assert.ok(this.createController(projFolder, randomNumeber), 'Controller was created');
       const time = this.totalTimeInterval * 0.9;
@@ -371,10 +402,13 @@ export class TestHelper {
   private async startServer(totalTime: number, buildTool: BuildTool, folder: string, randomNumber: number) {
     this.log('entered startServer');
     const runParameters = this.getRunParameters(buildTool, Tests.Run);
+    this.log('run parametrs');
     this.server = spawn(runParameters[0], runParameters[1], { cwd: folder, shell: true });
-
+    this.log('spawned');
     const port = convertStringToInt(process.env.MICRONAUT_SERVER_PORT, 8080);
+    this.log('port converted');
     await this.waitForServer(totalTime, `Server Running: http://localhost:${port}`);
+    this.log('waiting');
 
     assert.ok(
       (await axios.get(`http://localhost:${port}/test${randomNumber}`)).data === this.serverResponse(randomNumber),

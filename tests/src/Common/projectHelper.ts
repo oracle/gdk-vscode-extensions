@@ -6,8 +6,8 @@
  */
 
 import path from 'path';
-import type { GeneratedProject, ProjectDescription, TestFolder, TestFolders } from './types';
 import { copyRecursiveSync, generateUID, getSubDirs } from './helpers';
+import { BuildTool, GeneratedProject, ProjectDescription, TestFolder, TestFolders } from './types';
 import { AbstractTestDescriptor } from './abstractTestDescriptor';
 
 const rootPath = path.resolve(__dirname, '..', '..');
@@ -151,9 +151,34 @@ function isAlreadyGeneratedProject(project: GeneratedProject): boolean {
  * @param projects to be generated
  */
 export async function generateProjects(projects: GeneratedProject[]) {
-  const generator = require('./project-generator');
+  const generator = require('./gcn-generator');
   for (const project of projects) {
     const destination = getProjectFolder(project);
     await generator.createGcnProject(project.buildTool, project.features, destination, project.java);
+  }
+}
+
+export async function generateMicronautProjects(projects: GeneratedProject[]) {
+  const generator = require('./micronaut-generator');
+  for (const project of projects) {
+    const destination = getProjectFolder(project);
+    await generator.createMicronautProject(project.buildTool, project.java, destination);
+  }
+}
+
+export function getName(buildTool: BuildTool, services: string[]) {
+  let name: string = buildTool + '_';
+  if (services.length > 0) {
+    name += services.join('_') + '_';
+  }
+  name += generateUID();
+  return name;
+}
+
+export function resolveProjFolder(projectPath: string[] | string, ending: string): string {
+  if (typeof projectPath === 'string') return path.join(projectPath, ending);
+  else {
+    const relPath = path.join('..', '..', ...projectPath, ending);
+    return path.resolve(__dirname, relPath);
   }
 }

@@ -6,6 +6,7 @@
  */
 
 import { AbstractTestDescriptor } from './abstractTestDescriptor';
+import * as Common from '../../../gcn/out/common';
 
 export enum BuildTool {
   Maven = 'MAVEN',
@@ -44,12 +45,18 @@ export enum Extension {
 export type ExtensionName = (typeof Extension)[keyof typeof Extension];
 export type ExtensionMap<T> = { [Key in ExtensionName]?: T };
 
+export enum Type {
+  GCN,
+  MICRONAUT,
+}
+
 export type ProjectDescription = GeneratedProject | CopiedProject;
 type NamedProject<T extends string> = { name?: string; _type: T };
 export type GeneratedProject = NamedProject<'generated'> & {
   buildTool: BuildTool;
   features: Feature[];
   java?: SupportedJava;
+  type?: Type;
 };
 export type CopiedProject = NamedProject<'copied'> & {
   copyPath: string;
@@ -63,6 +70,11 @@ export type Arg<T extends string> = {
 /**
  * Tuple of [{@link AbstractTestDescriptor}, list of names of test files]
  */
+export interface CreateOptions {
+  homeDir: string;
+  options: Common.CreateOptions;
+}
+
 export type TestFolder = [AbstractTestDescriptor, string[]];
 
 /**

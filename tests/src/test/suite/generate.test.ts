@@ -7,7 +7,8 @@
 
 import * as path from 'path';
 import { findDescriptors } from '../../Common/testHelper';
-import { gatherProjectsToGenerate, generateProjects } from '../../Common/projectHelper';
+import { gatherProjectsToGenerate, generateMicronautProjects, generateProjects } from '../../Common/projectHelper';
+import { GeneratedProject, Type } from '../../Common/types';
 
 suite('Creating projects', function () {
   this.timeout(0);
@@ -16,7 +17,17 @@ suite('Creating projects', function () {
   const gatesPath = path.join(__dirname, 'Gates');
   const descriptors = findDescriptors(gatesPath, ...args);
   const projects = gatherProjectsToGenerate(descriptors);
-  test(`Generating ${projects.length} Projects...`, async () => {
-    await generateProjects(projects);
+  const gcnProjects: GeneratedProject[] = [];
+  const micronautProjects: GeneratedProject[] = [];
+
+  const comparator = (project: GeneratedProject) => project.type == Type.MICRONAUT;
+  projects.forEach((x) => (comparator(x) ? micronautProjects.push(x) : gcnProjects.push(x)));
+
+  test(`Generating ${gcnProjects.length} GCN Projects...`, async () => {
+    await generateProjects(gcnProjects);
+  });
+
+  test(`Generating ${micronautProjects.length} Micronaut Projects...`, async () => {
+    await generateMicronautProjects(micronautProjects);
   });
 });
