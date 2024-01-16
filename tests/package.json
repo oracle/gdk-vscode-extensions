@@ -69,6 +69,7 @@
     "vscode-extension-tester": "^5.10.0",
     "webpack": "^5.74.0",
     "webpack-cli": "^4.10.0",
-		"nodejs-file-downloader": "^4.12.1"
+		"nodejs-file-downloader": "^4.12.1",
+    "follow-redirects": "^1.15.4"
   }
 }
