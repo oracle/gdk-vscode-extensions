@@ -423,6 +423,7 @@ export function checkSshConfigOrPrivateKeyExposed(privateKey : string) : Map<str
  * @param filename 
  */
 function isFileReadableByOthers(filename : string) : boolean {
+    filename = filename.replace(/^~(?=$|\/|\\)/, os.homedir());
     if (!fs.existsSync(filename)) {
         logInfo(`[ssh] checking permissions for ${filename}: does not exist`);
         return false;
