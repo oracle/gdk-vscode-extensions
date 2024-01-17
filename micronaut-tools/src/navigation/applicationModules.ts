@@ -17,7 +17,7 @@ const SETTING_SELECTED_MODULE_KEY = 'selectedApplicationModule';
 const KNOWN_MODULES = [
     'aws',
     'oci'
-]
+];
 
 export function forApplication(application: applications.Application) {
     return new SelectedModule(application);
@@ -78,7 +78,7 @@ export class SelectedModule {
             }
             // select the first module
             if (this.module === undefined) {
-                const module = projectInfo.runnableModules[0].length ? projectInfo.runnableModules[0] : null
+                const module = projectInfo.runnableModules[0].length ? projectInfo.runnableModules[0] : null;
                 this.set(module, singleModule, totalModules);
             }
         } else {

@@ -22,7 +22,7 @@ export function forApplication(application: applications.Application) {
 export class RefreshEndpoint extends beanHandler.BeanHandler {
 
     constructor(application: applications.Application) {
-        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS, AVAILABLE_CODE)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS, AVAILABLE_CODE);
     }
 
     async refresh(): Promise<boolean> {
@@ -46,7 +46,7 @@ export class RefreshEndpoint extends beanHandler.BeanHandler {
                     }
                     resolve(response.code === 200);
                 }).catch(err => {
-                    console.log(err)
+                    console.log(err);
                     resolve(false);
                 });
             });

@@ -42,7 +42,7 @@ export interface ProjectInfo {
 export interface NbArtifactSpec {
     artifactId? : string;
     groupId?: string;
-    versionSpec?: string,
+    versionSpec?: string;
 }
 
 // Tries to guess whether the folder contains a supported Micronaut or Graal Cloud Native project
@@ -137,7 +137,7 @@ function getText(file: vscode.Uri): string | undefined {
     try {
         return fs.readFileSync(file.fsPath).toString();
     } catch (err) {
-        console.log(err)
+        console.log(err);
     }
     return undefined;
 }
@@ -311,7 +311,7 @@ async function getMissingDependencies(uri: vscode.Uri, showProgress: boolean, ..
                     artifacts: dependencies
                 });
                 return dependencies.filter(d => 
-                    found?.matches?.filter(f => d.groupId == f.artifact.groupId && d.artifactId == f.artifact.artifactId).length == 0
+                    found?.matches?.filter(f => d.groupId === f.artifact.groupId && d.artifactId === f.artifact.artifactId).length === 0
                 );
             } catch (err : any) {
                 throw new Error('Failed to determine dependencies.');
@@ -342,7 +342,7 @@ async function addMissingDependencies(uri: vscode.Uri, ...dependencies: NbArtifa
                     kind: 'add',
                     // BUG in deseralization: options: [ 'skipConflicts' ],
                     dependencies: depChanges
-                }
+                };
                 try {
                     await vscode.commands.executeCommand('nbls.project.dependencies.change', {
                         uri: uri.toString(),

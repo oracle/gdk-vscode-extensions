@@ -42,7 +42,7 @@ export class DefinedEnvironments {
         this.loadFromUri(moduleUri);
         application.getSelectedModule().onModuleChanged((_singleModule, uri) => {
             this.loadFromUri(uri);
-        })
+        });
     }
 
     get(): string[] | undefined {
@@ -76,7 +76,7 @@ export class DefinedEnvironments {
                 const environments = liveMode ? environmentEndpoint.getLastActiveEnvironments() : this.definedEnvironments;
                 this.getConfigurationFiles(allFiles, environments).then(async files => {
                     const preferredExt = this.getPreferredExtension(allFiles[1]);
-                    const items: (vscode.QuickPickItem & { file: string, createForEnvironment: string | undefined })[] = [];
+                    const items: (vscode.QuickPickItem & { file: string; createForEnvironment: string | undefined })[] = [];
                     for (let i = 0; i < files.length; i++) {
                         const create = files[i][1] === '---';
                         const icon = create ? '$(new-file)' : '$(file)';
@@ -100,7 +100,7 @@ export class DefinedEnvironments {
                         const createForEnvironment = items.length === 1 ? selected.createForEnvironment : undefined;
                         this.openFile(resourcesPath, selected.file, createForEnvironment);
                     }
-                })
+                });
             }).catch(err => {
                 console.log(err);
             });

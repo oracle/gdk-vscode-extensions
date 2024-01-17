@@ -22,7 +22,7 @@ export function forApplication(application: applications.Application) {
 export class ServerStopEndpoint extends beanHandler.BeanHandler {
 
     constructor(application: applications.Application) {
-        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS, AVAILABLE_CODE)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS, AVAILABLE_CODE);
     }
 
     async stopServer(): Promise<boolean> {
@@ -41,7 +41,7 @@ export class ServerStopEndpoint extends beanHandler.BeanHandler {
                     }
                     resolve(response.code === 200);
                 }).catch(err => {
-                    console.log(err)
+                    console.log(err);
                     resolve(false);
                 });
             });

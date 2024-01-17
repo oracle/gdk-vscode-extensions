@@ -881,7 +881,7 @@ export class MonitoringCpuNode extends BaseNode {
                     // this.tooltip = 'Process uptime: waiting for data...';
                     treeChanged(this);
             }
-        })
+        });
         endpoint.onUpdated(data => {
             const processCpu = Number.parseFloat(data[metricsEndpoint.PROCESS_CPU].measurements[0].value);
             const systemCpu = Number.parseFloat(data[metricsEndpoint.SYSTEM_CPU].measurements[0].value);
@@ -912,7 +912,7 @@ export class MonitoringHeapNode extends BaseNode {
                     // this.tooltip = 'Process uptime: waiting for data...';
                     treeChanged(this);
             }
-        })
+        });
         endpoint.onUpdated(data => {
             const heapUsed = Number.parseInt(data[metricsEndpoint.MEMORY_USED_HEAP].measurements[0].value);
             const heapMax = Number.parseInt(data[metricsEndpoint.MEMORY_MAX_HEAP].measurements[0].value);
@@ -943,7 +943,7 @@ export class MonitoringNonHeapNode extends BaseNode {
                     // this.tooltip = 'Process uptime: waiting for data...';
                     treeChanged(this);
             }
-        })
+        });
         endpoint.onUpdated(data => {
             const heapUsed = Number.parseInt(data[metricsEndpoint.MEMORY_USED_NONHEAP].measurements[0].value);
             const heapMax = Number.parseInt(data[metricsEndpoint.MEMORY_MAX_NONHEAP].measurements[0].value);
@@ -974,7 +974,7 @@ export class MonitoringUptimeNode extends BaseNode {
                     // this.tooltip = 'Process uptime: waiting for data...';
                     treeChanged(this);
             }
-        })
+        });
         endpoint.onUpdated(data => {
             const uptime = Number.parseInt(data[metricsEndpoint.PROCESS_UPTIME].measurements[0].value);
             this.description = `${formatters.formatTime(uptime)}`;
@@ -1004,7 +1004,7 @@ export class MonitoringDiskSpaceNode extends BaseNode {
                     // this.tooltip = 'Disk space: waiting for data...';
                     treeChanged(this);
             }
-        })
+        });
         endpoint.onUpdated(data => {
             if (data.details?.diskSpace) {
                 if (data.details.diskSpace.details.error) {
@@ -1065,7 +1065,7 @@ export class ManagementLoggersNode extends BaseNode {
                     this.contextValue = ManagementLoggersNode.BASE_CONTEXT;
             }
             treeChanged(this);
-        })
+        });
         endpoint.onUpdated(data => {
             const configured = loggersEndpoint.getConfigured(data);
             this.description = `${configured.length.toLocaleString()} configured`;
@@ -1118,7 +1118,7 @@ export class ManagementCachesNode extends BaseNode {
                     this.contextValue = ManagementCachesNode.BASE_CONTEXT;
             }
             treeChanged(this);
-        })
+        });
         endpoint.onUpdated(data => {
             const caches = cachesEndpoint.getNames(data);
             this.description = `${caches.length.toLocaleString()} available`;

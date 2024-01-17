@@ -6,7 +6,7 @@
  */
 
 import * as vscode from 'vscode';
-import * as logUtils from '../../common/lib/logUtils'
+import * as logUtils from '../../common/lib/logUtils';
 
 const EXTENSION_ID_MICRONAUT = 'oracle-labs-graalvm.micronaut';
 const EXTENSION_NAME_MICRONAUT = 'Micronaut Launch';

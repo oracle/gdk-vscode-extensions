@@ -21,7 +21,7 @@ export function forApplication(application: applications.Application) {
 export class CachesEndpoint extends beanHandler.UpdatableBeanHandler {
 
     constructor(application: applications.Application) {
-        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS);
     }
 
     clearCaches() {
@@ -35,13 +35,13 @@ export class CachesEndpoint extends beanHandler.UpdatableBeanHandler {
                         for (const name of names) {
                             items.push({
                                 label: name
-                            })
+                            });
                         }
                     } else {
                         items.push({
                             label: '',
                             description: 'No caches currently available'
-                        })
+                        });
                     }
                     resolve(items);
                 } else {
@@ -72,7 +72,7 @@ export class CachesEndpoint extends beanHandler.UpdatableBeanHandler {
                             this.update();
                             vscode.window.showInformationMessage(`${subject} ${selected.length === 1 ? 'has' : 'have'} been invalidated.`);
                         }
-                    })
+                    });
                 }
             }
         });
@@ -106,7 +106,7 @@ export class CachesEndpoint extends beanHandler.UpdatableBeanHandler {
                 }
                 resolve(response.code === 200);
             }).catch(err => {
-                console.log(err)
+                console.log(err);
                 resolve(false);
             });
         });
@@ -124,7 +124,7 @@ export class CachesEndpoint extends beanHandler.UpdatableBeanHandler {
                         resolve(undefined);
                     }
                 }).catch(err => {
-                    console.log(err)
+                    console.log(err);
                     this.setAvailable(false);
                     resolve(undefined);
                 });
