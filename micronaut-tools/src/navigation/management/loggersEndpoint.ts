@@ -23,7 +23,7 @@ export function forApplication(application: applications.Application) {
 export class LoggersEndpoint extends beanHandler.UpdatableBeanHandler {
 
     constructor(application: applications.Application) {
-        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS);
     }
 
     editLoggers() {
@@ -52,7 +52,7 @@ export class LoggersEndpoint extends beanHandler.UpdatableBeanHandler {
                     });
                     items.push({
                         label: CREATE_NEW_LOGGER
-                    })
+                    });
                     items.push({
                         label: 'Configured Loggers',
                         kind: vscode.QuickPickItemKind.Separator
@@ -62,13 +62,13 @@ export class LoggersEndpoint extends beanHandler.UpdatableBeanHandler {
                             items.push({
                                 label: `${CONFIGURED_PREFIX}${logger.name}`,
                                 description: `configured level: ${logger.configuredLevel}`
-                            })
+                            });
                         }
                     } else {
                         items.push({
                             label: '',
                             description: 'No loggers currently configured'
-                        })
+                        });
                     }
                     if (notConfigured.length) {
                         items.push({
@@ -79,7 +79,7 @@ export class LoggersEndpoint extends beanHandler.UpdatableBeanHandler {
                             items.push({
                                 label: `${NOT_CONFIGURED_PREFIX}${logger.name}`,
                                 description: `effective level: ${logger.effectiveLevel}`
-                            })
+                            });
                         }
                     }
                     resolve(items);
@@ -135,7 +135,7 @@ export class LoggersEndpoint extends beanHandler.UpdatableBeanHandler {
             title: `${title}: Select Logging Level`,
             placeHolder: `Select logging level for logger '${logger}'`,
             ignoreFocusOut: true
-        })
+        });
         if (level) {
             return this.postLogger(logger, level.label);
         }
@@ -152,7 +152,7 @@ export class LoggersEndpoint extends beanHandler.UpdatableBeanHandler {
                 }
                 resolve(response.code === 200);
             }).catch(err => {
-                console.log(err)
+                console.log(err);
                 resolve(false);
             });
         });
@@ -170,7 +170,7 @@ export class LoggersEndpoint extends beanHandler.UpdatableBeanHandler {
                         resolve(undefined);
                     }
                 }).catch(err => {
-                    console.log(err)
+                    console.log(err);
                     this.setAvailable(false);
                     resolve(undefined);
                 });

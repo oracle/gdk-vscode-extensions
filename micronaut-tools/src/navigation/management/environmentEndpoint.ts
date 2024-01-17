@@ -21,7 +21,7 @@ export class EnvironmentEndpoint extends beanHandler.UpdatableBeanHandler {
     private lastActiveEnvironments: string[] | undefined;
 
     constructor(application: applications.Application) {
-        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS);
     }
 
     protected async processResponse(response: { code: number | undefined; headers: any; data: any }) {

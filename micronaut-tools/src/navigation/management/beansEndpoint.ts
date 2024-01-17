@@ -26,7 +26,7 @@ export class BeansEndpoint extends beanHandler.BeanHandler {
     private runtimeBeans: symbols.Bean[] | null | undefined;
 
     constructor(application: applications.Application) {
-        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS);
     }
 
     getRuntimeBeans(): symbols.Bean[] | null | undefined {

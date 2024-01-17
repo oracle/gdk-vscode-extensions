@@ -27,7 +27,7 @@ const REQUIRED_DEPENDENCIES: projectUtils.NbArtifactSpec[] = [
     { groupId: 'io.micronaut.cache', artifactId: 'micronaut-cache-management'}, // https://micronaut-projects.github.io/micronaut-cache/latest/guide/index.html#endpoint
     { groupId: 'io.micrometer', artifactId: 'micrometer-core'}, // https://micrometer.io/docs/concepts#_dependencies
     { groupId: 'io.micronaut.micrometer', artifactId: 'micronaut-micrometer-core'} // https://micronaut-projects.github.io/micronaut-micrometer/latest/guide/#metricsEndpoint
-]
+];
 
 export type OnFeaturesAvailableChanged = (refreshAvailable: boolean, serverStopAvailable: boolean) => void;
 
@@ -109,7 +109,7 @@ export class Management extends beanHandler.BeanHandler {
                 this.metricsEndpoint.checkAvailable();
                 this.loggersEndpoint.checkAvailable();
                 this.cachesEndpoint.checkAvailable();
-                this.setAvailable(false)
+                this.setAvailable(false);
                 if (applications.isConnected(previousState)) {
                     this.notifyFeaturesAvailableChanged(false, false);
                 }
@@ -140,7 +140,7 @@ export class Management extends beanHandler.BeanHandler {
             if (selected) {
                 this.setEnabled(selected === items[0], true);
             }
-        })
+        });
     }
 
     protected doEnable(restoringPersisted: boolean) {
@@ -153,8 +153,8 @@ export class Management extends beanHandler.BeanHandler {
                         super.doDisable(); // silently disable when (restoring persisted state and) dependencies not available
                     }
                 }).catch(err => {
-                    console.log('Failed to configure project for Monitoring & Management: ' + err)
-                    console.log(err)
+                    console.log('Failed to configure project for Monitoring & Management: ' + err);
+                    console.log(err);
                 });
             } else { // restoring persisted state on startup while NBLS not ready yet to report the dependencies
                 super.doEnable();

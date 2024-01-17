@@ -93,12 +93,12 @@ export async function closeRepository(target : vscode.Uri, silent : boolean = tr
         return undefined;
     }
     const repository = gitApi.getRepository(target);
-    if (repository != null) {
+    if (repository !== null) {
         logUtils.logInfo(`[git] Closing repository for ${target.fsPath}`);
         try {
             // must unwrap the internal model from the API facade.
             await vscode.commands.executeCommand('git.close', repository['repository']);
-            logUtils.logInfo(`[git] Repository closed for ${target.fsPath}`)
+            logUtils.logInfo(`[git] Repository closed for ${target.fsPath}`);
             return true;
         } catch (err : any) {
             // just in the case, shouldn't fail anyway but if it does, we do not want to fail the undeploy operation.

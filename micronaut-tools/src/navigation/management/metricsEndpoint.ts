@@ -29,7 +29,7 @@ const MONITORED_METRICS = [
     PROCESS_UPTIME,
     PROCESS_CPU,
     SYSTEM_CPU
-]
+];
 
 export function forApplication(application: applications.Application) {
     return new MetricsEndpoint(application);
@@ -38,7 +38,7 @@ export function forApplication(application: applications.Application) {
 export class MetricsEndpoint extends beanHandler.UpdatableBeanHandler {
 
     constructor(application: applications.Application) {
-        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS);
     }
 
     // protected async processResponse(response: { code: number | undefined; headers: any; data: any }) {
@@ -71,7 +71,7 @@ export class MetricsEndpoint extends beanHandler.UpdatableBeanHandler {
                     // console.log(data)
                     resolve(true);
                 }).catch(err => {
-                    console.log(err)
+                    console.log(err);
                     this.setAvailable(false);
                     resolve(false);
                 });

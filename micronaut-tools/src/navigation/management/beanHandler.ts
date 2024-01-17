@@ -113,14 +113,14 @@ export abstract class BeanHandler {
                     this.processResponse(response);
                 }
             }).catch(err => {
-                console.log(err)
+                console.log(err);
                 this.setAvailable(false);
                 resolve(false);
             });
         });
     }
 
-    protected availableResp(response: { code: number | undefined; headers: any; data: any; }): boolean {
+    protected availableResp(response: { code: number | undefined; headers: any; data: any }): boolean {
         return response.code === this.availableCode;
     }
 
@@ -172,12 +172,12 @@ export abstract class UpdatableBeanHandler extends BeanHandler {
                     this.processResponse(response).then(() => {
                         resolve(true);
                     }).catch(err => {
-                        console.log(err)
+                        console.log(err);
                         this.setAvailable(false);
                         resolve(false);
                     });
                 }).catch(err => {
-                    console.log(err)
+                    console.log(err);
                     this.setAvailable(false);
                     resolve(false);
                 });

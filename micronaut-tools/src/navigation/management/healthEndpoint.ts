@@ -20,10 +20,10 @@ export function forApplication(application: applications.Application) {
 export class HealthEndpoint extends beanHandler.UpdatableBeanHandler {
 
     constructor(application: applications.Application) {
-        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS)
+        super(application, SETTING_ENABLED_KEY, RELATIVE_ADDRESS);
     }
 
-    protected availableResp(response: { code: number | undefined; headers: any; data: any; }): boolean {
+    protected availableResp(response: { code: number | undefined; headers: any; data: any }): boolean {
         return super.availableResp(response) || response.code === DOWN_CODE;
     }
 

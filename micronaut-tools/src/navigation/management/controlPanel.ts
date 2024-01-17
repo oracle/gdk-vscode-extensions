@@ -18,7 +18,7 @@ const REQUIRED_DEPENDENCIES: projectUtils.NbArtifactSpec[] = [
     { groupId: 'io.micronaut', artifactId: 'micronaut-management'}, // https://docs.micronaut.io/latest/guide/#management
     { groupId: 'io.micronaut.controlpanel', artifactId: 'micronaut-control-panel-ui'}, // https://micronaut-projects.github.io/micronaut-control-panel/snapshot/guide/#quickStart
     { groupId: 'io.micronaut.controlpanel', artifactId: 'micronaut-control-panel-management'} // https://micronaut-projects.github.io/micronaut-control-panel/snapshot/guide/#quickStart
-]
+];
 
 export function forApplication(application: applications.Application) {
     return new ControlPanel(application);
@@ -50,7 +50,7 @@ export class ControlPanel extends beanHandler.BeanHandler {
             if (selected) {
                 this.setEnabled(selected === items[0], true);
             }
-        })
+        });
     }
 
     protected doEnable(restoringPersisted: boolean) {
@@ -85,8 +85,8 @@ export class ControlPanel extends beanHandler.BeanHandler {
                         super.doDisable(); // silently disable when (restoring persisted state and) dependencies not available
                     }
                 }).catch(err => {
-                    console.log('Failed to configure project for Micronaut Control Panel: ' + err)
-                    console.log(err)
+                    console.log('Failed to configure project for Micronaut Control Panel: ' + err);
+                    console.log(err);
                 });
             } else { // restoring persisted state on startup while NBLS not ready yet to report the dependencies
                 super.doEnable();
