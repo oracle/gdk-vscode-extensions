@@ -1,6 +1,0 @@
-applicationType: default
-defaultPackage: com.exampleg
-testFramework: junit
-sourceLanguage: java
-buildTool: gradle
-features: [app-name, data, data-jdbc, flyway, gcn-bom, gcn-license, gcn-oci-cloud-app, gcn-oci-database, gcn-oci-logging, gcn-oci-metrics, gcn-oci-tracing, graalvm, gradle, http-client, java, java-application, jdbc-hikari, junit, logback, management, micrometer, micrometer-oracle-cloud, micronaut-build, netty-server, oracle-cloud-atp, oracle-cloud-sdk, properties, readme, serialization-jackson, shade, test-resources, validation]
