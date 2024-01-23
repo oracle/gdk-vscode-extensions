@@ -1,6 +1,0 @@
-{
-  "resources":
-  [
-    { "pattern": "db/migration/.*sql$" }
-  ]
-}
