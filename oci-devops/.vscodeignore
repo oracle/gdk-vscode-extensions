@@ -5,9 +5,11 @@ src/**
 .gitignore
 vsc-extension-quickstart.md
 webpack.config.js
-**/tsconfig.json
+**/tsconfig*.json
 **/tslint.json
 **/*.map
 **/*.ts
 testresources/**
 fixtures/**
+mochawesome-report/**
+test-resources/**

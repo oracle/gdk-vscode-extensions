@@ -4,8 +4,11 @@ out/test/**
 src/**
 .gitignore
 vsc-extension-quickstart.md
-**/tsconfig.json
+**/tsconfig*.json
 **/tslint.json
 **/*.map
 **/*.ts
 node_modules/**
+fixtures/**
+mochawesome-report/**
+test-resources/**
