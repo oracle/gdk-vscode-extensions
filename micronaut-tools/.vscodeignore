@@ -5,7 +5,7 @@ out/test/**
 src/**
 .gitignore
 vsc-extension-quickstart.md
-**/tsconfig.json
+**/tsconfig*.json
 **/tslint.json
 **/*.map
 **/*.ts
@@ -15,3 +15,4 @@ scripts
 buildagent
 # Ignore output of code sign
 server/*.md
+mochawesome-report/**
