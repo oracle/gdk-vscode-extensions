@@ -201,10 +201,6 @@ export function getClouds() {
             label: v.getLabel().$as('string') as string,
             value: v.getValueName().$as('string') as string
         };
-        if (cloud.label === 'GCP') {
-            // ignore GCP for now
-            continue;
-        }
         if (cloud.label === 'OCI') {
             ret.unshift(cloud);
         } else {
