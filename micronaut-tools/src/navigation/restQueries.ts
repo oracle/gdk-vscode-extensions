@@ -45,7 +45,8 @@ async function composeRestQuery(endpoint: symbols.Endpoint, context: vscode.Exte
         const existingQuery = documentText.indexOf(query);
         if (existingQuery === -1) {
             const addText = `${documentText.length ? getSeparator(document) : ''}${query}`;
-            editor.insertSnippet(new vscode.SnippetString(addText));
+            const addPos = document.positionAt(documentText.length);
+            editor.insertSnippet(new vscode.SnippetString(addText), addPos);
         } else {
             const existingPos = document.positionAt(existingQuery + query.length);
             editor.revealRange(new vscode.Range(existingPos, existingPos));
