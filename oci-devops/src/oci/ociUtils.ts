@@ -1836,14 +1836,21 @@ export async function createOkeDeployConfigurationArtifact(authenticationDetails
     }, tags);
 }
 
-async function createDeployArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, displayName: string, description: string, deployArtifactType: string, deployArtifactSource: devops.models.GenericDeployArtifactSource | devops.models.OcirDeployArtifactSource | devops.models.InlineDeployArtifactSource, tags?: { [key:string]: string }): Promise<devops.models.DeployArtifact> {
+export async function createOkeDeployConfigurationArtifactNoSubstitute(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, artifactInlineContent: string, artifactName: string, artifactDescription: string, tags?: { [key:string]: string }): Promise<devops.models.DeployArtifact> {
+    return createDeployArtifact(authenticationDetailsProvider, projectID, artifactName, artifactDescription, devops.models.DeployArtifact.DeployArtifactType.KubernetesManifest, {
+        base64EncodedContent: Buffer.from(artifactInlineContent, 'binary').toString('base64'),
+        deployArtifactSourceType: devops.models.InlineDeployArtifactSource.deployArtifactSourceType,
+    }, tags, devops.models.DeployArtifact.ArgumentSubstitutionMode.None);
+}
+
+async function createDeployArtifact(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, projectID: string, displayName: string, description: string, deployArtifactType: string, deployArtifactSource: devops.models.GenericDeployArtifactSource | devops.models.OcirDeployArtifactSource | devops.models.InlineDeployArtifactSource, tags?: { [key:string]: string }, substitute? : devops.models.DeployArtifact.ArgumentSubstitutionMode): Promise<devops.models.DeployArtifact> {
     const client = new devops.DevopsClient({ authenticationDetailsProvider: authenticationDetailsProvider });
     const createDeployArtifactDetails: devops.models.CreateDeployArtifactDetails = {
         displayName,
         description,
         deployArtifactType,
         deployArtifactSource,
-        argumentSubstitutionMode: devops.models.DeployArtifact.ArgumentSubstitutionMode.SubstitutePlaceholders,
+        argumentSubstitutionMode: substitute ? substitute : devops.models.DeployArtifact.ArgumentSubstitutionMode.SubstitutePlaceholders,
         projectId: projectID,
         freeformTags: tags
     };
