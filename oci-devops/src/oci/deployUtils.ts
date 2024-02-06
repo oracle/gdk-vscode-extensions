@@ -752,7 +752,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
             }
 
             for (const folder of projectFolders) {
-                const repositoryDir = folder.uri.fsPath;
+                const repositoryDir = folder.uri;
                 const repositoryName = removeSpaces(folder.name); // TODO: repositoryName should be unique within the devops project
                 const repositoryNamePrefix = `${repositoryName}: `;
                 const buildPipelines = [];
@@ -767,7 +767,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
 
                 const codeRepoResources: any = {}; // list of generated resources for the code repository (generic inline artifact)
 
-                logUtils.logInfo(`[deploy] Deploying folder ${repositoryDir}`);
+                logUtils.logInfo(`[deploy] Deploying folder ${repositoryDir.fsPath}`);
 
                 let codeRepositoryCompleted: boolean = false;
                 let codeRepositoryPromise;
@@ -2026,7 +2026,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                         }
                                         if (subData.oke_configMapArtifact) {
                                             progress.report({
-                                                message: `Using already created OKE jvm deployment configuration development artifact for ${repositoryName}...`
+                                                message: `Using already created OKE ConfigMap artifact for ${repositoryName}...`
                                             });
                                             try {
                                                 const artifact = await ociUtils.getDeployArtifact(provider, subData.oke_configMapArtifact);
@@ -2046,7 +2046,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             // --- Create OKE ConfigMap artifact
                                             progress.report({
                                                 increment,
-                                                message: `Creating OKE jvm deployment configuration artifact for ${repositoryName}...`
+                                                message: `Creating OKE ConfigMap artifact for ${repositoryName}...`
                                             });
                                             const oke_configMapArtifactName = `${repositoryName}_oke_configmap`;
                                             const oke_configMapArtifactArtifactDescription = `OKE ConfigMap for devops project ${projectName} & repository ${repositoryName}`;
@@ -2543,7 +2543,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             }
                             if (folderData.oke_configMapArtifact) {
                                 progress.report({
-                                    message: `Using already created OKE jvm deployment configuration development artifact for ${repositoryName}...`
+                                    message: `Using already created OKE ConfigMap artifact for ${repositoryName}...`
                                 });
                                 try {
                                     const artifact = await ociUtils.getDeployArtifact(provider, folderData.oke_configMapArtifact);
@@ -2563,7 +2563,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 // --- Create OKE ConfigMap artifact
                                 progress.report({
                                     increment,
-                                    message: `Creating OKE jvm deployment configuration artifact for ${repositoryName}...`
+                                    message: `Creating OKE ConfigMap artifact for ${repositoryName}...`
                                 });
                                 const oke_configMapArtifactName = `${repositoryName}_oke_configmap`;
                                 const oke_configMapArtifactArtifactDescription = `OKE ConfigMap for devops project ${projectName} & repository ${repositoryName}`;
@@ -3260,7 +3260,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         return;
                     }
                 }
-                logUtils.logInfo(`[deploy] Populating source code repository ${deployData.compartment.name}/${projectName}/${repositoryName} from ${repositoryDir}`);
+                logUtils.logInfo(`[deploy] Populating source code repository ${deployData.compartment.name}/${projectName}/${repositoryName} from ${repositoryDir.fsPath}`);
                 gitUtils.addGitIgnoreEntry(folder.uri.fsPath, folderStorage.getDefaultLocation());
                 const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir, folderData, async () => {
                     if (!deployData.user) {
@@ -3334,8 +3334,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         }
                     };
                 }
-                logUtils.logInfo(`[deploy] Saving project services configuration for ${deployData.compartment.name}/${projectName}/${repositoryName} into ${repositoryDir}`);
-                const saved = saveConfig(repositoryDir, data);
+                logUtils.logInfo(`[deploy] Saving project services configuration for ${deployData.compartment.name}/${projectName}/${repositoryName} into ${repositoryDir.fsPath}`);
+                const saved = saveConfig(repositoryDir.fsPath, data);
                 if (!saved) {
                     resolve(`Failed to save project services configuration for ${repositoryName}.`);
                     return;

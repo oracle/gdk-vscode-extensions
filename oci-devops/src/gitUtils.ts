@@ -125,8 +125,6 @@ export function getHEAD(target: vscode.Uri, silent?: boolean): { name?: string; 
         return undefined;
     }
     const repository = gitApi.getRepository(target);
-
-
     if (!repository) {
         if (!silent) {
             dialogs.showErrorMessage(`Cannot find Git repository for ${target}`);
@@ -181,7 +179,8 @@ export async function pushLocalBranch(target: vscode.Uri): Promise<boolean | und
     }
 }
 
-export async function populateNewRepository(address: string, source: string, folderData: any, user: () => Promise<any>, ...skipWorkTree: string[]): Promise<string | undefined> {
+export async function populateNewRepository(address: string, sourceUri: vscode.Uri, folderData: any, user: () => Promise<any>, ...skipWorkTree: string[]): Promise<string | undefined> {
+    const source = sourceUri.fsPath;
     logUtils.logInfo(`[git] Populate new repository ${address} from ${source}`);
     const gitPath = getPath();
     if (!gitPath) {
@@ -286,6 +285,26 @@ export async function populateNewRepository(address: string, source: string, fol
             return dialogs.getErrorMessage('Error while registering files for skipping updates', err);
         }
         folderData.git.forcedFiles = forcedFiles;
+    }
+    logUtils.logInfo(`[git] Open Git repository for ${source}`);
+    const gitApi = getGitAPI();
+    if (gitApi) {
+        if (gitApi.state !== 'uninitialized') {
+            if (!gitApi.getRepository(sourceUri)) {
+                try {
+                    await vscode.commands.executeCommand('git.openRepository', source);
+                } catch (err) {
+                    dialogs.showErrorMessage(`Error while opening Git repository`, err);
+                }
+                if (!gitApi.getRepository(sourceUri)) {
+                    dialogs.showErrorMessage(`Cannot open Git repository for ${source}`);
+                }
+            }
+        } else {
+            dialogs.showErrorMessage('Git support has not been initialized yet.');
+        }
+    } else {
+        dialogs.showErrorMessage('Cannot access Git support.');
     }
     return undefined;
 }
