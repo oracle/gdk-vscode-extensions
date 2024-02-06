@@ -2053,7 +2053,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating OKE ConfigMap artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 subData.oke_configMapArtifact = false;
-                                                subData.oke_configMapArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_configMapInlineContent, oke_configMapArtifactName, oke_configMapArtifactArtifactDescription, {
+                                                subData.oke_configMapArtifact = (await ociUtils.createOkeDeployConfigurationArtifactNoSubstitute(provider, projectOCID, oke_configMapInlineContent, oke_configMapArtifactName, oke_configMapArtifactArtifactDescription, {
                                                     'devops_tooling_deployID': deployData.tag,
                                                     'devops_tooling_codeRepoID': codeRepository.id
                                                 })).id;
@@ -2570,7 +2570,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 try {
                                     logUtils.logInfo(`[deploy] Creating OKE ConfigMap artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.oke_configMapArtifact = false;
-                                    folderData.oke_configMapArtifact = (await ociUtils.createOkeDeployConfigurationArtifact(provider, projectOCID, oke_configMapInlineContent, oke_configMapArtifactName, oke_configMapArtifactArtifactDescription, {
+                                    folderData.oke_configMapArtifact = (await ociUtils.createOkeDeployConfigurationArtifactNoSubstitute(provider, projectOCID, oke_configMapInlineContent, oke_configMapArtifactName, oke_configMapArtifactArtifactDescription, {
                                         'devops_tooling_deployID': deployData.tag,
                                         'devops_tooling_codeRepoID': codeRepository.id
                                     })).id;
