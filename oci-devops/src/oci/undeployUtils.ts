@@ -581,6 +581,19 @@ export async function undeploy(folders: devopsServices.FolderData[], deployData:
                             for (const subName in folderData.subs) {
                                 const subData = folderData.subs[subName];
                                 if (subData) {
+                                    if (subData.oke_configMapArtifact) {
+                                        try {
+                                            progress.report({ message: `Deleting OKE ConfigMap artifact for ${subName} of ${repositoryName}...` });
+                                            logUtils.logInfo(`[undeploy] Deleting OKE ConfigMap artifact for ${subName} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                            await ociUtils.deleteDeployArtifact(provider, subData.oke_configMapArtifact, true);
+                                        } catch (err) {
+                                            toCheck = true;
+                                        }
+                                        delete subData.oke_configMapArtifact;
+                                        dump(deployData);
+                                    } else if (subData.oke_configMapArtifact !== undefined) {
+                                        toCheck = true;
+                                    }
                                     if (subData.oke_deployJvmConfigArtifact) {
                                         try {
                                             progress.report({ message: `Deleting OKE jvm deployment configuration artifact for ${subName} of ${repositoryName}...` });
@@ -665,6 +678,19 @@ export async function undeploy(folders: devopsServices.FolderData[], deployData:
                                     }
                                 }
                             }
+                        }
+                        if (folderData.oke_configMapArtifact) {
+                            try {
+                                progress.report({ message: `Deleting OKE ConfigMap artifact for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting OKE ConfigMap artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteDeployArtifact(provider, folderData.oke_oke_configMapArtifact, true);
+                            } catch (err) {
+                                toCheck = true;
+                            }
+                            delete folderData.oke_configMapArtifact;
+                            dump(deployData);
+                        } else if (folderData.oke_configMapArtifact !== undefined) {
+                            toCheck = true;
                         }
                         if (folderData.oke_deployJvmConfigArtifact) {
                             try {
