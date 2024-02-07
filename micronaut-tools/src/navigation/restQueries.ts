@@ -75,7 +75,7 @@ async function composeRestQuery(endpoint: symbols.Endpoint, context: vscode.Exte
     if (query) {
         const document = await getDocument();
         const documentText = document.getText();
-        const editor = await vscode.window.showTextDocument(document, { preview: false });
+        const editor = await getEditorForDocument(document);
         const existingQuery = documentText.indexOf(query);
         if (existingQuery === -1) {
             const addText = `${documentText.length ? getSeparator(document) : ''}${query}`;
@@ -159,6 +159,11 @@ function findDocumentByText(text: string | undefined): vscode.TextDocument | und
         }
     }
     return foundDocument;
+}
+
+async function getEditorForDocument(document: vscode.TextDocument): Promise<vscode.TextEditor> {
+    const editor = vscode.window.visibleTextEditors.find(editor => editor.document === document);
+    return editor ? editor : vscode.window.showTextDocument(document, { preview: false });
 }
 
 function getEOL(document: vscode.TextDocument): string {
