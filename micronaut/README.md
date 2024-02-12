@@ -1,4 +1,8 @@
 # Micronaut® Launch
+[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/oracle-labs-graalvm.micronaut?style=for-the-badge&label=VS%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/oracle-labs-graalvm.micronaut?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut)
+[![License](https://img.shields.io/github/license/oracle/gcn-vscode-extensions?style=for-the-badge&logo=upl)](https://github.com/oracle/gcn-vscode-extensions/blob/main/LICENSE.txt)
+
 *** Technology Preview ***
 
 ## Overview
