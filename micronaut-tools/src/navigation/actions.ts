@@ -12,6 +12,7 @@ import * as projectUtils from './projectUtils';
 import * as symbols from './symbols';
 import * as targetAddress from './targetAddress';
 import * as workspaceFolders from './workspaceFolders';
+import * as visualvmIntegration from './visualvmIntegration';
 
 
 export const COMMAND_RUN_APPLICATION = 'extension.micronaut-tools.navigation.runApplication';
@@ -39,6 +40,7 @@ export const COMMAND_UPDATE_LOGGERS = 'extension.micronaut-tools.navigation.upda
 export const COMMAND_EDIT_LOGGERS = 'extension.micronaut-tools.navigation.editLoggers';
 export const COMMAND_CLEAR_CACHES = 'extension.micronaut-tools.navigation.clearCaches';
 export const COMMAND_SET_APPLICATION_ADDRESS = 'extension.micronaut-tools.navigation.setApplicationAddress';
+export const COMMAND_VISUALVM_INTEGRATION = 'extension.micronaut-tools.navigation.visualvmIntegration';
 
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_RUN_APPLICATION, (node: nodes.ApplicationFolderNode) => {
@@ -169,6 +171,9 @@ export function initialize(context: vscode.ExtensionContext) {
             await setApplicationAddress(address, folder);
         }
     }));
+    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_VISUALVM_INTEGRATION, () => {
+        visualvmIntegration.showView();
+	}));
     logUtils.logInfo('[actions] Initialized');
 }
 

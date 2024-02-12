@@ -362,6 +362,16 @@
 				"command": "extension.micronaut-tools.database.register",
 				"title": "Register Database for Micronaut/GCN",
 				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.navigation.visualvmIntegration",
+				"title": "Monitor and Profile Using VisualVM",
+				"icon": {
+					"light": "resources/visualvm_icon_light.svg",
+					"dark": "resources/visualvm_icon_dark.svg"
+				},
+				"category": "Micronaut Tools",
+				"enablement": "visualvm.view != visualvm-extension-micronaut-tools"
 			}
 		],
 		"viewsContainers": {
@@ -394,6 +404,12 @@
 					"id": "extension-micronaut-tools-management",
 					"name": "%extension.micronaut-tools.navigation.managementView.title%",
 					"icon": "images/micronaut.png"
+				},
+				{
+					"id": "visualvm-extension-micronaut-tools",
+					"name": "VisualVM",
+					"icon": "images/micronaut.png",
+					"when": "visualvm.view == visualvm-extension-micronaut-tools"
 				}
 			]
 		},
@@ -616,6 +632,11 @@
 					"command": "extension.micronaut-tools.navigation.searchEndpoints",
 					"when": "view == extension-micronaut-tools-endpoints && extension.micronaut-tools.navigation.endpointsInitialized",
 					"group": "navigation@7"
+				},
+				{
+					"command": "extension.micronaut-tools.navigation.visualvmIntegration",
+					"when": "view == extension-micronaut-tools-management && visualvm.view != visualvm-extension-micronaut-tools",
+					"group": "navigation@1"
 				}
 			],
 			"view/item/context": [

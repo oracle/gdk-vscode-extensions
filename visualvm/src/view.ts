@@ -1,0 +1,235 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+ */
+
+import * as vscode from 'vscode';
+import * as actions from './actions';
+import * as logUtils from '../../common/lib/logUtils';
+
+
+// Predefined views
+const VISUALVM_VIEW_ID = 'visualvm-visualvm';
+const EXPLORER_TOOLS_VIEW_ID = 'visualvm-explorer';
+const DEBUG_TOOLS_VIEW_ID = 'visualvm-debug';
+const PREDEFINED_VIEW_IDS = [ VISUALVM_VIEW_ID, EXPLORER_TOOLS_VIEW_ID, DEBUG_TOOLS_VIEW_ID ];
+
+// Supported external views
+const MICRONAUT_TOOLS_VIEW: ExternalView = {
+    extension_id: 'oracle-labs-graalvm.micronaut-tools',
+    container_id: 'extension-micronaut-tools',
+    view_id     : 'visualvm-extension-micronaut-tools'
+};
+// const SPRING_BOOT_DASHBOARD_VIEW: ExternalView = {
+//     extension_id: 'vscjava.vscode-spring-boot-dashboard',
+//     container_id: 'spring',
+//     view_id     : 'visualvm-spring'
+// };
+const EXTERNAL_VIEWS = [ MICRONAUT_TOOLS_VIEW ];
+const EXTERNAL_VIEW_IDS = EXTERNAL_VIEWS.map(view => view.view_id);
+
+// All views
+const ALL_VIEW_IDS = [ ...PREDEFINED_VIEW_IDS, ...EXTERNAL_VIEW_IDS ];
+
+type ExternalView = {
+    extension_id: string;
+    container_id: string;
+    view_id     : string;
+};
+
+const VIEW_KEY = 'visualvm.view';
+let currentViewId: string | undefined;
+
+const ALL_VIEWS_KEY = 'visualvm.views';
+
+let persistentStorage: vscode.Memento | undefined;
+
+export function initialize(context: vscode.ExtensionContext) {
+    let viewId: string | undefined;
+
+    // For now the view is always persisted in the global storage
+    // In future we may decide to optionally store it per workspace
+    const workspaceViewId = context.workspaceState.get<string>(VIEW_KEY);
+    if (workspaceViewId) {
+        persistentStorage = context.workspaceState;
+        if (PREDEFINED_VIEW_IDS.includes(workspaceViewId)) {
+            viewId = workspaceViewId;
+            logUtils.logInfo(`[view] Restoring predefined view saved for workspace: ${workspaceViewId}`);
+        } else if (EXTERNAL_VIEW_IDS.includes(workspaceViewId)) {
+            if (externalViewAvailable(workspaceViewId)) {
+                viewId = workspaceViewId;
+                logUtils.logInfo(`[view] Restoring external view saved for workspace: ${workspaceViewId}`);
+            } else {
+                logUtils.logWarning(`[view] External view saved for workspace cannot be restored: ${workspaceViewId}`);
+            }
+        } else {
+            logUtils.logWarning(`[view] Unknown view saved for workspace cannot be restored: ${workspaceViewId}`);
+        }
+    } else {
+        logUtils.logInfo('[view] No view saved for workspace');
+    }
+
+    if (!viewId) {
+        const globalViewId = context.globalState.get<string>(VIEW_KEY);
+        if (globalViewId) {
+            if (PREDEFINED_VIEW_IDS.includes(globalViewId)) {
+                viewId = globalViewId;
+                logUtils.logInfo(`[view] Restoring predefined view saved globally: ${globalViewId}`);
+            } else if (EXTERNAL_VIEW_IDS.includes(globalViewId)) {
+                if (externalViewAvailable(globalViewId)) {
+                    viewId = globalViewId;
+                    logUtils.logInfo(`[view] Restoring external view saved globally: ${globalViewId}`);
+                } else {
+                    logUtils.logWarning(`[view] External view saved globally cannot be restored: ${globalViewId}`);
+                }
+            } else {
+                logUtils.logWarning(`[view] Unknown view saved globally cannot be restored: ${globalViewId}`);
+            }
+        } else {
+            logUtils.logInfo('[view] No view saved globally');
+        }
+    }
+
+    if (!viewId) {
+        viewId = VISUALVM_VIEW_ID;
+        logUtils.logInfo(`[view] Fallback to default view: ${viewId}`);
+    }
+
+    // For now the view is always persisted in the global storage
+    // In future we may decide to optionally store it per workspace
+    if (!persistentStorage) {
+        persistentStorage = context.globalState;
+    }
+
+    switchView(viewId);
+
+    vscode.commands.executeCommand('setContext', ALL_VIEWS_KEY, ALL_VIEW_IDS);
+}
+
+export async function move(viewId?: string): Promise<boolean | undefined> {
+    if (!viewId) {
+        logUtils.logInfo('[view] Selecting view container');
+        viewId = await selectViewContainer(actions.NAME_MOVE_VIEW);
+        if (!viewId) {
+            logUtils.logInfo('[view] View container selection canceled');
+            return undefined;
+        }
+    } else {
+        logUtils.logInfo(`[view] Requested to move view: ${viewId}`);
+        if (EXTERNAL_VIEW_IDS.includes(viewId)) {
+            if (!externalViewAvailable(viewId)) {
+                logUtils.logWarning(`[view] External view not available: ${viewId}`);
+                return false;
+            }
+        } else if (!PREDEFINED_VIEW_IDS.includes(viewId)) {
+            logUtils.logWarning(`[view] Unknown view: ${viewId}`);
+            return false;
+        }
+    }
+
+    if (persistentStorage) {
+        persistentStorage.update(VIEW_KEY, viewId);
+    }
+
+    switchView(viewId);
+
+    // Make sure the selected view appears in the expected location
+    await vscode.commands.executeCommand(viewId + '.resetViewLocation');
+
+    // Focus the selected view to make sure it's visible
+    await vscode.commands.executeCommand(viewId + '.focus');
+
+    return true;
+}
+
+async function selectViewContainer(actionName?: string): Promise<string | undefined> {
+    const items: (vscode.QuickPickItem & { viewId: string }) [] = [];
+
+    items.push({ label: 'VisualVM', description: currentViewId === VISUALVM_VIEW_ID ? '(current)' : undefined, viewId: VISUALVM_VIEW_ID });
+    items.push({ label: 'Explorer', description: currentViewId === EXPLORER_TOOLS_VIEW_ID ? '(current)' : undefined, viewId: EXPLORER_TOOLS_VIEW_ID });
+    items.push({ label: 'Run and Debug', description: currentViewId === DEBUG_TOOLS_VIEW_ID ? '(current)' : undefined, viewId: DEBUG_TOOLS_VIEW_ID });
+    
+    if (externalViewAvailable(MICRONAUT_TOOLS_VIEW)) {
+        items.push({ label: 'Micronaut Tools', description: currentViewId === MICRONAUT_TOOLS_VIEW.view_id ? '(current)' : undefined, viewId: MICRONAUT_TOOLS_VIEW.view_id });
+    }
+    
+    return vscode.window.showQuickPick(items, { title: actionName || 'Select VisualVM View Container', placeHolder: 'Choose the VisualVM view location:' }).then(selected => selected?.viewId);
+}
+
+function externalViewAvailable(view: string | ExternalView): boolean {
+    let externalView = typeof view === 'string' ? findExternalView(view) : view;
+    if (!externalView) {
+        logUtils.logWarning(`[view] Unknown external view: ${view}`);
+        return false;
+    }
+    const extension = vscode.extensions.getExtension(externalView.extension_id);
+    if (extension) {
+        const extensionViews = extension.packageJSON?.contributes?.views?.[externalView.container_id];
+        if (Array.isArray(extensionViews)) {
+            for (const extensionView of extensionViews) {
+                if (extensionView.id === externalView.view_id) {
+                    if (extensionView.name !== 'VisualVM') {
+                        logUtils.logWarning(`[view] Extension providing external view defines unsupported view name: ${extensionView.name}`);
+                        return false;
+                    }
+                    if (extensionView.when !== `${VIEW_KEY} == ${externalView.view_id}` &&
+                        extensionView.when !== `${VIEW_KEY} === ${externalView.view_id}`) {
+                        logUtils.logWarning(`[view] Extension providing external view defines unsupported view activation: ${extensionView.when}`);
+                        return false;
+                    }
+                    return true;
+                }
+            }
+        }
+        logUtils.logWarning(`[view] Extension providing external view doesn't define VisualVM view in: ${externalView.container_id}`);
+    } else {
+        logUtils.logWarning(`[view] Extension providing external view not available: ${externalView.extension_id}`);
+    }
+    return false;
+}
+
+function findExternalView(viewId: string): ExternalView | undefined {
+    for (const externalView of EXTERNAL_VIEWS) {
+        if (externalView.view_id === viewId) {
+            return externalView;
+        }
+    }
+    return undefined;
+}
+
+function switchView(viewId: string) {
+    currentViewId = viewId;
+    vscode.commands.executeCommand('setContext', VIEW_KEY, viewId);
+    logUtils.logInfo(`[view] View switched to: ${viewId}`);
+}
+
+class NodeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+
+	private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null> = new vscode.EventEmitter<vscode.TreeItem | undefined | null>();
+	readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null> = this._onDidChangeTreeData.event;
+
+    refresh(element?: vscode.TreeItem) {
+        this._onDidChangeTreeData.fire(element);
+	}
+    
+    getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
+        return element;
+	}
+
+	getChildren(_element?: vscode.TreeItem): vscode.TreeItem[] {
+        return [];
+	}
+
+    getParent?(_element: vscode.TreeItem): vscode.TreeItem | undefined {
+        return undefined;
+    }
+
+}
+
+const nodeProvider = new NodeProvider();
+export const _treeViewVisualVM = vscode.window.createTreeView(VISUALVM_VIEW_ID, { treeDataProvider: nodeProvider });
+export const _treeViewExplorer = vscode.window.createTreeView(EXPLORER_TOOLS_VIEW_ID, { treeDataProvider: nodeProvider });
+export const _treeViewDebug = vscode.window.createTreeView(DEBUG_TOOLS_VIEW_ID, { treeDataProvider: nodeProvider });
+export let _treeViewMicronautTools: vscode.TreeView<vscode.TreeItem> | undefined;
