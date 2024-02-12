@@ -1,4 +1,8 @@
 # Graal Cloud Native Extensions Pack
+[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/oracle-labs-graalvm.graal-cloud-native-pack?style=for-the-badge&label=VS%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/oracle-labs-graalvm.graal-cloud-native-pack?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack)
+[![License](https://img.shields.io/github/license/oracle/gcn-vscode-extensions?style=for-the-badge&logo=upl)](https://github.com/oracle/gcn-vscode-extensions/blob/main/LICENSE.txt)
+
 
 [Graal Cloud Native Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) is a collection of extensions that help you create, build, and deploy Graal Cloud Native applications.
 
