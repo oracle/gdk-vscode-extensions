@@ -1,5 +1,10 @@
 # Change Log
 
+# Version 0.6.4
+* Fix for Compose REST Query action doesn't work starting from VS Code 1.86.0.
+* Saved REST Queries Document not reused for subsequent queries
+* Adds `gcp` module as recognized GCN subproject
+
 # Version 0.6.3
 * Micronaut:
    * Application Panel added to support Managemement & Control Panel

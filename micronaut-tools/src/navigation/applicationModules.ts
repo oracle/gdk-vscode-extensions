@@ -16,6 +16,7 @@ const SETTING_SELECTED_MODULE_KEY = 'selectedApplicationModule';
 
 const KNOWN_MODULES = [
     'aws',
+    'gcp',
     'oci'
 ]
 
