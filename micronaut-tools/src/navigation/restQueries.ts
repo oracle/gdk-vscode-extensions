@@ -23,6 +23,18 @@ const RECOMMENDED_EXT_CLIENT = 'humao.rest-client';
 const RECOMMENDED_EXT_CLIENT_NAME = 'REST Client';
 const SUPPORTED_EXT_CLIENTS = [ RECOMMENDED_EXT_CLIENT ];
 
+// --- NOTE on tracking the query document --------------------------------------------------------------
+// When saving a document, the destination document is opened, and the source document is closed - lost.
+// The only reliable way to track the query document seems to be using the onDidCloseTextDocument event.
+// This event is not fired only for an empty Untitled document, which is acceptable (empty not tracked).
+// Otherwise on closing the query document, all other TextDocuments are searched by the last known text.
+// The last known text is updated for every onDidChangeTextDocument event.
+// Since closing a document reverts its text to the value when opened, updating the known text is delayed
+// by UPDATE_QUERY_DOCUMENT_TEXT_DELAY to reliably detect the document.isClosed state and ignore the last
+// change.
+// ------------------------------------------------------------------------------------------------------
+const UPDATE_QUERY_DOCUMENT_TEXT_DELAY = 250;
+
 export function initialize(context: vscode.ExtensionContext) {
     dontSuggestClientExt.initialize(context);
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_COMPOSE_REST_QUERY, (nodeOrSymbol: nodes.EndpointNode | symbols.Endpoint) => {
@@ -33,6 +45,28 @@ export function initialize(context: vscode.ExtensionContext) {
             composeRestQuery(nodeOrSymbol, context);
         }
 	}));
+    context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(event => {
+        if (event.document === queryDocument) {
+            setTimeout(() => {
+                if (event.document === queryDocument && !event.document.isClosed) {
+                    queryDocumentText = queryDocument.getText();
+                }
+            }, UPDATE_QUERY_DOCUMENT_TEXT_DELAY);
+        }
+    }));
+    context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(document => {
+        if (document.uri === queryDocument?.uri) {
+            setTimeout(() => {
+                const foundDocument = findDocumentByText(queryDocumentText);
+                if (foundDocument) {
+                    queryDocument = foundDocument;
+                } else {
+                    queryDocument = undefined;
+                    queryDocumentText = undefined;
+                }
+            }, 0);
+        }
+    }));
     logUtils.logInfo('[restQueries] Initialized');
 }
 
@@ -45,7 +79,7 @@ async function composeRestQuery(endpoint: symbols.Endpoint, context: vscode.Exte
         const existingQuery = documentText.indexOf(query);
         if (existingQuery === -1) {
             const addText = `${documentText.length ? getSeparator(document) : ''}${query}`;
-            const addPos = new vscode.Position(document.lineCount, 0);
+            const addPos = document.positionAt(documentText.length);
             editor.insertSnippet(new vscode.SnippetString(addText), addPos);
         } else {
             const existingPos = document.positionAt(existingQuery + query.length);
@@ -91,18 +125,40 @@ async function checkExternalExt(context: vscode.ExtensionContext) {
 }
 
 let queryDocument: vscode.TextDocument | undefined;
+let queryDocumentText: string | undefined;
 
 async function getDocument(): Promise<vscode.TextDocument> {
     if (queryDocument) {
         const allDocuments = vscode.workspace.textDocuments;
         if (!allDocuments.includes(queryDocument)) {
             queryDocument = undefined;
+            queryDocumentText = undefined;
         }
     }
     if (!queryDocument) {
         queryDocument = await vscode.workspace.openTextDocument({ language: 'http' });
+        queryDocumentText = queryDocument.getText();
     }
     return queryDocument;
+}
+
+function findDocumentByText(text: string | undefined): vscode.TextDocument | undefined {
+    let foundDocument: vscode.TextDocument | undefined = undefined;
+    if (text) { // only search by actual text, skip empty documents
+        const allDocuments = vscode.workspace.textDocuments;
+        for (const document of allDocuments) {
+            if (!document.isClosed && !document.isUntitled && !document.isDirty) { // only search among opened && saved documents
+                if (document.getText() === text) {
+                    if (foundDocument) { // report no result for multiple matches
+                        return undefined;
+                    } else {
+                        foundDocument = document;
+                    }
+                }
+            }
+        }
+    }
+    return foundDocument;
 }
 
 function getEOL(document: vscode.TextDocument): string {
