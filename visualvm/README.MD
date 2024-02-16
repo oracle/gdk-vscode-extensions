@@ -12,7 +12,7 @@
 
 | Name | Description | Default Value |
 |---|---|---|
-| `visualvm.installationPath` | Path to the local VisualVM 2.1+ Installation. |  |
+| `visualvm.installation.visualvmPath` | Path to a local VisualVM 2.1+ Installation. |  |
 
 ## Provide Feedback or Seek Help
 

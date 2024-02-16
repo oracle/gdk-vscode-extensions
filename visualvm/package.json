@@ -42,10 +42,53 @@
 			"type": "object",
 			"title": "VisualVM Integration",
 			"properties": {
-				"visualvm.installationPath": {
+				"visualvm.java.jdkPath": {
 					"type": "string",
 					"default": "",
-					"description": "Path to the local VisualVM installation folder",
+					"description": "Path to local JDK installation folder (leave empty to find automatically)",
+					"scope": "machine-overridable"
+				},
+				"visualvm.startup.useJdkPathForVisualvm": {
+					"type": "boolean",
+					"default": true,
+					"description": "Use defined/automatically found local JDK installation to run VisualVM",
+					"scope": "machine-overridable"
+				},
+				"visualvm.installation.visualvmPath": {
+					"type": "string",
+					"default": "",
+					"description": "Path to local VisualVM installation folder",
+					"scope": "machine-overridable"
+				},
+				"visualvm.startup.visualvmParameters": {
+					"type": "string",
+					"default": "",
+					"description": "Optional parameters for starting VisualVM (--userdir, -J-Xmx, etc.)",
+					"scope": "machine-overridable"
+				},
+				"visualvm.behavior.visualvmWindowToFront": {
+					"type": "boolean",
+					"default": true,
+					"description": "Bring VisualVM window to front when invoked an action",
+					"scope": "machine-overridable"
+				},
+				"visualvm.behavior.preselectProcessView": {
+					"type": "string",
+					"default": "Monitor",
+					"description": "Preselected view for a process shown in VisualVM",
+					"enum": [ "Current", "Overview", "Monitor", "Threads", "Sampler" ],
+					"scope": "machine-overridable"
+				},
+				"visualvm.integration.automaticallySelectProjectProcess": {
+					"type": "boolean",
+					"default": true,
+					"description": "Automatically select started project process for monitoring",
+					"scope": "machine-overridable"
+				},
+				"visualvm.integration.enableGoToSource": {
+					"type": "boolean",
+					"default": true,
+					"description": "Enable Go to Source integration",
 					"scope": "machine-overridable"
 				}
 			}
@@ -59,8 +102,93 @@
 			{
 				"command": "visualvm.moveView",
 				"title": "Move VisualVM View",
+				"icon": "$(pin)",
+				"category": "VisualVM"
+			},
+			{
+				"command": "visualvm.start",
+				"title": "Start VisualVM",
+				"icon": "$(run)",
 				"category": "VisualVM",
-				"icon": "$(pin)"
+				"enablement": "visualvm.initialized && !visualvm.noInstallation"
+			},
+			{
+				"command": "visualvm.configureSetting",
+				"title": "Configure",
+				"icon": "$(edit)",
+				"category": "VisualVM"
+			},
+			{
+				"command": "visualvm.showProcess",
+				"title": "Show in VisualVM",
+				"icon": "$(eye)",
+				"category": "VisualVM"
+			},
+			{
+				"command": "visualvm.threadDumpTake",
+				"title": "Take Thread Dump",
+				"icon": "$(record)",
+				"category": "VisualVM"
+			},
+			{
+				"command": "visualvm.heapDumpTake",
+				"title": "Take Heap Dump",
+				"icon": "$(record)",
+				"category": "VisualVM"
+			},
+			{
+				"command": "visualvm.cpuSamplerStart",
+				"title": "Start CPU Sampling",
+				"icon": "$(play-circle)",
+				"category": "VisualVM"
+			},
+			{
+				"command": "visualvm.cpuSamplerSnapshot",
+				"title": "Take Snapshot of Sampler Results",
+				"icon": "$(record)",
+				"category": "VisualVM"
+			},
+			{
+				"command": "visualvm.cpuSamplerStop",
+				"title": "Stop Sampling",
+				"icon": "$(stop)",
+				"category": "VisualVM"
+			},
+			{
+				"command": "visualvm.memorySamplerStart",
+				"title": "Start Memory Sampling",
+				"icon": "$(play-circle)",
+				"category": "VisualVM"
+			},
+			{
+				"command": "visualvm.memorySamplerSnapshot",
+				"title": "Take Snapshot of Sampler Results",
+				"icon": "$(record)",
+				"category": "VisualVM"
+			},
+			{
+				"command": "visualvm.memorySamplerStop",
+				"title": "Stop Sampling",
+				"icon": "$(stop)",
+				"category": "VisualVM"
+			},
+			{
+				"command": "visualvm.jfrStart",
+				"title": "Start Flight Recording",
+				"icon": "$(play-circle)",
+				"category": "VisualVM"
+			},
+			{
+				"command": "visualvm.jfrSnapshot",
+				"title": "Dump Flight Recording Data",
+				"icon": "$(record)",
+				"category": "VisualVM"
+			},
+			{
+				"command": "visualvm.jfrStop",
+				"title": "Stop Flight Recording",
+				"icon": "$(stop)",
+				"category": "VisualVM"
 			}
 		],
 		"viewsContainers": {
@@ -142,17 +270,208 @@
 		},
 		"menus": {
 			"commandPalette": [
+				{
+					"command": "visualvm.configureSetting",
+					"when": "false"
+				},
+				{
+					"command": "visualvm.showProcess",
+					"when": "false"
+				},
+				{
+					"command": "visualvm.threadDumpTake",
+					"when": "false"
+				},
+				{
+					"command": "visualvm.heapDumpTake",
+					"when": "false"
+				},
+				{
+					"command": "visualvm.heapDumpTake",
+					"when": "false"
+				},
+				{
+					"command": "visualvm.cpuSamplerStart",
+					"when": "false"
+				},
+				{
+					"command": "visualvm.cpuSamplerSnapshot",
+					"when": "false"
+				},
+				{
+					"command": "visualvm.cpuSamplerStop",
+					"when": "false"
+				},
+				{
+					"command": "visualvm.memorySamplerStart",
+					"when": "false"
+				},
+				{
+					"command": "visualvm.memorySamplerSnapshot",
+					"when": "false"
+				},
+				{
+					"command": "visualvm.memorySamplerStop",
+					"when": "false"
+				},
+				{
+					"command": "visualvm.jfrStart",
+					"when": "false"
+				},
+				{
+					"command": "visualvm.jfrSnapshot",
+					"when": "false"
+				},
+				{
+					"command": "visualvm.jfrStop",
+					"when": "false"
+				}
 			],
 			"editor/context": [
 			],
 			"view/title": [
 				{
-					"command": "visualvm.moveView",
+					"command": "visualvm.start",
 					"group": "navigation@1",
+					"when": "view in visualvm.views && visualvm.initialized && !visualvm.noInstallation"
+				},
+				{
+					"command": "visualvm.moveView",
+					"group": "navigation@2",
 					"when": "view in visualvm.views"
 				}
 			],
 			"view/item/context": [
+				{
+					"command": "visualvm.configureSetting",
+					"when": "view in visualvm.views && viewItem in visualvm.configurableNodes",
+					"group": "inline@1"
+				},
+				{
+					"command": "visualvm.configureSetting",
+					"when": "view in visualvm.views && viewItem in visualvm.configurableNodes",
+					"group": "context@1"
+				},
+				{
+					"command": "visualvm.showProcess",
+					"when": "view in visualvm.views && viewItem == visualvm.ProcessNode.hasPid",
+					"group": "inline@1"
+				},
+				{
+					"command": "visualvm.showProcess",
+					"when": "view in visualvm.views && viewItem == visualvm.ProcessNode.hasPid",
+					"group": "context@1"
+				},
+				{
+					"command": "visualvm.threadDumpTake",
+					"when": "view in visualvm.views && viewItem == visualvm.ThreadDumpNode",
+					"group": "inline@1"
+				},
+				{
+					"command": "visualvm.threadDumpTake",
+					"when": "view in visualvm.views && viewItem == visualvm.ThreadDumpNode",
+					"group": "context@1"
+				},
+				{
+					"command": "visualvm.heapDumpTake",
+					"when": "view in visualvm.views && viewItem == visualvm.HeapDumpNode",
+					"group": "inline@1"
+				},
+				{
+					"command": "visualvm.heapDumpTake",
+					"when": "view in visualvm.views && viewItem == visualvm.HeapDumpNode",
+					"group": "context@1"
+				},
+				{
+					"command": "visualvm.cpuSamplerStart",
+					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode",
+					"group": "inline@1"
+				},
+				{
+					"command": "visualvm.cpuSamplerStart",
+					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode",
+					"group": "context@1"
+				},
+				{
+					"command": "visualvm.cpuSamplerSnapshot",
+					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode",
+					"group": "inline@2"
+				},
+				{
+					"command": "visualvm.cpuSamplerSnapshot",
+					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode",
+					"group": "context@2"
+				},
+				{
+					"command": "visualvm.cpuSamplerStop",
+					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode",
+					"group": "inline@3"
+				},
+				{
+					"command": "visualvm.cpuSamplerStop",
+					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode",
+					"group": "context@3"
+				},
+				{
+					"command": "visualvm.memorySamplerStart",
+					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode",
+					"group": "inline@1"
+				},
+				{
+					"command": "visualvm.memorySamplerStart",
+					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode",
+					"group": "context@1"
+				},
+				{
+					"command": "visualvm.memorySamplerSnapshot",
+					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode",
+					"group": "inline@2"
+				},
+				{
+					"command": "visualvm.memorySamplerSnapshot",
+					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode",
+					"group": "context@2"
+				},
+				{
+					"command": "visualvm.memorySamplerStop",
+					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode",
+					"group": "inline@3"
+				},
+				{
+					"command": "visualvm.memorySamplerStop",
+					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode",
+					"group": "context@3"
+				},
+				{
+					"command": "visualvm.jfrStart",
+					"when": "view in visualvm.views && viewItem == visualvm.JfrNode",
+					"group": "inline@1"
+				},
+				{
+					"command": "visualvm.jfrStart",
+					"when": "view in visualvm.views && viewItem == visualvm.JfrNode",
+					"group": "context@1"
+				},
+				{
+					"command": "visualvm.jfrSnapshot",
+					"when": "view in visualvm.views && viewItem == visualvm.JfrNode",
+					"group": "inline@2"
+				},
+				{
+					"command": "visualvm.jfrSnapshot",
+					"when": "view in visualvm.views && viewItem == visualvm.JfrNode",
+					"group": "context@2"
+				},
+				{
+					"command": "visualvm.jfrStop",
+					"when": "view in visualvm.views && viewItem == visualvm.JfrNode",
+					"group": "inline@3"
+				},
+				{
+					"command": "visualvm.jfrStop",
+					"when": "view in visualvm.views && viewItem == visualvm.JfrNode",
+					"group": "context@3"
+				}
 			]
 		},
 		"netbeans.options": {

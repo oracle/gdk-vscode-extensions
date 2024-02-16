@@ -6,10 +6,12 @@
  */
 
 import * as vscode from 'vscode';
-import * as logUtils from '../../common/lib/logUtils';
 import * as view from './view';
 import * as actions from './actions';
-import * as installation from './installation';
+import * as visualvm from './visualvm';
+import * as monitoredProcesses from './monitoredProcesses';
+import * as nodes from './nodes';
+import * as logUtils from '../../common/lib/logUtils';
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -18,7 +20,9 @@ export function activate(context: vscode.ExtensionContext) {
 	
 	view.initialize(context);
 	actions.initialize(context);
-	installation.initialize(context);
+	visualvm.initialize(context);
+	monitoredProcesses.initialize(context);
+	nodes.initialize(context);
 
 	logUtils.logInfo('[extension] Extension activated');
 }
