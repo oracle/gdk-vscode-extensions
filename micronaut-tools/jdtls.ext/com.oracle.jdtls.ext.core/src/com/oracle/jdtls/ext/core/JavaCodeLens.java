@@ -6,8 +6,6 @@
  */
 package com.oracle.jdtls.ext.core;
 
-import com.google.gson.Gson;
-
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,15 +14,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Stream;
-import java.util.stream.Collectors;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.maven.model.Plugin;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.buildship.core.GradleBuild;
 import org.eclipse.buildship.core.GradleCore;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -43,9 +42,11 @@ import org.eclipse.lsp4j.CodeLensParams;
 import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.m2e.core.MavenPlugin;
-import org.eclipse.m2e.core.project.IMavenProjectRegistry;
 import org.eclipse.m2e.core.project.IMavenProjectFacade;
+import org.eclipse.m2e.core.project.IMavenProjectRegistry;
 import org.gradle.tooling.model.GradleProject;
+
+import com.google.gson.Gson;
 
 
 public final class JavaCodeLens {
@@ -90,6 +91,8 @@ public final class JavaCodeLens {
 	}
 
     private static boolean isMicronautProject(IJavaProject javaProject, IProgressMonitor monitor) throws Exception {
+        JdtlsExtActivator.logInfo(String.format("isMicronautProject for project name %s", javaProject.getProject().getName()));
+
         if (ProjectUtils.isMavenProject(javaProject.getProject())) {
             IMavenProjectRegistry registry = MavenPlugin.getMavenProjectRegistry();
             IMavenProjectFacade facade = registry.getProject(javaProject.getProject());
@@ -100,10 +103,15 @@ public final class JavaCodeLens {
                     if (plugin == null) {
                         plugin = mvnProject.getPlugin("io.micronaut.maven:micronaut-maven-plugin");
                     }
+                    JdtlsExtActivator.logInfo(String.format("Maven project contains plugins: %s", mvnProject.getPluginArtifacts()));
                     if (plugin != null) {
                         return true;
                     }
+                } else {
+                    JdtlsExtActivator.logError(String.format("Facade reeturns null maven project for %s", javaProject.getProject().getName()));
                 }
+            } else {
+                JdtlsExtActivator.logError(String.format("Maven project registry returned null facade for %s", javaProject.getProject().getName()));
             }
             return false;
         } else if (ProjectUtils.isGradleProject(javaProject.getProject())) {
@@ -124,24 +132,64 @@ public final class JavaCodeLens {
                     return false;
                 }
                 Path scriptPath = gradleProject.getBuildScript().getSourceFile().toPath();
+                JdtlsExtActivator.logInfo(String.format("Inspecting buildscript: %s", scriptPath));
                 if (Files.exists(scriptPath)) {
                     String script = Files.readString(scriptPath);
                     return Pattern.compile("id\\s*\\(\\s*\\\"io\\.micronaut\\.application\\\"\\s*\\)").matcher(script).find();
                 } else {
                     return false;
                 }
+            } else {
+                JdtlsExtActivator.logError(String.format("Gradle returned null build for %s", javaProject.getProject().getName()));
             }
+        } else {
+            JdtlsExtActivator.logError(String.format("Project %s is neither maven or gradle", javaProject.getProject().getName()));
+            dumpProjects();
         }
         return false;
+    }
+
+    private static void dumpProjectDetails(IProject p) {
+        try {
+            if (!p.isOpen()) {
+                JdtlsExtActivator.logInfo(String.format("Project: %s, location %s,closed: %s", 
+                    p.getName(),
+                    p.getRawLocationURI(), 
+                    p.isOpen()
+                ));
+            } else {
+                IProjectDescription desc = p.getDescription();
+                JdtlsExtActivator.logInfo(String.format("Project: %s, location %s, natures: %s, closed: %s",
+                    p.getName(),
+                    p.getRawLocationURI(), 
+                    Arrays.asList(desc.getNatureIds()),
+                    p.isOpen()
+                ));
+            }
+        } catch (CoreException ex) {
+            JdtlsExtActivator.logException(String.format("Error occurred reading project %s", p.getName()), ex);
+        }
+    }
+
+    private static void dumpProjects() {
+        for (IProject p : ProjectUtils.getAllProjects()) {
+            dumpProjectDetails(p);
+        }
     }
 
     public static FindProjectTypeResult findProjectType(List<Object> arguments, IProgressMonitor monitor) {
         FindProjectTypeParams params = gson.fromJson(gson.toJson(arguments.get(0)), FindProjectTypeParams.class);
         IProject targetProject = null;
 
+        JdtlsExtActivator.logInfo(String.format("FindType for project name %s, mainClass %s, location %s", 
+            params.getProjectName(), params.getMainClass(), params.getLocation()));
+
         if (params.getProjectName() != null) {
             targetProject = Stream.of(ProjectUtils.getAllProjects()).filter(ProjectUtils::isJavaProject).filter(
                 p -> p.getName().equals(params.getProjectName())).findFirst().orElse(null);
+            if (targetProject == null) {
+                JdtlsExtActivator.logError(String.format("Project name %s not found", params.getProjectName()));
+            }
         }
         // Give mainClass a priority, as the workspace folder may be a parent project, while main class may identify a precise file.
         // If mainclass is not a filenam
@@ -152,14 +200,23 @@ public final class JavaCodeLens {
                     IPath sourceFolderPath = ResourceUtils.filePathFromURI(p.toUri().toString());
                     targetProject = findBelongedProject(sourceFolderPath);
                 }
+            if (targetProject == null) {
+                JdtlsExtActivator.logError(String.format("No project found for main class %s", params.getMainClass()));
+                dumpProjects();
+            }
             } catch (IllegalArgumentException ex) {
                 // expected
+                JdtlsExtActivator.logException("Exception during main class lookup", ex);
             }
         }
         if (targetProject == null && params.getLocation() != null) {
             IPath sourceFolderPath = ResourceUtils.filePathFromURI(params.getLocation());
             if (sourceFolderPath != null) {
                 targetProject = findBelongedProject(sourceFolderPath);
+            }
+            if (targetProject == null) {
+                JdtlsExtActivator.logError(String.format("No project handles the location %s", params.getLocation()));
+                dumpProjects();
             }
         }
         FindProjectTypeResult res = new FindProjectTypeResult();
@@ -202,6 +259,9 @@ public final class JavaCodeLens {
                         // swallow
                     }
                 }
+            } else {
+                JdtlsExtActivator.logError(String.format("Project %s is neither maven or gradle", jProject.getProject().getName()));
+                dumpProjectDetails(jProject.getProject());
             }
         }
         return res;
