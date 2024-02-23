@@ -12,14 +12,11 @@ import * as process from 'process';
 import * as cp from 'child_process';
 import * as view from './view';
 import * as parameters from './parameters';
+import * as commands from './commands';
 import * as logUtils from '../../common/lib/logUtils';
 
 
 const VISUALVM_HOMEPAGE = 'https://visualvm.github.io';
-
-const COMMAND_SELECT_INSTALLATION = 'visualvm.selectInstallation';
-const NAME_SELECT_INSTALLATION = 'Select Local VisualVM Installation Folder';
-const COMMAND_START_VISUALVM = 'visualvm.start';
 
 const INITIALIZED_KEY = 'visualvm.initialized';
 const NO_INSTALLATION_KEY = 'visualvm.noInstallation';
@@ -36,10 +33,10 @@ let installation: VisualVMInstallation | undefined = undefined;
 let interactiveChange: boolean = false;
 
 export async function initialize(context: vscode.ExtensionContext) {
-    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_SELECT_INSTALLATION, () => {
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_SELECT_INSTALLATION, () => {
         select();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_START_VISUALVM, () => {
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_START_VISUALVM, () => {
         show();
 	}));
     resolve();
@@ -58,7 +55,7 @@ export async function select() {
     const savedVisualVMPath = vscode.workspace.getConfiguration().get<string>(INSTALLATION_PATH_KEY);
     const savedVisualVMUri = savedVisualVMPath ? vscode.Uri.file(savedVisualVMPath) : undefined;
     const selectedVisualVMUri = await vscode.window.showOpenDialog({
-        title: NAME_SELECT_INSTALLATION,
+        title: commands.COMMAND_SELECT_INSTALLATION_NAME,
         canSelectFiles: false,
         canSelectFolders: true,
         canSelectMany: false,
@@ -83,9 +80,9 @@ export async function select() {
 
 async function resolve(interactive: boolean = false) {
     logUtils.logInfo('[visualvm] Searching for VisualVM installation');
-    view.hideNodes();
     await vscode.commands.executeCommand('setContext', INITIALIZED_KEY, false);
     await vscode.commands.executeCommand('setContext', NO_INSTALLATION_KEY, false);
+    view.hideNodes();
     installation = undefined;
     try {
         const savedVisualVMPath = vscode.workspace.getConfiguration().get<string>(INSTALLATION_PATH_KEY);
@@ -162,19 +159,47 @@ async function forPath(visualVMPath: string, interactive: boolean = false): Prom
 }
 
 export async function show(pid?: number): Promise<boolean> {
-    let params = parameters.windowToFront();
-    if (pid !== undefined) {
-        params += ` ${parameters.openPid(pid)}`;
-    }
-    return invoke(params);
+    return vscode.window.withProgress({
+            location: { viewId: view.getViewId() }
+            // location: vscode.ProgressLocation.Notification, 
+            // title: 'Invoking VisualVM...'},
+        },
+        async () => {
+            let params = parameters.windowToFront();
+            if (pid !== undefined) {
+                params += ` ${parameters.openPid(pid)}`;
+            }
+            return invoke(params);
+        }
+    );
 }
 
-export async function perform(params: string): Promise<boolean> {
-    const windowToFront = parameters.windowToFrontConditional();
-    if (windowToFront) {
-        params += ` ${windowToFront}`;
-    }
-    return invoke(params);
+export async function perform(params: string | Promise<string | undefined>): Promise<boolean> {
+    return vscode.window.withProgress({
+            location: { viewId: view.getViewId() }
+            // location: vscode.ProgressLocation.Notification, 
+            // title: 'Invoking VisualVM...'},
+        },
+        async () => {
+            // Resolve provided params promise
+            if (typeof params !== 'string') {
+                logUtils.logInfo('[visualvm] Resolving provided parameters...');
+                const resolvedParams = await Promise.resolve(params);
+                if (resolvedParams === undefined) {
+                    logUtils.logInfo('[visualvm] Canceled starting VisualVM');
+                    return false;
+                } else {
+                    params = resolvedParams;
+                }
+            }
+
+            const windowToFront = parameters.windowToFrontConditional();
+            if (windowToFront) {
+                params += ` ${windowToFront}`;
+            }
+            return invoke(params);
+        }
+    );
 }
 
 async function invoke(params?: string): Promise<boolean> {
@@ -208,9 +233,15 @@ async function invoke(params?: string): Promise<boolean> {
     }
 
     // User-defined parameters
-    const userParams = parameters.userDefinedParameters();;
+    const userParams = parameters.userDefinedParameters();
     if (userParams) {
         command.push(userParams);
+    }
+
+    // Go to Source integration
+    const goToSource = await parameters.goToSource();
+    if (goToSource) {
+        command.push(goToSource);
     }
 
     // Provided parameters -----

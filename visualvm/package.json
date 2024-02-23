@@ -85,10 +85,22 @@
 					"description": "Automatically select started project process for monitoring",
 					"scope": "machine-overridable"
 				},
+				"visualvm.integration.customizeDisplayNameForProjectProcess": {
+					"type": "boolean",
+					"default": true,
+					"description": "Configure started project process to display its folder name in VisualVM",
+					"scope": "machine-overridable"
+				},
 				"visualvm.integration.enableGoToSource": {
 					"type": "boolean",
 					"default": true,
 					"description": "Enable Go to Source integration",
+					"scope": "machine-overridable"
+				},
+				"visualvm.integration.visualStudioCodeParameters": {
+					"type": "string",
+					"default": "",
+					"description": "Optional parameters for invoking VS Code launcher to open sources (--user-data-dir, --extensions-dir, etc.)",
 					"scope": "machine-overridable"
 				}
 			}
@@ -122,6 +134,24 @@
 				"command": "visualvm.showProcess",
 				"title": "Show in VisualVM",
 				"icon": "$(eye)",
+				"category": "VisualVM"
+			},
+			{
+				"command": "visualvm.selectProcessGlobal",
+				"title": "Select Process",
+				"icon": "$(search)",
+				"category": "VisualVM"
+			},
+			{
+				"command": "visualvm.selectProcess",
+				"title": "Select Process",
+				"icon": "$(search)",
+				"category": "VisualVM"
+			},
+			{
+				"command": "visualvm.clearProcess",
+				"title": "Stop Monitoring",
+				"icon": "$(close)",
 				"category": "VisualVM"
 			},
 			{
@@ -179,7 +209,7 @@
 				"category": "VisualVM"
 			},
 			{
-				"command": "visualvm.jfrSnapshot",
+				"command": "visualvm.jfrDump",
 				"title": "Dump Flight Recording Data",
 				"icon": "$(record)",
 				"category": "VisualVM"
@@ -279,6 +309,14 @@
 					"when": "false"
 				},
 				{
+					"command": "visualvm.selectProcess",
+					"when": "false"
+				},
+				{
+					"command": "visualvm.clearProcess",
+					"when": "false"
+				},
+				{
 					"command": "visualvm.threadDumpTake",
 					"when": "false"
 				},
@@ -319,7 +357,7 @@
 					"when": "false"
 				},
 				{
-					"command": "visualvm.jfrSnapshot",
+					"command": "visualvm.jfrDump",
 					"when": "false"
 				},
 				{
@@ -363,113 +401,133 @@
 					"group": "context@1"
 				},
 				{
+					"command": "visualvm.selectProcess",
+					"when": "view in visualvm.views && viewItem == visualvm.ProcessNode.noProcess",
+					"group": "inline@1"
+				},
+				{
+					"command": "visualvm.selectProcess",
+					"when": "view in visualvm.views && viewItem == visualvm.ProcessNode.noProcess",
+					"group": "context@1"
+				},
+				{
+					"command": "visualvm.clearProcess",
+					"when": "view in visualvm.views && viewItem =~ /visualvm\\.ProcessNode\\.(hasId|hasPid|terminated)/",
+					"group": "inline@4"
+				},
+				{
+					"command": "visualvm.clearProcess",
+					"when": "view in visualvm.views && viewItem =~ /visualvm\\.ProcessNode\\.(hasId|hasPid|terminated)/",
+					"group": "context@4"
+				},
+				{
 					"command": "visualvm.threadDumpTake",
-					"when": "view in visualvm.views && viewItem == visualvm.ThreadDumpNode",
+					"when": "view in visualvm.views && viewItem == visualvm.ThreadDumpNode.invokable",
 					"group": "inline@1"
 				},
 				{
 					"command": "visualvm.threadDumpTake",
-					"when": "view in visualvm.views && viewItem == visualvm.ThreadDumpNode",
+					"when": "view in visualvm.views && viewItem == visualvm.ThreadDumpNode.invokable",
 					"group": "context@1"
 				},
 				{
 					"command": "visualvm.heapDumpTake",
-					"when": "view in visualvm.views && viewItem == visualvm.HeapDumpNode",
+					"when": "view in visualvm.views && viewItem == visualvm.HeapDumpNode.invokable",
 					"group": "inline@1"
 				},
 				{
 					"command": "visualvm.heapDumpTake",
-					"when": "view in visualvm.views && viewItem == visualvm.HeapDumpNode",
+					"when": "view in visualvm.views && viewItem == visualvm.HeapDumpNode.invokable",
 					"group": "context@1"
 				},
 				{
 					"command": "visualvm.cpuSamplerStart",
-					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode",
+					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode.invokable",
 					"group": "inline@1"
 				},
 				{
 					"command": "visualvm.cpuSamplerStart",
-					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode",
+					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode.invokable",
 					"group": "context@1"
 				},
 				{
 					"command": "visualvm.cpuSamplerSnapshot",
-					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode",
+					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode.invokable",
 					"group": "inline@2"
 				},
 				{
 					"command": "visualvm.cpuSamplerSnapshot",
-					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode",
+					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode.invokable",
 					"group": "context@2"
 				},
 				{
 					"command": "visualvm.cpuSamplerStop",
-					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode",
+					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode.invokable",
 					"group": "inline@3"
 				},
 				{
 					"command": "visualvm.cpuSamplerStop",
-					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode",
+					"when": "view in visualvm.views && viewItem == visualvm.CpuSamplerNode.invokable",
 					"group": "context@3"
 				},
 				{
 					"command": "visualvm.memorySamplerStart",
-					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode",
+					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode.invokable",
 					"group": "inline@1"
 				},
 				{
 					"command": "visualvm.memorySamplerStart",
-					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode",
+					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode.invokable",
 					"group": "context@1"
 				},
 				{
 					"command": "visualvm.memorySamplerSnapshot",
-					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode",
+					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode.invokable",
 					"group": "inline@2"
 				},
 				{
 					"command": "visualvm.memorySamplerSnapshot",
-					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode",
+					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode.invokable",
 					"group": "context@2"
 				},
 				{
 					"command": "visualvm.memorySamplerStop",
-					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode",
+					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode.invokable",
 					"group": "inline@3"
 				},
 				{
 					"command": "visualvm.memorySamplerStop",
-					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode",
+					"when": "view in visualvm.views && viewItem == visualvm.MemorySamplerNode.invokable",
 					"group": "context@3"
 				},
 				{
 					"command": "visualvm.jfrStart",
-					"when": "view in visualvm.views && viewItem == visualvm.JfrNode",
+					"when": "view in visualvm.views && viewItem == visualvm.JfrNode.invokable",
 					"group": "inline@1"
 				},
 				{
 					"command": "visualvm.jfrStart",
-					"when": "view in visualvm.views && viewItem == visualvm.JfrNode",
+					"when": "view in visualvm.views && viewItem == visualvm.JfrNode.invokable",
 					"group": "context@1"
 				},
 				{
-					"command": "visualvm.jfrSnapshot",
-					"when": "view in visualvm.views && viewItem == visualvm.JfrNode",
+					"command": "visualvm.jfrDump",
+					"when": "view in visualvm.views && viewItem == visualvm.JfrNode.invokable",
 					"group": "inline@2"
 				},
 				{
-					"command": "visualvm.jfrSnapshot",
-					"when": "view in visualvm.views && viewItem == visualvm.JfrNode",
+					"command": "visualvm.jfrDump",
+					"when": "view in visualvm.views && viewItem == visualvm.JfrNode.invokable",
 					"group": "context@2"
 				},
 				{
 					"command": "visualvm.jfrStop",
-					"when": "view in visualvm.views && viewItem == visualvm.JfrNode",
+					"when": "view in visualvm.views && viewItem == visualvm.JfrNode.invokable",
 					"group": "inline@3"
 				},
 				{
 					"command": "visualvm.jfrStop",
-					"when": "view in visualvm.views && viewItem == visualvm.JfrNode",
+					"when": "view in visualvm.views && viewItem == visualvm.JfrNode.invokable",
 					"group": "context@3"
 				}
 			]
@@ -548,8 +606,5 @@
 		"vscode-extension-tester": "^5.2.1",
 		"webpack": "^5.74.0",
 		"webpack-cli": "^4.10.0"
-	},
-	"extensionDependencies": [
-		"asf.apache-netbeans-java"
-	]
+	}
 }

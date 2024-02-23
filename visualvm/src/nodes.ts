@@ -7,33 +7,62 @@
 
 import * as vscode from 'vscode';
 import * as visualvm from './visualvm';
+import * as commands from './commands';
 import * as parameters from './parameters';
-import * as configurations from './configurations';
+import * as presets from './presets';
+import * as runningProcesses from './runningProcesses';
 import * as monitoredProcesses from './monitoredProcesses';
 import * as logUtils from '../../common/lib/logUtils';
 
 
 const CONFIGURABLE_NODES_KEY = 'visualvm.configurableNodes';
-
-const COMMAND_CONFIGURE_SETTING = 'visualvm.configureSetting';
-const COMMAND_OPEN_PROCESS = 'visualvm.showProcess';
-const COMMAND_THREADDUMP_TAKE = 'visualvm.threadDumpTake';
-const COMMAND_HEAPDUMP_TAKE = 'visualvm.heapDumpTake';
+const INVOKABLE_NODES_KEY = 'visualvm.invokableNodes';
 
 export function initialize(context: vscode.ExtensionContext) {
     const configurableNodes = [
-        WhenStartedNode.CONTEXT,
-        CpuSamplerFilterNode.CONTEXT,
-        CpuSamplerSamplingRateNode.CONTEXT,
-        MemorySamplerSamplingRateNode.CONTEXT,
-        JfrSettingsNode.CONTEXT
+        WhenStartedNode.CONTEXT_BASE + ConfigurableNode.CONFIGURABLE_SUFFIX,
+        CpuSamplerFilterNode.CONTEXT_BASE + ConfigurableNode.CONFIGURABLE_SUFFIX,
+        CpuSamplerSamplingRateNode.CONTEXT_BASE + ConfigurableNode.CONFIGURABLE_SUFFIX,
+        MemorySamplerSamplingRateNode.CONTEXT_BASE + ConfigurableNode.CONFIGURABLE_SUFFIX,
+        JfrSettingsNode.CONTEXT_BASE + ConfigurableNode.CONFIGURABLE_SUFFIX
     ];
     vscode.commands.executeCommand('setContext', CONFIGURABLE_NODES_KEY, configurableNodes);
 
-    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_CONFIGURE_SETTING, (node: ConfigurableNode) => {
+    const invokableNodes = [
+        ThreadDumpNode.CONTEXT_BASE + InvokableNode.INVOKABLE_SUFFIX,
+        HeapDumpNode.CONTEXT_BASE + InvokableNode.INVOKABLE_SUFFIX,
+        CpuSamplerNode.CONTEXT_BASE + InvokableNode.INVOKABLE_SUFFIX,
+        MemorySamplerNode.CONTEXT_BASE + InvokableNode.INVOKABLE_SUFFIX,
+        JfrNode.CONTEXT_BASE + InvokableNode.INVOKABLE_SUFFIX
+    ];
+    vscode.commands.executeCommand('setContext', INVOKABLE_NODES_KEY, invokableNodes);
+
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_SELECT_PROCESS_GLOBAL, async () => {
+        const current = monitoredProcesses.getPids();
+        const selected = await runningProcesses.select(current);
+        if (selected) {
+            monitoredProcesses.add(selected);
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_SELECT_PROCESS, async (node: ProcessNode) => {
+        const current = monitoredProcesses.getPids();
+        const selected = await runningProcesses.select(current);
+        if (selected) {
+            monitoredProcesses.add(selected, node);
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_CLEAR_PROCESS, (node: ProcessNode) => {
+        const process = node.getProcess();
+        if (process) {
+            monitoredProcesses.remove(process, node);
+        } else {
+            provider().removeProcessContainer(node);
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_CONFIGURE_SETTING, (node: ConfigurableNode) => {
         node.configure();
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_OPEN_PROCESS, async (node: ProcessNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_OPEN_PROCESS, async (node: BaseNode) => {
         const process = await findProcess(node);
         const pid = process?.getPid();
         if (pid) {
@@ -41,7 +70,7 @@ export function initialize(context: vscode.ExtensionContext) {
             visualvm.show(pid);
         }
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_THREADDUMP_TAKE, async (node: ThreadDumpNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_THREADDUMP_TAKE, async (node: BaseNode) => {
         const process = await findProcess(node);
         const pid = process?.getPid();
         if (pid) {
@@ -50,34 +79,148 @@ export function initialize(context: vscode.ExtensionContext) {
             visualvm.perform(command);
         }
 	}));
-    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_HEAPDUMP_TAKE, async (node: HeapDumpNode) => {
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_HEAPDUMP_TAKE, async (node: BaseNode) => {
         const process = await findProcess(node);
         const pid = process?.getPid();
         if (pid) {
-            logUtils.logInfo(`[nodes] Taking thread dump for pid ${pid}`);
+            logUtils.logInfo(`[nodes] Taking heap dump for pid ${pid}`);
             const command = parameters.heapDump(pid);
             visualvm.perform(command);
         }
 	}));
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_CPU_SAMPLER_START, async (node: BaseNode) => {
+        const processNode = findProcessNode(node);
+        if (processNode) {
+            const process = await findProcess(node);
+            const pid = process?.getPid();
+            if (process && pid) {
+                const samplingFilter = processNode.cpuSamplerFilterPresets.getSelectedValue();
+                const samplingRate = processNode.cpuSamplerSamplingRatePresets.getSelectedValue();
+                const workspaceFolder = process.workspaceFolder;
+                logUtils.logInfo(`[nodes] Starting CPU sampling for pid ${pid} with filter ${samplingFilter} and sampling rate ${samplingRate} for folder ${workspaceFolder}`);
+                const commandPromise = parameters.cpuSamplerStart(pid, samplingFilter, samplingRate, workspaceFolder);
+                visualvm.perform(commandPromise);
+            }
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_CPU_SAMPLER_SNAPSHOT, async (node: BaseNode) => {
+        const process = await findProcess(node);
+        const pid = process?.getPid();
+        if (process && pid) {
+            logUtils.logInfo(`[nodes] Taking (CPU) sampling snapshot for pid ${pid}`);
+            const command = parameters.samplerSnapshot(pid);
+            visualvm.perform(command);
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_CPU_SAMPLER_STOP, async (node: BaseNode) => {
+        const process = await findProcess(node);
+        const pid = process?.getPid();
+        if (process && pid) {
+            logUtils.logInfo(`[nodes] Stopping (CPU) sampling for pid ${pid}`);
+            const command = parameters.samplerStop(pid);
+            visualvm.perform(command);
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_MEMORY_SAMPLER_START, async (node: BaseNode) => {
+        const processNode = findProcessNode(node);
+        if (processNode) {
+            const process = await findProcess(node);
+            const pid = process?.getPid();
+            if (process && pid) {
+                const samplingRate = processNode.memorySamplerSamplingRatePresets.getSelectedValue();
+                logUtils.logInfo(`[nodes] Starting memory sampling for pid ${pid} with sampling rate ${samplingRate}`);
+                const command = parameters.memorySamplerStart(pid, samplingRate);
+                visualvm.perform(command);
+            }
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_MEMORY_SAMPLER_SNAPSHOT, async (node: BaseNode) => {
+        const process = await findProcess(node);
+        const pid = process?.getPid();
+        if (process && pid) {
+            logUtils.logInfo(`[nodes] Taking (memory) sampling snapshot for pid ${pid}`);
+            const command = parameters.samplerSnapshot(pid);
+            visualvm.perform(command);
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_MEMORY_SAMPLER_STOP, async (node: BaseNode) => {
+        const process = await findProcess(node);
+        const pid = process?.getPid();
+        if (process && pid) {
+            logUtils.logInfo(`[nodes] Stopping (memory) sampling for pid ${pid}`);
+            const command = parameters.samplerStop(pid);
+            visualvm.perform(command);
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_JFR_START, async (node: BaseNode) => {
+        const processNode = findProcessNode(node);
+        if (processNode) {
+            const process = await findProcess(processNode);
+            const pid = process?.getPid();
+            if (process && pid) {
+                const jfrSettings = processNode.jfrSettingsPresets.getSelectedValue();
+                logUtils.logInfo(`[nodes] Starting flight recording for pid ${pid} with settings ${jfrSettings}`);
+                const command = parameters.jfrRecordingStart(pid, process.displayName, jfrSettings);
+                visualvm.perform(command);
+            }
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_JFR_DUMP, async (node: BaseNode) => {
+        const process = await findProcess(node);
+        const pid = process?.getPid();
+        if (process && pid) {
+            logUtils.logInfo(`[nodes] Dumping flight recording data for pid ${pid}`);
+            const command = parameters.jfrRecordingDump(pid);
+            visualvm.perform(command);
+        }
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_JFR_STOP, async (node: BaseNode) => {
+        const process = await findProcess(node);
+        const pid = process?.getPid();
+        if (process && pid) {
+            logUtils.logInfo(`[nodes] Stopping flight recording for pid ${pid}`);
+            const command = parameters.jfrRecordingStop(pid);
+            visualvm.perform(command);
+        }
+	}));
 
-    monitoredProcesses.onChanged((added, removed) => {
-        PROVIDER.processesChanged(added, removed);
+    monitoredProcesses.onChanged((added, removed, target) => {
+        provider().processesChanged(added, removed, target);
     });
+
+    context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
+        if (event.affectsConfiguration(monitoredProcesses.AUTO_SELECT_PROJECT_PROCESS_KEY)) {
+            const isAutoSelectProcess = vscode.workspace.getConfiguration().get<boolean>(monitoredProcesses.AUTO_SELECT_PROJECT_PROCESS_KEY);
+            logUtils.logInfo(`[nodes] Automatic process selection changed to ${isAutoSelectProcess ? 'enabled' : 'disabled'}`);
+            provider().autoSelectProjectProcessChanged(!!isAutoSelectProcess);
+        }
+    }));
 }
 
 async function findProcess(node: BaseNode): Promise<monitoredProcesses.MonitoredProcess | undefined> {
-    while (node.parent !== undefined) {
-        node = node.parent;
-    }
-    if (node instanceof ProcessNode) {
-        const process = node.getProcess();
-        // TODO: select running process if undefined
+    const processNode = findProcessNode(node);
+    if (processNode) {
+        let process = processNode.getProcess();
+        if (!process) {
+            const current = monitoredProcesses.getPids();
+            const selected = await runningProcesses.select(current);
+            if (selected) {
+                process = monitoredProcesses.add(selected, node);
+            }
+        }
         return process;
     }
     return undefined;
 }
 
-type TreeChanged = (treeItem?: vscode.TreeItem) => void;
+function findProcessNode(node: BaseNode): ProcessNode | undefined {
+    while (node.parent !== undefined) {
+        node = node.parent;
+    }
+    return node instanceof ProcessNode ? node as ProcessNode : undefined;
+}
+
+type TreeChanged = (node?: BaseNode) => void;
 
 class BaseNode extends vscode.TreeItem {
 
@@ -156,71 +299,106 @@ class ChangeableNode extends BaseNode {
 
 abstract class ConfigurableNode extends ChangeableNode {
 
-    private readonly configuration: configurations.Configuration;
+    static readonly CONFIGURABLE_SUFFIX = '.configurable';
+    static readonly NOT_CONFIGURABLE_SUFFIX = 'notConfigurable';
 
-    constructor(configuration: configurations.Configuration, treeChanged: TreeChanged, label: string, description: string | undefined, contextValue: string | undefined, children: BaseNode[] | undefined | null, expanded: boolean | undefined) {
-        super(treeChanged, label, description, contextValue, children, expanded);
-        this.configuration = configuration;
-        this.configuration.onChanged(() => { this.updateFromConfiguration(); this.treeChanged(this); });
-        this.updateFromConfiguration();
+    private readonly contextBase: string;
+
+    private readonly presets: presets.Presets;
+
+    constructor(presets: presets.Presets, treeChanged: TreeChanged, label: string, description: string | undefined, contextBase: string, children: BaseNode[] | undefined | null, expanded: boolean | undefined) {
+        super(treeChanged, label, description, `${contextBase}${ConfigurableNode.CONFIGURABLE_SUFFIX}`, children, expanded);
+        this.contextBase = contextBase;
+        this.presets = presets;
+        this.presets.onChanged(() => { this.updateFromPresets(); this.treeChanged(this); });
+        this.updateFromPresets();
     }
 
-    configure() {
-        this.configuration.configure();
+    setConfigurable(configurable: boolean) {
+        // Only called from ProcessNode, tree will be refreshed from there
+        this.contextValue = `${this.contextBase}${configurable ? ConfigurableNode.CONFIGURABLE_SUFFIX : ConfigurableNode.NOT_CONFIGURABLE_SUFFIX}`;
     }
 
-    protected updateFromConfiguration() {
-        this.description = this.configuration.getString();
+    configure(actionName?: string) {
+        actionName = actionName || `Configure ${this.presets.name}`;
+        this.presets.select(actionName);
+    }
+
+    protected getPresetValue(): string {
+        return this.presets.getSelectedValue();
+    }
+
+    private updateFromPresets() {
+        this.description = this.presets.getSelectedString();
+    }
+
+}
+
+abstract class InvokableNode extends BaseNode {
+
+    static readonly INVOKABLE_SUFFIX = '.invokable';
+    static readonly NOT_INVOKABLE_SUFFIX = '.notInvokable';
+
+    private readonly contextBase: string;
+
+    constructor(label: string, description: string | undefined, contextBase: string, children: BaseNode[] | undefined | null, expanded: boolean | undefined) {
+        super(label, description, `${contextBase}${InvokableNode.INVOKABLE_SUFFIX}`, children, expanded);
+        this.contextBase = contextBase;
+    }
+
+    setInvokable(invokable: boolean) {
+        // Only called from ProcessNode, tree will be refreshed from there
+        this.contextValue = `${this.contextBase}${invokable ? InvokableNode.INVOKABLE_SUFFIX : InvokableNode.NOT_INVOKABLE_SUFFIX}`;
     }
 
 }
 
 class WhenStartedNode extends ConfigurableNode {
 
-    static CONTEXT = 'visualvm.WhenStartedNode';
+    static readonly CONTEXT_BASE = 'visualvm.WhenStartedNode';
 
-    constructor(treeChanged: TreeChanged) {
-        super(new configurations.WhenStartedConfiguration(), treeChanged, 'When started:', undefined, WhenStartedNode.CONTEXT, undefined, undefined);
-        this.tooltip = 'Action when a new project process is started';
+    constructor(presets: presets.Presets, treeChanged: TreeChanged) {
+        super(presets, treeChanged, 'When started:', undefined, WhenStartedNode.CONTEXT_BASE, undefined, undefined);
+        this.tooltip = 'Action when a project process is started';
     }
 
 }
 
-class ThreadDumpNode extends BaseNode {
+class ThreadDumpNode extends InvokableNode {
 
-    private static CONTEXT = 'visualvm.ThreadDumpNode';
+    static readonly CONTEXT_BASE = 'visualvm.ThreadDumpNode';
 
     constructor() {
-        super('Thread dump', undefined, ThreadDumpNode.CONTEXT, undefined, undefined);
+        super('Thread dump', undefined, ThreadDumpNode.CONTEXT_BASE, undefined, undefined);
         this.tooltip = 'Take a thread dump and open it in VisualVM';
     }
 
 }
 
-class HeapDumpNode extends BaseNode {
+class HeapDumpNode extends InvokableNode {
 
-    private static CONTEXT = 'visualvm.HeapDumpNode';
+    static readonly CONTEXT_BASE = 'visualvm.HeapDumpNode';
 
     constructor() {
-        super('Heap dump', undefined, HeapDumpNode.CONTEXT, undefined, undefined);
+        super('Heap dump', undefined, HeapDumpNode.CONTEXT_BASE, undefined, undefined);
         this.tooltip = 'Take a heap dump and open it in VisualVM';
     }
 
 }
 
-class CpuSamplerNode extends BaseNode {
+class CpuSamplerNode extends InvokableNode {
 
-    private static CONTEXT = 'visualvm.CpuSamplerNode';
+    static readonly CONTEXT_BASE = 'visualvm.CpuSamplerNode';
 
-    constructor(treeChanged: TreeChanged) {
-        super('CPU sampler', undefined, CpuSamplerNode.CONTEXT, [ ...CpuSamplerNode.createNodes(treeChanged) ], false);
+    constructor(presets: presets.Presets[], treeChanged: TreeChanged) {
+        super('CPU sampler', undefined, CpuSamplerNode.CONTEXT_BASE, [ ...CpuSamplerNode.createNodes(presets, treeChanged) ], false);
         this.tooltip = 'Control a CPU sampling session in VisualVM';
     }
 
-    private static createNodes(treeChanged: TreeChanged): BaseNode[] {
+    private static createNodes(presets: presets.Presets[], treeChanged: TreeChanged): BaseNode[] {
         const nodes: BaseNode[] = [];
-        nodes.push(new CpuSamplerFilterNode(treeChanged));
-        nodes.push(new CpuSamplerSamplingRateNode(treeChanged));
+        nodes.push(new CpuSamplerFilterNode(presets[0], treeChanged));
+        nodes.push(new CpuSamplerSamplingRateNode(presets[1], treeChanged));
         return nodes;
     }
 
@@ -228,10 +406,10 @@ class CpuSamplerNode extends BaseNode {
 
 class CpuSamplerFilterNode extends ConfigurableNode {
 
-    static CONTEXT = 'visualvm.CpuSamplerFilterNode';
+    static readonly CONTEXT_BASE = 'visualvm.CpuSamplerFilterNode';
 
-    constructor(treeChanged: TreeChanged) {
-        super(new configurations.CpuSamplerFilterConfiguration(), treeChanged, 'Filter:', undefined, CpuSamplerFilterNode.CONTEXT, undefined, undefined);
+    constructor(presets: presets.Presets, treeChanged: TreeChanged) {
+        super(presets, treeChanged, 'Filter:', undefined, CpuSamplerFilterNode.CONTEXT_BASE, undefined, undefined);
         this.tooltip = 'CPU sampling filter';
     }
 
@@ -239,27 +417,27 @@ class CpuSamplerFilterNode extends ConfigurableNode {
 
 class CpuSamplerSamplingRateNode extends ConfigurableNode {
 
-    static CONTEXT = 'visualvm.CpuSamplerSamplingRateNode';
+    static readonly CONTEXT_BASE = 'visualvm.CpuSamplerSamplingRateNode';
 
-    constructor(treeChanged: TreeChanged) {
-        super(new configurations.CpuSamplerSamplingRateConfiguration(), treeChanged, 'Sampling rate:', undefined, CpuSamplerSamplingRateNode.CONTEXT, undefined, undefined);
+    constructor(presets: presets.Presets, treeChanged: TreeChanged) {
+        super(presets, treeChanged, 'Sampling rate:', undefined, CpuSamplerSamplingRateNode.CONTEXT_BASE, undefined, undefined);
         this.tooltip = 'CPU sampling rate';
     }
 
 }
 
-class MemorySamplerNode extends BaseNode {
+class MemorySamplerNode extends InvokableNode {
 
-    private static CONTEXT = 'visualvm.MemorySamplerNode';
+    static readonly CONTEXT_BASE = 'visualvm.MemorySamplerNode';
 
-    constructor(treeChanged: TreeChanged) {
-        super('Memory sampler', undefined, MemorySamplerNode.CONTEXT, [ ...MemorySamplerNode.createNodes(treeChanged) ], false);
+    constructor(presets: presets.Presets, treeChanged: TreeChanged) {
+        super('Memory sampler', undefined, MemorySamplerNode.CONTEXT_BASE, [ ...MemorySamplerNode.createNodes(presets, treeChanged) ], false);
         this.tooltip = 'Control a memory sampling session in VisualVM';
     }
 
-    private static createNodes(treeChanged: TreeChanged): BaseNode[] {
+    private static createNodes(presets: presets.Presets, treeChanged: TreeChanged): BaseNode[] {
         const nodes: BaseNode[] = [];
-        nodes.push(new MemorySamplerSamplingRateNode(treeChanged));
+        nodes.push(new MemorySamplerSamplingRateNode(presets, treeChanged));
         return nodes;
     }
 
@@ -267,27 +445,27 @@ class MemorySamplerNode extends BaseNode {
 
 class MemorySamplerSamplingRateNode extends ConfigurableNode {
 
-    static CONTEXT = 'visualvm.MemorySamplerSamplingRateNode';
+    static readonly CONTEXT_BASE = 'visualvm.MemorySamplerSamplingRateNode';
 
-    constructor(treeChanged: TreeChanged) {
-        super(new configurations.MemorySamplerSamplingRateConfiguration(), treeChanged, 'Sampling rate:', undefined, MemorySamplerSamplingRateNode.CONTEXT, undefined, undefined);
+    constructor(presets: presets.Presets, treeChanged: TreeChanged) {
+        super(presets, treeChanged, 'Sampling rate:', undefined, MemorySamplerSamplingRateNode.CONTEXT_BASE, undefined, undefined);
         this.tooltip = 'Memory sampling rate';
     }
 
 }
 
-class JfrNode extends BaseNode {
+class JfrNode extends InvokableNode {
 
-    private static CONTEXT = 'visualvm.JfrNode';
+    static readonly CONTEXT_BASE = 'visualvm.JfrNode';
 
-    constructor(treeChanged: TreeChanged) {
-        super('JFR', undefined, JfrNode.CONTEXT, [ ...JfrNode.createNodes(treeChanged) ], false);
+    constructor(presets: presets.Presets, treeChanged: TreeChanged) {
+        super('JFR', undefined, JfrNode.CONTEXT_BASE, [ ...JfrNode.createNodes(presets, treeChanged) ], false);
         this.tooltip = 'Control a flight recording session in VisualVM';
     }
 
-    private static createNodes(treeChanged: TreeChanged): BaseNode[] {
+    private static createNodes(presets: presets.Presets, treeChanged: TreeChanged): BaseNode[] {
         const nodes: BaseNode[] = [];
-        nodes.push(new JfrSettingsNode(treeChanged));
+        nodes.push(new JfrSettingsNode(presets, treeChanged));
         return nodes;
     }
 
@@ -295,10 +473,10 @@ class JfrNode extends BaseNode {
 
 class JfrSettingsNode extends ConfigurableNode {
 
-    static CONTEXT = 'visualvm.JfrSettingsNode';
+    static readonly CONTEXT_BASE = 'visualvm.JfrSettingsNode';
 
-    constructor(treeChanged: TreeChanged) {
-        super(new configurations.JfrSettingsConfiguration(), treeChanged, 'Settings:', undefined, JfrSettingsNode.CONTEXT, undefined, undefined);
+    constructor(presets: presets.Presets, treeChanged: TreeChanged) {
+        super(presets, treeChanged, 'Settings:', undefined, JfrSettingsNode.CONTEXT_BASE, undefined, undefined);
         this.tooltip = 'Flight recorder settings';
     }
 
@@ -310,25 +488,42 @@ class ProcessNode extends ChangeableNode {
     private static CONTEXT_NO_PROCESS = `${this.CONTEXT_BASE}.noProcess`;
     private static CONTEXT_HAS_ID = `${this.CONTEXT_BASE}.hasId`;
     private static CONTEXT_HAS_PID = `${this.CONTEXT_BASE}.hasPid`;
-    private static CONTEXT_TERMINATED = `${this.CONTEXT_BASE}.terminated`;
+    // private static CONTEXT_TERMINATED = `${this.CONTEXT_BASE}.terminated`;
+
+    readonly isMaster: boolean;
+    private isAutoSelectProcess: boolean;
+
+    readonly whenStartedPresets: presets.Presets;
+    readonly cpuSamplerFilterPresets: presets.Presets;
+    readonly cpuSamplerSamplingRatePresets: presets.Presets;
+    readonly memorySamplerSamplingRatePresets: presets.Presets;
+    readonly jfrSettingsPresets: presets.Presets;
 
     private process: monitoredProcesses.MonitoredProcess | undefined;
 
-    constructor(treeChanged: TreeChanged, process?: monitoredProcesses.MonitoredProcess | undefined) {
-        super(treeChanged, 'Process:', undefined, ProcessNode.CONTEXT_NO_PROCESS, [ ...ProcessNode.createNodes(treeChanged) ], !process);
+    // process: undefined -> isMaster, null -> isMaster && persistentPresets
+    constructor(treeChanged: TreeChanged, process?: monitoredProcesses.MonitoredProcess | undefined | null, isAutoSelectProcess?: boolean) {
+        super(treeChanged, 'Process:', undefined, ProcessNode.CONTEXT_NO_PROCESS, [], !process);
         this.tooltip = 'Java process monitored by VisualVM';
-        this.setProcess(process);
-    }
+        this.isMaster = !process;
+        this.isAutoSelectProcess = !!isAutoSelectProcess;
+        
+        const persistentPresets = process === null;
+        this.whenStartedPresets = persistentPresets ? presets.WhenStartedPresets.PERSISTENT : new presets.WhenStartedPresets();
+        this.cpuSamplerFilterPresets = persistentPresets ? presets.CpuSamplerFilterPresets.PERSISTENT : new presets.CpuSamplerFilterPresets();
+        this.cpuSamplerSamplingRatePresets = persistentPresets ? presets.CpuSamplerSamplingRatePresets.PERSISTENT : new presets.CpuSamplerSamplingRatePresets();
+        this.memorySamplerSamplingRatePresets = persistentPresets ? presets.MemorySamplerSamplingRatePresets.PERSISTENT : new presets.MemorySamplerSamplingRatePresets();
+        this.jfrSettingsPresets = persistentPresets ? presets.JfrSettingsPresets.PERSISTENT : new presets.JfrSettingsPresets();
 
-    private static createNodes(treeChanged: TreeChanged): BaseNode[] {
         const nodes: BaseNode[] = [];
-        nodes.push(new WhenStartedNode(treeChanged));
         nodes.push(new ThreadDumpNode());
         nodes.push(new HeapDumpNode());
-        nodes.push(new CpuSamplerNode(treeChanged));
-        nodes.push(new MemorySamplerNode(treeChanged));
-        nodes.push(new JfrNode(treeChanged));
-        return nodes;
+        nodes.push(new CpuSamplerNode([ this.cpuSamplerFilterPresets, this.cpuSamplerSamplingRatePresets ], treeChanged));
+        nodes.push(new MemorySamplerNode(this.memorySamplerSamplingRatePresets, treeChanged));
+        nodes.push(new JfrNode(this.jfrSettingsPresets, treeChanged));
+        this.setChildren(nodes);
+        
+        this.setProcess(process ? process : undefined);
     }
 
     getProcess(): monitoredProcesses.MonitoredProcess | undefined {
@@ -337,28 +532,99 @@ class ProcessNode extends ChangeableNode {
 
     setProcess(process: monitoredProcesses.MonitoredProcess | undefined) {
         this.process = process;
-        this.process?.onPidChanged(() => { this.updateProcess(); this.treeChanged(this); });
-        this.updateProcess();
+        this.process?.onPidChanged(() => { this.updateProcess(); });
+        this.updateProcess(true);
+        this.updateWhenStartedAvailable();
     }
 
-    private updateProcess() {
+    autoSelectProcessChanged(isAutoSelectProcess: boolean) {
+        this.isAutoSelectProcess = isAutoSelectProcess;
+        if (!this.process) {
+            this.description = this.descriptionHint();
+            this.treeChanged(this);
+        }
+        this.updateWhenStartedAvailable();
+    }
+
+    private updateWhenStartedAvailable(): boolean {
+        if (this.isMaster) {
+            const hasWhenStartedNode = !!this.whenStartedNode();
+            const hasSupportedProcess = this.process === undefined || !this.process.isManuallySelected;
+            if (this.isAutoSelectProcess && hasSupportedProcess) {
+                if (!hasWhenStartedNode) {
+                    const whenStartedNode = new WhenStartedNode(this.whenStartedPresets, this.treeChanged);
+                    whenStartedNode.parent = this;
+                    this.children?.unshift(whenStartedNode);
+                    this.treeChanged(this);
+                    return true;
+                }
+            } else {
+                if (hasWhenStartedNode) {
+                    this.children?.splice(0, 1);
+                    this.treeChanged(this);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private updateProcess(initialUpdate: boolean = false) {
         if (this.process) {
             const name = this.process.displayName;
             const pid = this.process.getPid();
             if (pid === null) {
-                this.description = `${name} (terminated)`;
-                this.contextValue = ProcessNode.CONTEXT_TERMINATED;
+                // Do not update & refresh, will be reset/removed immediately after
+                return;
+                // this.description = `${name} (terminated)`;
+                // this.contextValue = ProcessNode.CONTEXT_TERMINATED;
             } else if (pid === undefined) {
                 this.description = `${name} (pid pending...)`;
                 this.contextValue = ProcessNode.CONTEXT_HAS_ID;
+                this.updateInvokables(false);
             } else {
                 this.description = `${name} (pid ${pid})`;
                 this.contextValue = ProcessNode.CONTEXT_HAS_PID;
+                if (!initialUpdate) {
+                    setTimeout(() => { this.handleWhenStarted(); }, 0);
+                }
+                this.updateInvokables(true);
             }
+            this.whenStartedNode()?.setConfigurable(false);
         } else {
-            // TODO: display 'start new' based on 'Auto select project process'
-            this.description = 'start new or select running...';
+            this.description = this.descriptionHint();
             this.contextValue = ProcessNode.CONTEXT_NO_PROCESS;
+            this.whenStartedNode()?.setConfigurable(true);
+            this.updateInvokables(true);
+        }
+        this.treeChanged(this);
+    }
+
+    private descriptionHint(): string {
+        return this.isAutoSelectProcess ? 'start new or select running...' : 'select running...';
+    }
+
+    private whenStartedNode(): WhenStartedNode | undefined {
+        return this.children?.[0] instanceof WhenStartedNode ? (this.children[0] as WhenStartedNode) : undefined;
+    }
+
+    private handleWhenStarted() {
+        const whenStartedNode = this.whenStartedNode();
+        if (whenStartedNode) { // When started is supported
+            const command = this.whenStartedPresets.getSelectedValue();
+            if (command) { // When started is set up to perform an action
+                vscode.commands.executeCommand(command, whenStartedNode);
+            }
+        }
+    }
+
+    private updateInvokables(invokable: boolean) {
+        if (this.children) {
+            for (const child of this.children) {
+                if (child instanceof InvokableNode) {
+                    (child as InvokableNode).setInvokable(invokable);
+                }
+            }
         }
     }
 
@@ -369,32 +635,46 @@ class Provider implements vscode.TreeDataProvider<vscode.TreeItem> {
 	private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null> = new vscode.EventEmitter<vscode.TreeItem | undefined | null>();
 	readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null> = this._onDidChangeTreeData.event;
 
-    private readonly treeChanged: TreeChanged = (treeItem?: vscode.TreeItem) => { this.refresh(treeItem); }
-    private readonly roots: ProcessNode[] = [ new ProcessNode(this.treeChanged) ];
+    private readonly treeChanged: TreeChanged = (node?: BaseNode) => {
+        if (this.visible) {
+            if (node) {
+                const processNode = findProcessNode(node);
+                if (!processNode || !this.roots.includes(processNode)) {
+                    // node already removed from tree
+                    return;
+                }
+            }
+            this.refresh(node);
+        }
+    };
+    private readonly roots: ProcessNode[] = [ new ProcessNode(this.treeChanged, null, vscode.workspace.getConfiguration().get<boolean>(monitoredProcesses.AUTO_SELECT_PROJECT_PROCESS_KEY)) ];
 
-    private visible: boolean = true;
+    private visible: boolean = false;
 
-    processesChanged(added: monitoredProcesses.MonitoredProcess | undefined, removed: monitoredProcesses.MonitoredProcess | undefined) {
+    processesChanged(added: monitoredProcesses.MonitoredProcess | undefined, removed: monitoredProcesses.MonitoredProcess | undefined, target: any | undefined) {
         if (removed) {
             for (let index = 0; index < this.roots.length; index++) {
                 const root = this.roots[index];
                 if (root.getProcess() === removed) {
-                    root.setProcess(added);
-                    if (!added && index > 0) {
+                    if (root.isMaster) {
+                        root.setProcess(undefined);
+                        this.refresh(root);
+                    } else {
                         this.roots.splice(index, 1);
                         this.refresh();
-                    } else {
-                        this.refresh(root);
                     }
                     break;
                 }
             }
         } else if (added) {
-            let processRoot: ProcessNode | undefined = undefined;
-            for (const root of this.roots) {
-                if (root.getProcess() === undefined) {
-                    processRoot = root;
-                    break;
+            const targetNode = target instanceof ProcessNode ? target as ProcessNode : undefined;
+            let processRoot: ProcessNode | undefined = targetNode;
+            if (!processRoot) {
+                for (const root of this.roots) {
+                    if (root.getProcess() === undefined) {
+                        processRoot = root;
+                        break;
+                    }
                 }
             }
             if (processRoot) {
@@ -405,6 +685,22 @@ class Provider implements vscode.TreeDataProvider<vscode.TreeItem> {
                 this.roots.push(processRoot);
                 this.refresh();
             }
+        }
+    }
+
+    autoSelectProjectProcessChanged(isAutoSelectProcess: boolean) {
+        for (const root of this.roots) {
+            if (root.isMaster) {
+                root.autoSelectProcessChanged(isAutoSelectProcess);
+            }
+        }
+    }
+
+    removeProcessContainer(root: ProcessNode) {
+        const index = this.roots.indexOf(root);
+        if (index > -1) {
+            this.roots.splice(index, 1);
+            this.refresh();
         }
     }
 
@@ -438,4 +734,8 @@ class Provider implements vscode.TreeDataProvider<vscode.TreeItem> {
     }
 }
 
-export const PROVIDER = new Provider();
+let PROVIDER: Provider | undefined;
+export function provider(): Provider {
+    PROVIDER = PROVIDER || new Provider();
+    return PROVIDER;
+}

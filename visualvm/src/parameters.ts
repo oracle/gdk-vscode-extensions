@@ -6,9 +6,20 @@
  */
 
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import * as jdk from './jdk';
+import * as projectUtils from './projectUtils';
+import * as vscodeUtils from './vscodeUtils';
 // import * as logUtils from '../../common/lib/logUtils';
 
+
+export const CPU_SAMPLER_FILTER_INCLUSIVE = 'include-classes';
+export const CPU_SAMPLER_FILTER_EXCLUSIVE = 'exclude-classes';
+
+const ENABLE_GO_TO_SOURCE_KEY = 'visualvm.integration.enableGoToSource';
+const VSCODE_PARAMETERS_KEY = 'visualvm.integration.visualStudioCodeParameters';
 
 const USE_JDK_PATH_FOR_STARTUP_KEY = 'visualvm.startup.useJdkPathForVisualvm';
 const STARTUP_PARAMETERS_KEY = 'visualvm.startup.visualvmParameters';
@@ -20,7 +31,7 @@ export function executable(executable: string): string {
 }
 
 export function perfMaxStringConstLength(): string {
-    return '-J-XX:PerfMaxStringConstLength=6144'
+    return '-J-XX:PerfMaxStringConstLength=6144';
 }
 
 export async function jdkHome(): Promise<string | undefined> {
@@ -49,6 +60,63 @@ export function userDefinedParameters(): string | undefined {
     return vscode.workspace.getConfiguration().get<string>(STARTUP_PARAMETERS_KEY);
 }
 
+export async function goToSource(): Promise<string | undefined> {
+    const parameters: string[] = [];
+    if (vscode.workspace.getConfiguration().get<boolean>(ENABLE_GO_TO_SOURCE_KEY)) {
+        const vsCodeLauncher = vscodeUtils.findLauncher();
+        const vsCodeLauncherParameters = vscode.workspace.getConfiguration().get<string>(VSCODE_PARAMETERS_KEY, '');
+        const vsCodeLauncherCommand = vsCodeLauncher ? `${vsCodeLauncher}${vsCodeLauncherParameters ? ' ' + vsCodeLauncherParameters : ''}` : '';
+        const sourceViewer = vsCodeLauncher ? `${encode(vsCodeLauncherCommand)} -g {file}:{line}:{column}` : '';
+        
+        const sourceRootsArr: string[] = [];
+        const workspaceSourceRoots = await getWorkspaceSourceRoots();
+        if (workspaceSourceRoots) {
+            sourceRootsArr.push(...workspaceSourceRoots);
+        }
+        const jdkSourceRoots = await getJdkSourceRoots();
+        if (jdkSourceRoots) {
+            sourceRootsArr.push(jdkSourceRoots);
+        }
+        const sourceRoots = sourceRootsArr.length ? sourceRootsArr.join(path.delimiter) : '';
+
+        if (sourceViewer.length + sourceRoots.length < 200) {
+            parameters.push(`--source-viewer="${sourceViewer}"`);
+            parameters.push(`--source-roots="${sourceRoots}"`);
+        } else {
+            const file = writeProperties('visualvm-source-config', `source-viewer=${sourceViewer}`, `source-roots=${sourceRoots}`);
+            if (file) {
+                parameters.push(`--source-config="${encode(file)}"`);
+            }
+        }
+    } else {
+        // Make sure to reset the previously forced settings
+        parameters.push('--source-viewer=""');
+        parameters.push('--source-roots=""');
+    }
+    return parameters.length ? parameters.join(' ') : undefined;
+}
+
+async function getWorkspaceSourceRoots(): Promise<string[] | undefined> {
+    const sourceRoots = await projectUtils.getSourceRoots();
+    if (sourceRoots) {
+        for (let index = 0; index < sourceRoots.length; index++) {
+            sourceRoots[index] = encode(sourceRoots[index]);
+        }
+    }
+    return sourceRoots;
+}
+
+async function getJdkSourceRoots(): Promise<string | undefined> {
+    const jdkPath = await jdk.getPath(true);
+    if (jdkPath) {
+        const jdkSources = await jdk.getSources(jdkPath);
+        if (jdkSources) {
+            return `${encode(jdkSources.path)}${jdkSources.modular ? '[subpaths=*modules*]' : ''}`;
+        }
+    }
+    return undefined;
+}
+
 export function openPid(pid: number): string {
     const view = vscode.workspace.getConfiguration().get<string>(PRESELECT_VIEW_KEY);
     function viewIndex(view: string | undefined): number {
@@ -73,13 +141,137 @@ export function heapDump(pid: number): string {
     return `--heapdump ${pid.toString()}`;
 }
 
+export async function cpuSamplerStart(pid: number, samplingFilter?: string, samplingRate?: number | string, workspaceFolder?: vscode.WorkspaceFolder): Promise<string | undefined> {
+    const samplingFilterP = await resolveSamplingFilter(samplingFilter, workspaceFolder);
+    if (samplingFilterP !== undefined) {
+        if (typeof samplingRate !== 'string') {
+            samplingRate = Number(samplingRate || 100).toString();
+        }
+        const parameters: string[] = [];
+        parameters.push(`--start-cpu-sampler ${pid}`);
+        const samplingRateP = `sampling-rate=${samplingRate}`;
+        if (samplingFilterP.length + samplingRateP.length < 200) {
+            parameters.push('@');
+            parameters.push(samplingFilterP);
+            parameters.push(',');
+            parameters.push(samplingRateP);
+        } else {
+            const file = writeProperties('visualvm-sampler-config', samplingFilterP, samplingRateP);
+            if (file) {
+                parameters.push(`@settings-file="${encode(file)}"`);
+            }
+        }
+        return parameters.join('');
+    } else {
+        return undefined;
+    }
+}
+
+async function resolveSamplingFilter(samplingFilter?: string, workspaceFolder?: vscode.WorkspaceFolder): Promise<string | undefined> {
+    switch (samplingFilter) {
+        case CPU_SAMPLER_FILTER_EXCLUSIVE: // exclude JDK classes
+            const jdkPackages = jdk.getPackages();
+            return `${CPU_SAMPLER_FILTER_EXCLUSIVE}=${encode(jdkPackages)}`;
+        case CPU_SAMPLER_FILTER_INCLUSIVE: // include only project classes
+            const projectPackages = await projectUtils.getPackages(workspaceFolder);
+            if (projectPackages?.length) {
+                const packages = projectPackages.join(', ');
+                return `${CPU_SAMPLER_FILTER_INCLUSIVE}=${encode(packages)}`;
+            } else {
+                const reason = projectPackages === undefined ? 'No Java support available to resolve project classes' : 'No project classes found';
+                const msg = `${reason}. Select how to proceed:`;
+                const allOption = 'Include All Classes';
+                const jdkOption = 'Exclude JDK Classes';
+                const cancelOption = 'Cancel CPU Sampler';
+                const selected = await vscode.window.showWarningMessage(msg, allOption, jdkOption, cancelOption);
+                if (selected === allOption) {
+                    return resolveSamplingFilter();
+                } else if (selected === jdkOption) {
+                    return resolveSamplingFilter(CPU_SAMPLER_FILTER_EXCLUSIVE);
+                } else {
+                    return undefined;
+                }
+            }
+        default: // include all classes
+            return `${CPU_SAMPLER_FILTER_INCLUSIVE}=`;
+    }
+}
+
+export function memorySamplerStart(pid: number, samplingRate?: number | string): string {
+    if (typeof samplingRate !== 'string') {
+        samplingRate = Number(samplingRate || 1000).toString();
+    }
+    const parameters: string[] = [];
+    parameters.push(`--start-memory-sampler ${pid}`);
+    parameters.push('@');
+    parameters.push(`sampling-rate=${samplingRate}`);
+    return parameters.join('');
+}
+
+export function samplerSnapshot(pid: number): string {
+    return `--snapshot-sampler ${pid}`;
+}
+
+export function samplerStop(pid: number): string {
+    return `--stop-sampler ${pid}`;
+}
+
+export function jfrRecordingStart(pid: number, displayName: string, settingsName?: string): string {
+    const parameters: string[] = [];
+    parameters.push(`--start-jfr ${pid}`);
+    parameters.push('@');
+    parameters.push(`name=${encode(displayName)}`);
+    parameters.push(',');
+    parameters.push(`settings=${settingsName || 'default'}`);
+    return parameters.join('');
+}
+
+export function jfrRecordingDump(pid: number) {
+    return `--dump-jfr ${pid}`;
+}
+
+export function jfrRecordingStop(pid: number) {
+    return `--stop-jfr ${pid}`;
+}
+
 
 
 export function vmArgId(id: string): string {
-    return `-Dvisualvm.id=#${id}`;
+    return `-Dvisualvm.id=${id}`;
 }
 
 export function vmArgDisplayName(displayName: string): string {
     displayName = displayName.replace(/\s/g, '_');
     return `-Dvisualvm.display.name=${displayName}`;
+}
+
+
+function encode(text: string | undefined): string {
+    if (!text) return 'undefined';
+    text = text.replace(/\'/g, '%27');
+    text = text.replace(/\"/g, '%22');
+    text = text.replace(/\s/g, '%20');
+    text = text.replace( /,/g, '%2C');
+    return text;
+}
+
+function writeProperties(filename: string, ...records: string[]): string | undefined {
+    const tmp = getTmpDir();
+    if (tmp) {
+        const file = path.join(tmp, filename);
+        const stream = fs.createWriteStream(path.join(tmp, filename), { flags: 'w', encoding: 'utf8' });
+        for (let record of records) {
+            stream.write(record.replace(/\\/g, '\\\\') + '\n');
+        }
+        stream.end();
+        return file;
+    } else {
+        return undefined;
+    }
+}
+
+function getTmpDir(): string {
+    const tmp = os.tmpdir();
+    const realtmp = fs.realpathSync(tmp);
+    return realtmp;
 }

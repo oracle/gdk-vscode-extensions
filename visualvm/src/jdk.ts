@@ -64,7 +64,7 @@ export async function getPath(interactive: boolean = false): Promise<string | un
                 return jdkPath;
             } else {
                 logUtils.logError(`[jdk] Selected JDK installation is invalid: ${jdkPath}`);
-                vscode.window.showErrorMessage(`Selected JDK installation is invalid: ${jdkPath}`)
+                vscode.window.showErrorMessage(`Selected JDK installation is invalid: ${jdkPath}`);
             }
         } else {
             logUtils.logInfo('[jdk] JDK installation selection canceled');
@@ -100,4 +100,29 @@ export function getJpsPath(jdkPath: string): string | undefined {
         return undefined;
     }
     return jdkJpsPath;
+}
+
+export function getPackages(): string {
+    let ret = 'java.**, javax.**, jdk.**';
+    ret += ', org.graalvm.**';
+    ret += ', com.sun.**, sun.**, sunw.**';
+    ret += ', org.omg.CORBA.**, org.omg.CosNaming.**, COM.rsa.**';
+    if (process.platform === 'darwin') {
+        ret += ', apple.laf.**, apple.awt.**, com.apple.**';
+    }
+    return ret;
+}
+
+export async function getSources(jdkPath: string): Promise<{ path: string; modular: boolean } | undefined> {
+    const modularJdkSrc = path.join(jdkPath, 'lib', 'src.zip');
+    if (fs.existsSync(modularJdkSrc)) {
+        return { path: modularJdkSrc, modular: true };
+    }
+
+    const jdkSrc = path.join(jdkPath, 'src.zip');
+    if (fs.existsSync(jdkSrc)) {
+        return { path: jdkSrc, modular: false };
+    }
+    
+    return undefined;
 }

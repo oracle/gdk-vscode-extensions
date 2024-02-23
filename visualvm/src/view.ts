@@ -7,11 +7,9 @@
 
 import * as vscode from 'vscode';
 import * as nodes from './nodes';
+import * as commands from './commands';
 import * as logUtils from '../../common/lib/logUtils';
 
-
-const COMMAND_MOVE_VIEW = 'visualvm.moveView';
-const NAME_MOVE_VIEW = 'Move VisualVM View';
 
 // Predefined views
 const VISUALVM_VIEW_ID = 'visualvm-visualvm';
@@ -52,7 +50,7 @@ const CREATED_VIEWS: any = {};
 let persistentStorage: vscode.Memento | undefined;
 
 export function initialize(context: vscode.ExtensionContext) {
-    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_MOVE_VIEW, (viewId?: string) => {
+    context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_MOVE_VIEW, (viewId?: string) => {
         // NOTE: if called without the viewId parameter, the last selected node is passed as a parameter
         move(typeof viewId === 'string' ? viewId : undefined);
 	}));
@@ -121,7 +119,7 @@ export function initialize(context: vscode.ExtensionContext) {
 export async function move(viewId?: string): Promise<boolean | undefined> {
     if (!viewId) {
         logUtils.logInfo('[view] Selecting view container');
-        viewId = await selectViewContainer(NAME_MOVE_VIEW);
+        viewId = await selectViewContainer(commands.COMMAND_MOVE_VIEW_NAME);
         if (!viewId) {
             logUtils.logInfo('[view] View container selection canceled');
             return undefined;
@@ -135,8 +133,6 @@ export async function move(viewId?: string): Promise<boolean | undefined> {
             }
         } else if (!PREDEFINED_VIEW_IDS.includes(viewId)) {
             logUtils.logWarning(`[view] Unknown view: ${viewId}`);
-            console.log('______ UNKNOWN VIEW _____')
-            console.log(viewId)
             return false;
         }
     }
@@ -157,11 +153,15 @@ export async function move(viewId?: string): Promise<boolean | undefined> {
 }
 
 export function hideNodes() {
-    nodes.PROVIDER.setVisible(false);
+    nodes.provider().setVisible(false);
 }
 
 export function showNodes() {
-    nodes.PROVIDER.setVisible(true);
+    nodes.provider().setVisible(true);
+}
+
+export function getViewId(): string {
+    return currentViewId || VISUALVM_VIEW_ID;
 }
 
 async function selectViewContainer(actionName?: string): Promise<string | undefined> {
@@ -221,15 +221,10 @@ function findExternalView(viewId: string): ExternalView | undefined {
 
 function switchView(viewId: string) {
     if (!CREATED_VIEWS[viewId]) {
-        CREATED_VIEWS[viewId] = vscode.window.createTreeView(viewId, { treeDataProvider: nodes.PROVIDER });
+        CREATED_VIEWS[viewId] = vscode.window.createTreeView(viewId, { treeDataProvider: nodes.provider() });
         logUtils.logInfo(`[view] Created view ${viewId}`);
     }
     currentViewId = viewId;
     vscode.commands.executeCommand('setContext', VIEW_KEY, viewId);
     logUtils.logInfo(`[view] View switched to ${viewId}`);
 }
-
-// export const _treeViewVisualVM = vscode.window.createTreeView(VISUALVM_VIEW_ID, { treeDataProvider: nodes.PROVIDER });
-// export const _treeViewExplorer = vscode.window.createTreeView(EXPLORER_TOOLS_VIEW_ID, { treeDataProvider: nodes.PROVIDER });
-// export const _treeViewDebug = vscode.window.createTreeView(DEBUG_TOOLS_VIEW_ID, { treeDataProvider: nodes.PROVIDER });
-// export let _treeViewMicronautTools: vscode.TreeView<vscode.TreeItem> | undefined;

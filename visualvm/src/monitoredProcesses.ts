@@ -13,42 +13,19 @@ import * as runningProcesses from './runningProcesses';
 import * as logUtils from '../../common/lib/logUtils';
 
 
-export type OnChanged = (added: MonitoredProcess | undefined, removed: MonitoredProcess | undefined) => void;
+export const AUTO_SELECT_PROJECT_PROCESS_KEY = 'visualvm.integration.automaticallySelectProjectProcess';
+export const CUSTOMIZE_PROJECT_PROCESS_DISPLAYNAME_KEY = 'visualvm.integration.customizeDisplayNameForProjectProcess';
+
+export type OnChanged = (added: MonitoredProcess | undefined, removed: MonitoredProcess | undefined, target: any | undefined) => void;
 export type OnPidChanged = () => void;
 
 const ON_CHANGED_LISTENERS: OnChanged[] = [];
 export function onChanged(listener: OnChanged) {
     ON_CHANGED_LISTENERS.push(listener);
 }
-function notifyChanged(added: MonitoredProcess | undefined, removed: MonitoredProcess | undefined) {
+function notifyChanged(added: MonitoredProcess | undefined, removed: MonitoredProcess | undefined, target?: any) {
     for (const listener of ON_CHANGED_LISTENERS) {
-        listener(added, removed);
-    }
-}
-
-const MONITORED_PROCESSES: MonitoredProcess[] = [];
-function addMonitored(process: MonitoredProcess) {
-    logUtils.logInfo(`[monitoredProcess] Started tracking process ${process.displayName}@${process.id}`);
-    MONITORED_PROCESSES.push(process);
-    notifyChanged(process, undefined);
-}
-function removeMonitored(process: MonitoredProcess) {
-    const index = MONITORED_PROCESSES.indexOf(process);
-    if (index > -1) {
-        logUtils.logInfo(`[monitoredProcess] Stopped tracking process ${process.displayName}@${process.id}`);
-        MONITORED_PROCESSES.splice(index, 1);
-        process.release();
-        notifyChanged(undefined, process);
-    }
-}
-function replaceMonitored(newProcess: MonitoredProcess, previousProcess: MonitoredProcess) {
-    const index = MONITORED_PROCESSES.indexOf(previousProcess);
-    if (index > -1) {
-        logUtils.logInfo(`[monitoredProcess] Started tracking process ${newProcess.displayName}@${newProcess.id}`);
-        logUtils.logInfo(`[monitoredProcess] Stopped tracking process ${previousProcess.displayName}@${previousProcess.id}`);
-        MONITORED_PROCESSES.splice(index, 1, newProcess);
-        previousProcess.release();
-        notifyChanged(newProcess, previousProcess);
+        listener(added, removed, target);
     }
 }
 
@@ -61,47 +38,54 @@ export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.debug.onDidStartDebugSession(session => { debugSessionStarted(session); }));
     context.subscriptions.push(vscode.debug.onDidTerminateDebugSession(session => { debugSessionTerminated(session); }));
 
-    // onChanged((added: MonitoredProcess | undefined, removed: MonitoredProcess | undefined) => {
-    //     console.log('>>> --- ON CHANGED ---')
-    //     console.log('>>> ADDED: ')
-    //     console.log(added)
-    //     if (added) {
-    //         added.onPidChanged(() => {
-    //             console.log('>>> --- ON PID CHANGED ---')
-    //             console.log('>>> pid: ' + added.getPid())
-    //         })
-    //     }
-    //     console.log('>>> REMOVED: ')
-    //     console.log(removed)
-    // });
-
     logUtils.logInfo('[monitoredProcess] Initialized');
 }
 
-export async function select(ignore?: MonitoredProcess[], replace?: MonitoredProcess) {
-    logUtils.logInfo('[monitoredProcess] Selecting monitored process');
-    const ignorePids: number[] | undefined = ignore ? [] : undefined;
-    if (ignore && ignorePids) {
-        for (const process of ignore) {
-            const pid = process.getPid(false);
-            if (pid !== undefined && pid !== null) {
-                ignorePids.push(pid);
-            }
-        }
-    }
-    const selected = await runningProcesses.select(ignorePids);
-    if (selected) {
-        const monitoredProcess = new MonitoredProcess(selected.pid.toString(), displayName(selected.rest), selected.pid);
-        if (replace) {
-            logUtils.logInfo(`[monitoredProcess] Replacing original process ${replace.displayName}@${replace.id} by selected process ${monitoredProcess.displayName}@${monitoredProcess.id}`);
-            replaceMonitored(monitoredProcess, replace);
-        } else {
-            logUtils.logInfo(`[monitoredProcess] Adding selected process ${monitoredProcess.displayName}@${monitoredProcess.id}`);
-            addMonitored(monitoredProcess);
-        }
+const MONITORED_PROCESSES: MonitoredProcess[] = [];
+
+export function add(running: runningProcesses.RunningProcess, target?: any): MonitoredProcess | undefined {
+    logUtils.logInfo(`[monitoredProcess] Adding running process ${running.displayName}@${running.pid}`);
+    const monitoredRunning = getPids();
+    if (!monitoredRunning.includes(running.pid)) {
+        const monitoredProcess = new MonitoredProcess(running.pid.toString(), running.displayName, undefined, running.pid);
+        return addMonitored(monitoredProcess, target);
     } else {
-        logUtils.logInfo('[monitoredProcess] Selecting monitored process canceled');
+        logUtils.logWarning(`[monitoredProcess] Process already tracked: ${running.displayName}@${running.pid}`);
+        return undefined;
     }
+}
+
+function addMonitored(monitored: MonitoredProcess, target?: any): MonitoredProcess {
+    logUtils.logInfo(`[monitoredProcess] Started tracking process ${monitored.displayName}@${monitored.id}`);
+    MONITORED_PROCESSES.push(monitored);
+    notifyChanged(monitored, undefined, target);
+    return monitored;
+}
+
+export function remove(monitored: MonitoredProcess, target?: any): MonitoredProcess | undefined {
+    logUtils.logInfo(`[monitoredProcess] Removing monitored process ${monitored.displayName}@${monitored.id}`);
+    const index = MONITORED_PROCESSES.indexOf(monitored);
+    if (index > -1) {
+        logUtils.logInfo(`[monitoredProcess] Stopped tracking process ${monitored.displayName}@${monitored.id}`);
+        MONITORED_PROCESSES.splice(index, 1);
+        monitored.release();
+        notifyChanged(undefined, monitored, target);
+        return monitored;
+    } else {
+        logUtils.logWarning(`[monitoredProcess] Process not tracked: ${monitored.displayName}@${monitored.id}`);
+        return undefined;
+    }
+}
+
+export function getPids(): number[] {
+    const pids: number[] = [];
+    for (const process of MONITORED_PROCESSES) {
+        const pid = process.getPid();
+        if (pid !== undefined && pid !== null) {
+            pids.push(pid);
+        }
+    }
+    return pids;
 }
 
 function debugSessionStarted(session: vscode.DebugSession) {
@@ -122,7 +106,7 @@ function debugSessionTerminated(session: vscode.DebugSession) {
     for (const monitoredProcess of MONITORED_PROCESSES) {
         if (monitoredProcess.isSession(session)) {
             logUtils.logInfo(`[monitoredProcess] Session terminated for process ${monitoredProcess.displayName}@${monitoredProcess.id}`);
-            removeMonitored(monitoredProcess);
+            remove(monitoredProcess);
             break;
         }
     }
@@ -132,14 +116,19 @@ export class MonitoredProcess {
 
     readonly id: string;
     readonly displayName: string;
+    readonly workspaceFolder: vscode.WorkspaceFolder | undefined;
+
+    readonly isManuallySelected: boolean;
 
     private pid: number | undefined | null = undefined;
     private session: vscode.DebugSession | undefined = undefined;
 
-    constructor(id: string, displayName: string, pid?: number) {
+    constructor(id: string, displayName: string, workspaceFolder?: vscode.WorkspaceFolder, pid?: number) {
         this.id = id;
         this.displayName = displayName;
+        this.workspaceFolder = workspaceFolder;
         this.pid = pid;
+        this.isManuallySelected = pid !== undefined;
     }
 
     isSession(session: vscode.DebugSession) {
@@ -156,8 +145,8 @@ export class MonitoredProcess {
             };
             const onTimeout = () => {
                 logUtils.logInfo(`[monitoredProcess] Timed out waiting for process ${this.displayName}@${this.id}`);
-                removeMonitored(this);
-            }
+                remove(this);
+            };
             runningProcesses.searchByParameter(parameters.vmArgId(this.id), onFound, onTimeout);
         }
     }
@@ -172,10 +161,8 @@ export class MonitoredProcess {
                 if (interactive) {
                     vscode.window.showWarningMessage(`Process ${this.displayName} already terminated.`);
                 }
-                removeMonitored(this);
-                // setTimeout(() => {
-                //     removeMonitored(this);
-                // }, 0);
+                // Must be delayed to not break iterating MONITORED_PROCESSES[].getPid() 
+                setTimeout(() => { remove(this); }, 0);
             }
         }
         return this.pid;
@@ -214,23 +201,29 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 
     resolveDebugConfiguration/*WithSubstitutedVariables?*/(folder: vscode.WorkspaceFolder | undefined, config: vscode.DebugConfiguration, _token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration> {
         return new Promise(async resolve => {
-            // TODO: display notification to select JDK / skip VisualVM support
-            const jdkPath = await jdk.getPath();
-            const jpsPath = jdkPath ? jdk.getJpsPath(jdkPath) : undefined;
-            if (jpsPath) {
-                runningProcesses.setJpsPath(jpsPath);
-                // console.log('>>> ---- resolveDebugConfigurationWithSubstitutedVariables')
-                const id = Date.now().toString();
-                const name = displayName(folder?.name);
-                const process = new MonitoredProcess(id, name);
-                addMonitored(process);
-                const vmArgs = `${parameters.vmArgId(id)} ${parameters.vmArgDisplayName(name)}`;
-                if (!config.vmArgs) {
-                    config.vmArgs = vmArgs;
-                } else {
-                    config.vmArgs = `${config.vmArgs} ${vmArgs}`;
+            const name = displayName(folder?.name);
+            const vmArgs: string[] = [];
+            if (vscode.workspace.getConfiguration().get<boolean>(CUSTOMIZE_PROJECT_PROCESS_DISPLAYNAME_KEY)) {
+                vmArgs.push(parameters.vmArgDisplayName(name));
+            }
+            if (vscode.workspace.getConfiguration().get<boolean>(AUTO_SELECT_PROJECT_PROCESS_KEY)) {
+                // TODO: display notification to select JDK / skip VisualVM support?
+                const jdkPath = await jdk.getPath();
+                const jpsPath = jdkPath ? jdk.getJpsPath(jdkPath) : undefined;
+                if (jpsPath) {
+                    runningProcesses.setJpsPath(jpsPath);
+                    const id = Date.now().toString();
+                    const process = new MonitoredProcess(id, name, folder);
+                    addMonitored(process);
+                    vmArgs.push(parameters.vmArgId(id));
                 }
-                // console.log(config)
+            }
+            if (vmArgs) {
+                if (!config.vmArgs) {
+                    config.vmArgs = vmArgs.join(' ');
+                } else {
+                    config.vmArgs = `${config.vmArgs} ${vmArgs.join(' ')}`;
+                }
             }
             resolve(config);
         });

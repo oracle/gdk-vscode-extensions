@@ -14,6 +14,11 @@ import * as jdk from './jdk';
 const DISPLAY_NAME_PREFIX: string = '-Dvisualvm.display.name=';
 const DISPLAY_NAME_SUFFIX: string = '%PID';
 
+export type RunningProcess = {
+    readonly pid: number;
+    readonly displayName: string;
+};
+
 export async function select(ignore?: number[]): Promise<RunningProcess | undefined> {
     const jdkPath = await jdk.getPath();
     if (!jdkPath) {
@@ -30,10 +35,10 @@ export async function select(ignore?: number[]): Promise<RunningProcess | undefi
             const processes: QuickPickProcess[] = [];
             parts1.forEach(p1 => {
                 const p2 = parts2.find(p2 => p2.pid === p1.pid);
-                if (p2 && !ignore?.includes(p2.pid) && !p2.rest?.includes('--branding visualvm')) {
+                if (p2 && !ignore?.includes(p2.pid) && !p2.displayName.includes('--branding visualvm')) { // TODO: filter out jps process
                     // console.log('>>> P1.rest ' + p1.rest)
                     // console.log('>>> P2.rest ' + p2.rest)
-                    processes.push(new QuickPickProcess(p1.pid, p1.rest, p2.rest));
+                    processes.push(new QuickPickProcess(p1.pid, p1.displayName, p2.displayName));
                 }
             });
             resolve(processes);
@@ -43,7 +48,7 @@ export async function select(ignore?: number[]): Promise<RunningProcess | undefi
              placeHolder: 'Select the process to be monitored by VisualVM'
         });
         if (selected) {
-            return { pid: selected.pid, rest: selected.label };
+            return { pid: selected.pid, displayName: selected.label };
         } else {
             return undefined;
         }
@@ -57,7 +62,7 @@ class QuickPickProcess implements vscode.QuickPickItem{
     label: string;
     description: string;
     detail?: string;
-    constructor(public readonly pid: number, public readonly info1?: string, public readonly info2?: string) {
+    constructor(public readonly pid: number, public readonly info1: string, public readonly info2: string) {
         if (info1) {
             const prefixIdx = info1.indexOf(DISPLAY_NAME_PREFIX);
             const suffixIdx = info1.indexOf(DISPLAY_NAME_SUFFIX);
@@ -79,11 +84,6 @@ class QuickPickProcess implements vscode.QuickPickItem{
     }
 }
 
-type RunningProcess = {
-    readonly pid: number;
-    readonly rest?: string;
-}
-
 async function processJpsCommand(cmd: string): Promise<RunningProcess[]> {
     return new Promise<RunningProcess[]>((resolve, reject) => {
         cp.exec(cmd, async (error: any, stdout: string) => {
@@ -95,9 +95,9 @@ async function processJpsCommand(cmd: string): Promise<RunningProcess[]> {
             lines.forEach(line => {
                 const index = line.trim().indexOf(' ');
                 if (index >= 0) {
-                    parts.push({ pid: Number.parseInt(line.slice(0, index)), rest: line.slice(index + 1, line.length) });
+                    parts.push({ pid: Number.parseInt(line.slice(0, index)), displayName: line.slice(index + 1, line.length) });
                 } else {
-                    parts.push({ pid: Number.parseInt(line) });
+                    parts.push({ pid: Number.parseInt(line), displayName: '' });
                 }
             });
             resolve(parts);
@@ -116,7 +116,7 @@ type SearchedProcess = {
     onFound: (pid: number) => void;
     onTimeout: () => void;
     timeoutTime: number; // timestamp after which onTimeout() will be triggered
-}
+};
 
 export function setJpsPath(jpsPath: string) {
     SEARCH_PROCESSES_JPS_PATH = jpsPath;
@@ -160,7 +160,7 @@ function searchProcesses() {
                     for (let index = SEARCHED_PROCESSES.length - 1; index >= 0; index--) {
                         const process = SEARCHED_PROCESSES[index];
                         for (const result of results) {
-                            if (result.rest?.includes(process.searchParameter)) {
+                            if (result.displayName.includes(process.searchParameter)) {
                                 setTimeout(() => { process.onFound(result.pid); }, 0);
                                 SEARCHED_PROCESSES.splice(index, 1);
                                 break;
