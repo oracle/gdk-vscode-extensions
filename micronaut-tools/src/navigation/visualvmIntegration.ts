@@ -8,9 +8,9 @@
 import * as vscode from 'vscode';
 
 
-const VISUALVM_EXTENSION_ID = 'oracle-labs-graalvm.visualvm';
+const VISUALVM_EXTENSION_ID = 'oracle-labs-graalvm.visualvm-integration';
 const VISUALVM_EXTENSION_NAME = 'VisualVM Integration';
-const VISUALVM_EXTENSION_COMMAND = 'visualvm.moveView';
+const VISUALVM_EXTENSION_COMMAND = 'visualvm-integration.moveView';
 const VISUALVM_EXTENSION_COMMAND_TIMEOUT = 60;
 const VISUALVM_VIEW_ID = 'visualvm-extension-micronaut-tools';
 

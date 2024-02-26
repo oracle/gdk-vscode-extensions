@@ -409,7 +409,7 @@
 					"id": "visualvm-extension-micronaut-tools",
 					"name": "VisualVM",
 					"icon": "images/micronaut.png",
-					"when": "visualvm.view == visualvm-extension-micronaut-tools"
+					"when": "visualvm-integration.view == visualvm-extension-micronaut-tools"
 				}
 			]
 		},

@@ -13,7 +13,7 @@ import * as logUtils from '../../common/lib/logUtils';
 
 
 // Paths to JDK used in settings.json
-const VISUALVM_JDK_PATH_KEY = 'visualvm.java.jdkPath';
+const VISUALVM_JDK_PATH_KEY = 'visualvm-integration.java.jdkPath';
 const NETBEANS_JDK_PATH_KEY = 'netbeans.jdkhome';
 const JDT_JS_JDK_PATH_KEY = 'java.jdt.ls.java.home';
 const JDK_JDK_PATH_KEY = 'java.home';

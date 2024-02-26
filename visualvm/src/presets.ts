@@ -108,7 +108,7 @@ export abstract class Presets {
 
 export class WhenStartedPresets extends Presets {
 
-    private static PERSISTENCE_KEY = 'visualvm.presets.WhenStarted';
+    private static PERSISTENCE_KEY = 'visualvm-integration.presets.WhenStarted';
     private static NAME = 'When Started Action';
     private static SELECT_PROMPT = 'Select what happens when a project process is started';
     private static PRESETS = [
@@ -139,7 +139,7 @@ export class WhenStartedPresets extends Presets {
 
 export class CpuSamplerFilterPresets extends Presets {
     
-    private static PERSISTENCE_KEY = 'visualvm.presets.CpuSamplerFilter';
+    private static PERSISTENCE_KEY = 'visualvm-integration.presets.CpuSamplerFilter';
     private static NAME = 'CPU Sampling Filter';
     private static SELECT_PROMPT = 'Select CPU sampling filter';
     private static PRESETS = [
@@ -168,7 +168,7 @@ export class CpuSamplerFilterPresets extends Presets {
 
 export class CpuSamplerSamplingRatePresets extends Presets {
     
-    private static PERSISTENCE_KEY = 'visualvm.presets.CpuSamplerSamplingRate';
+    private static PERSISTENCE_KEY = 'visualvm-integration.presets.CpuSamplerSamplingRate';
     private static NAME = 'CPU Sampling Rate';
     private static SELECT_PROMPT = 'Select CPU sampling rate';
     private static SAMPLING_RATES = [ 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
@@ -199,7 +199,7 @@ export class CpuSamplerSamplingRatePresets extends Presets {
 
 export class MemorySamplerSamplingRatePresets extends Presets {
     
-    private static PERSISTENCE_KEY = 'visualvm.presets.MemorySamplerSamplingRate';
+    private static PERSISTENCE_KEY = 'visualvm-integration.presets.MemorySamplerSamplingRate';
     private static NAME = 'Memory Sampling Rate';
     private static SELECT_PROMPT = 'Select memory sampling rate';
     private static SAMPLING_RATES = [ 100, 200, 500, 1000, 2000, 5000, 10000];
@@ -230,7 +230,7 @@ export class MemorySamplerSamplingRatePresets extends Presets {
 
 export class JfrSettingsPresets extends Presets {
     
-    private static PERSISTENCE_KEY = 'visualvm.presets.JfrSettings';
+    private static PERSISTENCE_KEY = 'visualvm-integration.presets.JfrSettings';
     private static NAME = 'Flight Recording Settings';
     private static SELECT_PROMPT = 'Select JFR settings';
     private static PRESETS = [

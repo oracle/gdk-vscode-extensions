@@ -15,8 +15,8 @@ import * as monitoredProcesses from './monitoredProcesses';
 import * as logUtils from '../../common/lib/logUtils';
 
 
-const CONFIGURABLE_NODES_KEY = 'visualvm.configurableNodes';
-const INVOKABLE_NODES_KEY = 'visualvm.invokableNodes';
+const CONFIGURABLE_NODES_KEY = 'visualvm-integration.configurableNodes';
+const INVOKABLE_NODES_KEY = 'visualvm-integration.invokableNodes';
 
 export function initialize(context: vscode.ExtensionContext) {
     const configurableNodes = [
@@ -355,7 +355,7 @@ abstract class InvokableNode extends BaseNode {
 
 class WhenStartedNode extends ConfigurableNode {
 
-    static readonly CONTEXT_BASE = 'visualvm.WhenStartedNode';
+    static readonly CONTEXT_BASE = 'visualvm-integration.WhenStartedNode';
 
     constructor(presets: presets.Presets, treeChanged: TreeChanged) {
         super(presets, treeChanged, 'When started:', undefined, WhenStartedNode.CONTEXT_BASE, undefined, undefined);
@@ -366,7 +366,7 @@ class WhenStartedNode extends ConfigurableNode {
 
 class ThreadDumpNode extends InvokableNode {
 
-    static readonly CONTEXT_BASE = 'visualvm.ThreadDumpNode';
+    static readonly CONTEXT_BASE = 'visualvm-integration.ThreadDumpNode';
 
     constructor() {
         super('Thread dump', undefined, ThreadDumpNode.CONTEXT_BASE, undefined, undefined);
@@ -377,7 +377,7 @@ class ThreadDumpNode extends InvokableNode {
 
 class HeapDumpNode extends InvokableNode {
 
-    static readonly CONTEXT_BASE = 'visualvm.HeapDumpNode';
+    static readonly CONTEXT_BASE = 'visualvm-integration.HeapDumpNode';
 
     constructor() {
         super('Heap dump', undefined, HeapDumpNode.CONTEXT_BASE, undefined, undefined);
@@ -388,7 +388,7 @@ class HeapDumpNode extends InvokableNode {
 
 class CpuSamplerNode extends InvokableNode {
 
-    static readonly CONTEXT_BASE = 'visualvm.CpuSamplerNode';
+    static readonly CONTEXT_BASE = 'visualvm-integration.CpuSamplerNode';
 
     constructor(presets: presets.Presets[], treeChanged: TreeChanged) {
         super('CPU sampler', undefined, CpuSamplerNode.CONTEXT_BASE, [ ...CpuSamplerNode.createNodes(presets, treeChanged) ], false);
@@ -406,7 +406,7 @@ class CpuSamplerNode extends InvokableNode {
 
 class CpuSamplerFilterNode extends ConfigurableNode {
 
-    static readonly CONTEXT_BASE = 'visualvm.CpuSamplerFilterNode';
+    static readonly CONTEXT_BASE = 'visualvm-integration.CpuSamplerFilterNode';
 
     constructor(presets: presets.Presets, treeChanged: TreeChanged) {
         super(presets, treeChanged, 'Filter:', undefined, CpuSamplerFilterNode.CONTEXT_BASE, undefined, undefined);
@@ -417,7 +417,7 @@ class CpuSamplerFilterNode extends ConfigurableNode {
 
 class CpuSamplerSamplingRateNode extends ConfigurableNode {
 
-    static readonly CONTEXT_BASE = 'visualvm.CpuSamplerSamplingRateNode';
+    static readonly CONTEXT_BASE = 'visualvm-integration.CpuSamplerSamplingRateNode';
 
     constructor(presets: presets.Presets, treeChanged: TreeChanged) {
         super(presets, treeChanged, 'Sampling rate:', undefined, CpuSamplerSamplingRateNode.CONTEXT_BASE, undefined, undefined);
@@ -428,7 +428,7 @@ class CpuSamplerSamplingRateNode extends ConfigurableNode {
 
 class MemorySamplerNode extends InvokableNode {
 
-    static readonly CONTEXT_BASE = 'visualvm.MemorySamplerNode';
+    static readonly CONTEXT_BASE = 'visualvm-integration.MemorySamplerNode';
 
     constructor(presets: presets.Presets, treeChanged: TreeChanged) {
         super('Memory sampler', undefined, MemorySamplerNode.CONTEXT_BASE, [ ...MemorySamplerNode.createNodes(presets, treeChanged) ], false);
@@ -445,7 +445,7 @@ class MemorySamplerNode extends InvokableNode {
 
 class MemorySamplerSamplingRateNode extends ConfigurableNode {
 
-    static readonly CONTEXT_BASE = 'visualvm.MemorySamplerSamplingRateNode';
+    static readonly CONTEXT_BASE = 'visualvm-integration.MemorySamplerSamplingRateNode';
 
     constructor(presets: presets.Presets, treeChanged: TreeChanged) {
         super(presets, treeChanged, 'Sampling rate:', undefined, MemorySamplerSamplingRateNode.CONTEXT_BASE, undefined, undefined);
@@ -456,7 +456,7 @@ class MemorySamplerSamplingRateNode extends ConfigurableNode {
 
 class JfrNode extends InvokableNode {
 
-    static readonly CONTEXT_BASE = 'visualvm.JfrNode';
+    static readonly CONTEXT_BASE = 'visualvm-integration.JfrNode';
 
     constructor(presets: presets.Presets, treeChanged: TreeChanged) {
         super('JFR', undefined, JfrNode.CONTEXT_BASE, [ ...JfrNode.createNodes(presets, treeChanged) ], false);
@@ -473,7 +473,7 @@ class JfrNode extends InvokableNode {
 
 class JfrSettingsNode extends ConfigurableNode {
 
-    static readonly CONTEXT_BASE = 'visualvm.JfrSettingsNode';
+    static readonly CONTEXT_BASE = 'visualvm-integration.JfrSettingsNode';
 
     constructor(presets: presets.Presets, treeChanged: TreeChanged) {
         super(presets, treeChanged, 'Settings:', undefined, JfrSettingsNode.CONTEXT_BASE, undefined, undefined);
@@ -484,7 +484,7 @@ class JfrSettingsNode extends ConfigurableNode {
 
 class ProcessNode extends ChangeableNode {
 
-    private static CONTEXT_BASE = 'visualvm.ProcessNode';
+    private static CONTEXT_BASE = 'visualvm-integration.ProcessNode';
     private static CONTEXT_NO_PROCESS = `${this.CONTEXT_BASE}.noProcess`;
     private static CONTEXT_HAS_ID = `${this.CONTEXT_BASE}.hasId`;
     private static CONTEXT_HAS_PID = `${this.CONTEXT_BASE}.hasPid`;

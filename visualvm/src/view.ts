@@ -40,10 +40,10 @@ type ExternalView = {
     view_id     : string;
 };
 
-const VIEW_KEY = 'visualvm.view';
+const VIEW_KEY = 'visualvm-integration.view';
 let currentViewId: string | undefined;
 
-const ALL_VIEWS_KEY = 'visualvm.views';
+const ALL_VIEWS_KEY = 'visualvm-integration.views';
 
 const CREATED_VIEWS: any = {};
 

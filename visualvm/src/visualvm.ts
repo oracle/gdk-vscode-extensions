@@ -16,19 +16,19 @@ import * as commands from './commands';
 import * as logUtils from '../../common/lib/logUtils';
 
 
-const VISUALVM_HOMEPAGE = 'https://visualvm.github.io';
+export const VISUALVM_HOMEPAGE = 'https://visualvm.github.io';
 
-const INITIALIZED_KEY = 'visualvm.initialized';
-const NO_INSTALLATION_KEY = 'visualvm.noInstallation';
+const INITIALIZED_KEY = 'visualvm-integration.initialized';
+const NO_INSTALLATION_KEY = 'visualvm-integration.noInstallation';
 
-const INSTALLATION_PATH_KEY = 'visualvm.installation.visualvmPath';
+const INSTALLATION_PATH_KEY = 'visualvm-integration.installation.visualvmPath';
 
 type VisualVMInstallation = {
     executable: string;
+    isGraalVM: boolean;
     // 1: VisualVM 2.1+
     featureSet: number;
 };
-let installation: VisualVMInstallation | undefined = undefined;
 
 let interactiveChange: boolean = false;
 
@@ -50,20 +50,27 @@ export async function initialize(context: vscode.ExtensionContext) {
     }));
 }
 
-export async function select() {
-    logUtils.logInfo('[visualvm] Selecting VisualVM installation');
+export async function select(visualVMPath?: string) {
     const savedVisualVMPath = vscode.workspace.getConfiguration().get<string>(INSTALLATION_PATH_KEY);
     const savedVisualVMUri = savedVisualVMPath ? vscode.Uri.file(savedVisualVMPath) : undefined;
-    const selectedVisualVMUri = await vscode.window.showOpenDialog({
-        title: commands.COMMAND_SELECT_INSTALLATION_NAME,
-        canSelectFiles: false,
-        canSelectFolders: true,
-        canSelectMany: false,
-        defaultUri: savedVisualVMUri,
-        openLabel: 'Select'
-    });
-    if (selectedVisualVMUri?.length === 1) {
-        const selectedVisualVMPath = selectedVisualVMUri[0].fsPath;
+    if (!visualVMPath) {
+        logUtils.logInfo('[visualvm] Selecting VisualVM installation');
+        const selectedVisualVMUri = await vscode.window.showOpenDialog({
+            title: `${commands.COMMAND_SELECT_INSTALLATION_NAME} Folder`,
+            canSelectFiles: false,
+            canSelectFolders: true,
+            canSelectMany: false,
+            defaultUri: savedVisualVMUri,
+            openLabel: 'Select'
+        });
+        if (selectedVisualVMUri?.length === 1) {
+            visualVMPath = selectedVisualVMUri[0].fsPath;
+        } else {
+            logUtils.logInfo('[visualvm] VisualVM installation selection canceled');
+        }
+    }
+    if (visualVMPath) {
+        const selectedVisualVMPath = visualVMPath;
         if (selectedVisualVMPath !== savedVisualVMPath) {
             logUtils.logInfo('[visualvm] Selected new VisualVM installation, saving installation path');
             interactiveChange = true;
@@ -73,32 +80,31 @@ export async function select() {
             logUtils.logInfo('[visualvm] Selected current VisualVM installation, re-resolving');
             resolve(true);
         }
+    }
+}
+
+async function get(interactive: boolean = false): Promise<VisualVMInstallation | undefined> {
+    const savedVisualVMPath = vscode.workspace.getConfiguration().get<string>(INSTALLATION_PATH_KEY);
+    if (savedVisualVMPath) {
+        logUtils.logInfo(`[visualvm] Found defined installation path: ${savedVisualVMPath}`);
+        return forPath(savedVisualVMPath, interactive);
     } else {
-        logUtils.logInfo('[visualvm] VisualVM installation selection canceled');
+        logUtils.logInfo('[visualvm] No installation path defined');
+        return undefined;
     }
 }
 
 async function resolve(interactive: boolean = false) {
     logUtils.logInfo('[visualvm] Searching for VisualVM installation');
-    await vscode.commands.executeCommand('setContext', INITIALIZED_KEY, false);
     await vscode.commands.executeCommand('setContext', NO_INSTALLATION_KEY, false);
+    await vscode.commands.executeCommand('setContext', INITIALIZED_KEY, false);
     view.hideNodes();
-    installation = undefined;
+    let installation = undefined;
     try {
-        const savedVisualVMPath = vscode.workspace.getConfiguration().get<string>(INSTALLATION_PATH_KEY);
-        if (savedVisualVMPath) {
-            logUtils.logInfo(`[visualvm] Found defined installation path: ${savedVisualVMPath}`);
-            const savedInstallation = await forPath(savedVisualVMPath, interactive);
-            if (savedInstallation) {
-                installation = savedInstallation;
-                return;
-            }
-        } else {
-            logUtils.logInfo('[visualvm] No installation path defined');
-        }
+        installation = await get(interactive);
     } finally {
-        await vscode.commands.executeCommand('setContext', NO_INSTALLATION_KEY, !installation);
         await vscode.commands.executeCommand('setContext', INITIALIZED_KEY, true);
+        await vscode.commands.executeCommand('setContext', NO_INSTALLATION_KEY, !installation);
         if (installation) {
             view.showNodes();
         }
@@ -109,7 +115,7 @@ async function forPath(visualVMPath: string, interactive: boolean = false): Prom
     if (!fs.existsSync(visualVMPath)) {
         logUtils.logError(`[visualvm] Installation path does not exist: ${visualVMPath}`);
         if (interactive) {
-            vscode.window.showErrorMessage(`VisualVM installation directory does not exist: ${visualVMPath}`);
+            vscode.window.showErrorMessage(`VisualVM installation path does not exist: ${visualVMPath}`);
         }
         return undefined;
     }
@@ -121,28 +127,39 @@ async function forPath(visualVMPath: string, interactive: boolean = false): Prom
         return undefined;
     }
 
-    const visualVMExecutable = path.join(visualVMPath, 'bin', process.platform === 'win32' ? 'visualvm.exe' : 'visualvm');
-    if (!fs.existsSync(visualVMExecutable)) {
-        logUtils.logError(`[visualvm] Installation executable does not exist: ${visualVMExecutable}`);
-        if (interactive) {
-            vscode.window.showErrorMessage(`VisualVM executable not found in the selected directory: ${visualVMExecutable}`);
+    let isGraalVM: boolean = false;
+
+    const gvisualVMExecutable = path.join(visualVMPath, 'bin', process.platform === 'win32' ? 'visualvm.exe' : 'visualvm'); // GitHub VisualVM
+    const jvisualVMExecutable = path.join(visualVMPath, 'bin', process.platform === 'win32' ? 'jvisualvm.exe' : 'jvisualvm'); // GraalVM VisualVM
+    if (!fs.existsSync(gvisualVMExecutable)) {
+        if (!fs.existsSync(jvisualVMExecutable)) {
+            logUtils.logError(`[visualvm] Installation executable does not exist: ${gvisualVMExecutable}`);
+            if (interactive) {
+                vscode.window.showErrorMessage(`VisualVM executable does not exist: ${gvisualVMExecutable}`);
+            }
+            return undefined;
+        } else {
+            isGraalVM = true;
         }
-        return undefined;
     }
+    const visualVMExecutable = isGraalVM ? jvisualVMExecutable : gvisualVMExecutable;
     if (!fs.statSync(visualVMExecutable).isFile()) {
         logUtils.logError(`[visualvm] Installation executable is not a file: ${visualVMExecutable}`);
         if (interactive) {
-            vscode.window.showErrorMessage(`Invalid VisualVM executable found in the selected directory: ${visualVMExecutable}`);
+            vscode.window.showErrorMessage(`Invalid VisualVM executable: ${visualVMExecutable}`);
         }
         return undefined;
     }
     logUtils.logInfo(`[visualvm] Found valid executable: ${visualVMExecutable}`);
 
-    const visualVMGoToSourceJar = path.join(visualVMPath, 'visualvm', 'modules', 'org-graalvm-visualvm-gotosource.jar');
+    const visualVMGoToSourceJarPath = [];
+    if (isGraalVM) visualVMGoToSourceJarPath.push(...[ 'lib', 'visualvm' ]);
+    visualVMGoToSourceJarPath.push(...[ 'visualvm', 'modules', 'org-graalvm-visualvm-gotosource.jar' ]);
+    const visualVMGoToSourceJar = path.join(visualVMPath, ...visualVMGoToSourceJarPath);
     if (!fs.existsSync(visualVMGoToSourceJar)) {
         logUtils.logError(`[visualvm] Installation org-graalvm-visualvm-gotosource.jar does not exist: ${visualVMGoToSourceJar}`);
         if (interactive) {
-            vscode.window.showErrorMessage(`Unsupported VisualVM version found in the selected directory: ${visualVMPath}. Please install the latest VisualVM from [${VISUALVM_HOMEPAGE}](${VISUALVM_HOMEPAGE}).`);
+            vscode.window.showErrorMessage(`Unsupported VisualVM version found in ${visualVMPath}. Please install the latest VisualVM from [${VISUALVM_HOMEPAGE}](${VISUALVM_HOMEPAGE}).`);
         }
         return undefined;
     }
@@ -155,7 +172,7 @@ async function forPath(visualVMPath: string, interactive: boolean = false): Prom
     }
     logUtils.logInfo(`[visualvm] Found valid org-graalvm-visualvm-gotosource.jar: ${visualVMGoToSourceJar}`);
     
-    return { executable: visualVMExecutable, featureSet: 1 };
+    return { executable: visualVMExecutable, isGraalVM: isGraalVM, featureSet: 1 };
 }
 
 export async function show(pid?: number): Promise<boolean> {
@@ -205,9 +222,9 @@ export async function perform(params: string | Promise<string | undefined>): Pro
 async function invoke(params?: string): Promise<boolean> {
     logUtils.logInfo('[visualvm] Starting VisualVM');
     
+    const installation = await get();
     if (!installation) {
-        // Should not happen - shouldn't be called if no installation available
-        logUtils.logError('[visualvm] No VisualVM installation available');
+        resolve(true);
         return false;
     }
 
@@ -222,14 +239,16 @@ async function invoke(params?: string): Promise<boolean> {
 
     // Configurable pararameters
     // --jdkhome
-    try {
-        const jdkHome = await parameters.jdkHome();
-        if (jdkHome) {
-            command.push(jdkHome);
+    if (!installation.isGraalVM) {
+        try {
+            const jdkHome = await parameters.jdkHome();
+            if (jdkHome) {
+                command.push(jdkHome);
+            }
+        } catch (err) {
+            logUtils.logError('[visualvm] Cannot start with --jdkhome, no JDK available');
+            return false;
         }
-    } catch (err) {
-        logUtils.logError('[visualvm] Cannot start with --jdkhome, no JDK available');
-        return false;
     }
 
     // User-defined parameters

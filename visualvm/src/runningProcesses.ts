@@ -8,11 +8,9 @@
 import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import * as jdk from './jdk';
+import * as parameters from './parameters';
 // import * as logUtils from '../../common/lib/logUtils';
 
-
-const DISPLAY_NAME_PREFIX: string = '-Dvisualvm.display.name=';
-const DISPLAY_NAME_SUFFIX: string = '%PID';
 
 export type RunningProcess = {
     readonly pid: number;
@@ -36,8 +34,6 @@ export async function select(ignore?: number[]): Promise<RunningProcess | undefi
             parts1.forEach(p1 => {
                 const p2 = parts2.find(p2 => p2.pid === p1.pid);
                 if (p2 && !ignore?.includes(p2.pid) && !p2.displayName.includes('--branding visualvm')) { // TODO: filter out jps process
-                    // console.log('>>> P1.rest ' + p1.rest)
-                    // console.log('>>> P2.rest ' + p2.rest)
                     processes.push(new QuickPickProcess(p1.pid, p1.displayName, p2.displayName));
                 }
             });
@@ -59,29 +55,32 @@ export async function select(ignore?: number[]): Promise<RunningProcess | undefi
 }
 
 class QuickPickProcess implements vscode.QuickPickItem{
+    
     label: string;
     description: string;
     detail?: string;
-    constructor(public readonly pid: number, public readonly info1: string, public readonly info2: string) {
-        if (info1) {
-            const prefixIdx = info1.indexOf(DISPLAY_NAME_PREFIX);
-            const suffixIdx = info1.indexOf(DISPLAY_NAME_SUFFIX);
-            if (prefixIdx === -1 || suffixIdx === -1) {
-                this.label = info1.split(' ')[0];
-                if (!this.label.length) {
-                    this.label = 'Java process';
-                }
-            } else {
-                this.label = info1.substring(prefixIdx + DISPLAY_NAME_PREFIX.length, suffixIdx);
+    
+    constructor(public readonly pid: number, info1: string, info2: string) {
+        this.label = '';
+        const infos1 = info1.split(' ');
+        const vmArgDisplayName = parameters.vmArgDisplayName('');
+        for (const info of infos1) {
+            if (info.startsWith(vmArgDisplayName)) {
+                this.label = info.substring(vmArgDisplayName.length).replace(/\%PID/g, '').replace(/\%pid/g, '');
+                break;
             }
-        } else {
-            this.label = 'Java process';
         }
+        this.label = this.label || infos1[0] || 'Java Process';
         this.description = `(pid ${pid})`;
-        if (info2) {
-            this.detail = info2;
-        }
+        this.detail = this.normalize(info2 || info1 || 'no details available', 1000); // VS Code fails to display long string in tooltip
     }
+
+    private normalize(string: string, limit: number): string {
+        string = string.trim();
+        const length = string.length;
+        return length <= limit ? string : string.substring(0, limit);
+    }
+    
 }
 
 async function processJpsCommand(cmd: string): Promise<RunningProcess[]> {

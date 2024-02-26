@@ -13,8 +13,8 @@ import * as runningProcesses from './runningProcesses';
 import * as logUtils from '../../common/lib/logUtils';
 
 
-export const AUTO_SELECT_PROJECT_PROCESS_KEY = 'visualvm.integration.automaticallySelectProjectProcess';
-export const CUSTOMIZE_PROJECT_PROCESS_DISPLAYNAME_KEY = 'visualvm.integration.customizeDisplayNameForProjectProcess';
+export const AUTO_SELECT_PROJECT_PROCESS_KEY = 'visualvm-integration.integration.automaticallySelectProjectProcess';
+export const CUSTOMIZE_PROJECT_PROCESS_DISPLAYNAME_KEY = 'visualvm-integration.integration.customizeDisplayNameForProjectProcess';
 
 export type OnChanged = (added: MonitoredProcess | undefined, removed: MonitoredProcess | undefined, target: any | undefined) => void;
 export type OnPidChanged = () => void;

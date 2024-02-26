@@ -18,20 +18,20 @@ import * as vscodeUtils from './vscodeUtils';
 export const CPU_SAMPLER_FILTER_INCLUSIVE = 'include-classes';
 export const CPU_SAMPLER_FILTER_EXCLUSIVE = 'exclude-classes';
 
-const ENABLE_GO_TO_SOURCE_KEY = 'visualvm.integration.enableGoToSource';
-const VSCODE_PARAMETERS_KEY = 'visualvm.integration.visualStudioCodeParameters';
+const ENABLE_GO_TO_SOURCE_KEY = 'visualvm-integration.integration.enableGoToSource';
+const VSCODE_PARAMETERS_KEY = 'visualvm-integration.integration.visualStudioCodeParameters';
 
-const USE_JDK_PATH_FOR_STARTUP_KEY = 'visualvm.startup.useJdkPathForVisualvm';
-const STARTUP_PARAMETERS_KEY = 'visualvm.startup.visualvmParameters';
-const WINDOW_TO_FRONT_KEY = 'visualvm.behavior.visualvmWindowToFront';
-const PRESELECT_VIEW_KEY = 'visualvm.behavior.preselectProcessView';
+const USE_JDK_PATH_FOR_STARTUP_KEY = 'visualvm-integration.startup.useJdkPathForVisualvm';
+const STARTUP_PARAMETERS_KEY = 'visualvm-integration.startup.visualvmParameters';
+const WINDOW_TO_FRONT_KEY = 'visualvm-integration.behavior.visualvmWindowToFront';
+const PRESELECT_VIEW_KEY = 'visualvm-integration.behavior.preselectProcessView';
 
 export function executable(executable: string): string {
     return executable.includes(' ') ? `"${executable}"` : executable;
 }
 
 export function perfMaxStringConstLength(): string {
-    return '-J-XX:PerfMaxStringConstLength=6144';
+    return '-J-XX:PerfMaxStringConstLength=10240';
 }
 
 export async function jdkHome(): Promise<string | undefined> {

@@ -11,6 +11,7 @@ import * as view from './view';
 import * as visualvm from './visualvm';
 import * as nodes from './nodes';
 import * as monitoredProcesses from './monitoredProcesses';
+import * as download from './download';
 import * as logUtils from '../../common/lib/logUtils';
 
 
@@ -23,6 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
 	visualvm.initialize(context);
 	nodes.initialize(context);
 	monitoredProcesses.initialize(context);
+	download.initialize(context);
 
 	logUtils.logInfo('[extension] Extension activated');
 }
