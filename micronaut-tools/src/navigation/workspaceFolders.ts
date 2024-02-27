@@ -190,6 +190,16 @@ export async function getFolderData(): Promise<FolderData[]> {
     return folderDataPromise;
 }
 
+export async function getApplication(folder: vscode.WorkspaceFolder): Promise<applications.Application | undefined> {
+    const folderData = await getFolderData(); // make sure this waits for initialization (workspaceFolders and folderData are empty yet)
+    for (const data of folderData) {
+        if (data.getWorkspaceFolder() === folder) {
+            return data.getApplication();
+        }
+    }
+    return undefined;
+}
+
 export function onUpdating(listener: OnUpdating) {
     onUpdatingListeners.push(listener);
 }

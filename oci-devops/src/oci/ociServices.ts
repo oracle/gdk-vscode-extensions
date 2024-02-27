@@ -206,6 +206,7 @@ export async function importServices(oci: ociContext.Context, projectResources: 
 
 export class OciServices implements model.CloudServices, dataSupport.DataProducer {
 
+    private readonly folder: vscode.WorkspaceFolder;
     private readonly oci: ociContext.Context;
     private servicesData: any;
     private readonly services: ociService.Service[];
@@ -214,6 +215,7 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
     private decorableContainer: nodes.DecorableNode | undefined;
 
     constructor(folder: vscode.WorkspaceFolder, oci: ociContext.Context, servicesData: any, dataChanged: dataSupport.DataChanged) {
+        this.folder = folder;
         this.oci = oci;
         this.servicesData = servicesData ? servicesData : {};
         const serviceDataChanged: dataSupport.DataChanged = (dataProducer?: dataSupport.DataProducer) => {
@@ -240,6 +242,10 @@ export class OciServices implements model.CloudServices, dataSupport.DataProduce
             knowledgeBaseServices.create(folder, oci, this.servicesData[knowledgeBaseServices.DATA_NAME], serviceDataChanged),
             containerInstanceServices.create(folder, oci, this.servicesData[containerInstanceServices.DATA_NAME], serviceDataChanged)
         ];
+    }
+
+    public getFolder(): vscode.WorkspaceFolder {
+        return this.folder;
     }
 
     public getContext(): ociContext.Context {

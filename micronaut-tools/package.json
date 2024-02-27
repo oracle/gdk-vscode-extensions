@@ -130,6 +130,22 @@
 					"default": true,
 					"description": "Use build system (Maven or Gradle) to run or debug applications.",
 					"scope": "window"
+				},
+				"micronaut-tools.updateAddressFromDeployment": {
+					"type": "string",
+					"default": "Ask",
+					"enum": [
+						"Ask",
+						"Always",
+						"Never"
+					],
+					"enumDescriptions": [
+						"Display a notification to manually confirm updating the address",
+						"Always update the address for a new OKE port forward",
+						"Ignore any OKE port forwards in OCI DevOps Tools extension"
+					],
+					"description": "Update application address for a new OKE port forward in OCI DevOps Tools extension",
+					"scope": "window"
 				}
 			}
 		},

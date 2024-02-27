@@ -848,7 +848,19 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
                 dialogs.showErrorMessage(`Cannot forward port for the '${deploymentName}' deployment.`);
                 return;
             }
-            vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${localPort}`));
+            const address = `http://localhost:${localPort}`;
+
+            const commands = await vscode.commands.getCommands();
+            if (commands.includes('extension.micronaut-tools.navigation.setApplicationAddress')) {
+                const services = ociServices.findByNode(this);
+                if (services) {
+                    const folder = services.getFolder();
+                    await vscode.commands.executeCommand('extension.micronaut-tools.navigation.setApplicationAddress', address, folder);
+                }
+            }
+
+            vscode.env.openExternal(vscode.Uri.parse(address));
+
             resolve(true);
         };
         this.runOnDeployment(run);
