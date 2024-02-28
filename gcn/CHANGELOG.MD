@@ -1,5 +1,8 @@
 # Change Log
 
+## Version 0.9.8
+* GCN updated to 4.2.1-2 with patched AWS libraries in GCN BOM 4.2.1.3 based on Micronaut 4.2.1
+
 ## Version 0.9.7
 * GCN Launcher update to 4.2.1 (Micronaut 4.2.1)
 
