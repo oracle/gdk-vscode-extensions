@@ -11,6 +11,7 @@ import * as nodes from './nodes';
 import * as projectUtils from './projectUtils';
 import * as symbols from './symbols';
 import * as targetAddress from './targetAddress';
+import * as workspaceFolders from './workspaceFolders';
 
 
 export const COMMAND_RUN_APPLICATION = 'extension.micronaut-tools.navigation.runApplication';
@@ -37,6 +38,7 @@ export const COMMAND_STOP_SERVER = 'extension.micronaut-tools.navigation.stopSer
 export const COMMAND_UPDATE_LOGGERS = 'extension.micronaut-tools.navigation.updateLoggers';
 export const COMMAND_EDIT_LOGGERS = 'extension.micronaut-tools.navigation.editLoggers';
 export const COMMAND_CLEAR_CACHES = 'extension.micronaut-tools.navigation.clearCaches';
+export const COMMAND_SET_APPLICATION_ADDRESS = 'extension.micronaut-tools.navigation.setApplicationAddress';
 
 export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_RUN_APPLICATION, (node: nodes.ApplicationFolderNode) => {
@@ -162,6 +164,11 @@ export function initialize(context: vscode.ExtensionContext) {
             node.clearCaches();
         }
 	}));
+    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_SET_APPLICATION_ADDRESS, async (address: string, folder?: vscode.WorkspaceFolder) => {
+        if (address) {
+            await setApplicationAddress(address, folder);
+        }
+    }));
     logUtils.logInfo('[actions] Initialized');
 }
 
@@ -184,4 +191,45 @@ async function openSymbolInBrowser(symbol: symbols.Endpoint): Promise<boolean> {
 async function openInBrowser(address: string): Promise<boolean> {
     const uri = vscode.Uri.parse(address);
     return vscode.env.openExternal(uri);
+}
+
+async function setApplicationAddress(address: string, folder?: vscode.WorkspaceFolder) {
+    const setAddressMode = vscode.workspace.getConfiguration().get<string>('micronaut-tools.updateAddressFromDeployment');
+    if (setAddressMode === 'Ask' || setAddressMode === 'Always') {
+        if (!folder) {
+            const folderData = await workspaceFolders.getFolderData();
+            if (folderData.length === 1) {
+                folder = folderData[0].getWorkspaceFolder();
+            } else {
+                type WorkspaceFolderItem = vscode.QuickPickItem & { workspaceFolder: vscode.WorkspaceFolder };
+                const items: WorkspaceFolderItem[] = [];
+                for (const data of folderData) {
+                    items.push({ label: data.getWorkspaceFolder().name, workspaceFolder: data.getWorkspaceFolder() });
+                }
+                const selected = await vscode.window.showQuickPick(items, {
+                    title: 'Select Application',
+                    placeHolder: 'Select the application for which to change address'
+                });
+                if (!selected?.workspaceFolder) {
+                    return;
+                }
+                folder = selected.workspaceFolder;
+            }
+        }
+        const application = await workspaceFolders.getApplication(folder);
+        if (application) {
+            if (setAddressMode === 'Ask') {
+                const msg = `Change the address of ${application.getFolder().name} in Micronaut Tools activity to ${address}?`;
+                const changeOption = 'Change';
+                // const alwaysChangeOption = 'Always Change';
+                // const neverChangeOption = 'Never Change';
+                const cancelOption = 'Cancel';
+                const selectedOption = await vscode.window.showInformationMessage(msg, changeOption, /*alwaysChangeOption, neverChangeOption,*/ cancelOption);
+                if (selectedOption !== changeOption) {
+                    return;
+                }
+            }
+            application.setAddress(address);
+        }
+    }
 }
