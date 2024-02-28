@@ -13,20 +13,20 @@ import * as logUtils from '../../common/lib/logUtils';
 
 // Predefined views
 const VISUALVM_VIEW_ID = 'visualvm-visualvm';
-const EXPLORER_TOOLS_VIEW_ID = 'visualvm-explorer';
-const DEBUG_TOOLS_VIEW_ID = 'visualvm-debug';
+const EXPLORER_TOOLS_VIEW_ID = 'explorer-visualvm';
+const DEBUG_TOOLS_VIEW_ID = 'debug-visualvm';
 const PREDEFINED_VIEW_IDS = [ VISUALVM_VIEW_ID, EXPLORER_TOOLS_VIEW_ID, DEBUG_TOOLS_VIEW_ID ];
 
 // Supported external views
 const MICRONAUT_TOOLS_VIEW: ExternalView = {
     extension_id: 'oracle-labs-graalvm.micronaut-tools',
     container_id: 'extension-micronaut-tools',
-    view_id     : 'visualvm-extension-micronaut-tools'
+    view_id     : 'extension-micronaut-tools-visualvm'
 };
 // const SPRING_BOOT_DASHBOARD_VIEW: ExternalView = {
 //     extension_id: 'vscjava.vscode-spring-boot-dashboard',
 //     container_id: 'spring',
-//     view_id     : 'visualvm-spring'
+//     view_id     : 'spring-visualvm'
 // };
 const EXTERNAL_VIEWS = [ MICRONAUT_TOOLS_VIEW ];
 const EXTERNAL_VIEW_IDS = EXTERNAL_VIEWS.map(view => view.view_id);

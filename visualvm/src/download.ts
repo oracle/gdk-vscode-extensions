@@ -13,6 +13,7 @@ import * as process from 'process';
 import * as install from './install';
 import * as commands from './commands';
 import * as visualvm from './visualvm';
+import * as logUtils from '../../common/lib/logUtils';
 
 
 const VISUALVM_URL: string = 'https://api.github.com';
@@ -31,10 +32,13 @@ export function initialize(context: vscode.ExtensionContext) {
 }
 
 async function downloadLatestVisualVM() {
+    logUtils.logInfo('[download] Requested to download latest VisualVM');
     const folder = await selectFolder();
     if (!folder) {
+        logUtils.logInfo('[download] Destination folder selection canceled');
         return;
     }
+    logUtils.logInfo(`[download] Selected destination folder ${folder}`);
 
     let releaseMetadata: any | undefined = undefined;
     await vscode.window.withProgress({
@@ -47,20 +51,28 @@ async function downloadLatestVisualVM() {
         return;
     }
 
+    const releaseName = releaseMetadata.name;
+    logUtils.logInfo(`[download] Found latest release: ${releaseName}`);
+
     const releaseAsset = getReleaseAsset(releaseMetadata);
+    if (!releaseAsset) {
+        return;
+    }
+
     const url = releaseAsset.browser_download_url;
     if (!url) {
+        logUtils.logError(`[download] Could not find download link for ${releaseName}`);
         const msg = new vscode.MarkdownString(`Could not find download link. Download VisualVM manually from [${visualvm.VISUALVM_HOMEPAGE}](${visualvm.VISUALVM_HOMEPAGE}), and use the ${commands.COMMAND_SELECT_INSTALLATION_NAME} action to start using it.`);
         vscode.window.showErrorMessage(msg.value);
         return;
     }
-
-    const releaseName = releaseMetadata.name;
+    logUtils.logInfo(`[download] Found download link: ${url}`);
 
     if (process.platform !== 'darwin') {
         const parsedName = path.parse(releaseAsset.name);
         const targetFolder = path.join(folder, parsedName.name);
         if (fs.existsSync(targetFolder)) { // TODO: should check if directory?
+            logUtils.logWarning(`[download] Found existing directory ${targetFolder} while verifying download of ${releaseName}`);
             const msg = `${releaseName} seems to be already installed in the selected folder. Download anyway?`;
             const downloadOption = 'Download';
             const openOption = 'Open Folder';
@@ -76,10 +88,12 @@ async function downloadLatestVisualVM() {
     }
 
     const file = uniquePath(folder, releaseAsset.name);
+    logUtils.logInfo(`[download] Downloading ${releaseName} to ${file}`);
     const result = await download(url, file, releaseName);
     if (!result) {
         return;
     }
+    logUtils.logInfo(`[download] Downloaded ${releaseName} to ${file}`);
 
     if (process.platform === 'darwin') {
         install.installDiskImage(result, releaseName);
@@ -102,6 +116,7 @@ async function selectFolder(): Promise<string | undefined> {
 }
 
 async function getReleaseMetadata(): Promise<any | undefined> {
+    logUtils.logInfo('[download] Searching for latest VisualVM release');
     const USER_AGENT_OPTIONS: https.RequestOptions = {
         headers: { 'User-Agent': USER_AGENT } // TODO: add support for 'Accept-Encoding': 'gzip';
     };
@@ -118,8 +133,7 @@ async function getReleaseMetadata(): Promise<any | undefined> {
             }
         }
     } catch (err) {
-        console.log('>>> Error getting download link');
-        console.log(err);
+        logUtils.logError(`[download] Could not find latest VisualVM release: ${err}`);
         if ((err as any)?.code === 'ENOTFOUND' || (err as any)?.code === 'ETIMEDOUT') {
             vscode.window.showErrorMessage('Cannot get data from server. Check your connection and verify proxy settings.');
         } else {
@@ -132,22 +146,27 @@ async function getReleaseMetadata(): Promise<any | undefined> {
 function getReleaseAsset(releaseMetadata: any): any | undefined {
     const releaseName = releaseMetadata.name; // VisualVM 2.1.7
     if (!releaseName) {
+        logUtils.logError('[download] Could not resolve release name');
         return undefined;
     }
     const releaseVersion = String(releaseName).split(' ').pop(); // 2.1.7
     if (!releaseVersion) {
+        logUtils.logError(`[download] Could not determine release version from ${releaseName}`);
         return undefined;
     }
     const releaseKey = releaseVersion.replace(/\./g, ''); // 217
     const fileName = process.platform === 'darwin' ? `VisualVM_${releaseKey}.dmg` : `visualvm_${releaseKey}.zip`;
     if (!Array.isArray(releaseMetadata.assets)) {
+        logUtils.logError('[download] Could not recognize release assets structure');
         return undefined;
     }
     for (const asset of releaseMetadata.assets) {
         if (asset.name === fileName) {
+            logUtils.logInfo(`[download] Found release asset for ${fileName}`);
             return asset;
         }
     }
+    logUtils.logError('[download] Could not find release asset');
     return undefined;
 }
 
@@ -244,8 +263,10 @@ async function download(url: string, file: string, name: string): Promise<string
         });
     } catch (err) {
         if (err) {
+            logUtils.logError(`[download] Download of ${name} from ${url} to ${file} failed: ${err}`);
             vscode.window.showErrorMessage(`Error downloading ${name}: ${(err as any)?.message}`);
         } else {
+            logUtils.logInfo(`[download] Download of ${name} canceled`);
             // canceled
         }
         return undefined;

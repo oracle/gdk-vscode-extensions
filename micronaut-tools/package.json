@@ -371,7 +371,7 @@
 					"dark": "resources/visualvm_icon_dark.svg"
 				},
 				"category": "Micronaut Tools",
-				"enablement": "visualvm.view != visualvm-extension-micronaut-tools"
+				"enablement": "visualvm.view != extension-micronaut-tools-visualvm"
 			}
 		],
 		"viewsContainers": {
@@ -406,10 +406,10 @@
 					"icon": "images/micronaut.png"
 				},
 				{
-					"id": "visualvm-extension-micronaut-tools",
+					"id": "extension-micronaut-tools-visualvm",
 					"name": "VisualVM",
 					"icon": "images/micronaut.png",
-					"when": "visualvm-integration.view == visualvm-extension-micronaut-tools"
+					"when": "visualvm-integration.view == extension-micronaut-tools-visualvm"
 				}
 			]
 		},
@@ -635,7 +635,7 @@
 				},
 				{
 					"command": "extension.micronaut-tools.navigation.visualvmIntegration",
-					"when": "view == extension-micronaut-tools-management && visualvm.view != visualvm-extension-micronaut-tools",
+					"when": "view == extension-micronaut-tools-management && visualvm-integration.view != extension-micronaut-tools-visualvm",
 					"group": "navigation@1"
 				}
 			],

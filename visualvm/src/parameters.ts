@@ -240,9 +240,9 @@ export function vmArgId(id: string): string {
     return `-Dvisualvm.id=${id}`;
 }
 
-export function vmArgDisplayName(displayName: string): string {
+export function vmArgDisplayName(displayName: string, includePid: boolean = true): string {
     displayName = displayName.replace(/\s/g, '_');
-    return `-Dvisualvm.display.name=${displayName}`;
+    return `-Dvisualvm.display.name=${displayName}${includePid ? '%PID' : ''}`;
 }
 
 

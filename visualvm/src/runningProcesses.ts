@@ -63,7 +63,7 @@ class QuickPickProcess implements vscode.QuickPickItem{
     constructor(public readonly pid: number, info1: string, info2: string) {
         this.label = '';
         const infos1 = info1.split(' ');
-        const vmArgDisplayName = parameters.vmArgDisplayName('');
+        const vmArgDisplayName = parameters.vmArgDisplayName('', false);
         for (const info of infos1) {
             if (info.startsWith(vmArgDisplayName)) {
                 this.label = info.substring(vmArgDisplayName.length).replace(/\%PID/g, '').replace(/\%pid/g, '');
