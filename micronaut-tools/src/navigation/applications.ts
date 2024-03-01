@@ -401,6 +401,9 @@ class RunCustomizer implements vscode.DebugConfigurationProvider {
                                 // TODO: override defined args where necessary (port, env, etc.)
                                 config.vmArgs = `${config.vmArgs} ${vmArgs}`;
                             }
+                            if (!config.vmArgs.includes('-XX:PerfMaxStringConstLength=')) {
+                                config.vmArgs = `${config.vmArgs} -XX:PerfMaxStringConstLength=10240`; // support reading long command line parameters using jps/jvmstat
+                            }
                         }
                         // console.log('>>> CONFIG:')
                         // console.log(config)
