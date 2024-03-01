@@ -40,6 +40,7 @@ export const COMMAND_UPDATE_LOGGERS = 'extension.micronaut-tools.navigation.upda
 export const COMMAND_EDIT_LOGGERS = 'extension.micronaut-tools.navigation.editLoggers';
 export const COMMAND_CLEAR_CACHES = 'extension.micronaut-tools.navigation.clearCaches';
 export const COMMAND_SET_APPLICATION_ADDRESS = 'extension.micronaut-tools.navigation.setApplicationAddress';
+export const COMMAND_GET_SELECTED_SUBPROJECT = 'extension.micronaut-tools.navigation.getSelectedSubproject';
 export const COMMAND_VISUALVM_INTEGRATION = 'extension.micronaut-tools.navigation.visualvmIntegration';
 
 export function initialize(context: vscode.ExtensionContext) {
@@ -171,6 +172,12 @@ export function initialize(context: vscode.ExtensionContext) {
             await setApplicationAddress(address, folder);
         }
     }));
+    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_GET_SELECTED_SUBPROJECT, async (folder: vscode.WorkspaceFolder): Promise<vscode.Uri | undefined | null> => {
+        if (folder) {
+            return await getSelectedSubproject(folder);
+        }
+        return null;
+    }));
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_VISUALVM_INTEGRATION, () => {
         visualvmIntegration.showView();
 	}));
@@ -237,4 +244,14 @@ async function setApplicationAddress(address: string, folder?: vscode.WorkspaceF
             application.setAddress(address);
         }
     }
+}
+
+// undefined: Micronaut application exists, no subproject selected
+// null: Micronaut application doesn't exist
+async function getSelectedSubproject(folder: vscode.WorkspaceFolder): Promise<vscode.Uri | undefined | null> {
+    const application = await workspaceFolders.getApplication(folder);
+    if (application) {
+        return application.getSelectedModule().getUri();
+    }
+    return null;
 }

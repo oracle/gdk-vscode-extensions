@@ -67,7 +67,7 @@ export function initialize(context: vscode.ExtensionContext) {
         const pid = process?.getPid();
         if (pid) {
             logUtils.logInfo(`[nodes] Opening process pid ${pid}`);
-            visualvm.show(pid);
+            visualvm.show(pid, process?.workspaceFolder);
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_THREADDUMP_TAKE, async (node: BaseNode) => {
@@ -76,7 +76,7 @@ export function initialize(context: vscode.ExtensionContext) {
         if (pid) {
             logUtils.logInfo(`[nodes] Taking thread dump for pid ${pid}`);
             const command = parameters.threadDump(pid);
-            visualvm.perform(command);
+            visualvm.perform(command, process?.workspaceFolder);
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_HEAPDUMP_TAKE, async (node: BaseNode) => {
@@ -85,7 +85,7 @@ export function initialize(context: vscode.ExtensionContext) {
         if (pid) {
             logUtils.logInfo(`[nodes] Taking heap dump for pid ${pid}`);
             const command = parameters.heapDump(pid);
-            visualvm.perform(command);
+            visualvm.perform(command, process?.workspaceFolder);
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_CPU_SAMPLER_START, async (node: BaseNode) => {
@@ -99,26 +99,26 @@ export function initialize(context: vscode.ExtensionContext) {
                 const workspaceFolder = process.workspaceFolder;
                 logUtils.logInfo(`[nodes] Starting CPU sampling for pid ${pid} with filter ${samplingFilter} and sampling rate ${samplingRate} for folder ${workspaceFolder}`);
                 const commandPromise = parameters.cpuSamplerStart(pid, samplingFilter, samplingRate, workspaceFolder);
-                visualvm.perform(commandPromise);
+                visualvm.perform(commandPromise, workspaceFolder);
             }
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_CPU_SAMPLER_SNAPSHOT, async (node: BaseNode) => {
         const process = await findProcess(node);
         const pid = process?.getPid();
-        if (process && pid) {
+        if (pid) {
             logUtils.logInfo(`[nodes] Taking (CPU) sampling snapshot for pid ${pid}`);
             const command = parameters.samplerSnapshot(pid);
-            visualvm.perform(command);
+            visualvm.perform(command, process?.workspaceFolder);
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_CPU_SAMPLER_STOP, async (node: BaseNode) => {
         const process = await findProcess(node);
         const pid = process?.getPid();
-        if (process && pid) {
+        if (pid) {
             logUtils.logInfo(`[nodes] Stopping (CPU) sampling for pid ${pid}`);
             const command = parameters.samplerStop(pid);
-            visualvm.perform(command);
+            visualvm.perform(command, process?.workspaceFolder);
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_MEMORY_SAMPLER_START, async (node: BaseNode) => {
@@ -126,30 +126,30 @@ export function initialize(context: vscode.ExtensionContext) {
         if (processNode) {
             const process = await findProcess(node);
             const pid = process?.getPid();
-            if (process && pid) {
+            if (pid) {
                 const samplingRate = processNode.memorySamplerSamplingRatePresets.getSelectedValue();
                 logUtils.logInfo(`[nodes] Starting memory sampling for pid ${pid} with sampling rate ${samplingRate}`);
                 const command = parameters.memorySamplerStart(pid, samplingRate);
-                visualvm.perform(command);
+                visualvm.perform(command, process?.workspaceFolder);
             }
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_MEMORY_SAMPLER_SNAPSHOT, async (node: BaseNode) => {
         const process = await findProcess(node);
         const pid = process?.getPid();
-        if (process && pid) {
+        if (pid) {
             logUtils.logInfo(`[nodes] Taking (memory) sampling snapshot for pid ${pid}`);
             const command = parameters.samplerSnapshot(pid);
-            visualvm.perform(command);
+            visualvm.perform(command, process?.workspaceFolder);
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_MEMORY_SAMPLER_STOP, async (node: BaseNode) => {
         const process = await findProcess(node);
         const pid = process?.getPid();
-        if (process && pid) {
+        if (pid) {
             logUtils.logInfo(`[nodes] Stopping (memory) sampling for pid ${pid}`);
             const command = parameters.samplerStop(pid);
-            visualvm.perform(command);
+            visualvm.perform(command, process?.workspaceFolder);
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_JFR_START, async (node: BaseNode) => {
@@ -161,26 +161,26 @@ export function initialize(context: vscode.ExtensionContext) {
                 const jfrSettings = processNode.jfrSettingsPresets.getSelectedValue();
                 logUtils.logInfo(`[nodes] Starting flight recording for pid ${pid} with settings ${jfrSettings}`);
                 const command = parameters.jfrRecordingStart(pid, process.displayName, jfrSettings);
-                visualvm.perform(command);
+                visualvm.perform(command, process.workspaceFolder);
             }
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_JFR_DUMP, async (node: BaseNode) => {
         const process = await findProcess(node);
         const pid = process?.getPid();
-        if (process && pid) {
+        if (pid) {
             logUtils.logInfo(`[nodes] Dumping flight recording data for pid ${pid}`);
             const command = parameters.jfrRecordingDump(pid);
-            visualvm.perform(command);
+            visualvm.perform(command, process?.workspaceFolder);
         }
 	}));
     context.subscriptions.push(vscode.commands.registerCommand(commands.COMMAND_JFR_STOP, async (node: BaseNode) => {
         const process = await findProcess(node);
         const pid = process?.getPid();
-        if (process && pid) {
+        if (pid) {
             logUtils.logInfo(`[nodes] Stopping flight recording for pid ${pid}`);
             const command = parameters.jfrRecordingStop(pid);
-            visualvm.perform(command);
+            visualvm.perform(command, process?.workspaceFolder);
         }
 	}));
 

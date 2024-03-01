@@ -60,7 +60,7 @@ export function userDefinedParameters(): string | undefined {
     return vscode.workspace.getConfiguration().get<string>(STARTUP_PARAMETERS_KEY);
 }
 
-export async function goToSource(): Promise<string | undefined> {
+export async function goToSource(folder?: vscode.WorkspaceFolder): Promise<string | undefined> {
     const parameters: string[] = [];
     if (vscode.workspace.getConfiguration().get<boolean>(ENABLE_GO_TO_SOURCE_KEY)) {
         const vsCodeLauncher = vscodeUtils.findLauncher();
@@ -69,7 +69,7 @@ export async function goToSource(): Promise<string | undefined> {
         const sourceViewer = vsCodeLauncher ? `${encode(vsCodeLauncherCommand)} -g {file}:{line}:{column}` : '';
         
         const sourceRootsArr: string[] = [];
-        const workspaceSourceRoots = await getWorkspaceSourceRoots();
+        const workspaceSourceRoots = await getWorkspaceSourceRoots(folder);
         if (workspaceSourceRoots) {
             sourceRootsArr.push(...workspaceSourceRoots);
         }
@@ -96,8 +96,8 @@ export async function goToSource(): Promise<string | undefined> {
     return parameters.length ? parameters.join(' ') : undefined;
 }
 
-async function getWorkspaceSourceRoots(): Promise<string[] | undefined> {
-    const sourceRoots = await projectUtils.getSourceRoots();
+async function getWorkspaceSourceRoots(folder?: vscode.WorkspaceFolder): Promise<string[] | undefined> {
+    const sourceRoots = await projectUtils.getSourceRoots(folder);
     if (sourceRoots) {
         for (let index = 0; index < sourceRoots.length; index++) {
             sourceRoots[index] = encode(sourceRoots[index]);

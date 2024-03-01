@@ -175,27 +175,23 @@ async function forPath(visualVMPath: string, interactive: boolean = false): Prom
     return { executable: visualVMExecutable, isGraalVM: isGraalVM, featureSet: 1 };
 }
 
-export async function show(pid?: number): Promise<boolean> {
+export async function show(pid?: number, folder?: vscode.WorkspaceFolder): Promise<boolean> {
     return vscode.window.withProgress({
             location: { viewId: view.getViewId() }
-            // location: vscode.ProgressLocation.Notification, 
-            // title: 'Invoking VisualVM...'},
         },
         async () => {
             let params = parameters.windowToFront();
             if (pid !== undefined) {
                 params += ` ${parameters.openPid(pid)}`;
             }
-            return invoke(params);
+            return invoke(params, folder);
         }
     );
 }
 
-export async function perform(params: string | Promise<string | undefined>): Promise<boolean> {
+export async function perform(params: string | Promise<string | undefined>, folder?: vscode.WorkspaceFolder): Promise<boolean> {
     return vscode.window.withProgress({
             location: { viewId: view.getViewId() }
-            // location: vscode.ProgressLocation.Notification, 
-            // title: 'Invoking VisualVM...'},
         },
         async () => {
             // Resolve provided params promise
@@ -214,12 +210,12 @@ export async function perform(params: string | Promise<string | undefined>): Pro
             if (windowToFront) {
                 params += ` ${windowToFront}`;
             }
-            return invoke(params);
+            return invoke(params, folder);
         }
     );
 }
 
-async function invoke(params?: string): Promise<boolean> {
+async function invoke(params?: string, folder?: vscode.WorkspaceFolder): Promise<boolean> {
     logUtils.logInfo('[visualvm] Starting VisualVM');
     
     const installation = await get();
@@ -258,7 +254,7 @@ async function invoke(params?: string): Promise<boolean> {
     }
 
     // Go to Source integration
-    const goToSource = await parameters.goToSource();
+    const goToSource = await parameters.goToSource(folder);
     if (goToSource) {
         command.push(goToSource);
     }
