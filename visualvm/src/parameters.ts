@@ -36,7 +36,7 @@ export function perfMaxStringConstLength(): string {
 
 export async function jdkHome(): Promise<string | undefined> {
     if (vscode.workspace.getConfiguration().get<boolean>(USE_JDK_PATH_FOR_STARTUP_KEY)) {
-        const jdkPath = await jdk.getPath(true);
+        const jdkPath = await jdk.getPath();
         if (!jdkPath) {
             throw new Error();
         }
@@ -107,11 +107,12 @@ async function getWorkspaceSourceRoots(folder?: vscode.WorkspaceFolder): Promise
 }
 
 async function getJdkSourceRoots(): Promise<string | undefined> {
-    const jdkPath = await jdk.getPath(true);
+    const jdkPath = await jdk.getPath();
     if (jdkPath) {
         const jdkSources = await jdk.getSources(jdkPath);
         if (jdkSources) {
-            return `${encode(jdkSources.path)}${jdkSources.modular ? '[subpaths=*modules*]' : ''}`;
+            const jdkSourcesPath = fs.realpathSync(jdkSources.path); // JDK sources may be a symbolic link on linux
+            return `${encode(jdkSourcesPath)}${jdkSources.modular ? '[subpaths=*modules*]' : ''}`;
         }
     }
     return undefined;
