@@ -25,7 +25,7 @@ const JDK_HOME_ENV_VAR = 'JDK_HOME';
 const JAVA_HOME_ENV_VAR = 'JAVA_HOME';
 const JDK_ENV_VARS = [ JDK_HOME_ENV_VAR, JAVA_HOME_ENV_VAR ];
 
-export async function getPath(interactive: boolean = false): Promise<string | undefined> {
+export async function getPath(interactive: boolean = true): Promise<string | undefined> {
     logUtils.logInfo('[jdk] Getting a JDK');
 
     const configuration = vscode.workspace.getConfiguration();

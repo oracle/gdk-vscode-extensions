@@ -200,22 +200,34 @@ function displayName(displayName: string | undefined): string {
 class ConfigurationProvider implements vscode.DebugConfigurationProvider {
 
     resolveDebugConfiguration/*WithSubstitutedVariables?*/(folder: vscode.WorkspaceFolder | undefined, config: vscode.DebugConfiguration, _token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration> {
+        logUtils.logInfo(`[monitoredProcess] VS Code starting new process${folder ? ' for folder ' + folder.name : ''}`);
         return new Promise(async resolve => {
             const name = displayName(folder?.name);
             const vmArgs: string[] = [];
             if (vscode.workspace.getConfiguration().get<boolean>(CUSTOMIZE_PROJECT_PROCESS_DISPLAYNAME_KEY)) {
+                logUtils.logInfo(`[monitoredProcess] Will customize display name: ${name}`);
                 vmArgs.push(parameters.vmArgDisplayName(name));
             }
             if (vscode.workspace.getConfiguration().get<boolean>(AUTO_SELECT_PROJECT_PROCESS_KEY)) {
-                // TODO: display notification to select JDK / skip VisualVM support?
-                const jdkPath = await jdk.getPath();
+                const jdkPath = await jdk.getPath(false);
                 const jpsPath = jdkPath ? jdk.getJpsPath(jdkPath) : undefined;
                 if (jpsPath) {
                     runningProcesses.setJpsPath(jpsPath);
                     const id = Date.now().toString();
                     const process = new MonitoredProcess(id, name, folder);
+                    logUtils.logInfo(`[monitoredProcess] Will select the process with id: ${id}`);
                     addMonitored(process);
                     vmArgs.push(parameters.vmArgId(id));
+                } else {
+                    logUtils.logWarning('[monitoredProcess] Will not select the process, no JDK/jps found');
+                    const reason = jdkPath ? 'The JDK for VisualVM is not valid.' : 'No JDK for VisualVM found.';
+                    const msg = `${reason} The started process will not be selected automatically. Please select a local JDK installation, and then select the started process manually.`;
+                    const selectOption = 'Select JDK Installation';
+                    vscode.window.showInformationMessage(msg, selectOption).then(selectedOption => {
+                        if (selectedOption === selectOption) {
+                            jdk.getPath();
+                        }
+                    });
                 }
             }
             if (vmArgs) {
@@ -224,7 +236,7 @@ class ConfigurationProvider implements vscode.DebugConfigurationProvider {
                 } else {
                     config.vmArgs = `${config.vmArgs} ${vmArgs.join(' ')}`;
                 }
-                logUtils.logInfo(`[monitoredProcess] Added vmArgs to started process: ${vmArgs.join(' ')}`);
+                logUtils.logInfo(`[monitoredProcess] Added vmArgs for process startup: ${vmArgs.join(' ')}`);
             }
             resolve(config);
         });
