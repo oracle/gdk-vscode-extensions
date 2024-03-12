@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as process from 'process';
@@ -55,12 +56,13 @@ export async function select(visualVMPath?: string) {
     const savedVisualVMUri = savedVisualVMPath ? vscode.Uri.file(savedVisualVMPath) : undefined;
     if (!visualVMPath) {
         logUtils.logInfo('[visualvm] Selecting VisualVM installation');
+        const macOS = process.platform === 'darwin';
         const selectedVisualVMUri = await vscode.window.showOpenDialog({
             title: `${commands.COMMAND_SELECT_INSTALLATION_NAME} Folder`,
-            canSelectFiles: false,
-            canSelectFolders: true,
+            canSelectFiles: macOS ? true : false,
+            canSelectFolders: macOS ? false : true,
             canSelectMany: false,
-            defaultUri: savedVisualVMUri,
+            defaultUri: macOS ? vscode.Uri.file('/Applications') : savedVisualVMUri || vscode.Uri.file(os.homedir()),
             openLabel: 'Select'
         });
         if (selectedVisualVMUri?.length === 1) {
@@ -74,7 +76,7 @@ export async function select(visualVMPath?: string) {
         if (selectedVisualVMPath !== savedVisualVMPath) {
             logUtils.logInfo('[visualvm] Selected new VisualVM installation, saving installation path');
             interactiveChange = true;
-            vscode.workspace.getConfiguration().update(INSTALLATION_PATH_KEY, selectedVisualVMPath, vscode.ConfigurationTarget.Global);
+            await vscode.workspace.getConfiguration().update(INSTALLATION_PATH_KEY, selectedVisualVMPath, vscode.ConfigurationTarget.Global);
         } else {
             // Has to be handled separately, wouldn't trigger any notification from settings.json
             logUtils.logInfo('[visualvm] Selected current VisualVM installation, re-resolving');
@@ -128,21 +130,33 @@ async function forPath(visualVMPath: string, interactive: boolean = false): Prom
     }
 
     let isGraalVM: boolean = false;
+    let isMacOsApp: boolean = false;
 
     const gvisualVMExecutable = path.join(visualVMPath, 'bin', process.platform === 'win32' ? 'visualvm.exe' : 'visualvm'); // GitHub VisualVM
+    const mvisualVMExecutable = process.platform === 'darwin' && visualVMPath.endsWith('.app') ? path.join(visualVMPath, 'Contents', 'MacOS', 'visualvm') : undefined; // VisualVM.app on macOS
     const jvisualVMExecutable = path.join(visualVMPath, 'bin', process.platform === 'win32' ? 'jvisualvm.exe' : 'jvisualvm'); // GraalVM VisualVM
     if (!fs.existsSync(gvisualVMExecutable)) {
-        if (!fs.existsSync(jvisualVMExecutable)) {
-            logUtils.logError(`[visualvm] Installation executable does not exist: ${gvisualVMExecutable}`);
-            if (interactive) {
-                vscode.window.showErrorMessage(`VisualVM executable does not exist: ${gvisualVMExecutable}`);
-            }
-            return undefined;
-        } else {
+        if (!mvisualVMExecutable || !fs.existsSync(mvisualVMExecutable)) {
+            if (!fs.existsSync(jvisualVMExecutable)) {
+                logUtils.logError(`[visualvm] Installation executable does not exist: ${gvisualVMExecutable}`);
+                if (interactive) {
+                    vscode.window.showErrorMessage(`VisualVM executable does not exist: ${gvisualVMExecutable}`);
+                }
+                return undefined;
+            } else {
+                logUtils.logInfo(`[visualvm] VisualVM executable found in GraalVM installation: ${mvisualVMExecutable}`);
             isGraalVM = true;
+            isGraalVM = true;
+                isGraalVM = true;
+            }
+        } else {
+            logUtils.logInfo(`[visualvm] VisualVM executable found in MacOS application: ${mvisualVMExecutable}`);
+            isMacOsApp = true;
         }
+    } else {
+        logUtils.logInfo(`[visualvm] VisualVM executable found in standard installation: ${gvisualVMExecutable}`);
     }
-    const visualVMExecutable = isGraalVM ? jvisualVMExecutable : gvisualVMExecutable;
+    const visualVMExecutable = isGraalVM ? jvisualVMExecutable : (isMacOsApp ? mvisualVMExecutable as string : gvisualVMExecutable);
     if (!fs.statSync(visualVMExecutable).isFile()) {
         logUtils.logError(`[visualvm] Installation executable is not a file: ${visualVMExecutable}`);
         if (interactive) {
@@ -154,6 +168,7 @@ async function forPath(visualVMPath: string, interactive: boolean = false): Prom
 
     const visualVMGoToSourceJarPath = [];
     if (isGraalVM) visualVMGoToSourceJarPath.push(...[ 'lib', 'visualvm' ]);
+    else if (isMacOsApp) visualVMGoToSourceJarPath.push(...[ 'Contents', 'Resources', 'visualvm' ]);
     visualVMGoToSourceJarPath.push(...[ 'visualvm', 'modules', 'org-graalvm-visualvm-gotosource.jar' ]);
     const visualVMGoToSourceJar = path.join(visualVMPath, ...visualVMGoToSourceJarPath);
     if (!fs.existsSync(visualVMGoToSourceJar)) {
