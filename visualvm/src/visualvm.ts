@@ -145,8 +145,6 @@ async function forPath(visualVMPath: string, interactive: boolean = false): Prom
                 return undefined;
             } else {
                 logUtils.logInfo(`[visualvm] VisualVM executable found in GraalVM installation: ${mvisualVMExecutable}`);
-            isGraalVM = true;
-            isGraalVM = true;
                 isGraalVM = true;
             }
         } else {
