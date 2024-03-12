@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as https from 'https';
@@ -110,6 +111,7 @@ async function selectFolder(): Promise<string | undefined> {
         canSelectFiles: false,
         canSelectFolders: true,
         canSelectMany: false,
+        defaultUri: vscode.Uri.file(os.homedir()),
         openLabel: 'Select'
     });
     return selectedFolder?.length === 1 ? selectedFolder[0].fsPath : undefined;
