@@ -1648,6 +1648,68 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             }
                                             dump(deployData);
                                         }
+                                            // --- Create OKE ConfigMap
+                                        progress.report({
+                                            increment,
+                                            message: `Creating OKE ConfigMap for ${repositoryName}...`
+                                        });
+                                        const oke_configmap_template = 'oke_configmap.yaml';
+                                        const oke_configMapInlineContent = expandTemplate(resourcesPath, oke_configmap_template, {
+                                            app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
+                                        });
+                                        if (!oke_configMapInlineContent) {
+                                            resolve(`Failed to create OKE ConfigMap for ${repositoryName}`);
+                                            return;
+                                        }
+                                        if (subData.oke_configMapArtifact) {
+                                            progress.report({
+                                                message: `Using already created OKE ConfigMap artifact for ${repositoryName}...`
+                                            });
+                                            try {
+                                                const artifact = await ociUtils.getDeployArtifact(provider, subData.oke_configMapArtifact);
+                                                if (!artifact) {
+                                                    subData.oke_configMapArtifact = undefined;
+                                                }
+                                            } catch (err) {
+                                                subData.oke_configMapArtifact = undefined;
+                                            }
+                                        }
+                                        if (subData.oke_configMapArtifact) {
+                                            progress.report({
+                                                increment,
+                                            });
+                                            logUtils.logInfo(`[deploy] Using already created OKE ConfigMap artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        } else {
+                                            // --- Create OKE ConfigMap artifact
+                                            progress.report({
+                                                increment,
+                                                message: `Creating OKE ConfigMap artifact for ${repositoryName}...`
+                                            });
+                                            const oke_configMapArtifactName = `${repositoryName}_oke_configmap`;
+                                            const oke_configMapArtifactArtifactDescription = `OKE ConfigMap for devops project ${projectName} & repository ${repositoryName}`;
+                                            try {
+                                                logUtils.logInfo(`[deploy] Creating OKE ConfigMap artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                subData.oke_configMapArtifact = false;
+                                                subData.oke_configMapArtifact = (await ociUtils.createOkeDeployConfigurationArtifactNoSubstitute(provider, projectOCID, oke_configMapInlineContent, oke_configMapArtifactName, oke_configMapArtifactArtifactDescription, {
+                                                    'devops_tooling_deployID': deployData.tag,
+                                                    'devops_tooling_codeRepoID': codeRepository.id,
+                                                    'devops_tooling_artifact_type': 'configmap'
+                                                })).id;
+                                                if (!codeRepoResources.artifacts) {
+                                                    codeRepoResources.artifacts = [];
+                                                }
+                                                codeRepoResources.artifacts.push({
+                                                    ocid: subData.oke_configMapArtifact,
+                                                    originalName: oke_configMapArtifactName
+                                                });
+                                            } catch (err) {
+                                                resolve(dialogs.getErrorMessage(`Failed to create OKE ConfigMap artifact for ${repositoryName}`, err));
+                                                subData.oke_configMapArtifact = false;
+                                                dump(deployData);
+                                                return;
+                                            }
+                                            dump(deployData);
+                                        }
 
                                         const oke_deployNativePipelineName = `Deploy ${subName.toUpperCase()} ${NI_CONTAINER_NAME} to OKE`;
                                         if (subData.oke_deployNativePipeline) {
@@ -1754,6 +1816,33 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             } catch (err) {
                                                 resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${NI_CONTAINER_NAME_LC} deployment to OKE stage for ${repositoryName}`, err));
                                                 subData.deployNativeToOkeStage = false;
+                                                dump(deployData);
+                                                return;
+                                            }
+                                            dump(deployData);
+                                        }
+                                        if (subData.applyNativeConfigMapStage) {
+                                            try {
+                                                const stage = await ociUtils.getDeployStage(provider, folderData.applyNativeConfigMapStage);
+                                                if (!stage) {
+                                                    subData.applyNativeConfigMapStage = undefined;
+                                                }
+                                            } catch (err) {
+                                                subData.applyNativeConfigMapStage = undefined;
+                                            }
+                                        }
+                                        if (subData.applyNativeConfigMapStage) {
+                                            logUtils.logInfo(`[deploy] Using already created apply ConfigMap stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        } else {
+                                            try {
+                                                logUtils.logInfo(`[deploy] Creating apply ConfigMap stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                subData.applyNativeConfigMapStage = false;
+                                                subData.applyNativeConfigMapStage = (await ociUtils.createDeployToOkeStage('Apply ConfigMap', provider, subData.oke_deployNativePipeline, subData.oke_deployNativePipeline, deployData.okeClusterEnvironment, subData.oke_configMapArtifact, {
+                                                    'devops_tooling_deployID': deployData.tag
+                                                })).id;
+                                            } catch (err) {
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${NI_CONTAINER_NAME_LC} apply ConfigMap stage for ${repositoryName}`, err));
+                                                subData.applyNativeConfigMapStage = false;
                                                 dump(deployData);
                                                 return;
                                             }
@@ -2055,7 +2144,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                                 subData.oke_configMapArtifact = false;
                                                 subData.oke_configMapArtifact = (await ociUtils.createOkeDeployConfigurationArtifactNoSubstitute(provider, projectOCID, oke_configMapInlineContent, oke_configMapArtifactName, oke_configMapArtifactArtifactDescription, {
                                                     'devops_tooling_deployID': deployData.tag,
-                                                    'devops_tooling_codeRepoID': codeRepository.id
+                                                    'devops_tooling_codeRepoID': codeRepository.id,
+                                                    'devops_tooling_artifact_type': 'configmap'
                                                 })).id;
                                                 if (!codeRepoResources.artifacts) {
                                                     codeRepoResources.artifacts = [];
