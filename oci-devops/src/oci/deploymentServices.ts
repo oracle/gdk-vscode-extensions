@@ -370,6 +370,37 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         });
     }
 
+    async function createConfigMapArtifact(oci: ociContext.Context, repositoryName: string, ): Promise<string | null | undefined> {
+        return await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Creating deploy ConfigMap artifact...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async (resolve) => {
+                try {
+                    const inlineContent = deployUtils.expandTemplate(RESOURCES_FOLDER, 'oke_configmap.yaml', {
+                        app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
+                    });
+                    if (!inlineContent) {
+                        resolve(undefined);
+                        dialogs.showErrorMessage(`Failed to create OKE ConfigMap for ${repositoryName}`);
+                        return;
+                    }
+                    const artifactName = `${repositoryName}_oke_configmap`;
+                    const artifactDescription = `OKE ConfigMap for devops project ${projectName} & repository ${repositoryName}`;
+                    const artifact = (await ociUtils.createOkeDeployConfigurationArtifact(oci.getProvider(), oci.getDevOpsProject(), inlineContent, artifactName, artifactDescription, {
+                        'devops_tooling_codeRepoID': oci.getCodeRepository(),
+                        'devops_tooling_artifact_type': 'configmap'
+                    })).id;
+                    resolve(artifact);
+                } catch (err) {
+                    resolve(null);
+                    dialogs.showErrorMessage('Failed to create ConfigMap artifact', err);
+                }
+            });
+        });
+    }
+
     const secretName = `${repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')}-vscode-generated-ocirsecret`;
     const deployArtifacts = await listDeployArtifacts(oci);
     let setupCommandSpecArtifact = deployArtifacts?.find(env => {
@@ -394,7 +425,18 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         deployConfigArtifact = artifact;
     }
 
-    async function createDeployPipeline(oci: ociContext.Context, projectName: string, repositoryName: string, okeCompartmentId: string, okeClusterEnvironment: string, setupCommandSpecArtifact: string, deployConfigArtifact: string, subnet: {id: string; compartmentID: string}, buildPipeline: devops.models.BuildPipelineSummary): Promise<{ocid: string; displayName: string}[] | undefined> {
+    let configMapArtifact = deployArtifacts?.find(env => {
+        return env.deployArtifactType === devops.models.DeployArtifact.DeployArtifactType.KubernetesManifest && env.freeformTags?.devops_tooling_artifact_type === 'configmap';
+    })?.id;
+    if (!configMapArtifact) {
+        const artifact = await createConfigMapArtifact(oci, repositoryName);
+        if (!artifact) {
+            return undefined;
+        }
+        configMapArtifact = artifact;
+    }
+
+    async function createDeployPipeline(oci: ociContext.Context, projectName: string, repositoryName: string, okeCompartmentId: string, okeClusterEnvironment: string, setupCommandSpecArtifact: string, deployConfigArtifact: string, subnet: {id: string; compartmentID: string}, buildPipeline: devops.models.BuildPipelineSummary, configMapArtifact: string): Promise<{ocid: string; displayName: string}[] | undefined> {
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: `Creating deployment to OKE pipeline...`,
@@ -442,6 +484,16 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     dialogs.showErrorMessage(`Failed to create deployment to OKE stage for ${repositoryName}`, err);
                     return;
                 }
+                
+                try{
+                    await ociUtils.createDeployToOkeStage('Apply ConfigMap', oci.getProvider(), deployPipeline.id, deployPipeline.id, okeClusterEnvironment, configMapArtifact)
+                } catch (err) {
+                    resolve(undefined);
+                    dialogs.showErrorMessage(`Failed to create ConfigMap stage for ${repositoryName}`, err);
+                    return;
+                }
+                
+
                 try {
                     await ociUtils.createDeployToOkeStage('Deploy to OKE', oci.getProvider(), deployPipeline.id, setupSecretStage.id, okeClusterEnvironment, deployConfigArtifact);
                 } catch (err) {
@@ -453,7 +505,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
             });
         });
     }
-    return await createDeployPipeline(oci, projectName, repositoryName, okeCluster.compartmentId, okeClusterEnvironment.id, setupCommandSpecArtifact, deployConfigArtifact, subnet, buildPipeline);
+    return await createDeployPipeline(oci, projectName, repositoryName, okeCluster.compartmentId, okeClusterEnvironment.id, setupCommandSpecArtifact, deployConfigArtifact, subnet, buildPipeline, configMapArtifact);
 }
 
 async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode.WorkspaceFolder, ignore: DeploymentPipeline[]): Promise<DeploymentPipeline[] | undefined> {
