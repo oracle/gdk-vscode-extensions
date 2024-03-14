@@ -1,5 +1,8 @@
 # Change Log
 
+# Version 0.6.3
+* Renamed to "Launch for Micronaut® framework"
+
 # Version 0.6.2
 * Labels wording changes
 

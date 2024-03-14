@@ -1,4 +1,4 @@
-# Micronaut&reg; Tools
+# Tools for Micronaut&reg; framework
 [![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/oracle-labs-graalvm.micronaut-tools?style=for-the-badge&label=VS%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools)
 [![Installs](https://img.shields.io/visual-studio-marketplace/i/oracle-labs-graalvm.micronaut-tools?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools)
 [![License](https://img.shields.io/github/license/oracle/gcn-vscode-extensions?style=for-the-badge&logo=upl)](https://github.com/oracle/gcn-vscode-extensions/blob/main/LICENSE.txt)
@@ -6,7 +6,7 @@
 *** Technology Preview ***
 
 ## Overview
-Micronaut Tools is a powerful extension for using [GraalVM](https://www.oracle.com/java/graalvm/) to develop [Micronaut framework](https://micronaut.io/) and [Graal Cloud Native](https://graal.cloud/) (GCN) applications within VS Code.
+Tools for Micronaut® framework is a powerful extension for using [GraalVM](https://www.oracle.com/java/graalvm/) to develop [Micronaut framework](https://micronaut.io/) and [Graal Cloud Native](https://graal.cloud/) (GCN) applications within VS Code.
 
 Install the [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack), which contains this extension and others.
 
@@ -41,14 +41,14 @@ VS Code will prompt you to install the extension when you open a Micronaut proje
 [Oracle GraalVM](https://www.oracle.com/java/graalvm/) is a fast and efficient JDK from Oracle.
 
 ## Installing the Extension
-Click **Install** on the banner above or from the **Extensions** activity in the VS Code Activity Bar by searching for "Micronaut Tools".
+Click **Install** on the banner above or from the **Extensions** activity in the VS Code Activity Bar by searching for "Tools for Micronaut® framework".
 
 You can also find the extension listed on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut).
 
-The Micronaut Tools page opens as soon as the extension is installed.
+The Tools for Micronaut® framework page opens as soon as the extension is installed.
 You can also open this page using the Command Palette command **Micronaut Tools: Show Micronaut Tools Page**.
 
-> **Note**: This extension is part of the [Graal Cloud Native Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack). We recommend you install the Graal Cloud Native Extensions Pack as it provides additional extensions for Micronaut development, including the [Micronaut Launch](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extension.
+> **Note**: This extension is part of the [Graal Cloud Native Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack). We recommend you install the Graal Cloud Native Extensions Pack as it provides additional extensions for Micronaut development, including the [Launch for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extension.
 
 > **Note**: This extension includes the _Apache NetBeans Language Server for Java_ to provide hints and code completion. It occasionally takes some time to start, its status is displayed in the VS Code Status Bar. 
 
@@ -440,9 +440,9 @@ The extension contributes the following settings:
 * __micronaut-tools.showWelcomePage__ - when set to `true` (default), show the Micronaut Tools when the extension is activated.
 * __micronaut-tools.jdt.buildsystemExecution__ - if set to `true` (default), enables enhanced Run support for Micronaut applications.
 
-## Micronaut Commands
+## Available Commands
 
-Invoke the Micronaut commands from the Command Palette, then search for "Micronaut Tools".
+To invoke the commands available from the Command Palette, search for "Micronaut Tools".
 To open the Command Palette, select **Command Palette** from the **View** menu.
 
 The following commands are available for Micronaut project development:
@@ -496,5 +496,6 @@ The assignee will work with the pull request owner to address any issues and the
 
 ## Release Notes
 
-Refer to [CHANGELOG](https://github.com/oracle/gcn-vscode-extensions/blob/main/micronaut-tools/CHANGELOG.md).
+Refer to [CHANGELOG](CHANGELOG.md).
 
+Micronaut® is a registered trademark of Object Computing, Inc. Use is for referential purposes and does not imply any endorsement or affiliation with any third-party product. Unauthorized use is strictly prohibited.

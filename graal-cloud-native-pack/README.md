@@ -6,7 +6,7 @@
 
 [Graal Cloud Native Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) is a collection of extensions that help you create, build, and deploy Graal Cloud Native applications.
 
-The Graal Cloud Native Extension Pack bundles the [Graal Cloud Native Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn), [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops), [Micronaut Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) and [Micronaut Launch](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extensions.
+The Graal Cloud Native Extension Pack bundles the [Graal Cloud Native Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn), [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops), [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) and [Launch for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extensions.
 
 ### Graal Cloud Native Development Support
 
@@ -14,7 +14,7 @@ The extension pack bundles support for [Graal Cloud Native](https://graal.cloud)
 
 1. Integrated Graal Cloud Native and Micronaut project creation wizards.
 2. Support for the core [Oracle Cloud Infrastructure](https://www.oracle.com/cloud/) services in VS Code including: Object Storage; Authentication; Secret Management; Streaming; etc.;
-3. Micronaut Tools to support Micronaut applications development
+3. Tools to support Micronaut applications development
    * YAML files code completion
    * Database development support
    * Micronaut REST Explorer
@@ -34,8 +34,8 @@ The extension pack also bundles support for using Oracle Cloud Infrastructure's 
 
 * [Graal Cloud Native Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn) - an extension that provides a launcher for GCN projects.
 * [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops) - an extension that provides support for Oracle Cloud Infrastructure’s DevOps service in VS Code with the creation of build and deployment pipelines along with source code management that makes it easy to transition from local development to cloud-based development and deployment.
-* [Micronaut Launch](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) - an extension that provides a launcher for Micronaut projects.
-* [Micronaut Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) - an extension that provides Micronaut and Graal Cloud Native project support and delivers JDBC drivers supported by Oracle GCN, that are used by the Apache NetBeans Language Server.
+* [Launch for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) - an extension that provides a launcher for Micronaut projects.
+* [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) - an extension that provides Micronaut and Graal Cloud Native project support and delivers JDBC drivers supported by Oracle GCN, that are used by the Apache NetBeans Language Server.
 
 ### Feedback
 

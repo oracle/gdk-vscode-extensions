@@ -1,5 +1,8 @@
 # Change Log
 
+# Version 0.6.5
+* Renamed to "Tools for Micronaut® framework"
+
 # Version 0.6.4
 * Fix for Compose REST Query action doesn't work starting from VS Code 1.86.0.
 * Saved REST Queries Document not reused for subsequent queries
