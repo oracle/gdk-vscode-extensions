@@ -98,7 +98,7 @@ The [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/ite
 
    ![Add to OCI Vault](images/add_to_oci_vault.png)
 
-All details, including prerequisites, can be found in the [Micronaut Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) extension documentation. See the section *Use OCI Vault to Store Database Connection Properties*.
+All details, including prerequisites, can be found in the [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) extension documentation. See the section *Use OCI Vault to Store Database Connection Properties*.
 
 This action creates new a project artifact named <_project_name_>__oke_configmap_, which contains the `datasources.default.*` properties stored in your OCI Vault. It also extends both predefined Deployment Pipelines to use this Kubernetes manifest in order to run a database application in OKE in a secure and seamless way.
 
