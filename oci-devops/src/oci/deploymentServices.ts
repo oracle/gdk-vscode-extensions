@@ -486,7 +486,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                 }
                 
                 try{
-                    await ociUtils.createDeployToOkeStage('Apply ConfigMap', oci.getProvider(), deployPipeline.id, deployPipeline.id, okeClusterEnvironment, configMapArtifact)
+                    await ociUtils.createDeployToOkeStage('Apply ConfigMap', oci.getProvider(), deployPipeline.id, deployPipeline.id, okeClusterEnvironment, configMapArtifact);
                 } catch (err) {
                     resolve(undefined);
                     dialogs.showErrorMessage(`Failed to create ConfigMap stage for ${repositoryName}`, err);

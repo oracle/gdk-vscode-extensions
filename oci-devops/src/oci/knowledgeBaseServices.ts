@@ -721,7 +721,7 @@ class VulnerabilityAuditNode extends nodes.BaseNode implements nodes.ShowReportN
                         const maxV3Score = audit.maxObservedCvssV3Score;
                         if (audit.isSuccess) {
                             this.iconPath = new vscode.ThemeIcon(VulnerabilityAuditNode.ICON, new vscode.ThemeColor('charts.green'));
-                        } else if (maxV2Score >= VulnerabilityAuditNode.V2_SCORE_RED || maxV3Score >= VulnerabilityAuditNode.V3_SCORE_RED) {
+                        } else if (maxV2Score && maxV2Score >= VulnerabilityAuditNode.V2_SCORE_RED || maxV3Score && maxV3Score >= VulnerabilityAuditNode.V3_SCORE_RED) {
                             this.iconPath = new vscode.ThemeIcon(VulnerabilityAuditNode.ICON, new vscode.ThemeColor('charts.red'));
                         } else {
                             this.iconPath = new vscode.ThemeIcon(VulnerabilityAuditNode.ICON, new vscode.ThemeColor('charts.orange'));
