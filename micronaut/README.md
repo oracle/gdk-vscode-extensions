@@ -1,4 +1,4 @@
-# Micronaut® Launch
+# Launch for Micronaut&reg; framework
 [![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/oracle-labs-graalvm.micronaut?style=for-the-badge&label=VS%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut)
 [![Installs](https://img.shields.io/visual-studio-marketplace/i/oracle-labs-graalvm.micronaut?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut)
 [![License](https://img.shields.io/github/license/oracle/gcn-vscode-extensions?style=for-the-badge&logo=upl)](https://github.com/oracle/gcn-vscode-extensions/blob/main/LICENSE.txt)
@@ -6,7 +6,7 @@
 *** Technology Preview ***
 
 ## Overview
-Micronaut Launch is a lightweight extension for creating [Micronaut framework](https://micronaut.io/) applications within VS Code.
+Launch for Micronaut® framework is a lightweight extension for creating [Micronaut framework](https://micronaut.io/) applications within VS Code.
 The Micronaut framework is a lightweight reactive framework that provides a solid foundation for building cloud native Java microservices.
 
 ## Features
@@ -16,11 +16,11 @@ The Micronaut framework is a lightweight reactive framework that provides a soli
 - VS Code (version 1.76.0 or later).
 
 ## Installing the Extension
-Click **Install** on the banner above, or from the Extensions side bar in VS Code, by searching for "Micronaut Launch".
+Click **Install** on the banner above, or from the Extensions side bar in VS Code, by searching for "Launch for Micronaut® framework".
 
 You can also find the extension listed on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut).
 
-> Note: This extension is part of the [Graal Cloud Native Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack). We recommend you install the Graal Cloud Native Extensions Pack as it provides additional extensions for Micronaut development, including the [Micronaut Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) extension.
+> Note: This extension is part of the [Graal Cloud Native Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack). We recommend you install the Graal Cloud Native Extensions Pack as it provides additional extensions for Micronaut development, including the [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) extension.
 
 ## Usage
 
@@ -54,9 +54,9 @@ Specify the local Micronaut CLI installation to be used in addition to the defau
 * __micronaut.launchUrl__ - Optional URL for the Micronaut Launch web interface (for example, `https://launch.micronaut.io`).
 Specify a URL for the Micronaut Launch web interface in addition to the default (`https://micronaut.io/launch/`).
 
-## Micronaut Launch Commands
+## Available Commands
 
-Invoke the Micronaut Launch commands from the Command Palette, then search for "Micronaut Launch".
+To invoke the commands available from the Command Palette, search for "Micronaut Launch".
 To open the Command Palette, select **Command Palette** from the **View** menu.
 
 The following command is available for Micronaut project creation:
@@ -80,3 +80,5 @@ The assignee will work with the pull request owner to address any issues and the
 ## Release Notes
 
 Refer to [CHANGELOG](CHANGELOG.md).
+
+Micronaut® is a registered trademark of Object Computing, Inc. Use is for referential purposes and does not imply any endorsement or affiliation with any third-party product. Unauthorized use is strictly prohibited.

@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as process from 'process';
@@ -25,7 +26,7 @@ const JDK_HOME_ENV_VAR = 'JDK_HOME';
 const JAVA_HOME_ENV_VAR = 'JAVA_HOME';
 const JDK_ENV_VARS = [ JDK_HOME_ENV_VAR, JAVA_HOME_ENV_VAR ];
 
-export async function getPath(interactive: boolean = false): Promise<string | undefined> {
+export async function getPath(interactive: boolean = true): Promise<string | undefined> {
     logUtils.logInfo('[jdk] Getting a JDK');
 
     const configuration = vscode.workspace.getConfiguration();
@@ -60,7 +61,7 @@ export async function getPath(interactive: boolean = false): Promise<string | un
             logUtils.logInfo(`[jdk] Selected JDK installation: ${jdkPath}`);
             if (isSupportedJDK(jdkPath)) {
                 logUtils.logInfo(`[jdk] Verified selected JDK installation: ${jdkPath}`);
-                vscode.workspace.getConfiguration().update(VISUALVM_JDK_PATH_KEY, jdkPath, vscode.ConfigurationTarget.Global);
+                await vscode.workspace.getConfiguration().update(VISUALVM_JDK_PATH_KEY, jdkPath, vscode.ConfigurationTarget.Global);
                 return jdkPath;
             } else {
                 logUtils.logError(`[jdk] Selected JDK installation is invalid: ${jdkPath}`);
@@ -80,6 +81,7 @@ async function select(): Promise<string | undefined> {
         canSelectFiles: false,
         canSelectFolders: true,
         canSelectMany: false,
+        defaultUri: vscode.Uri.file(os.homedir()),
         openLabel: 'Select'
     });
     return selectedJDKUri?.length === 1 ? selectedJDKUri[0].fsPath : undefined;
