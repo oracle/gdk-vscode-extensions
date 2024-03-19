@@ -40,10 +40,10 @@ Follow these steps to start using VisualVM with VS Code:
 2. Install **Language Server for Java by Apache NetBeans** or **Extension Pack for Java** (or both).
 3. Open your application sources. Make sure it is configured correctly before integrating it with VisualVM.
 4. Click **Download Latest VisualVM** in the VisualVM view, and complete the required steps.
-5. Invoke the **Configure** action displayed for the *When started node* in the *VisualVM* view, and select **Open Process**.
+5. Invoke the **Configure** action displayed for the *When started* node in the *VisualVM* view, and select **Open Process**.
 6. Start the application using the *Run Without Debugging* or *Start Debugging* action.
 
-At this point the application starts, and eventually its process is opened in VisualVM, displayed using its VS Code directory name.
+At this point the application starts, and eventually its process is opened in VisualVM, displayed using its VS Code folder name.
 
 The Go to Source action in various VisualVM views like CPU or Memory Sampler/Profiler results, Heap Viewer, and so on, opens the source code back in VS Code.
 
@@ -54,7 +54,7 @@ The Go to Source action in various VisualVM views like CPU or Memory Sampler/Pro
 
 To download the latest VisualVM release from [https://visualvm.github.io](https://visualvm.github.io), use the **Download Latest VisualVM** action. Depending on the host OS, this will either download a ZIP archive or a macOS disk image (.dmg) file. The ZIP archive will be automatically extracted and registered for the extension. The macOS disk image needs to be installed and registered manually (see the next paragraph).
 
-If an existing local VisualVM installation is already available on the system, or after manually installing a macOS disk image, use the *Select Local VisualVM Installation* action and point to the VisualVM installation directory. The extension supports VisualVM 2.1+, or the corresponding GraalVM component (select the GraalVM installation directory). We recommend using the latest version of VisualVM.
+If an existing local VisualVM installation is already available on the system, or after manually installing a macOS disk image, use the **Select Local VisualVM Installation** action and point to the VisualVM installation directory. The extension supports VisualVM 2.1+, or the corresponding GraalVM component (select the GraalVM installation directory). We recommend using the latest version of VisualVM.
 
 To manually register an existing local VisualVM installation, or to configure specific VisualVM installation for the workspace, use the `visualvm-integration.installation.visualvmPath` property to point to the VisualVM installation directory.
 
@@ -99,29 +99,29 @@ To override the JDK to be used, or to configure a specific JDK for the workspace
 Note: The *When started* node is only displayed if the automatic application process selection is enabled (`visualvm-integration.integration.automaticallySelectProjectProcess` property is set to `true`), and no process has been selected yet, or it has not been selected manually using the *Select Process* action.
 
 #### Thread Dump Node
-*Take Thread Dump* takes a thread dump from a monitored process, and selects the corresponding view in VisualVM.
+*Take Thread Dump* takes a thread dump from a monitored process, and selects its view in VisualVM.
 
 #### Heap Dump Node
-*Take Heap Dump* takes a heap dump from a monitored process, and selects the corresponding view in VisualVM.
+*Take Heap Dump* takes a heap dump from a monitored process, and selects its view in VisualVM.
 
 #### CPU Sampler Node
 *Start CPU Sampling* starts a new CPU sampling session for a monitored process, and selects its view in VisualVM. The sampling session settings are defined by the *Filter* and *Sampling rate* subnodes.
 
-*Take Snapshot of Sampler Results* takes a snapshot of the collected data, and selects a corresponding view in VisualVM.
+*Take Snapshot of Sampler Results* takes a snapshot of the collected data, and selects its view in VisualVM.
 
 *Stop Sampling* terminates the current sampling session, and selects its view in VisualVM.
 
 #### Memory Sampler Node
 *Start Memory Sampling* starts a new memory sampling session for the monitored process, and selects its view in VisualVM. The sampling session settings are defined by the *Sampling rate* subnode.
 
-*Take Snapshot of Sampler Results* takes a snapshot of the collected data, and selects a corresponding view in VisualVM.
+*Take Snapshot of Sampler Results* takes a snapshot of the collected data, and selects its view in VisualVM.
 
 *Stop Sampling* terminates the current sampling session, and selects its view in VisualVM.
 
 #### JFR Node
 *Start Flight Recording* starts a new flight recording for a monitored process. The flight recorder preset to be used for the recording is defined by the *Settings* subnode.
 
-*Dump Flight Recording Data* dumps the data for the current flight recording, and selects a corresponding view in VisualVM.
+*Dump Flight Recording Data* dumps the data for the current flight recording, and selects its view in VisualVM.
 
 *Stop Flight Recording* terminates the current flight recording.
 </details>
