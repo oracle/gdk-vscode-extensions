@@ -28,7 +28,7 @@ To integrate with an application startup, and to support application classes fil
 
 The extension also tightly integrates with the following extensions to provide the best monitoring and profiling experience for special application types:
 
-* [Micronaut Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools)
+* [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools)
   - VisualVM view can be easily displayed in the Micronaut Tools activity
   - CPU Sampler configured for the selected GCN application subproject (OCI, AWS, GCP)
   - Go to Source configured for the selected GCN application subproject (OCI, AWS, GCP)
