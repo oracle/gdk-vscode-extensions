@@ -110,7 +110,9 @@ export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<
                     const projectType : ProjectType = 'GCN';
                     return Object.assign({}, folder, { projectType, buildSystem, subprojects, deploySubproject: sub });
                 }
-                if (fs.existsSync(path.join(resPath, 'application.yaml'))) {
+                if (fs.existsSync(path.join(resPath, 'application.yaml')) ||
+                    fs.existsSync(path.join(resPath, 'META-INF', 'microprofile-config.properties')) ||
+                    fs.existsSync(path.join(u, '.helidon'))) {
                     const pomPath = path.join(u, 'pom.xml');
                     // currently we only support Helidon Maven projects
                     if (fs.existsSync(pomPath)) {
@@ -157,7 +159,9 @@ export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<
             const projectType: ProjectType = 'SpringBoot';
             return Object.assign({}, folder, { projectType, buildSystem, subprojects });
         }
-        if (fs.existsSync(path.join(resPath, 'application.yaml')) && fs.existsSync(path.join(folder.uri.fsPath, 'pom.xml'))) {
+        if ((fs.existsSync(path.join(resPath, 'application.yaml')) ||
+            fs.existsSync(path.join(resPath, 'META-INF', 'microprofile-config.properties')) ||
+            fs.existsSync(path.join(folder.uri.fsPath, '.helidon'))) && fs.existsSync(path.join(folder.uri.fsPath, 'pom.xml'))) {
             // possibly Helidon, must verify using dependencies
             try {
                 logInfo(`[project] Getting project dependencies for ${folder.uri.toString()}`);
