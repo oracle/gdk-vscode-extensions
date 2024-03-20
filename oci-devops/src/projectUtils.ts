@@ -11,8 +11,11 @@ import * as os from 'os';
 import * as path from 'path';
 import * as xml2js from 'xml2js';
 import * as semver from 'semver';
+import { logError, logInfo } from '../../common/lib/logUtils';
+
 
 const GET_PROJECT_INFO = 'nbls.project.info';
+const GET_PROJECT_DEPENDENCIES = 'nbls.project.dependencies.find';
 const GET_PROJECT_ARTIFACTS = 'nbls.project.artifacts';
 const NATIVE_BUILD = 'native-build';
 
@@ -37,6 +40,24 @@ export async function checkNBLS(): Promise<string | undefined> {
         await delay(1000);
     }
     return 'Project support not available. Check whether the Language Server for Java by Apache NetBeans extension is active and initialized.';
+}
+
+interface ArtifactSpec {
+    groupId : string;
+    artifactId : string;
+    versionSpec : string;
+}
+
+interface Dependency {
+    artifact : ArtifactSpec;
+    project : any;
+    scope : string;
+}
+
+interface DependencyResult {
+    uri : string;
+    project? : ArtifactSpec;
+    matches? : Dependency[];
 }
 
 export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<ProjectFolder> {
@@ -87,10 +108,45 @@ export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<
                     fs.existsSync(path.join(resPath, 'application-ec2.yml')) ||
                     fs.existsSync(path.join(resPath, 'application-ec2.properties'))) {
                     const projectType : ProjectType = 'GCN';
-                    return Object.assign({}, folder, { projectType, buildSystem, subprojects });
+                    return Object.assign({}, folder, { projectType, buildSystem, subprojects, deploySubproject: sub });
+                }
+                if (fs.existsSync(path.join(resPath, 'application.yaml'))) {
+                    const pomPath = path.join(u, 'pom.xml');
+                    // currently we only support Helidon Maven projects
+                    if (fs.existsSync(pomPath)) {
+                        try {
+                            logInfo(`[project] Getting project dependencies for ${u.toString()}`);
+                            const response : DependencyResult = await vscode.commands.executeCommand(GET_PROJECT_DEPENDENCIES, {
+                                uri: folder.uri.toString(),
+                                artifacts: [
+                                    { groupId: 'com.oracle.oci.sdk', artifactId: 'oci-java-sdk-core'},
+                                    { groupId: 'io.helidon.microprofile.bundles', artifactId: 'helidon-microprofile-core'},
+                                    { groupId: 'io.helidon.webserver', artifactId: 'helidon-webserver'}
+                                ],
+                                returnContents: false
+                            });
+                            const projectType : ProjectType = 'Helidon';
+                            logInfo(`[project] Dependencies for ${u.toString()}: ${JSON.stringify(response)}`);
+                            let oci = false;
+                            let helidon = false;
+                            response.matches?.forEach(m => {
+                                if (m.artifact.groupId === 'com.oracle.oci.sdk') {
+                                    oci = true;
+                                } else if (m.artifact.groupId.startsWith('io.helidon')) {
+                                    helidon = true;
+                                }
+                            })
+                            if (oci && helidon) {
+                                return Object.assign({}, folder, { projectType, buildSystem, subprojects, deploySubproject: sub });
+                            }
+                        } catch (err : any) {
+                            logError(`[project] Unable to read project dependencies for ${u.toString()}: ${err['message']}`);
+                        }
+                    }
                 }
             }
         }
+        const resPath = path.join(folder.uri.fsPath, 'src', 'main', 'resources');
         if (fs.existsSync(path.join(subprojects.length > 0 ? path.join(folder.uri.fsPath, 'app') : folder.uri.fsPath, 'src', 'main', 'resources', 'application.yml'))) {
             const projectType: ProjectType = infos[0].subprojects?.length ? 'GCN' : 'Micronaut';
             return Object.assign({}, folder, { projectType, buildSystem, subprojects });
@@ -100,11 +156,32 @@ export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<
         } else if (fs.existsSync(path.join(subprojects.length > 0 ? path.join(folder.uri.fsPath, 'app') : folder.uri.fsPath, 'src', 'main', 'resources', 'application.properties'))) {
             const projectType: ProjectType = 'SpringBoot';
             return Object.assign({}, folder, { projectType, buildSystem, subprojects });
-        } else {
-            const projectType: ProjectType = 'Unknown';
-            return Object.assign({}, folder, { projectType, buildSystem, subprojects: [] });
         }
+        if (fs.existsSync(path.join(resPath, 'application.yaml')) && fs.existsSync(path.join(folder.uri.fsPath, 'pom.xml'))) {
+            // possibly Helidon, must verify using dependencies
+            try {
+                logInfo(`[project] Getting project dependencies for ${folder.uri.toString()}`);
+                const response : DependencyResult = await vscode.commands.executeCommand(GET_PROJECT_DEPENDENCIES, {
+                    uri: folder.uri.toString(),
+                    artifacts: [
+                        { groupId: 'io.helidon.microprofile.bundles', artifactId: 'helidon-microprofile-core'}, // Helidon MP
+                        { groupId: 'io.helidon.webserver', artifactId: 'helidon-webserver'} // Helidon SE
+                    ],
+                    returnContents: false
+                });
+                logInfo(`[project] Dependencies for ${folder.uri.toString()}: ${JSON.stringify(response)}`);
+                if (response.matches?.length) {
+                    const projectType: ProjectType = 'Helidon';
+                    return Object.assign({}, folder, { projectType, buildSystem, subprojects });
+                }
+            } catch (err : any) {
+                logError(`[project] Could not get dependencies of ${folder.uri}: ${err['message']}`);
+            }
+        }
+        const projectType: ProjectType = 'Unknown';
+        return Object.assign({}, folder, { projectType, buildSystem, subprojects: [] });
     }
+
     return Object.assign({}, folder, { projectType: 'Unknown' as ProjectType, subprojects: [] });
 }
 
@@ -112,6 +189,10 @@ export async function getProjectBuildCommand(folder: ProjectFolder, subfolder: s
     if (isMaven(folder)) {
         if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {
             return 'chmod 777 ./mvnw && ./mvnw package --no-transfer-progress -DskipTests';
+        }
+        // Helidon wizard has no mvnw
+        if (folder.projectType === 'Helidon') {
+            return 'mvn package --no-transfer-progress -DskipTests';
         }
         if (folder.projectType === 'GCN') {
             return `chmod 777 ./mvnw && ./mvnw package -pl ${subfolder} -am --no-transfer-progress -DskipTests`;
@@ -137,6 +218,9 @@ export async function getProjectBuildNativeExecutableCommand(folder: ProjectFold
         }
         if (folder.projectType === 'SpringBoot') {
             return 'chmod 777 ./mvnw && ./mvnw --no-transfer-progress native:compile -Pnative -DskipTests';
+        }
+        if (folder.projectType === 'Helidon') {
+            return 'mvn --no-transfer-progress package -Pnative-image -DskipTests';
         }
         if (folder.projectType === 'GCN') {
             let appName = undefined;
@@ -222,7 +306,7 @@ export async function getProjectBuildArtifactLocation(folder: ProjectFolder, sub
         if (folder.projectType === 'Micronaut') {
             return `target/${folder.name}-${tryReadMavenVersion(folder.uri.fsPath)}.jar`;
         }
-        if (folder.projectType === 'SpringBoot') {
+        if (folder.projectType === 'SpringBoot' || folder.projectType === 'Helidon') {
             return `target/${folder.name}-${tryReadMavenVersion(folder.uri.fsPath)}.jar`;
         }
         if (folder.projectType === 'GCN') {
@@ -234,7 +318,7 @@ export async function getProjectBuildArtifactLocation(folder: ProjectFolder, sub
         if (folder.projectType === 'Micronaut') {
             return `build/libs/${folder.name}-${tryReadGradleVersion(folder.uri.fsPath)}-all.jar`;
         }
-        if (folder.projectType === 'SpringBoot') {
+        if (folder.projectType === 'SpringBoot' || folder.projectType === 'Helidon') {
             return `build/libs/${folder.name}-${tryReadGradleVersion(folder.uri.fsPath, '0.0.1')}-SNAPSHOT.jar`;
         }
         if (folder.projectType === 'GCN') {
@@ -261,7 +345,7 @@ export async function getProjectNativeExecutableArtifactLocation(folder: Project
         return path.relative(projectPath, loc.path);
     }
     if (isMaven(folder)) {
-        if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {
+        if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot' || folder.projectType === 'Helidon') {
             return `target/${folder.name}`;
         }
         if (folder.projectType === 'GCN') {
@@ -283,7 +367,7 @@ export function getCloudSpecificSubProjectNames(folder: ProjectFolder): string[]
     return folder.subprojects.map(sub => sub.name).filter(name => name !== 'app' && name !== 'lib') || [];
 }
 
-export type ProjectType = 'GCN' | 'Micronaut' | 'SpringBoot' | 'Unknown';
+export type ProjectType = 'GCN' | 'Micronaut' | 'SpringBoot' | 'Helidon' | 'Unknown';
 export type BuildSystemType = 'Maven' | 'Gradle';
 
 export interface ProjectFolder extends vscode.WorkspaceFolder {
