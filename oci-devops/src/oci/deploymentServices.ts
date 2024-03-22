@@ -141,7 +141,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     return;
                 } catch (err) {
                     resolve(undefined);
-                    dialogs.showErrorMessage('Failed to read project and repository', err);
+                    dialogs.showErrorMessageWithReportIssueCommand('Failed to read project and repository', 'oci.devops.openIssueReporter', err);
                     return;
                 }
             });
@@ -168,7 +168,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     return;
                 } catch (err) {
                     resolve(undefined);
-                    dialogs.showErrorMessage('Failed to read build pipelines', err);
+                    dialogs.showErrorMessageWithReportIssueCommand('Failed to read build pipelines', 'oci.devops.openIssueReporter', err);
                     return;
                 }
             });
@@ -215,10 +215,10 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                         }
                     }
                     resolve(undefined);
-                    dialogs.showErrorMessage('Failed to read image uri');
+                    dialogs.showErrorMessageWithReportIssueCommand('Failed to read image uri', 'oci.devops.openIssueReporter');
                 } catch (err) {
                     resolve(undefined);
-                    dialogs.showErrorMessage('Failed to read image uri', err);
+                    dialogs.showErrorMessageWithReportIssueCommand('Failed to read image uri', 'oci.devops.openIssueReporter', err);
                 }
             });
         });
@@ -247,7 +247,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     return;
                 } catch (err) {
                     resolve(undefined);
-                    dialogs.showErrorMessage('Failed to read deploy environments', err);
+                    dialogs.showErrorMessageWithReportIssueCommand('Failed to read deploy environments', 'oci.devops.openIssueReporter', err);
                     return;
                 }
             });
@@ -273,7 +273,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     return;
                 } catch (err) {
                     resolve(undefined);
-                    dialogs.showErrorMessage('Failed to create OKE cluster deploy environment', err);
+                    dialogs.showErrorMessageWithReportIssueCommand('Failed to create OKE cluster deploy environment', 'oci.devops.openIssueReporter', err);
                     return;
                 }
             });
@@ -296,7 +296,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     resolve(items);
                 } catch (err) {
                     resolve(undefined);
-                    dialogs.showErrorMessage('Failed to read deploy artifacts', err);
+                    dialogs.showErrorMessageWithReportIssueCommand('Failed to read deploy artifacts', 'oci.devops.openIssueReporter', err);
                 }
             });
         });
@@ -319,7 +319,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     });
                     if (!inlineContent) {
                         resolve(undefined);
-                        dialogs.showErrorMessage(`Failed to create OKE deployment setup command spec`);
+                        dialogs.showErrorMessageWithReportIssueCommand(`Failed to create OKE deployment setup command spec`, 'oci.devops.openIssueReporter');
                         return;
                     }
                     const artifactName = `${repositoryName}_oke_deploy_docker_secret_setup_command`;
@@ -330,7 +330,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     resolve(artifact);
                 } catch (err) {
                     resolve(null);
-                    dialogs.showErrorMessage('Failed to create setup command specification artifact', err);
+                    dialogs.showErrorMessageWithReportIssueCommand('Failed to create setup command specification artifact', 'oci.devops.openIssueReporter', err);
                 }
             });
         });
@@ -351,7 +351,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     });
                     if (!inlineContent) {
                         resolve(undefined);
-                        dialogs.showErrorMessage(`Failed to create OKE deployment configuration spec`);
+                        dialogs.showErrorMessageWithReportIssueCommand(`Failed to create OKE deployment configuration spec`, 'oci.devops.openIssueReporter');
                         return;
                     }
                     const jvm = imageName.endsWith('-jvm:${DOCKER_TAG}');
@@ -364,7 +364,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     resolve(artifact);
                 } catch (err) {
                     resolve(null);
-                    dialogs.showErrorMessage('Failed to create deploy config artifact', err);
+                    dialogs.showErrorMessageWithReportIssueCommand('Failed to create deploy config artifact', 'oci.devops.openIssueReporter', err);
                 }
             });
         });
@@ -383,7 +383,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     });
                     if (!inlineContent) {
                         resolve(undefined);
-                        dialogs.showErrorMessage(`Failed to create OKE ConfigMap for ${repositoryName}`);
+                        dialogs.showErrorMessageWithReportIssueCommand(`Failed to create OKE ConfigMap for ${repositoryName}`, 'oci.devops.openIssueReporter');
                         return;
                     }
                     const artifactName = `${repositoryName}_oke_configmap`;
@@ -395,7 +395,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     resolve(artifact);
                 } catch (err) {
                     resolve(null);
-                    dialogs.showErrorMessage('Failed to create ConfigMap artifact', err);
+                    dialogs.showErrorMessageWithReportIssueCommand('Failed to create ConfigMap artifact', 'oci.devops.openIssueReporter', err);
                 }
             });
         });
@@ -462,7 +462,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     await ociUtils.updateCompartmentAccessPolicies(oci.getProvider(), oci.getCompartment(), okeCompartmentId, subnet.compartmentID);
                 } catch (err) {
                     resolve(undefined);
-                    dialogs.showErrorMessage(`Failed to update policies for accessing resources`, err);
+                    dialogs.showErrorMessageWithReportIssueCommand(`Failed to update policies for accessing resources`, 'oci.devops.openIssueReporter', err);
                     return;
                 }
                 let deployPipeline;
@@ -473,7 +473,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     }], tags));
                 } catch (err) {
                     resolve(undefined);
-                    dialogs.showErrorMessage(`Failed to create deployment to OKE pipeline for ${repositoryName}`, err);
+                    dialogs.showErrorMessageWithReportIssueCommand(`Failed to create deployment to OKE pipeline for ${repositoryName}`, 'oci.devops.openIssueReporter', err);
                     return;
                 }
                 let setupSecretStage;
@@ -481,7 +481,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     setupSecretStage = await ociUtils.createSetupKubernetesDockerSecretStage(oci.getProvider(), deployPipeline.id, setupCommandSpecArtifact, subnet.id);
                 } catch (err) {
                     resolve(undefined);
-                    dialogs.showErrorMessage(`Failed to create deployment to OKE stage for ${repositoryName}`, err);
+                    dialogs.showErrorMessageWithReportIssueCommand(`Failed to create deployment to OKE stage for ${repositoryName}`, 'oci.devops.openIssueReporter', err);
                     return;
                 }
                 
@@ -489,7 +489,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     await ociUtils.createDeployToOkeStage('Apply ConfigMap', oci.getProvider(), deployPipeline.id, deployPipeline.id, okeClusterEnvironment, configMapArtifact);
                 } catch (err) {
                     resolve(undefined);
-                    dialogs.showErrorMessage(`Failed to create ConfigMap stage for ${repositoryName}`, err);
+                    dialogs.showErrorMessageWithReportIssueCommand(`Failed to create ConfigMap stage for ${repositoryName}`, 'oci.devops.openIssueReporter', err);
                     return;
                 }
                 
@@ -498,7 +498,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     await ociUtils.createDeployToOkeStage('Deploy to OKE', oci.getProvider(), deployPipeline.id, setupSecretStage.id, okeClusterEnvironment, deployConfigArtifact);
                 } catch (err) {
                     resolve(undefined);
-                    dialogs.showErrorMessage(`Failed to create deployment to OKE stage for ${repositoryName}`, err);
+                    dialogs.showErrorMessageWithReportIssueCommand(`Failed to create deployment to OKE stage for ${repositoryName}`, 'oci.devops.openIssueReporter', err);
                     return;
                 }
                 resolve([{ ocid: deployPipeline.id, displayName: deployPipelineName }]);
@@ -541,7 +541,7 @@ async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode
                     return;
                 } catch (err) {
                     resolve(undefined);
-                    dialogs.showErrorMessage('Failed to read deployment pipelines', err);
+                    dialogs.showErrorMessageWithReportIssueCommand('Failed to read deployment pipelines', 'oci.devops.openIssueReporter', err);
                     return;
                 }
             });
@@ -800,7 +800,7 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
                             this.updateWhenCompleted(deployment.id, deployment.compartmentId, deploymentName);
                         }
                     } catch (err) {
-                        dialogs.showErrorMessage(`Failed to start deployment pipeline '${this.object.displayName}'`, err);
+                        dialogs.showErrorMessageWithReportIssueCommand(`Failed to start deployment pipeline '${this.object.displayName}'`, 'oci.devops.openIssueReporter', err);
                         resolve(false);
                     }
                 });
@@ -822,7 +822,7 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
                             ociUtils.cancelDeployment(this.oci.getProvider(), lastDeployment.ocid);
                             this.updateLastDeployment(lastDeployment.ocid, devops.models.Deployment.LifecycleState.Canceling, lastDeployment.output);
                         } catch (err) {
-                            dialogs.showErrorMessage(`Failed to stop deployment pipeline '${this.object.displayName}'`, err);
+                            dialogs.showErrorMessageWithReportIssueCommand(`Failed to stop deployment pipeline '${this.object.displayName}'`, 'oci.devops.openIssueReporter', err);
                         }
                     }
                 });
@@ -848,7 +848,7 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
                     const deploymentName = this.lastDeployment?.deploymentName;
                     if (!deployment || !deploymentName) {
                         resolve(false);
-                        dialogs.showErrorMessage('Cannot resolve the latest deployment.');
+                        dialogs.showErrorMessageWithReportIssueCommand('Cannot resolve the latest deployment.', 'oci.devops.openIssueReporter');
                         return;
                     }
                     const deployEnvId = deployment.deployPipelineEnvironments?.items.find(env => env.deployEnvironmentId)?.deployEnvironmentId;
@@ -856,7 +856,7 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
                     const okeDeployEnvironment = ociUtils.asOkeDeployEnvironemnt(deployEnvironment);
                     if (!okeDeployEnvironment?.clusterId) {
                         resolve(false);
-                        dialogs.showErrorMessage('Cannot resolve destination OKE cluster.');
+                        dialogs.showErrorMessageWithReportIssueCommand('Cannot resolve destination OKE cluster.', 'oci.devops.openIssueReporter');
                         return;
                     }
                     if (!await kubernetesUtils.isCurrentCluster(okeDeployEnvironment.clusterId)) {

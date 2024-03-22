@@ -182,7 +182,7 @@ async function selectBuildPipelines(oci: ociContext.Context, ignore: BuildPipeli
                     return;
                 } catch (err) {
                     resolve(undefined);
-                    dialogs.showErrorMessage('Failed to read build pipelines', err);
+                    dialogs.showErrorMessageWithReportIssueCommand('Failed to read build pipelines', 'oci.devops.openIssueReporter', err);
                     return;
                 }
             });
@@ -449,7 +449,7 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
                                 this.updateWhenCompleted(buildRun.id, buildRun.compartmentId, buildName);
                             }
                         } catch (err) {
-                            dialogs.showErrorMessage(`Failed to start build pipeline '${this.object.displayName}'`, err);
+                            dialogs.showErrorMessageWithReportIssueCommand(`Failed to start build pipeline '${this.object.displayName}'`, 'oci.devops.openIssueReporter', err);
                             resolve(false);
                         }
                     });
@@ -472,7 +472,7 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
                             ociUtils.cancelBuildRun(this.oci.getProvider(), lastRun.ocid);
                             this.updateLastRun(lastRun.ocid, devops.models.BuildRun.LifecycleState.Canceling, lastRun.output, undefined);
                         } catch (err) {
-                            dialogs.showErrorMessage(`Failed to stop build pipeline '${this.object.displayName}'`, err);
+                            dialogs.showErrorMessageWithReportIssueCommand(`Failed to stop build pipeline '${this.object.displayName}'`, 'oci.devops.openIssueReporter', err);
                         }
                     }
                 });

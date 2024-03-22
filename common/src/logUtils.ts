@@ -7,32 +7,41 @@
 
 import * as vscode from 'vscode';
 
-let LOG_OUTPUT: vscode.OutputChannel;
+let LOG_OUTPUT: vscode.LogOutputChannel;
 export function registerExtensionForLogging(context: vscode.ExtensionContext) {
     if (!LOG_OUTPUT) {
-        LOG_OUTPUT = vscode.window.createOutputChannel(context.extension.packageJSON.displayName);
+        LOG_OUTPUT = vscode.window.createOutputChannel(context.extension.packageJSON.displayName, { log: true });
     }
 }
 
+export function logTrace(record: string) {
+    if (!LOG_OUTPUT) { throw new Error("Extension isn't registered for logging."); }
+    LOG_OUTPUT.trace(record);
+}
+
+export function logDebug(record: string) {
+    if (!LOG_OUTPUT) { throw new Error("Extension isn't registered for logging."); }
+    LOG_OUTPUT.debug(record);
+}
+
 export function logInfo(record: string) {
-    logRecord('info', record);
+    if (!LOG_OUTPUT) { throw new Error("Extension isn't registered for logging."); }
+    LOG_OUTPUT.info(record);
 }
 
 export function logWarning(record: string) {
-    logRecord('warning', record);
+    if (!LOG_OUTPUT) { throw new Error("Extension isn't registered for logging."); }
+    LOG_OUTPUT.warn(record);
 }
 
 export function logError(record: string) {
-    logRecord('error', record);
+    if (!LOG_OUTPUT) { throw new Error("Extension isn't registered for logging."); }
+    LOG_OUTPUT.error(record);
 }
 
 export function logAndThrow(record: string, errFnc?: (err: Error) => Error) {
-    logError(record);
+    if (!LOG_OUTPUT) { throw new Error("Extension isn't registered for logging."); }
+    LOG_OUTPUT.error(record);
     const err = new Error(record);
     throw errFnc ? errFnc(err) : err;
-}
-
-export function logRecord(category: string, record: string) {
-    if (!LOG_OUTPUT) { throw new Error("Extension isn't registered for logging."); }
-    LOG_OUTPUT.appendLine(`[${new Date().toISOString()}] [${category}] ${record}`);
 }
