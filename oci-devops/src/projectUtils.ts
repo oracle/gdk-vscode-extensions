@@ -137,7 +137,7 @@ export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<
                                 } else if (m.artifact.groupId.startsWith('io.helidon')) {
                                     helidon = true;
                                 }
-                            })
+                            });
                             if (oci && helidon) {
                                 return Object.assign({}, folder, { projectType, buildSystem, subprojects, deploySubproject: sub });
                             }

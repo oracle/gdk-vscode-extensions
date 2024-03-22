@@ -75,6 +75,18 @@ export function getErrorMessage(message: string | undefined, err?: any): string 
     return message;
 }
 
+export function showErrorMessageWithReportIssueCommand(message: string | undefined, command: string, err?: any, ...items: string[]): Thenable<string | undefined> {
+	const reportIssue = 'Report Issue';
+	items.push(reportIssue);
+	return showErrorMessage(message, err, ...items).then(val => {
+		if (val === reportIssue) {
+			vscode.commands.executeCommand(command);
+			return undefined;
+		}
+		return val;
+	});
+}
+
 export function showErrorMessage(message: string | undefined, err?: any, ...items: string[]): Thenable<string | undefined> {
     const msg = getErrorMessage(message, err);
 	logUtils.logError(msg);

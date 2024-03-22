@@ -3490,8 +3490,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
     });
 
     if (error) {
-        dialogs.showErrorMessage(error);
         logUtils.logInfo(`[deploy] Failed: ${error}`);
+        dialogs.showErrorMessageWithReportIssueCommand(error, 'oci.devops.openIssueReporter');
         return false;
     } else {
         logUtils.logInfo(`[deploy] New devops project successfully created`);
