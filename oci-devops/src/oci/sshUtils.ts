@@ -515,7 +515,9 @@ function isFileReadableByOthers(filename : string) : boolean {
  * @param filename filename to change permissions for
  */
 function makeFileOwnerReadable(filename : string) : void {
+    filename = filename.replace(/^~(?=$|\/|\\)/, os.homedir());
     if (!fs.existsSync(filename)) {
+        logInfo(`[ssh] Resetting permissions on ${filename}: does not exist`);
         return;
     }
     logInfo(`[ssh] Resetting permissions on ${filename}`);
