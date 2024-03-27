@@ -1,0 +1,42 @@
+#####################################################################
+# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+#####################################################################
+
+#####################################################################
+#
+# OCI DevOps Tools Build Pipeline Spec for Maven & Gradle
+# Builds application Docker image and deploys it to Container Registry
+#
+#####################################################################
+version: 0.1
+component: build
+timeoutInSeconds: 15000
+runAs: root
+shell: bash
+env:
+  exportedVariables:
+    - DOCKER_TAG
+steps:
+  - type: Command
+    name: "Define docker image tag"
+    timeoutInSeconds: 40
+    command: |
+      echo "OCI_BUILD_RUN_ID: ${OCI_BUILD_RUN_ID}"
+      export DOCKER_TAG="latest"
+      echo "DOCKER_TAG: ${DOCKER_TAG}"
+  - type: Command
+    name: "Docker build"
+    command: |
+      echo "Running docker image build."
+      echo "Docker Image Tag: ${DOCKER_TAG}"
+      docker build -f {{{docker_file}}} \
+                   -t {{{image_name}}}:${DOCKER_TAG} .
+      echo "Done"
+      printf "List of docker images:\n $(docker images)"
+outputArtifacts:
+  - name: {{{deploy_artifact_name}}}
+    type: DOCKER_IMAGE
+    location: {{{image_name}}}:latest

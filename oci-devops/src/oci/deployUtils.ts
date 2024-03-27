@@ -294,7 +294,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                     }
                     totalSteps += 4; // Docker jvm image, build spec, and pipeline, jvm container repository
                     totalSteps += 4 * projectUtils.getCloudSpecificSubProjectNames(projectFolder).length; // Docker native image, build spec, and pipeline, native container repository per cloud specific subproject
-                } else if (projectFolder.projectType === 'Micronaut' || projectFolder.projectType === 'SpringBoot') {
+                } else if (projectFolder.projectType === 'Micronaut' || projectFolder.projectType === 'SpringBoot' || projectFolder.projectType === 'Helidon') {
                     totalSteps += 12; // Jar build spec and pipeline, NI build spec and pipeline, Docker native image, build spec and pipeline, Docker jvm image, build spec and pipeline, native container repository, jvm container repository
                     if (!bypassArtifacts) {
                         totalSteps += 2; // Jar artifact, NI artifact
@@ -2435,14 +2435,15 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         const docker_nibuildspec_template = 'docker_nibuild_spec.yaml';
                         const docker_nibuildArtifactName = `${repositoryName}_native_docker_image`;
                         logUtils.logInfo(`[deploy] Creating ${NI_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                        const docker_nibuildTemplate = expandTemplate(resourcesPath, docker_nibuildspec_template, {
+                        const docker_nibuildTemplate = expandTemplate(resourcesPath, folder.projectType === 'Helidon' ? 'docker_build_spec.yaml' : docker_nibuildspec_template, {
                             default_graalvm_version: DEFAULT_GRAALVM_VERSION,
                             default_java_version: DEFAULT_JAVA_VERSION,
                             project_build_command: project_build_native_executable_command,
                             project_artifact_location: project_native_executable_artifact_location,
                             deploy_artifact_name: docker_nibuildArtifactName,
+                            docker_file: 'Dockerfile.native',
                             image_name: nativeContainerRepository.displayName.toLowerCase()
-                        }, folder);
+                        }, folder, docker_nibuildspec_template);
                         if (!docker_nibuildTemplate) {
                             resolve(`Failed to configure ${NI_CONTAINER_NAME_LC} build spec for ${repositoryName}`);
                             return;
@@ -2945,14 +2946,15 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         const docker_jvmbuildspec_template = 'docker_jvmbuild_spec.yaml';
                         const docker_jvmbuildArtifactName = `${repositoryName}_jvm_docker_image`;
                         logUtils.logInfo(`[deploy] Creating ${JVM_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                        const docker_jvmbuildTemplate = expandTemplate(resourcesPath, docker_jvmbuildspec_template, {
+                        const docker_jvmbuildTemplate = expandTemplate(resourcesPath, folder.projectType === 'Helidon' ? 'docker_build_spec.yaml' : docker_jvmbuildspec_template, {
                             default_graalvm_version: DEFAULT_GRAALVM_VERSION,
                             default_java_version: DEFAULT_JAVA_VERSION,
                             project_build_command: project_devbuild_command,
                             project_artifact_location: project_devbuild_artifact_location,
                             deploy_artifact_name: docker_jvmbuildArtifactName,
+                            docker_file: 'Dockerfile.jlink',
                             image_name: jvmContainerRepository.displayName.toLowerCase()
-                        }, folder);
+                        }, folder, docker_jvmbuildspec_template);
                         if (!docker_jvmbuildTemplate) {
                             resolve(`Failed to configure ${JVM_CONTAINER_NAME_LC} build spec for ${repositoryName}`);
                             return;
