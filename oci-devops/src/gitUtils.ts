@@ -13,7 +13,8 @@ import * as dialogs from '../../common/lib/dialogs';
 import * as logUtils from '../../common/lib/logUtils';
 
 function getGitAPI() {
-    return vscode.extensions.getExtension('vscode.git')?.exports.getAPI(1);
+    const ext = vscode.extensions.getExtension('vscode.git');
+    return ext?.exports.enabled ? ext?.exports.getAPI(1) : undefined;
 }
 
 function getPath(): string | undefined {
