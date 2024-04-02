@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import * as jdk from './jdk';
 import * as parameters from './parameters';
-// import * as logUtils from '../../common/lib/logUtils';
+// import * as logUtils from './logUtils';
 
 
 export type RunningProcess = {

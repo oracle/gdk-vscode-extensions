@@ -8,7 +8,7 @@
 import * as vscode from 'vscode';
 import * as nodes from './nodes';
 import * as commands from './commands';
-import * as logUtils from '../../common/lib/logUtils';
+import * as logUtils from './logUtils';
 
 
 // Predefined views

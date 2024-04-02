@@ -10,7 +10,7 @@ import * as process from 'process';
 import * as jdk from './jdk';
 import * as parameters from './parameters';
 import * as runningProcesses from './runningProcesses';
-import * as logUtils from '../../common/lib/logUtils';
+import * as logUtils from './logUtils';
 
 
 export const AUTO_SELECT_PROJECT_PROCESS_KEY = 'visualvm-integration.integration.automaticallySelectProjectProcess';

@@ -14,7 +14,7 @@ import * as cp from 'child_process';
 import * as view from './view';
 import * as parameters from './parameters';
 import * as commands from './commands';
-import * as logUtils from '../../common/lib/logUtils';
+import * as logUtils from './logUtils';
 
 
 export const VISUALVM_HOMEPAGE = 'https://visualvm.github.io';
