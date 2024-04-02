@@ -10,7 +10,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as process from 'process';
-import * as logUtils from '../../common/lib/logUtils';
+import * as logUtils from './logUtils';
 
 
 // Paths to JDK used in settings.json

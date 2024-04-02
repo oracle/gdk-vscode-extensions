@@ -12,7 +12,7 @@ import * as path from 'path';
 import * as jdk from './jdk';
 import * as projectUtils from './projectUtils';
 import * as vscodeUtils from './vscodeUtils';
-// import * as logUtils from '../../common/lib/logUtils';
+// import * as logUtils from './logUtils';
 
 
 export const CPU_SAMPLER_FILTER_INCLUSIVE = 'include-classes';

@@ -14,7 +14,7 @@ import * as process from 'process';
 import * as install from './install';
 import * as commands from './commands';
 import * as visualvm from './visualvm';
-import * as logUtils from '../../common/lib/logUtils';
+import * as logUtils from './logUtils';
 
 
 const VISUALVM_URL: string = 'https://api.github.com';

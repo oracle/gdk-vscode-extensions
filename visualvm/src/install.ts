@@ -11,7 +11,7 @@ import * as path from 'path';
 import * as decompress from 'decompress';
 import * as visualvm from './visualvm';
 import * as commands from './commands';
-import * as logUtils from '../../common/lib/logUtils';
+import * as logUtils from './logUtils';
 
 
 export async function installZipArchive(zipFile: string, targetDir: string, name: string, deleteZipFile: boolean = true) {

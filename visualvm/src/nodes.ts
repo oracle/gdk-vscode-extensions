@@ -12,7 +12,7 @@ import * as parameters from './parameters';
 import * as presets from './presets';
 import * as runningProcesses from './runningProcesses';
 import * as monitoredProcesses from './monitoredProcesses';
-import * as logUtils from '../../common/lib/logUtils';
+import * as logUtils from './logUtils';
 
 
 const CONFIGURABLE_NODES_KEY = 'visualvm-integration.configurableNodes';

@@ -12,7 +12,7 @@ import * as visualvm from './visualvm';
 import * as nodes from './nodes';
 import * as monitoredProcesses from './monitoredProcesses';
 import * as download from './download';
-import * as logUtils from '../../common/lib/logUtils';
+import * as logUtils from './logUtils';
 
 
 export function activate(context: vscode.ExtensionContext) {
