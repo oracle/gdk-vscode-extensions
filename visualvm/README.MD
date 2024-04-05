@@ -6,7 +6,7 @@
 This extension integrates the [VisualVM](https://visualvm.github.io) monitoring and troubleshooting tool into Visual Studio Code (VS Code).
 
 ## Features
-* Easy install and update of VisualVM.
+* Easy installation of VisualVM.
 * When starting an application from VS Code:
   - The application process is configured to display its folder name in VisualVM.
   - The application process PID is detected to invoke VisualVM actions when needed.
@@ -27,10 +27,9 @@ Either of these Java language servers must be installed to integrate VisualVM wi
 * [Extension Pack for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack)
 
 The extension also tightly integrates with the [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) to provide the best monitoring and profiling experience. For example:
-
-* The VisualVM view is displayed in the Micronaut Tools Activity
-* CPU Sampler is configured for the selected GCN application sub-projects
-* `Go to Source` is configured for the selected GCN application sub-projects
+* The VisualVM view can be easily displayed in the Micronaut Tools activity
+* CPU Sampler is configured for the selected GCN application subprojects
+* `Go to Source` is configured for the selected GCN application subprojects
 
 ## Quick Start
 Follow these steps to start using VisualVM with VS Code:
@@ -42,42 +41,49 @@ Follow these steps to start using VisualVM with VS Code:
 5. Invoke the **Configure** action displayed for the *When started* node in the *VisualVM* view, and select **Open Process**.
 6. Start the application using the *Run Without Debugging* or *Start Debugging* action.
 
-The application starts and its process is opened in VisualVM and displayed under its folder name.
+The application starts and its process is opened in VisualVM using the application display name from VS Code.
 
 The `Go to Source` action in the VisualVM views, such as the Heap Viewer, CPU or Memory Sampler/Profiler results, opens the associated source code within VS Code.
 
 ## Configuring VisualVM
 
-To download the latest VisualVM release from [https://visualvm.github.io](https://visualvm.github.io), use the **Download Latest VisualVM** action. Depending on the host OS, this will either download a ZIP archive or a macOS disk image (.dmg) file. The ZIP archive will be automatically extracted and registered for the extension. The macOS disk image must be installed and registered manually (see the next paragraph).
+To download the latest VisualVM release from [https://visualvm.github.io](https://visualvm.github.io), use the **Download Latest VisualVM** action. 
+Depending on the host OS, this will either download a ZIP archive or a macOS disk image (.dmg) file. 
+The ZIP archive will be automatically extracted and registered for the extension. 
+The macOS disk image must be installed and registered manually (see the next paragraph).
 
-If an existing local VisualVM installation is already available on the system, or after manually installing a macOS disk image, use the **Select Local VisualVM Installation** action and point to the VisualVM installation directory. The extension supports **VisualVM 2.1+**, or the corresponding GraalVM component (select the GraalVM installation directory). We recommend using the latest version of VisualVM.
+If an existing local VisualVM installation is already available on the system, or after manually installing a macOS disk image, use the **Select Local VisualVM Installation** action and point to the VisualVM installation directory. 
+The extension supports **VisualVM 2.1+**, or the corresponding GraalVM component (select the GraalVM installation directory). 
+We recommend using the latest version of VisualVM.
 
 To manually register an existing local VisualVM installation, or to configure a specific VisualVM installation for the workspace, use the `visualvm-integration.installation.visualvmPath` property to point to the VisualVM installation directory.
 
-Custom VisualVM startup parameters (such as `--userdir`) including VM arguments (such as `-Xmx...`) which can be defined using the `visualvm-integration.startup.visualvmParameters` property.
+Custom VisualVM startup parameters (such as `--userdir`) including VM arguments (such as `-Xmx...`) can be defined using the `visualvm-integration.startup.visualvmParameters` property.
 
-By default, VisualVM runs using a defined/automatically found local JDK (see the Configuring JDK section). To define a custom JDK for running VisualVM, set the `visualvm-integration.startup.useJdkPathForVisualvm` property to `false` and use the `--jdkhome` VisualVM startup parameter.
-
+By default, VisualVM runs using a defined/automatically found local JDK (see the [Configuring JDK](#configuring-a-jdk) section). 
+To define a custom JDK for running VisualVM, set the `visualvm-integration.startup.useJdkPathForVisualvm` property to `false` and use the `--jdkhome` VisualVM startup parameter.
 
 ## Configuring a JDK
 
 The extension requires a JDK for:
 
-* Running VisualVM (if not disabled, see the Configuring VisualVM section).
+* Running VisualVM (if not disabled, see the [Configuring VisualVM](#configuring-visualvm) section).
 * To detect locally running processes using the `jps` utility, either when starting an application, or for a manual process selection.
 * For configuring the JDK source roots used by the `Go to Source` feature.
 
-VisualVM can use any JDK to detect Java processes and support the `Go to Source` action. A JDK is located by searching through the following properties in order:
+VisualVM can use any JDK to detect Java processes and support the `Go to Source` action. 
+Make sure a JDK resolves to the instance which actually runs the application for the Go to Source action to work as expected.
+A JDK is located by searching through the following properties in order:
 
 * Properties: `netbeans.jdkhome`, `java.jdt.ls.java.home`, `java.home`, `graalvm.home`.
 * Environment variables: `JDK_HOME`, `JAVA_HOME`.
 
-To select the JDK being used, or to configure a specific JDK for the workspace, use the `visualvm-integration.java.jdkPath` property to point to a local JDK installation directory.
+To override the JDK that was selected automatically, or to configure a specific JDK for the workspace, use the `visualvm-integration.java.jdkPath` property to point to a local JDK installation directory.
 
-## Using VisualVM Action from VS Code
+## VisualVM Actions in VS Code
 
 ### Start VisualVM
-*Start VisualVM* (action in the VisualVM view toolbar) starts the VisualVM, or brings its window to the front if it is already running.
+* *Start VisualVM* (action in the VisualVM view toolbar) starts the VisualVM, or brings its window to the front if it is already running.
 
 ### Process Node
 * *Select Process*: Shows a list of all running processes available for monitoring, excluding those already being monitored.
@@ -89,7 +95,7 @@ To select the JDK being used, or to configure a specific JDK for the workspace, 
 #### When Started Node
 * *Configure*: Defines the action to be taken when a new application process is started by VS Code. When configured, the process can be automatically opened in VisualVM, and a preconfigured sampling or flight recording session can be started.
 
-Note: The *When started* node is only displayed if the automatic application process selection is enabled (`visualvm-integration.integration.automaticallySelectProjectProcess` property is set to `true`), and no process has been selected yet, or it has not been selected manually using the *Select Process* action.
+  > Note: The *When started* node is only displayed if the automatic application process selection is enabled (`visualvm-integration.integration.automaticallySelectProjectProcess` property is set to `true`), and no process has been selected yet, or it has not been selected manually using the *Select Process* action.
 
 #### Thread Dump Node
 * *Take Thread Dump*: Takes a thread dump from a monitored process, and selects its view in VisualVM.
@@ -118,23 +124,24 @@ Note: The *When started* node is only displayed if the automatic application pro
 
 * *Stop Flight Recording*: Terminates the current flight recording.
 
-
 ## Monitoring Multiple Processes Simultaneously
 
 Whilst monitoring multiple processes concurrently is not a typical scenario, it is supported by the VisualVM Integration extension.
 
-To start monitoring another process using VisualVM, start another application process using the *Run Without Debugging* or *Start Debugging* action, or use the *VisualVM: Select Process* command from the Command Palette.
+To start monitoring another process using VisualVM, start another application process using the *Run Without Debugging* or *Start Debugging* action, or use the **VisualVM: Select Process** command from the Command Palette.
 
-Note: The *When started* node is not available for a subsequent monitored process, and its respective *Process* node is removed immediately after monitoring of the process has been stopped.
+> Note: The *When started* node is not available for a subsequent monitored process, and its respective *Process* node is removed immediately after monitoring of the process has been stopped.
 
 ## Troubleshooting
 
-The VisualVM Integration extension customizes the way VS Code runs an application by adding extra VM arguments to the launch configuration. If the application process fails to start, it may be required to disable these customizations by setting the following properties to `false`:
+The VisualVM Integration extension customizes the way VS Code runs an application by adding extra VM arguments to the launch configuration. 
+If the application process fails to start, it may be required to disable these customizations by setting the following properties to `false`:
 
 * `visualvm-integration.integration.automaticallySelectProjectProcess`
 * `visualvm-integration.integration.customizeDisplayNameForProjectProcess`
 
-The extension also controls the VisualVM startup parameters. If the VisualVM fails to start, disable or tweak the following properties:
+The extension also controls the VisualVM startup parameters. 
+If the VisualVM fails to start, disable or tweak the following properties:
 
 * `visualvm-integration.startup.visualvmParameters`
 * `visualvm-integration.startup.useJdkPathForVisualvm`
@@ -144,7 +151,8 @@ In case VisualVM fails to open source code using the `Go to Source` action in VS
 
 * `visualvm-integration.integration.visualStudioCodeParameters`
 
-For detailed analysis of any issues encountered when using the extension, see the *VisualVM Integration* log in the VS Code *Output* view. Additionally, see the logs of any other extensions involved, or the *Extension Host* log.
+For detailed analysis of any issues encountered when using the extension, see the *VisualVM Integration* log in the VS Code *Output* view. 
+Additionally, see the logs of any other extensions involved, or the *Extension Host* log.
 
 For VisualVM specific troubleshooting, refer to the [VisualVM Troubleshooting Guide](https://visualvm.github.io/troubleshooting.html).
 
