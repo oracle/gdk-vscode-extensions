@@ -371,6 +371,10 @@ export function getCloudSpecificSubProjectNames(folder: ProjectFolder): string[]
     return folder.subprojects.map(sub => sub.name).filter(name => name !== 'app' && name !== 'lib') || [];
 }
 
+export function getDockerfiles(folder: ProjectFolder): string[] {
+    return fs.readdirSync(folder.uri.fsPath).filter(name => name === 'Dockerfile' || name.startsWith('Dockerfile.'));
+}
+
 export type ProjectType = 'GCN' | 'Micronaut' | 'SpringBoot' | 'Helidon' | 'Unknown';
 export type BuildSystemType = 'Maven' | 'Gradle';
 

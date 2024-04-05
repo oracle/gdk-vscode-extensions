@@ -266,6 +266,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
             let totalSteps = 1;
             const buildCommands = new Map();
             const niBuildCommands = new Map();
+            const dockerFiles = new Map();
             for (const folder of folders) {
                 logUtils.logInfo(`[deploy] Getting project information for folder ${folder.uri.fsPath}`);
                 const repositoryName = removeSpaces(folder.name); // TODO: repositoryName should be unique within the devops project
@@ -294,8 +295,24 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                     }
                     totalSteps += 4; // Docker jvm image, build spec, and pipeline, jvm container repository
                     totalSteps += 4 * projectUtils.getCloudSpecificSubProjectNames(projectFolder).length; // Docker native image, build spec, and pipeline, native container repository per cloud specific subproject
-                } else if (projectFolder.projectType === 'Micronaut' || projectFolder.projectType === 'SpringBoot' || projectFolder.projectType === 'Helidon') {
+                } else if (projectFolder.projectType === 'Micronaut' || projectFolder.projectType === 'SpringBoot') {
                     totalSteps += 12; // Jar build spec and pipeline, NI build spec and pipeline, Docker native image, build spec and pipeline, Docker jvm image, build spec and pipeline, native container repository, jvm container repository
+                    if (!bypassArtifacts) {
+                        totalSteps += 2; // Jar artifact, NI artifact
+                    }
+                    if (deployData.okeCluster) {
+                        totalSteps += 8; // OKE setup command spec and artifact, OKE deploy spec and artifact, deploy to OKE pipeline, dev OKE deploy spec and artifact, dev deploy to OKE pipeline
+                    }
+                } else if (projectFolder.projectType === 'Helidon') {
+                    totalSteps += 4; // Jar build spec and pipeline, NI build spec and pipeline
+                    const dFiles = projectUtils.getDockerfiles(projectFolder);
+                    dockerFiles.set(projectFolder, dFiles);
+                    if (dFiles.includes('Dockerfile.jlink') || dFiles.includes('Dockerfile')) {
+                        totalSteps += 4; // Docker jvm image, build spec and pipeline, jvm container repository
+                    }
+                    if (dFiles.includes('Dockerfile.native')) {
+                        totalSteps += 4; // Docker native image, build spec and pipeline, native container repository
+                    }
                     if (!bypassArtifacts) {
                         totalSteps += 2; // Jar artifact, NI artifact
                     }
@@ -2376,10 +2393,11 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                     // Add /bin folders created by EDT to .gitignore
                     gitUtils.addGitIgnoreEntry(folder.uri.fsPath, '**/bin');
 
-                } else { // Micronaut, SpringBoot, other Java projects
+                } else { // Micronaut, SpringBoot, Helidon, other Java projects
                     logUtils.logInfo(`[deploy] ${folder.projectType !== 'Unknown' ? 'Recognized ' : ''}${folder.projectType} project in ${deployData.compartment.name}/${projectName}/${repositoryName}`);
 
-                    if (project_native_executable_artifact_location && project_build_native_executable_command) {
+                    if (project_native_executable_artifact_location && project_build_native_executable_command
+                        && (folder.projectType !== 'Helidon' || dockerFiles.get(folder)?.includes('Dockerfile.native'))) {
                         let nativeContainerRepository;
                         if (folderData.nativeContainerRepository) {
                             progress.report({
@@ -2890,7 +2908,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         }
                     }
 
-                    if (project_devbuild_artifact_location && project_devbuild_command) {
+                    if (project_devbuild_artifact_location && project_devbuild_command
+                        && (folder.projectType !== 'Helidon' || dockerFiles.get(folder)?.includes('Dockerfile.jlink') || dockerFiles.get(folder)?.includes('Dockerfile'))) {
                         let jvmContainerRepository;
                         if (folderData.jvmContainerRepository) {
                             progress.report({
@@ -2952,7 +2971,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             project_build_command: project_devbuild_command,
                             project_artifact_location: project_devbuild_artifact_location,
                             deploy_artifact_name: docker_jvmbuildArtifactName,
-                            docker_file: 'Dockerfile.jlink',
+                            docker_file: dockerFiles.get(folder)?.includes('Dockerfile.jlink') ? 'Dockerfile.jlink' : 'Dockerfile',
                             image_name: jvmContainerRepository.displayName.toLowerCase()
                         }, folder, docker_jvmbuildspec_template);
                         if (!docker_jvmbuildTemplate) {
