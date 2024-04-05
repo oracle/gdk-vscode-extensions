@@ -41,7 +41,7 @@ Follow these steps to start using VisualVM with VS Code:
 5. Invoke the **Configure** action displayed for the *When started* node in the *VisualVM* view, and select **Open Process**.
 6. Start the application using the *Run Without Debugging* or *Start Debugging* action.
 
-The application starts and its process is opened in VisualVM using the application display name from VS Code.
+The application starts and its process is opened in VisualVM and displayed using the name of the source code folder within VS Code.
 
 The `Go to Source` action in the VisualVM views, such as the Heap Viewer, CPU or Memory Sampler/Profiler results, opens the associated source code within VS Code.
 
@@ -71,14 +71,12 @@ The extension requires a JDK for:
 * To detect locally running processes using the `jps` utility, either when starting an application, or for a manual process selection.
 * For configuring the JDK source roots used by the `Go to Source` feature.
 
-VisualVM can use any JDK to detect Java processes and support the `Go to Source` action. 
-Make sure a JDK resolves to the instance which actually runs the application for the Go to Source action to work as expected.
-A JDK is located by searching through the following properties in order:
+VisualVM can use any JDK to detect Java processes and support the Go to Source action. The JDK running the application is located by searching through the following properties in order:
 
 * Properties: `netbeans.jdkhome`, `java.jdt.ls.java.home`, `java.home`, `graalvm.home`.
 * Environment variables: `JDK_HOME`, `JAVA_HOME`.
 
-To override the JDK that was selected automatically, or to configure a specific JDK for the workspace, use the `visualvm-integration.java.jdkPath` property to point to a local JDK installation directory.
+To override the JDK that was selected automatically, or to configure a specific JDK for the workspace, set the `visualvm-integration.java.jdkPath` property to point to a local JDK installation directory (either in the VS Code Settings view, or manually in _settings.json_).
 
 ## VisualVM Actions in VS Code
 
