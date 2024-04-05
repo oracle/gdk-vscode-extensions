@@ -19,6 +19,7 @@ For the best experience it is recommended to install the [Graal Cloud Native Ext
 ## Supported Java Projects
 * Micronaut
 * Graal Cloud Native
+* Helidon SE 
 * SpringBoot (GraalVM Native Support dependency must be enabled in project)
 
 ## Requirements
