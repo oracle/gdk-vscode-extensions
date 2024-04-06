@@ -18,7 +18,7 @@ This extension integrates the [VisualVM](https://visualvm.github.io) monitoring 
 ## Requirements
 
 Install the following in order to use this extension:
-* VisualVM 2.1+ (we recommend using the latest version of VisualVM).
+* VisualVM 2.1+ (we recommend using the latest version of VisualVM, that you can [install directly from within VS Code](#configuring-visualvm)).
 * Any JDK 8+ to run VisualVM and detect running processes using `jps`.
 
 Either of these Java language servers must be installed to integrate VisualVM with application startup, to support application class filtering, and to provide the `Go to Source` feature:
