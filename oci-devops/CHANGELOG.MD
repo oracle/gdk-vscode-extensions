@@ -1,5 +1,10 @@
 # Change Log
 
+## Version 0.9.8
+* Helidon SE projects support
+* Added possibility to easily report issues directly to GitHub
+* Bug fixes in handling OCI DevOps project deployment
+
 ## Version 0.9.7
 * 3rd party libraries updated
 
