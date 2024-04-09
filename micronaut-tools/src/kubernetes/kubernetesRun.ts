@@ -50,7 +50,7 @@ async function run(info: RunInfo) {
     }
 }
 
-export async function createService(context: vscode.ExtensionContext) {
+export async function createService() {
     const title = 'Create Kubernetes Service File';
     logUtils.logInfo(`[kubernetesRun] Creating Kubernetes Service File.`);
 
@@ -74,7 +74,8 @@ export async function createService(context: vscode.ExtensionContext) {
         return;
     }
 
-    let text = createContent(context.extensionPath, 'service.yaml', projectInfo.name);
+    const template = require('../../templates/service.yaml.handlebars');
+    const text = createContent(template, 'service.yaml', projectInfo.name);
     createNewFile(projectInfo.root, "service", "yaml", text);
     logUtils.logInfo(`[kubernetesRun] Created Kubernetes Service File.`);
 }

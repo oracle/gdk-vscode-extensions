@@ -11,7 +11,6 @@ import { kubernetesChannel } from './kubernetesChannel';
 import * as fs from 'fs';
 import * as readline from 'readline'; 
 import * as path from 'path';
-import * as mustache from 'mustache';
 import * as kubernetes from 'vscode-kubernetes-tools-api';
 import * as logUtils from '../../../common/lib/logUtils';
 
@@ -32,7 +31,6 @@ export interface RunInfo {
 
 const YES: string = 'Yes';
 const NO: string = 'No';
-const templatesFolder: string = 'templates';
 
 export interface ProjectInfo {
     name: string;   
@@ -236,10 +234,9 @@ async function spawnWithOutput(command: string, args?: readonly string[] | undef
     });
 }
 
-export function createContent(extensionPath: string, template: string, name: string, namespace?: string, image?: string, dockerSecret?: string) {
-    let templatePath = path.join(extensionPath, templatesFolder, template);
-    logUtils.logInfo(`[kubernetesUtil] creating content from template: ${templatePath}`);
-    return mustache.render(fs.readFileSync(templatePath).toString(), {
+export function createContent(template: (args: any) => string, templateName: string, name: string, namespace?: string, image?: string, dockerSecret?: string) {
+    logUtils.logInfo(`[kubernetesUtil] creating content from template: ${templateName}`);
+    return template({
         name, image, dockerSecret, namespace
     });
 }

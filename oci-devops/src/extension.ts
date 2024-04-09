@@ -8,7 +8,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as mustache from 'mustache';
 import * as model from './model';
 import * as devopsServices from './devopsServices';
 import * as servicesView from './servicesView';
@@ -38,10 +37,10 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('oci.devops.openIssueReporter', () => {
 		const logPath = path.join(context.logUri.fsPath, context.extension.packageJSON.displayName + '.log');
 		const logContent = fs.existsSync(logPath) ? fs.readFileSync(logPath, 'utf8') : '';
-		const template = fs.readFileSync(path.join(context.extensionPath, 'resources', 'issue_template.md'), 'utf8');
+		const template = require('../resources/issue_template.handlebars');
 		vscode.commands.executeCommand('vscode.openIssueReporter', {
 			extensionId: 'oracle-labs-graalvm.oci-devops',
-			issueBody: mustache.render(template, { logContent })
+			issueBody: template({ logContent })
 		});
 	}));
 

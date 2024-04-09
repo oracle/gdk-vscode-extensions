@@ -9,7 +9,6 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
-import * as mustache from 'mustache';
 import * as gitUtils from '../gitUtils';
 import * as model from '../model';
 import * as projectUtils from '../projectUtils';
@@ -27,6 +26,7 @@ import * as sshUtils from './sshUtils';
 import * as okeUtils from './okeUtils';
 import * as ociFeatures from './ociFeatures';
 import * as vcnUtils from './vcnUtils';
+import { RESOURCES } from './ociResources';
 import { DEFAULT_GRAALVM_VERSION, DEFAULT_JAVA_VERSION } from '../graalvmUtils';
 
 const CREATE_ACTION_NAME = 'Create OCI DevOps Project';
@@ -51,7 +51,7 @@ export type DeployOptions = {
     autoConfirmDeploy : boolean;
 };
 
-export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExisting: boolean, resourcesPath: string, saveConfig: SaveConfig, dump: model.DumpDeployData, deployOptions? : DeployOptions): Promise<boolean> {
+export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExisting: boolean, saveConfig: SaveConfig, dump: model.DumpDeployData, deployOptions? : DeployOptions): Promise<boolean> {
     logUtils.logInfo('[deploy] Invoked deploy folders to OCI');
 
     const actionName = addToExisting ? ADD_ACTION_NAME : CREATE_ACTION_NAME;
@@ -873,7 +873,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                     const devbuildArtifactName = `${repositoryName}_dev_fatjar`;
                     if (bypassArtifacts) {
                         logUtils.logInfo(`[deploy] Creating ${FAT_JAR_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                        const devbuildTemplate = expandTemplate(resourcesPath, 'devbuild_spec_no_output_artifacts.yaml', {
+                        const devbuildTemplate = expandTemplate(RESOURCES['devbuild_spec_no_output_artifacts.yaml'], {
                             default_graalvm_version: DEFAULT_GRAALVM_VERSION,
                             default_java_version: DEFAULT_JAVA_VERSION,
                             project_build_command: project_devbuild_command,
@@ -887,13 +887,13 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         }
                     } else {
                         logUtils.logInfo(`[deploy] Creating ${FAT_JAR_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                        const devbuildTemplate = expandTemplate(resourcesPath, devbuildspec_template, {
+                        const devbuildTemplate = expandTemplate(RESOURCES[devbuildspec_template], {
                             default_graalvm_version: DEFAULT_GRAALVM_VERSION,
                             default_java_version: DEFAULT_JAVA_VERSION,
                             project_build_command: project_devbuild_command,
                             project_artifact_location: project_devbuild_artifact_location,
                             deploy_artifact_name: devbuildArtifactName
-                        }, folder);
+                        }, folder, devbuildspec_template);
                         if (!devbuildTemplate) {
                             resolve(`Failed to configure ${FAT_JAR_NAME_LC} build spec for ${repositoryName}`);
                             return;
@@ -1078,7 +1078,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                     const nibuildArtifactName = `${repositoryName}_dev_executable`;
                     if (bypassArtifacts) {
                         logUtils.logInfo(`[deploy] Creating ${NI_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                        const nibuildTemplate = expandTemplate(resourcesPath, 'nibuild_spec_no_output_artifacts.yaml', {
+                        const nibuildTemplate = expandTemplate(RESOURCES['nibuild_spec_no_output_artifacts.yaml'], {
                             default_graalvm_version: DEFAULT_GRAALVM_VERSION,
                             default_java_version: DEFAULT_JAVA_VERSION,
                             project_build_command: project_build_native_executable_command,
@@ -1092,13 +1092,13 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         }
                     } else {
                         logUtils.logInfo(`[deploy] Creating ${NI_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                        const nibuildTemplate = expandTemplate(resourcesPath, nibuildspec_template, {
+                        const nibuildTemplate = expandTemplate(RESOURCES[nibuildspec_template], {
                             default_graalvm_version: DEFAULT_GRAALVM_VERSION,
                             default_java_version: DEFAULT_JAVA_VERSION,
                             project_build_command: project_build_native_executable_command,
                             project_artifact_location: project_native_executable_artifact_location,
                             deploy_artifact_name: nibuildArtifactName
-                        }, folder);
+                        }, folder, nibuildspec_template);
                         if (!nibuildTemplate) {
                             resolve(`Failed to configure ${NI_NAME_LC} build spec for ${repositoryName}`);
                             return;
@@ -1274,7 +1274,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         message: `Creating OKE deployment setup secret command spec for ${repositoryName}...`
                     });
                     const oke_deploy_setup_command_template = 'oke_docker_secret_setup.yaml';
-                    const oke_deploySetupCommandInlineContent = expandTemplate(resourcesPath, oke_deploy_setup_command_template, {
+                    const oke_deploySetupCommandInlineContent = expandTemplate(RESOURCES[oke_deploy_setup_command_template], {
                         repo_endpoint: `${provider.getRegion().regionCode}.ocir.io`,
                         region: provider.getRegion().regionId,
                         cluster_id: deployData.okeCluster.id,
@@ -1414,7 +1414,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 const docker_nibuildspec_template = 'docker_nibuild_spec.yaml';
                                 const docker_nibuildArtifactName = `${repositoryName}_${subName}_native_docker_image`;
                                 logUtils.logInfo(`[deploy] Creating ${subName} ${NI_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                const docker_nibuildTemplate = expandTemplate(resourcesPath, docker_nibuildspec_template, {
+                                const docker_nibuildTemplate = expandTemplate(RESOURCES[docker_nibuildspec_template], {
                                     default_graalvm_version: DEFAULT_GRAALVM_VERSION,
                                     default_java_version: DEFAULT_JAVA_VERSION,
                                     project_build_command: project_build_native_executable_command,
@@ -1428,7 +1428,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 }
                                 if (subName === 'oci') {
                                     const docker_ni_file = 'Dockerfile.native';
-                                    const docker_niFile = expandTemplate(resourcesPath, docker_ni_file, {}, folder);
+                                    const docker_niFile = expandTemplate(RESOURCES[docker_ni_file], {}, folder, docker_ni_file);
                                     if (!docker_niFile) {
                                         resolve(`Failed to configure ${NI_CONTAINER_NAME_LC} file for ${repositoryName}`);
                                         return;
@@ -1607,7 +1607,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             message: `Creating OKE native deployment configuration spec for ${subName} of ${repositoryName}...`
                                         });
                                         const oke_deploy_native_config_template = 'oke_deploy_config.yaml';
-                                        const oke_deployNativeConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_native_config_template, {
+                                        const oke_deployNativeConfigInlineContent = expandTemplate(RESOURCES[oke_deploy_native_config_template], {
                                             image_name: docker_nibuildImage,
                                             app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
                                             secret_name: folderData.secretName
@@ -1671,7 +1671,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             message: `Creating OKE ConfigMap for ${repositoryName}...`
                                         });
                                         const oke_configmap_template = 'oke_configmap.yaml';
-                                        const oke_configMapInlineContent = expandTemplate(resourcesPath, oke_configmap_template, {
+                                        const oke_configMapInlineContent = expandTemplate(RESOURCES[oke_configmap_template], {
                                             app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                                         });
                                         if (!oke_configMapInlineContent) {
@@ -1937,7 +1937,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     const docker_jvmbuildspec_template = 'docker_jvmbuild_spec.yaml';
                                     const docker_jvmbuildArtifactName = `${repositoryName}_${subName}_jvm_docker_image`;
                                     logUtils.logInfo(`[deploy] Creating ${subName} ${JVM_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                    const docker_jvmbuildTemplate = expandTemplate(resourcesPath, docker_jvmbuildspec_template, {
+                                    const docker_jvmbuildTemplate = expandTemplate(RESOURCES[docker_jvmbuildspec_template], {
                                         default_graalvm_version: DEFAULT_GRAALVM_VERSION,
                                         default_java_version: DEFAULT_JAVA_VERSION,
                                         project_build_command: project_devbuild_command,
@@ -1950,7 +1950,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                         return;
                                     }
                                     const docker_jvm_file = 'Dockerfile.jvm';
-                                    const docker_jvmFile = expandTemplate(resourcesPath, docker_jvm_file, {}, folder);
+                                    const docker_jvmFile = expandTemplate(RESOURCES[docker_jvm_file], {}, folder, docker_jvm_file);
                                     if (!docker_jvmFile) {
                                         resolve(`Failed to configure ${JVM_CONTAINER_NAME_LC} file for ${repositoryName}`);
                                         return;
@@ -2123,7 +2123,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             message: `Creating OKE ConfigMap for ${repositoryName}...`
                                         });
                                         const oke_configmap_template = 'oke_configmap.yaml';
-                                        const oke_configMapInlineContent = expandTemplate(resourcesPath, oke_configmap_template, {
+                                        const oke_configMapInlineContent = expandTemplate(RESOURCES[oke_configmap_template], {
                                             app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                                         });
                                         if (!oke_configMapInlineContent) {
@@ -2186,7 +2186,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             message: `Creating OKE jvm deployment configuration spec for ${subName} of ${repositoryName}...`
                                         });
                                         const oke_deploy_jvm_config_template = 'oke_deploy_config.yaml';
-                                        const oke_deployJvmConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_jvm_config_template, {
+                                        const oke_deployJvmConfigInlineContent = expandTemplate(RESOURCES[oke_deploy_jvm_config_template], {
                                             image_name: docker_jvmbuildImage,
                                             app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
                                             secret_name: folderData.secretName
@@ -2453,7 +2453,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         const docker_nibuildspec_template = 'docker_nibuild_spec.yaml';
                         const docker_nibuildArtifactName = `${repositoryName}_native_docker_image`;
                         logUtils.logInfo(`[deploy] Creating ${NI_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                        const docker_nibuildTemplate = expandTemplate(resourcesPath, folder.projectType === 'Helidon' ? 'docker_build_spec.yaml' : docker_nibuildspec_template, {
+                        const docker_nibuildTemplate = expandTemplate(RESOURCES[folder.projectType === 'Helidon' ? 'docker_build_spec.yaml' : docker_nibuildspec_template], {
                             default_graalvm_version: DEFAULT_GRAALVM_VERSION,
                             default_java_version: DEFAULT_JAVA_VERSION,
                             project_build_command: project_build_native_executable_command,
@@ -2467,7 +2467,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             return;
                         }
                         const docker_ni_file = 'Dockerfile.native';
-                        const docker_niFile = expandTemplate(resourcesPath, docker_ni_file, {}, folder);
+                        const docker_niFile = expandTemplate(RESOURCES[docker_ni_file], {}, folder, docker_ni_file);
                         if (!docker_niFile) {
                             resolve(`Failed to configure ${NI_CONTAINER_NAME_LC} file for ${repositoryName}`);
                             return;
@@ -2643,7 +2643,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 message: `Creating OKE ConfigMap for ${repositoryName}...`
                             });
                             const oke_configmap_template = 'oke_configmap.yaml';
-                            const oke_configMapInlineContent = expandTemplate(resourcesPath, oke_configmap_template, {
+                            const oke_configMapInlineContent = expandTemplate(RESOURCES[oke_configmap_template], {
                                 app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                             });
                             if (!oke_configMapInlineContent) {
@@ -2705,7 +2705,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 message: `Creating OKE native deployment configuration spec for ${repositoryName}...`
                             });
                             const oke_deploy_native_config_template = 'oke_deploy_config.yaml';
-                            const oke_deployNativeConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_native_config_template, {
+                            const oke_deployNativeConfigInlineContent = expandTemplate(RESOURCES[oke_deploy_native_config_template], {
                                 image_name: docker_nibuildImage,
                                 app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
                                 secret_name: folderData.secretName
@@ -2965,7 +2965,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         const docker_jvmbuildspec_template = 'docker_jvmbuild_spec.yaml';
                         const docker_jvmbuildArtifactName = `${repositoryName}_jvm_docker_image`;
                         logUtils.logInfo(`[deploy] Creating ${JVM_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                        const docker_jvmbuildTemplate = expandTemplate(resourcesPath, folder.projectType === 'Helidon' ? 'docker_build_spec.yaml' : docker_jvmbuildspec_template, {
+                        const docker_jvmbuildTemplate = expandTemplate(RESOURCES[folder.projectType === 'Helidon' ? 'docker_build_spec.yaml' : docker_jvmbuildspec_template], {
                             default_graalvm_version: DEFAULT_GRAALVM_VERSION,
                             default_java_version: DEFAULT_JAVA_VERSION,
                             project_build_command: project_devbuild_command,
@@ -2979,7 +2979,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             return;
                         }
                         const docker_jvm_file = 'Dockerfile.jvm';
-                        const docker_jvmFile = expandTemplate(resourcesPath, docker_jvm_file, {}, folder);
+                        const docker_jvmFile = expandTemplate(RESOURCES[docker_jvm_file], {}, folder, docker_jvm_file);
                         if (!docker_jvmFile) {
                             resolve(`Failed to configure ${JVM_CONTAINER_NAME_LC} file for ${repositoryName}`);
                             return;
@@ -3152,7 +3152,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 message: `Creating OKE jvm deployment configuration development spec for ${repositoryName}...`
                             });
                             const oke_deploy_jvm_config_template = 'oke_deploy_config.yaml';
-                            const oke_deployJvmConfigInlineContent = expandTemplate(resourcesPath, oke_deploy_jvm_config_template, {
+                            const oke_deployJvmConfigInlineContent = expandTemplate(RESOURCES[oke_deploy_jvm_config_template], {
                                 image_name: docker_jvmbuildImage,
                                 app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
                                 secret_name: folderData.secretName
@@ -3563,18 +3563,14 @@ function pathForTargetPlatform(path: string | undefined): string | undefined {
     return path;
 }
 
-export function expandTemplate(templatesStorage: string, template: string, args: { [key:string] : string }, folder?: vscode.WorkspaceFolder, name?: string): string | undefined {
-    const templatespec = path.join(templatesStorage, template);
-    let templateString = fs.readFileSync(templatespec).toString();
-
-    templateString = mustache.render(templateString, args);
-
-    if (folder) {
+export function expandTemplate(template: (args: any) => string, args: { [key:string] : string }, folder?: vscode.WorkspaceFolder, name?: string): string | undefined {
+    const templateString = template(args);
+    if (folder && name) {
         const dest = path.join(folder.uri.fsPath, projectUtils.getDevOpsResourcesDir());
         if (!fs.existsSync(dest)) {
             fs.mkdirSync(dest);
         }
-        const templatedest = path.join(dest, name || template);
+        const templatedest = path.join(dest, name);
         fs.writeFileSync(templatedest, templateString);
     }
     return templateString;

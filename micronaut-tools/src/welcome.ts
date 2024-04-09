@@ -7,8 +7,6 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import * as fs from 'fs';
-import * as mustache from 'mustache';
 
 export class WelcomePanel {
 
@@ -75,9 +73,9 @@ export class WelcomePanel {
 	}
 
 	private setHtml(context: vscode.ExtensionContext) {
-		const templatePath = path.join(context.extensionPath, WelcomePanel.webviewsFolder, 'welcome.html');
-		this._panel.webview.html = mustache.render(fs.readFileSync(templatePath).toString(), {
-		cspSource: this._panel.webview.cspSource,
+		const template = require('../webviews/welcome.handlebars');
+		this._panel.webview.html = template({
+			cspSource: this._panel.webview.cspSource,
 			showWelcomePage: vscode.workspace.getConfiguration().get<boolean>('micronaut-tools.showWelcomePage') ? 'checked' : '',
 			cssUri: this._panel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, WelcomePanel.webviewsFolder, 'styles', 'welcome.css'))),
 			jsUri: this._panel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, WelcomePanel.webviewsFolder, 'scripts', 'welcome.js')))

@@ -6,7 +6,6 @@
  */
 
 import * as vscode from 'vscode';
-import * as path from 'path';
 import * as devops from 'oci-devops';
 import * as nodes from '../nodes';
 import * as dialogs from '../../../common/lib/dialogs';
@@ -24,6 +23,7 @@ import * as okeUtils from './okeUtils';
 import * as ociFeatures from './ociFeatures';
 import * as vcnUtils from './vcnUtils';
 import * as k8s from 'vscode-kubernetes-tools-api';
+import { RESOURCES } from './ociResources';
 
 
 export const DATA_NAME = 'deploymentPipelines';
@@ -39,10 +39,7 @@ type DeploymentPipeline = {
 
 type RunOnDeployment = (resolve: Function, deploymentName: string, kubectl: k8s.KubectlV1) => void;
 
-let RESOURCES_FOLDER: string;
-
 export function initialize(context: vscode.ExtensionContext) {
-    RESOURCES_FOLDER = path.join(context.extensionPath, 'resources', 'oci');
     nodes.registerRenameableNode(DeploymentPipelineNode.CONTEXTS);
     nodes.registerRemovableNode(DeploymentPipelineNode.CONTEXTS);
     nodes.registerViewDeploymentLogNode([DeploymentPipelineNode.CONTEXTS[1], DeploymentPipelineNode.CONTEXTS[2]]);
@@ -310,7 +307,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
                 try {
-                    const inlineContent = deployUtils.expandTemplate(RESOURCES_FOLDER, 'oke_docker_secret_setup.yaml', {
+                    const inlineContent = deployUtils.expandTemplate(RESOURCES['oke_docker_secret_setup.yaml'], {
                         repo_endpoint: repoEndpoint,
                         region: oci.getProvider().getRegion().regionId,
                         cluster_id: cluster,
@@ -344,7 +341,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
                 try {
-                    const inlineContent = deployUtils.expandTemplate(RESOURCES_FOLDER, 'oke_deploy_config.yaml', {
+                    const inlineContent = deployUtils.expandTemplate(RESOURCES['oke_deploy_config.yaml'], {
                         image_name: imageName,
                         app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
                         secret_name: secretName
@@ -378,7 +375,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
                 try {
-                    const inlineContent = deployUtils.expandTemplate(RESOURCES_FOLDER, 'oke_configmap.yaml', {
+                    const inlineContent = deployUtils.expandTemplate(RESOURCES['oke_configmap.yaml'], {
                         app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
                     });
                     if (!inlineContent) {
