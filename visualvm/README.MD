@@ -28,7 +28,7 @@ Either of these Java language servers must be installed to integrate VisualVM wi
 
 The extension also tightly integrates with the [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) to provide the best monitoring and profiling experience. For example:
 * The VisualVM view can be easily displayed in the Micronaut Tools activity
-* CPU Sampler is configured for the selected GCN application subprojects
+* CPU Sampler is configured for the selected Graal Cloud Native (GCN) application subprojects
 * The Go to Source feature is configured for the selected GCN application subprojects
 
 ## Quick Start
