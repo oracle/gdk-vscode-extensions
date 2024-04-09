@@ -13,15 +13,15 @@ This extension integrates the [VisualVM](https://visualvm.github.io) monitoring 
   - When started, the application can be automatically opened in VisualVM.
 * Shortcuts for VisualVM actions such as Thread dump, Heap dump and Start sampling are available in a dedicated view within VS Code.
 * The CPU Sampler filter can be automatically configured to include only application classes.
-* Two-way integration. `Go to Source` in VisualVM opens the source code in VS Code.
+* Two-way integration. The Go to Source action in VisualVM opens the source code in VS Code.
 
 ## Requirements
 
 Install the following in order to use this extension:
-* VisualVM 2.1+ (we recommend using the latest version of VisualVM, that you can [install directly from within VS Code](#configuring-visualvm)).
+* VisualVM 2.1+ (we recommend using the latest version of VisualVM; you can [install directly from within VS Code](#configuring-visualvm)).
 * Any JDK 8+ to run VisualVM and detect running processes using `jps`.
 
-Either of these Java language servers must be installed to integrate VisualVM with application startup, to support application class filtering, and to provide the `Go to Source` feature:
+Either of these Java language servers must be installed to integrate VisualVM with application startup, to support application class filtering, and to provide the Go to Source feature:
 
 * [Language Server for Java by Apache NetBeans](https://marketplace.visualstudio.com/items?itemName=ASF.apache-netbeans-java)
 * [Extension Pack for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack)
@@ -29,7 +29,7 @@ Either of these Java language servers must be installed to integrate VisualVM wi
 The extension also tightly integrates with the [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) to provide the best monitoring and profiling experience. For example:
 * The VisualVM view can be easily displayed in the Micronaut Tools activity
 * CPU Sampler is configured for the selected GCN application subprojects
-* `Go to Source` is configured for the selected GCN application subprojects
+* The Go to Source feature is configured for the selected GCN application subprojects
 
 ## Quick Start
 Follow these steps to start using VisualVM with VS Code:
@@ -43,7 +43,7 @@ Follow these steps to start using VisualVM with VS Code:
 
 The application starts and its process is opened in VisualVM and displayed using the name of the source code folder within VS Code.
 
-The `Go to Source` action in the VisualVM views, such as the Heap Viewer, CPU or Memory Sampler/Profiler results, opens the associated source code within VS Code.
+The Go to Source action in the VisualVM views, such as the Heap Viewer, CPU or Memory Sampler/Profiler results, opens the associated source code within VS Code.
 
 ## Configuring VisualVM
 
@@ -71,8 +71,9 @@ The extension requires a JDK for:
 * To detect locally running processes using the `jps` utility, either when starting an application, or for a manual process selection.
 * For configuring the JDK source roots used by the `Go to Source` feature.
 
-VisualVM can use any JDK to detect Java processes and support the Go to Source action. The JDK running the application is located by searching through the following properties in order:
-
+VisualVM can use any JDK to detect Java processes and support the Go to Source action. 
+However, it should match the JDK running a monitored application in order to correctly support Go to Source for the JDK classes. 
+The JDK is located by searching through the following properties in order:
 * Properties: `netbeans.jdkhome`, `java.jdt.ls.java.home`, `java.home`, `graalvm.home`.
 * Environment variables: `JDK_HOME`, `JAVA_HOME`.
 
