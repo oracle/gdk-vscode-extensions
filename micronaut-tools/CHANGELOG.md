@@ -2,6 +2,7 @@
 
 # Version 0.6.5
 * Renamed to "Tools for Micronaut® framework"
+* Bug fixes
 
 # Version 0.6.4
 * Fix for Compose REST Query action doesn't work starting from VS Code 1.86.0.
