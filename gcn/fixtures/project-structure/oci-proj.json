@@ -33,13 +33,5 @@
                 "path": "./pom.xml"
             }
         ]
-    },
-    "contents": {
-        "contains": [
-            {
-                "path": "./oci/src/main/java/com/example/Application.java",
-                "match": "oraclecloud"
-            }
-        ]
     }
 }
