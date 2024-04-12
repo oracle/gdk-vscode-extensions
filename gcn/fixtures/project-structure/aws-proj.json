@@ -33,13 +33,5 @@
                 "path": "./pom.xml"
             }
         ]
-    },
-    "contents": {
-        "contains": [
-            {
-                "path": "./aws/src/main/java/com/example/Application.java",
-                "match": "ec2"
-            }
-        ]
     }
 }
