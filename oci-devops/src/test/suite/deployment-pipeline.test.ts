@@ -9,9 +9,8 @@ import * as projectUtils from '../../projectUtils';
 import { ConfigFileAuthenticationDetailsProvider, devops} from 'oci-sdk';
 import { DeployOptions } from '../../oci/deployUtils';
 import { getDefaultConfigFile, listProfiles } from '../../oci/ociAuthentication';
+import { RESOURCES } from '../../oci/ociResources';
 import { containerengine } from 'oci-sdk';
-
-import * as path from 'path';
 
 /**
  * Types used to reduce the number of arguments passed to functions
@@ -251,13 +250,12 @@ async function setupCommandSpecArtifactAndDeployConfigArtifact(provider: ConfigF
         
             let extensionPath = vscode.extensions.getExtension("oracle-labs-graalvm.oci-devops")?.extensionPath;
             assert.ok(extensionPath, "Extension Path Not Found - Line 253");
-            let RESOURCES_FOLDER = path.join(extensionPath, 'resources', 'oci');
         
             if (!setupCommandSpecArtifact) {
                     
                 let repoEndpoint = `${provider.getRegion().regionCode}.ocir.io`;
                 assert.ok(ociResources.cluster && ociResources.cluster.id, "Cluster with given Id not Found - Line 259");
-                const inlineContent = deployUtils.expandTemplate(RESOURCES_FOLDER, 'oke_docker_secret_setup.yaml', {
+                const inlineContent = deployUtils.expandTemplate(RESOURCES['oke_docker_secret_setup.yaml'], {
                     repo_endpoint: repoEndpoint,
                     region: provider.getRegion().regionId,
                     cluster_id: ociResources.cluster.id,
@@ -281,7 +279,7 @@ async function setupCommandSpecArtifactAndDeployConfigArtifact(provider: ConfigF
         
             if (!deployConfigArtifact) {
         
-                let inlineContent = deployUtils.expandTemplate(RESOURCES_FOLDER, 'oke_deploy_config.yaml', {
+                let inlineContent = deployUtils.expandTemplate(RESOURCES['oke_deploy_config.yaml'], {
                     image_name: ociResources.image,
                     app_name: repository.name.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
                     secret_name: ociResources.secretName

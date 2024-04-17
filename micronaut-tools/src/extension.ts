@@ -61,13 +61,13 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.executeCommand('extension.micronaut-tools.build', 'nativeImage');
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.kubernetes.createDeploy', () => {
-		createDeployment(context);
+		createDeployment();
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.kubernetes.deploy', () => {
 		deployProject();
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.kubernetes.createService', () => {
-		createService(context);
+		createService();
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.kubernetes.run', () => {
 		runProject();

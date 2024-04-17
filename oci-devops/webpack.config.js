@@ -52,6 +52,9 @@ const config = {
             use: [{
                 loader: 'ts-loader'
             }]
+        }, {
+            test: /\.handlebars$/,
+            loader: "handlebars-loader"
         }]
     },
     plugins: [
@@ -100,6 +103,9 @@ const devConf = {
                     transpileOnly: true, // https://github.com/TypeStrong/ts-loader#faster-builds
                 }
             }]
+        }, {
+            test: /\.handlebars$/,
+            loader: "handlebars-loader"
         }]
     },
     optimization: { 

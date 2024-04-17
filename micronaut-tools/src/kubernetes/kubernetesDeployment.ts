@@ -14,7 +14,7 @@ import * as logUtils from "../../../common/lib/logUtils";
 const LOCAL = "<local>";
 const NO_SECRET = "<public repository>";
 
-export async function createDeployment(context: vscode.ExtensionContext) {
+export async function createDeployment() {
     logUtils.logInfo(`[kubernetesDeployment] creating deployment.`);
     const kubectl: kubernetes.API<kubernetes.KubectlV1> = await kubernetes.extension.kubectl.v1;
     if (!kubectl.available) {
@@ -139,7 +139,8 @@ export async function createDeployment(context: vscode.ExtensionContext) {
 
     const state = await collectInputs();
     if (state.dockerRegistry  && state.imageName) {
-        let text = createContent(context.extensionPath, 'deploy.yaml', projectInfo.name, state.namespace, state.imageName, state.dockerSecret);
+        const template = require('../../templates/deploy.yaml.handlebars');
+        const text = createContent(template, 'deploy.yaml', projectInfo.name, state.namespace, state.imageName, state.dockerSecret);
         createNewFile(projectInfo.root, "deploy", "yaml", text);
     }
     logUtils.logInfo(`[kubernetesDeployment] created deployment.`);

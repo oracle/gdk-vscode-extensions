@@ -6,7 +6,6 @@
  */
 
 import * as vscode from 'vscode';
-import * as path from 'path';
 import * as model from '../model';
 import * as folderStorage from '../folderStorage';
 import * as persistenceUtils from '../persistenceUtils';
@@ -22,8 +21,6 @@ import * as ociFeatures from './ociFeatures';
 
 const TYPE = 'oci';
 
-let RESOURCES_FOLDER: string;
-
 const DEVOPS_DECORATIONS_KEY = 'oci.devops.devOpsDecorations';
 let CURRENT_SERVICES: ociServices.OciServices[] = [];
 let CURRENT_DEVOPS_PROJECTS: string[] = [];
@@ -37,8 +34,6 @@ export function create(context: vscode.ExtensionContext): model.CloudSupport {
 }
 
 function initialize(context: vscode.ExtensionContext) {
-    RESOURCES_FOLDER = path.join(context.extensionPath, 'resources', 'oci');
-
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.enableDevOpsDecorations', () => {
         updateDevOpsDecorations(true);
 	}));
@@ -85,7 +80,7 @@ class OciSupport implements model.CloudSupport {
             folderStorage.storeCloudSupportData(this, [ folder ], [ config ]);
             return true;
         };
-        return deployUtils.deployFolders(folders, addToExisting, RESOURCES_FOLDER, saveConfig, dump, deployOptions);
+        return deployUtils.deployFolders(folders, addToExisting, saveConfig, dump, deployOptions);
     }
 
     buildingServices() {

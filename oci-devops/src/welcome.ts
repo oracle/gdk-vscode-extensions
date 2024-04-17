@@ -7,8 +7,6 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import * as fs from 'fs';
-import * as mustache from 'mustache';
 import * as persistenceUtils from './persistenceUtils';
 
 export class WelcomePanel {
@@ -76,9 +74,9 @@ export class WelcomePanel {
 	}
 
 	private setHtml(context: vscode.ExtensionContext) {
-		const templatePath = path.join(context.extensionPath, WelcomePanel.webviewsFolder, 'welcome.html');
-		this._panel.webview.html = mustache.render(fs.readFileSync(templatePath).toString(), {
-		cspSource: this._panel.webview.cspSource,
+		const template = require('../webviews/welcome.handlebars');
+		this._panel.webview.html = template({
+			cspSource: this._panel.webview.cspSource,
 			showToolsPage: persistenceUtils.getWorkspaceConfiguration().get<boolean>('showToolsPage') ? 'checked' : '',
 			cssUri: this._panel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, WelcomePanel.webviewsFolder, 'styles', 'welcome.css'))),
 			imgsUri: this._panel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, WelcomePanel.webviewsFolder, 'imgs'))),
