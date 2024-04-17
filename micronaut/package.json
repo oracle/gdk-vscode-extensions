@@ -96,10 +96,10 @@
 		}
 	},
 	"dependencies": {
-		"decompress": "^4.2.1"
+		"adm-zip": "^0.5.12"
 	},
 	"devDependencies": {
-		"@types/decompress": "^4.2.4",
+		"@types/adm-zip": "^0.5.5",
 		"@types/glob": "^7.1.1",
 		"@types/node": "^14.16.0",
 		"@types/vscode": "^1.76.0",

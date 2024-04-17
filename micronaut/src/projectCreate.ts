@@ -10,7 +10,8 @@ import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as https from 'https';
 import * as path from 'path';
-import * as decompress from 'decompress';
+import * as os from 'os';
+import * as AdmZip from 'adm-zip';
 import { getMicronautHome, getMicronautLaunchURL } from './utils';
 import { getJavaHome, getJavaVMs } from "../../common/lib/utils";
 import { simpleProgress, MultiStepInput, handleNewGCNProject } from "../../common/lib/dialogs";
@@ -62,7 +63,7 @@ export interface CreateOptions {
 export async function createProject(context: vscode.ExtensionContext) {
     const options = await selectCreateOptions(context);
     if (options && await __writeProject(options)) {
-        const uri = vscode.Uri.file(options.target);
+        const uri = vscode.Uri.file(path.join(options.target, options.name));
         handleNewGCNProject(context, uri, "Micronaut");
     }
 }
@@ -76,16 +77,17 @@ export async function __writeProject(options: CreateOptions, openDialog: boolean
         if (options.url.startsWith(HTTP_PROTOCOL) || options.url.startsWith(HTTPS_PROTOCOL)) {
             try {
                 const downloadedFile = await downloadProject(options);
-                const files = await decompress(downloadedFile, options.target, { strip: 1 });
+                const zip = new AdmZip(downloadedFile);
+                zip.extractAllTo(options.target, true, true);
                 fs.unlinkSync(downloadedFile);
-                created = files.length > 0;
+                created = true;
             } catch (e) {
                 fs.rmdirSync(options.target, { recursive: true });
                 vscode.window.showErrorMessage(`Cannot create Micronaut project: ${e}`);
             }
         } else {
             try {
-                const out = cp.execFileSync(options.url, options.args, { cwd: path.dirname(options.target), env: {JAVA_HOME: getJavaHome() } });
+                const out = cp.execFileSync(options.url, options.args, { cwd: path.dirname(path.join(options.target, options.name)), env: {JAVA_HOME: getJavaHome() } });
                 created = out.toString().indexOf('Application created') >= 0;
             } catch (e: any) {
                 vscode.window.showErrorMessage(`Cannot create Micronaut project: ${e.message}`);
@@ -377,7 +379,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
                 return {
                     url: state.micronautVersion.serviceUrl + CREATE + '/' + state.applicationType.name + '/' + appName + query,
                     name: state.projectName,
-                    target: path.join(location[0].fsPath, state.projectName),
+                    target: location[0].fsPath,
                     buildTool: state.buildTool.value,
                     java: state.javaVersion && state.javaVersion.value.length > 0 ? state.javaVersion.value : undefined
                 };
@@ -399,7 +401,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
                 url: state.micronautVersion.serviceUrl,
                 args,
                 name: state.projectName,
-                target: path.join(location[0].fsPath, state.projectName),
+                target: location[0].fsPath,
                 buildTool: state.buildTool.value,
                 java: state.javaVersion && state.javaVersion.value.length > 0 ? state.javaVersion.value : undefined
             };
@@ -579,8 +581,7 @@ function getMNFeatures(mnPath: string, applicationType: string, javaVersion: num
 
 async function downloadProject(options: {url: string; name: string; target: string}): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-        fs.mkdirSync(options.target, {recursive: true});
-        const filePath: string = path.join(options.target, options.name + '.zip');
+        const filePath: string = path.join(os.tmpdir(), options.name + '.zip');
         const file: fs.WriteStream = fs.createWriteStream(filePath);
         https.get(options.url, res => {
             const { statusCode } = res;
