@@ -46,6 +46,12 @@
 			{
 				"language": "java-properties",
 				"pattern": "**/{application,bootstrap}*.properties"
+			},
+			{
+				"language": "spring-boot-properties"
+			},
+			{
+				"language": "spring-boot-properties-yaml"
 			}
 		],
 		"javaExtensions": [
