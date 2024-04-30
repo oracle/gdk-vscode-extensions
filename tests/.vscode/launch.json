@@ -5,31 +5,149 @@
 {
 	"version": "1.0.0",
 	"configurations": [
+		
 		{
-			"name": "API Tests",
+			"name": "Run API Tests",
 			"type": "node",
-			//"runtimeExecutable": "C:/Program Files/nodejs/node.exe", // WINDOWS: default node
+			"runtimeExecutable": "${config:gcn.test.nodePath}",
 			"request": "launch",
 			"program": "${workspaceFolder}/out/bin.js",
+			"runtimeArgs": [
+				"--require",  "global-agent/bootstrap"
+			],
+			"env" :{
+				// Run tests against this specific OCID
+				"TEST_DEPLOY_COMPARTMENT_OCID": "${config:gcn.test.compartmentOCID}",
+
+				// If enabled, will skip extension installation into the downloaded vscode
+				"TEST_SKIP_EXTENSIONS": "true",
+
+				// If your .ssh/config does not contain an appropriate username + identity file entry,
+				// enable TEST_SSH_KEYFILE and TEST_SSH_USERNAME, set them to the private key file and username for ssh authentication.
+				// If TEST_SSH_KEYFILE is not set, the key file is parsed out DEFAULT profile in .oci/config
+				// TEST_SSH_KEYFILE: ""
+				//"TEST_SSH_USERNAME": ""	// username should be in form e-mail@tenancy
+
+				// propagate env settings to the global agent bootstrap; mandatory
+				"GLOBAL_AGENT_NO_PROXY": "${env:no_proxy}",
+				"GLOBAL_AGENT_HTTP_PROXY": "${env:http_proxy}",
+			},
 			"args": [
-				"--runTest"
+				"--runTest",
+				// Change to a glob path to the desired test set. One or more globs can be specified, as separate arguments.
+				"**/*test.js"
 			],
 			"console": "integratedTerminal",
 			"internalConsoleOptions": "neverOpen",
-			// "preLaunchTask": "tasks: tests-ui-prerequisites"
+			"preLaunchTask": "npm: watch"
 		},
 		{
-			"name": "UI Tests",
+			"name": "Run UI Tests",
 			"type": "node",
-			//"runtimeExecutable": "C:/Program Files/nodejs/node.exe", // WINDOWS: default node
+			"runtimeExecutable": "${config:gcn.test.nodePath}",
 			"request": "launch",
 			"program": "${workspaceFolder}/out/bin.js",
+			"env" :{
+				// Run tests against this specific OCID
+				"TEST_DEPLOY_COMPARTMENT_OCID": "${config:gcn.test.compartmentOCID}",
+
+				// If enabled, will skip extension installation into the downloaded vscode
+				"TEST_SKIP_EXTENSIONS": "true",
+
+				// If your .ssh/config does not contain an appropriate username + identity file entry,
+				// enable TEST_SSH_KEYFILE and TEST_SSH_USERNAME, set them to the private key file and username for ssh authentication.
+				// If TEST_SSH_KEYFILE is not set, the key file is parsed out DEFAULT profile in .oci/config
+				// TEST_SSH_KEYFILE: ""
+				//"TEST_SSH_USERNAME": ""	// username should be in form e-mail@tenancy
+
+				// propagate env settings to the global agent bootstrap; mandatory
+				"GLOBAL_AGENT_NO_PROXY": "${env:no_proxy}",
+				"GLOBAL_AGENT_HTTP_PROXY": "${env:http_proxy}",
+			},
 			"args": [
 				"--runTest-ui"
 			],
 			"console": "integratedTerminal",
 			"internalConsoleOptions": "neverOpen",
-			// "preLaunchTask": "tasks: tests-prerequisites"
+		},
+		{
+			"name": "Test setup",
+			"type": "node",
+			"runtimeExecutable": "${config:gcn.test.nodePath}",
+			"request": "launch",
+			"program": "${workspaceFolder}/out/bin.js",
+			"env" :{
+				// URLs for Jenkins JSON resources that contain artifact download links
+				"TEST_JENKINS_BUILDERS" : "${config:gcn.test.jenkinsBuilders}",
+				// Local paths to directories containing installable VSIXes, or to the VSIXes themselves.
+				"TEST_EXTENSION_DOWNLOADS": "${config:gcn.test.extensionDownloads}",
+
+				"GLOBAL_AGENT_NO_PROXY": "${env:no_proxy}",
+				"GLOBAL_AGENT_HTTP_PROXY": "${env:http_proxy}",
+			},
+			"runtimeArgs": [
+				"--require", "global-agent/bootstrap",
+			],
+			"args": [
+				"--prepareTest"
+			],
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen",
+			"preLaunchTask": "tasks: tests-prerequisites"
+		},
+
+		//------------------------------------------------------------------------------------------------------------------------
+
+		/**
+			This configuration is intended to debug a single test. The configuration needs to be finalized with
+			project(s) to be opened in the debugged vscode instance. Projects have to be prepared in advance, 
+			using `npm run generate`.
+
+			This sample is intended for copying into local workspace.
+		 */
+		{
+			"name": "Test SAMPLE: ADM API tests",
+			"runtimeExecutable": "${execPath}",
+			"request": "launch",
+			"type": "extensionHost",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}/../oci-devops",
+				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index",
+				
+				// Use path to the generated test project, or sample project data
+				"./out/test/suite/Gates/API/TestsWithSimpleWorkspace/projects/MAVEN_OBJECTSTORE_e0b50e4e"
+			],
+			"internalConsoleOptions": "openOnSessionStart",
+			"outFiles": [
+				"${workspaceFolder}/out/**/*.js",
+				"${workspaceFolder}/dist/**/*.js",
+				"${workspaceFolder}/../oci-devops/out/**/*.js",
+				"${workspaceFolder}/../oci-devops/dist/**/*.js",
+				"${workspaceFolder}/../gcn/out/**/*.js",
+			],
+			"resolveSourceMapLocations": [
+				"${workspaceFolder}/../oci-devops/out/**",
+				"${workspaceFolder}/../oci-devops/dist/**",
+				"${workspaceFolder}/../gcn/out/**",
+				"${workspaceFolder}/**",
+				"!**/node_modules/**"
+			],
+			"env": {
+				// change testPatterns to include tests you want to execute. Separate glob patterns by semicolon
+				"testPatterns": "**/TestsWithSimpleWorkspace/*.test.js",
+				// Set to have a fixed deploy project name. Set to _RANDOM to generate random names for deployed projects. Use ${env:USER} so your projects
+				// cannot conflict with other users in OCI tenancy
+				"TEST_DEPLOY_PROJECT_NAME": "adm-test-project-${env:USER}",
+				// Do not deploy the project, if the project already exists. Saves time during debugging and development.
+				// Also does not undeploy the project at the end. Currently works only for ADM projects.
+				"TEST_ADM_REUSE_PROJECTS": "true",
+				// Set to your own compartment OCID, to avoid collisions with CI or other users.
+				"TEST_DEPLOY_COMPARTMENT_OCID": "${gcn.test.compartmentOCID}",
+
+				// REQUIRED for the ADM support to work. DO NOT change.
+				"ADM_SUPPRESS_AUTO_DISPLAY" : "true"
+			},
+			"preLaunchTask": "npm: watch",
 		}
 	]
 }

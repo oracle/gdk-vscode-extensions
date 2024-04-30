@@ -16,7 +16,6 @@ import { gatherTestFolders } from './Common/testHelper';
 import { prepareAPITests } from './Common/projectHelper';
 import { TestFolders, TestFolder, Extension } from './Common/types';
 import * as fs from 'fs';
-import * as os from 'os';
 import { prepareExtensions, prepareVSCode } from './Common/vscodeHelper';
 
 /**
