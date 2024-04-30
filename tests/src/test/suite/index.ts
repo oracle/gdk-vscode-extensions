@@ -6,8 +6,25 @@
  */
 
 import Mocha from 'mocha';
+import * as path from 'path';
+import { findFiles } from '../../Common/helpers';
+import { setGlobalDispatcher, EnvHttpProxyAgent } from 'undici';
 
-export function run(): Promise<void> {
+
+export async function run(): Promise<void> {
+  let opts = {};
+  if (process.env['GLOBAL_AGENT_HTTP_PROXY']) {
+    opts = {
+      httpProxy: process.env['GLOBAL_AGENT_HTTP_PROXY'],
+      httpsProxy: process.env['GLOBAL_AGENT_HTTP_PROXY'],
+      noProxy: process.env['GLOBAL_AGENT_NO_PROXY']
+    };
+  }
+
+  await require('handlebars-loader');
+  const dispatcher = new EnvHttpProxyAgent(opts);
+  setGlobalDispatcher(dispatcher);
+
   // Create the mocha test
   const mocha = new Mocha({
     ui: 'tdd',
@@ -22,8 +39,21 @@ export function run(): Promise<void> {
       json: true,
     },
   });
-
+  
+  // tests env variable comes from `runTest` commandline launcher. 
+  // testPatterns is used in launch.json to directly launch this test runner, so the
+  // expansion to test cases must be done here.
+  // TODO: unify
   process.env['tests']?.split(';').forEach((file) => mocha.addFile(file));
+  let pat = process.env['testPatterns'];
+  if (pat) {
+    let files = findFiles(__dirname, ...pat.split(';'));
+    for (let d in files) {
+      files[d].forEach((file) => 
+        mocha.addFile(path.join(d, file))
+      );
+    }
+  }
 
   return new Promise((resolve, reject) => {
     try {

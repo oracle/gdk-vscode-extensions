@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import * as common from 'oci-common';
 import * as dialogs from '../../../common/lib/dialogs';
+import * as logUtils from '../../../common/lib/logUtils';
 import * as ociUtils from './ociUtils';
 
 
@@ -19,11 +20,13 @@ export async function selectNetwork(authenticationDetailsProvider: common.Config
     }, (_progress, _token) => {
         return new Promise(async resolve => {
             try {
+                logUtils.logInfo(`[oci] Getting VCN details and networks from ${vcnID}`)
                 const vcn = await ociUtils.getVCN(authenticationDetailsProvider, vcnID);
                 const subnets = await ociUtils.listSubnets(authenticationDetailsProvider, vcn.compartmentId, vcnID);
                 for (const subnet of subnets) {
                     if (subnet.securityListIds) {
                         for (const secListId of subnet.securityListIds) {
+                            logUtils.logInfo(`[oci] Getting security list ${secListId}`);
                             const secList = await ociUtils.getSecurityList(authenticationDetailsProvider, secListId);
                             for (const rule of secList.egressSecurityRules) {
                                 if (rule.protocol === 'all' && rule.destination === '0.0.0.0/0') {
@@ -34,9 +37,11 @@ export async function selectNetwork(authenticationDetailsProvider: common.Config
                         }
                     }
                 }
+                logUtils.logError(`[oci] Failed to resolve cluster network configuration: ${vcnID}`);
                 dialogs.showErrorMessage('Failed to resolve cluster network configuration');
                 resolve(undefined);
             } catch (err) {
+                logUtils.logError(`[oci] Failed to resolve cluster network configuration: ${vcnID}`);
                 dialogs.showErrorMessage('Failed to read cluster network configuration', err);
                 resolve(undefined);
             }

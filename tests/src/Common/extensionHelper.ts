@@ -9,7 +9,9 @@ import path from 'path';
 import { ExtensionMap, ExtensionName } from './types';
 import Downloader from 'nodejs-file-downloader';
 import * as fs from 'fs';
+import * as semver from 'semver';
 import { downloadJSON } from '../../../common/lib/connections';
+import { globSync } from 'glob';
 
 const downloadPath = path.resolve(__dirname, '..', '..', 'downloadedExtensions');
 
@@ -31,10 +33,14 @@ async function resolveExtension(extensionID: string, urls: ExtensionMap<string>)
 
 async function download(name: string, url?: string): Promise<string | undefined> {
   if (!url) return undefined;
+  if (fs.existsSync(url)) {
+    console.log(`Using local copy of extension: ${url}`);
+    return url;
+  }
   const dest = path.join(downloadPath, path.basename(url));
   if (fs.existsSync(dest)) return dest;
   console.log('Obtaining: ' + name + '; from: ' + url);
-  const options: any = {
+  const options : any = {
     url,
     directory: downloadPath,
     skipExistingFileName: true,
@@ -85,6 +91,8 @@ const extensionFileNames: ExtensionMap<RegExp> = {
   'oracle-labs-graalvm.oci-devops': extRegExp('oci-devops-'),
   'oracle-labs-graalvm.gcn': extRegExp('gcn-'),
   'oracle-labs-graalvm.graalvm': extRegExp('graalvm-'),
+  'oracle-labs-graalvm.micronaut': extRegExp('micronaut-[0-9]'),
+  'oracle-labs-graalvm.micronaut-tools': extRegExp('micronaut-tools-'),
 } as const;
 
 async function mapExtensionURLS(urls: string[]): Promise<ExtensionMap<string>> {
@@ -105,9 +113,74 @@ function getExtensionNameFromURL(url: string): ExtensionName | undefined {
 }
 
 export async function obtainLatestArtifactsURLs(): Promise<ExtensionMap<string>> {
-  return mapExtensionURLS(
-    (
-      await Promise.all([
+  let urls = (process.env['TEST_JENKINS_BUILDERS'] || '').split(";");
+
+  let parsed : [ name : string, ver : string, dir : string][] = [];
+  (process.env['TEST_EXTENSION_DOWNLOADS'] || '').split(path.delimiter).forEach(dir => {
+    if (!dir || dir.length == 0) {
+      return;
+    }
+    let listed : string[] = [];
+
+    for (let m of globSync(dir)) {
+     let stat;
+     
+      try {
+        stat = fs.statSync(m);
+      } catch (e : any) {
+        console.log(`Warning: invalid extension download location: ${m}`);
+        continue;
+      }
+
+      if (stat.isDirectory()) {
+        listed.push(...fs.readdirSync(m).map(n => path.join(m, n)));
+      } else {
+        listed.push(m);
+      }
+    }
+    for (let n of listed) {
+      let base = path.basename(n);
+      let d = path.dirname(n);
+      let re = /([-A-z]*)-([0-9.]*).vsix/.exec(base);
+      if (re) {
+        parsed.push([ re[1], re[2], d]);
+      }
+    }
+});
+
+  let files : string[] = [];
+  parsed.sort((a, b) => {
+    if (a[0] < b[0]) {
+      return -1;
+    } else if (a[0] > b[0]) {
+      return 1;
+    }
+    let r =  -semver.compare(a[1], b[1]);
+    return r;
+  });
+  let last = undefined;
+  for (let [n, v, d] of parsed) {
+    if (n === last) {
+      continue;
+    }
+    last = n;
+    files.push(path.join(d, `${n}-${v}.vsix`));
+  }
+
+  let fileMap = await mapExtensionURLS(files);
+  let urlMap = await mapExtensionURLS(
+      (await Promise.all(
+        urls.filter(u => u && u.length).map(u => obtainArtifactURLsFromURL(u)).filter(o => o !== null && o !== undefined)
+      )).reduce((prev, cur) => {
+        prev.push(...cur);
+        return prev;
+      }, [])
+    );
+  for (let k in fileMap) {
+    urlMap[k as ExtensionName] = fileMap[k as ExtensionName];
+  }
+  return urlMap;
+    /*
         obtainArtifactURLsFromURL(
           'https://ci-builds.apache.org/job/Netbeans/job/netbeans-vscode/lastStableBuild/api/json',
         ),
@@ -118,18 +191,19 @@ export async function obtainLatestArtifactsURLs(): Promise<ExtensionMap<string>>
           'https://graalvm.oraclecorp.com/jenkins/job/vscode-graalvm-micronaut-master/lastStableBuild/api/json',
         ),
       ])
-    ).reduce((prev, cur) => {
-      prev.push(...cur);
-      return prev;
-    }),
-  );
+    */
 }
 
 async function obtainArtifactURLsFromURL(url: string): Promise<string[]> {
-  const json = JSON.parse(await downloadJSON(url)); // TODO: validate/type data
-  const out = [];
-  for (const artifact of json.artifacts) {
-    if (artifact.fileName.endsWith('.vsix')) out.push(json.url + 'artifact/' + artifact.relativePath);
+  try {
+    const json = JSON.parse(await downloadJSON(url)); // TODO: validate/type data
+    const out = [];
+    for (const artifact of json.artifacts) {
+      if (artifact.fileName.endsWith('.vsix')) out.push(json.url + 'artifact/' + artifact.relativePath);
+    }
+    return out;
+  } catch (err : any) {
+    console.log(`Warning: could not obtain URL from: ${url}: ${err.message ? err.message : JSON.stringify(err)}`);
+    return [];
   }
-  return out;
 }

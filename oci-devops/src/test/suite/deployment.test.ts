@@ -12,22 +12,10 @@ import * as fs from 'fs';
 import * as ociAuthentication from '../../oci/ociAuthentication';
 import { ConfigFileAuthenticationDetailsProvider, devops, identity } from 'oci-sdk';
 import { DeployOptions } from '../../oci/deployUtils';
-import { waitForStatup } from './extension.test';
+import { waitForStatup, getProfile } from './common';
 import { getDefaultConfigFile, listProfiles } from '../../oci/ociAuthentication';
 
 let wf = vscode.workspace.workspaceFolders;
-
-export function getProfile(profiles : string[]) : string {
-    if (profiles.length === 1)
-        return  profiles[0];
-    else if (profiles.indexOf("TESTS") !== -1)
-        return "TESTS";
-    else if (profiles.indexOf("DEFAULT") !== -1)
-        return "DEFAULT";
-    else {
-        return "";
-    }
-}
 
 suite('Deployment Test Suite', function() {
 	vscode.window.showInformationMessage('Start all tests.');
@@ -45,7 +33,7 @@ suite('Deployment Test Suite', function() {
     let provider : ConfigFileAuthenticationDetailsProvider | undefined;
 
     const DEPLOY_COMPARTMENT_NAME : string = "tests";
-    const DEPLOY_PROJECT_NAME : string = "base-oci-template-testdeploy";
+    const DEPLOY_PROJECT_NAME : string = process.env['TEST_DEPLOY_PROJECT_NAME'] || "base-oci-template-testdeploy";
 
     test("Initial test setup", async () => {
         const ext = vscode.extensions.getExtension("oracle-labs-graalvm.oci-devops");
@@ -91,11 +79,15 @@ suite('Deployment Test Suite', function() {
             
             assert.ok(compartments.length>0, "No compartments listed");
 
-            for (let compartment of compartments) {
-                if (compartment.name === DEPLOY_COMPARTMENT_NAME)
-                    comaprtmentOCID = compartment.id;
+            if (process.env['TEST_DEPLOY_COMPARTMENT_OCID']) {
+                comaprtmentOCID = process.env['TEST_DEPLOY_COMPARTMENT_OCID'];
+            } else {
+                for (let compartment of compartments) {
+                    if (compartment.name === DEPLOY_COMPARTMENT_NAME)
+                        comaprtmentOCID = compartment.id;
+                }
+                assert.ok(comaprtmentOCID!=="", "No comaprtment " + DEPLOY_COMPARTMENT_NAME + " found!");
             }
-            assert.ok(comaprtmentOCID!=="", "No comaprtment " + DEPLOY_COMPARTMENT_NAME + " found!");
 
         } else assert.ok(false, "Authentication failed");
     });
@@ -123,7 +115,6 @@ suite('Deployment Test Suite', function() {
             const deployOptions : DeployOptions = {
                 compartment: {
                     ocid: comaprtmentOCID,
-                    name: "gcn-dev/"+DEPLOY_COMPARTMENT_NAME,
                 },
                 skipOKESupport: true,
                 projectName: DEPLOY_PROJECT_NAME,

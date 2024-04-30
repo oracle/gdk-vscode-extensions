@@ -28,6 +28,17 @@ async function main() {
     console.log('TESTS', status ? 'SUCCEEDED' : 'FAILED');
     exitCode = status ? exitCode : 1;
   }
+  if ((currentArg = args.find((v) => v.name === 'prepareVscode')) !== undefined) {
+    const test = require('./runTest');
+    const dir = await test.prepareVscodeInstallation(true);
+    console.log(`vscode installed in ${dir}`);
+  }
+  if ((currentArg = args.find((v) => v.name === 'prepareTest')) !== undefined) {
+    const test = require('./runTest');
+    const status: boolean = await test.prepareTests(allArg.args.concat(currentArg.args));
+    console.log('test preparation', status ? 'SUCCEEDED' : 'FAILED');
+    exitCode = status ? exitCode : 1;
+  }
   if ((currentArg = args.find((v) => v.name === 'runTest-ui')) !== undefined) {
     const test = require('./runTest-ui');
     const status: boolean = await test.runTestUI(allArg.args.concat(currentArg.args));

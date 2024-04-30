@@ -64,6 +64,8 @@
     "fs": "^0.0.1-security",
     "glob": "^10.3.12",
     "global-agent": "^3.0.0",
+		"handlebars": "^4.7.8",
+		"handlebars-loader": "^1.7.3",
     "isexe": "^3.1.1",
     "jdk-utils": "^0.4.4",
     "mocha": "^10.2.0",

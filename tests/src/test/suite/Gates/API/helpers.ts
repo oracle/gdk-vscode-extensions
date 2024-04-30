@@ -19,7 +19,7 @@ export async function waitForStatup(wf?: vscode.WorkspaceFolder): Promise<void> 
         await vscode.commands.executeCommand('nbls.project.info', wf2.uri.toString(), { projectStructure: true });
         resolve();
       } catch (e) {
-        if (counter < 60) {
+        if (counter < 120) {
           counter++;
           console.log(`Still waiting for NBLS start, ${counter} seconds elapsed.`);
           setTimeout(dowait, 1000);

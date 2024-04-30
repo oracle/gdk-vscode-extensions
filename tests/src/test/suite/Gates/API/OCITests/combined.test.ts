@@ -15,7 +15,9 @@ import { DeploymentPipelineNode } from '../../../../../../../oci-devops/out/oci/
 import { waitForStatup } from '../helpers';
 import { generateUID } from '../../../../../Common/helpers';
 
-suite('Oci Combined pipelines test', function () {
+let wf = vscode.workspace.workspaceFolders;
+
+suite(`Oci Combined pipelines test: ${wf![0].name}`, function () {
   const wf = vscode.workspace.workspaceFolders;
 
   const COMPARTMENT_OCID: string = process.env['TEST_DEPLOY_COMPARTMENT_OCID']
@@ -33,13 +35,13 @@ suite('Oci Combined pipelines test', function () {
   let comaprtmentOCID: string;
   let jvmItem: any;
   let randomGuid: string;
+  let extContext : vscode.ExtensionContext;
 
   suite('Test configuaration', function () {
-    suite('Prepare poject', async function () {
+    suite('Prepare poject', function () {
       let projectType: string;
       suite('Extension testing', function () {
         vscode.window.showInformationMessage('Start Extension testing');
-
         /* Wait for the NBLS to start */
         // the timeout will propagate to beforeAll hook
         this.timeout(5 * 60 * 1000);
@@ -115,6 +117,11 @@ suite('Oci Combined pipelines test', function () {
           }
         });
 
+        test('Clean extension deploy context', async function() {
+          extContext = await vscode.commands.executeCommand('_oci.devops.getExtensionContext');
+          extContext.workspaceState.update('devops_tooling_deployData', undefined);
+        });
+
         test('Create controller', async function () {
           randomGuid = generateUID();
           assert.ok(wf);
@@ -139,7 +146,7 @@ suite('Oci Combined pipelines test', function () {
         });
       });
 
-      suite('OCI configuration', async function () {
+      suite(`OCI configuration, compartment ${COMPARTMENT_OCID}`, async function () {
         test('Check Default Config profiles', async function () {
           assert.ok(
             COMPARTMENT_OCID,
@@ -181,7 +188,7 @@ suite('Oci Combined pipelines test', function () {
           const configurationProblem = auth.getConfigurationProblem();
           assert.ok(!configurationProblem, configurationProblem);
 
-          assert.ok(auth, 'Authentication failed! Check your oci config.');
+          assert.ok(auth, 'Authentication failed! Check your oci config.'); 
           provider = auth.getProvider();
           assert.ok(provider, 'provider is ok');
         });
@@ -215,7 +222,13 @@ suite('Oci Combined pipelines test', function () {
         assert.ok(compartments.length > 0, 'No compartments listed');
 
         for (let compartment of compartments) {
-          if (compartment.name === DEPLOY_COMPARTMENT_NAME) comaprtmentOCID = compartment.id;
+          if (compartment.id === COMPARTMENT_OCID) {
+            comaprtmentOCID = compartment.id; 
+            break;
+          }
+          if (compartment.name === DEPLOY_COMPARTMENT_NAME) {
+            comaprtmentOCID = compartment.id;
+          }
         }
         assert.ok(comaprtmentOCID && comaprtmentOCID !== '', 'No comapartment ' + DEPLOY_COMPARTMENT_NAME + ' found!');
       });
@@ -242,8 +255,7 @@ suite('Oci Combined pipelines test', function () {
         if (!provider) assert.fail('provider is null');
         const deployOptions: DeployOptions = {
           compartment: {
-            ocid: comaprtmentOCID,
-            name: 'gcn-dev/' + DEPLOY_COMPARTMENT_NAME,
+            ocid: comaprtmentOCID
           },
           skipOKESupport: false,
           projectName: deployProjectName,

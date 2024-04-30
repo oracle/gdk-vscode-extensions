@@ -6,6 +6,7 @@ import * as ociUtils from '../../../../../../../oci-devops/out/oci/ociUtils';
 import * as deployUtils from '../../../../../../../oci-devops/out/oci/deployUtils';
 import * as path from 'path';
 import { ChangeableNode } from '../../../../../../../oci-devops/out/nodes';
+import { RESOURCES } from '../../../../../../../oci-devops/out/oci/ociResources';
 import * as fs from 'fs';
 import axios from 'axios';
 
@@ -147,12 +148,11 @@ export async function setupCommandSpecArtifactAndDeployConfigArtifact(
 
         let extensionPath = vscode.extensions.getExtension('oracle-labs-graalvm.oci-devops')?.extensionPath;
         assert.ok(extensionPath, 'Extension Path Not Found - Line 253');
-        let RESOURCES_FOLDER = path.join(extensionPath, 'resources', 'oci');
 
         if (!setupCommandSpecArtifact) {
           let repoEndpoint = `${provider.getRegion().regionCode}.ocir.io`;
           assert.ok(ociResources.cluster && ociResources.cluster.id, 'Cluster with given Id not Found - Line 259');
-          const inlineContent = deployUtils.expandTemplate(RESOURCES_FOLDER, 'oke_docker_secret_setup.yaml', {
+          const inlineContent = deployUtils.expandTemplate(RESOURCES['oke_docker_secret_setup.yaml'], {
             repo_endpoint: repoEndpoint,
             region: provider.getRegion().regionId,
             cluster_id: ociResources.cluster.id,
@@ -189,7 +189,7 @@ export async function setupCommandSpecArtifactAndDeployConfigArtifact(
         })?.id;
 
         if (!deployConfigArtifact) {
-          let inlineContent = deployUtils.expandTemplate(RESOURCES_FOLDER, 'oke_deploy_config.yaml', {
+          let inlineContent = deployUtils.expandTemplate(RESOURCES['oke_deploy_config.yaml'], {
             image_name: ociResources.image,
             app_name: repository.name.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
             secret_name: ociResources.secretName,

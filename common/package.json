@@ -11,7 +11,7 @@
     "clean-all": "npm run clean",
     "lint": "eslint src --ext ts",
     "prebuild": "npm install",
-    "compile": "tsc -p . --declaration --outDir out",
+    "compile": "tsc -p . --declaration",
     "build": "tsc"
   },
   "browser": {

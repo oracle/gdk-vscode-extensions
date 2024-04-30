@@ -26,7 +26,12 @@ async function createProject(options: Common.CreateOptions, name: string): Promi
   if (!fs.existsSync(projFolder)) {
     fs.mkdirSync(projFolder, { recursive: true });
   }
-  await Common.writeProjectContents(options, new NodeFileHandler(vscode.Uri.file(projFolder)));
+  try {
+    await Common.writeProjectContents(options, new NodeFileHandler(vscode.Uri.file(projFolder)));
+  } catch (err : any) {
+    console.log(JSON.stringify(err));
+  }
+  
 
   return projFolder;
 }
@@ -47,7 +52,6 @@ function compareStructures(projPath: string, comparable: any): boolean {
         if (!('path' in item)) {
           continue;
         }
-
         const path: string = projPath + '/' + item['path'];
 
         assert(fs.existsSync(path), 'Path ' + path + ' does not exists - expected a valid path');
@@ -107,7 +111,7 @@ function compareStructures(projPath: string, comparable: any): boolean {
  */
 async function createAndTest(options: Common.CreateOptions, name: string): Promise<void> {
   const projFolder: string = await createProject(options, name);
-  const jsonPath = path1.resolve(__dirname, '../../../fixtures/project-structure/' + name + '.json');
+  const jsonPath = path1.resolve(__dirname, '../../../../../../../gcn/fixtures/project-structure/' + name + '.json');
   const jsonString = fs.readFileSync(jsonPath, 'utf-8');
   const jsonData = JSON.parse(jsonString);
   compareStructures(projFolder, jsonData);

@@ -7,13 +7,12 @@
 
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { waitForStatup } from './extension.test';
+import { waitForStatup, getProfile } from './common';
 import * as ociAuthentication from '../../oci/ociAuthentication';
 import * as ociUtils from '../../oci/ociUtils';
 import { ConfigFileAuthenticationDetailsProvider, devops} from 'oci-sdk';
 import { DeployOptions } from '../../oci/deployUtils';
 import { getDefaultConfigFile, listProfiles } from '../../oci/ociAuthentication';
-import { getProfile } from './deployment.test';
 import { NodeProvider } from '../../servicesView';
 import { BuildPipelineNode } from '../../oci/buildServices';
 
