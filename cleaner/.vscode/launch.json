@@ -1,0 +1,51 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Clean OCI Compartment",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "runtimeExecutable": "/usr/bin/node",
+            "program": "${workspaceFolder}/out/main.js",
+            "args": [
+                // Put your favourite compartment for tests in "config:gcn.test.clean.compartmentName" into your settings
+                "${config:gcn.test.compartmentName}",
+                // Put the project names you want to purge from OCI to "gcn.test.clean.regexp" in your settings
+                "${config:gcn.test.clean.regexp}"
+            ],
+            "env": {
+				"GLOBAL_AGENT_NO_PROXY": "${env:no_proxy}",
+            },
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ],
+			"preLaunchTask": "npm: build"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Clean Test OCI Compartment",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "runtimeExecutable": "/usr/bin/node",
+            "program": "${workspaceFolder}/out/main.js",
+            "args": [
+                // Put your favourite compartment for tests in "config:gcn.test.clean.compartmentName" into your settings
+                "gcn-dev/tests",
+                // Put the project names you want to purge from OCI to "gcn.test.clean.regexp" in your settings
+                "${config:gcn.test.clean.regexp}",
+            ],
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ],
+			"preLaunchTask": "npm: build"
+        }
+    ]
+}
