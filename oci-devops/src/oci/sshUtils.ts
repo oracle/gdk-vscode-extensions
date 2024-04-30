@@ -74,6 +74,14 @@ async function initializeSshKeys(provider: common.ConfigFileAuthenticationDetail
     let userName: string;
     let tenancyName: string | undefined;
     let identityFile: string | null | undefined;
+    // if the ssh key is provided externally, do not try to match against the config. 
+    // TODO: also support -o "IdentityFile=..."
+    const identityCheck = /-o IdentityFile=((([^" \t\n\\]|"([^"]|\\.)*"|'([^']|\\.)*'|\\.)*))/.exec(process.env['GIT_SSH_COMMAND']|| '');
+    if (identityCheck) {
+        // auto-accept in test environment.
+        logInfo(`[ssh] using explicit identity file: ${identityCheck[1]}`);
+        return true;
+    }
     try {
         userName = (await ociUtils.getUser(provider, configurations.get('user'))).name;
         tenancyName = (await ociUtils.getTenancy(provider, configurations.get('tenancy'))).name;
@@ -336,6 +344,10 @@ class ParsedKnownHosts {
 }
 
 function isAutoAcceptHostFingerprint() : boolean {
+    if (process.env['TEST_VSCODE_EXTENSION']) {
+        // auto-accept in test environment.
+        return true;
+    }
     try {
         const parsed = new ParsedKnownHosts();
         return parsed.isDisabled();

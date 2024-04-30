@@ -243,7 +243,7 @@ export async function populateNewRepository(address: string, sourceUri: vscode.U
         }
         try {
             const command = `${gitPath} checkout master`;
-            await execute(command, source);
+            logUtils.logInfo(`[git] ${await execute(command, source)}`);
         } catch (err) {
             return dialogs.getErrorMessage('Error while checking out master branch', err);
         }
@@ -272,7 +272,7 @@ export async function populateNewRepository(address: string, sourceUri: vscode.U
     if (!folderData.git.pushed) {
         try {
             const command = `${gitPath} push`;
-            await execute(command, source);
+            logUtils.logInfo(`[git] ${await execute(command, source)}`);
         } catch (err) {
             return dialogs.getErrorMessage('Error while pushing lacal changes to remote repository', err);
         }

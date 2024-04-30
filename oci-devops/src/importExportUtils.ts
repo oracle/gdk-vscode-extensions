@@ -13,6 +13,7 @@ import { showErrorMessage } from '../../common/lib/dialogs';
 import * as folderStorage from './folderStorage';
 import * as undeployUtils from './oci/undeployUtils'; // TODO: include into CloudSupport API?
 import { DeployOptions } from './oci/deployUtils';
+import { logError } from '../../common/lib/logUtils';
 
 
 let importInProgress: boolean;
@@ -140,6 +141,9 @@ export async function deployFolders(workspaceState: vscode.Memento, addToExistin
                 if (deployed) {
                     await devopsServices.build(workspaceState);
                 }
+            } catch (err : any) {
+                logError(`Error deploing: ${JSON.stringify(err)}`);
+                throw err;
             } finally {
                 if (dump(null)) {
                     await vscode.commands.executeCommand('setContext', 'oci.devops.deployFailed', true);

@@ -745,8 +745,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         'devops_tooling_description': knowledgeBaseDescription,
                         'devops_tooling_usage': 'oci-devops-adm-audit'
                     });
+                    
                     knowledgePromise = ociUtils.admWaitForResourceCompletionStatus(provider, `Knowledge base for project ${projectName}`, deployData.knowledgeBaseWorkRequest).
                         then(ocid => {
+                            logUtils.logInfo(`[deploy] ADM knowledgebase created with OCID: ${ocid}`);
                             deployData.knowledgeBaseOCID = ocid;
                             knowledgeBaseOCID = ocid;
                             if (!projectResources.knowledgeBases) {
@@ -756,6 +758,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 ocid: ocid,
                                 originalName: `${projectName}Audits` // TODO: better to be resolved from the created KB
                             });
+                        }).catch((err : any )=> {
+                            logUtils.logError(`[deploy] ADM knowledgebase creation failed with error: ${JSON.stringify(err)}`);
+                            knowledgeCompleted = true;
+                            throw err;
                         }).finally(() => knowledgeCompleted = true);
                 } catch (err) {
                     resolve(dialogs.getErrorMessage('Failed to create knowledge base', err));
@@ -3376,7 +3382,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                 const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir, folderData, async () => {
                     if (!deployData.user) {
                         const user = await ociUtils.getUser(provider);
-                        deployData.user = { name: user.description, email: user.email };
+                        // In the test environment, the email for git commits can be specified externally
+                        deployData.user = { name: user.description, email: process.env['TEST_GIT_USER_EMAIL'] || user.email };
                     }
                     return deployData.user;
                 }, /*, storage*/);
