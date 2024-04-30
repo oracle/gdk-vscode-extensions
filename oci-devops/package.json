@@ -904,6 +904,9 @@
 		"info": "webpack --display-modules",
 		"watch": "webpack --mode development --watch",
 		"watch-tests": "tsc --outDir out --watch",
+		"clean": "rm -rf ./out ./dist",
+		"clean-all": "npm run clean",
+		"test-compile-dependencies": "cd ../extension-tests && npm run compile",
 		"test-clean": "rm -r out",
 		"test-compile": "tsc -p . --declaration --outDir out",
 		"test": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./node_modules/gcn-extension-tests/bin/main.js --runTest",
@@ -920,6 +923,7 @@
 		}
 	},
 	"dependencies": {
+		"http-proxy-agent": "^7.0.2",
 		"isomorphic-fetch": "^3.0.0",
 		"jdk-utils": "^0.4.4",
 		"oci-sdk": "^2.82.1",
@@ -932,7 +936,7 @@
 		"@types/glob": "^8.0.1",
 		"@types/isomorphic-fetch": "^0.0.36",
 		"@types/mocha": "^10.0.1",
-		"@types/node": "^14.16.0",
+		"@types/node": "^18.14",
 		"@types/node-fetch": "^2.6.9",
 		"@types/semver": "7.5.0",
 		"@types/vscode": "^1.76.0",
@@ -948,7 +952,7 @@
 		"encoding": "^0.1.13",
 		"eslint": "^8.35.0",
 		"eslint-webpack-plugin": "^4.0.0",
-		"gcn-extension-tests": "^1.2.1",
+		"gcn-extension-tests": "file:../extension-tests",
 		"glob": "^8.1.0",
 		"global-agent": "^3.0.0",
 		"mocha": "^10.1.0",
@@ -958,6 +962,7 @@
 		"handlebars": "^4.7.8",
 		"handlebars-loader": "^1.7.3",
 		"typescript": "^4.9.5",
+		"undici": "^6.14.0",
 		"vscode-extension-tester": "^5.2.1",
 		"webpack": "^5.74.0",
 		"webpack-cli": "^4.10.0"

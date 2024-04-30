@@ -4,7 +4,10 @@
   "description": "Test environment for GCN extensions",
   "main": "./out/index.js",
   "scripts": {
-    "compile": "tsc -p ."
+    "compile": "tsc -p .",
+    "build": "npm run compile",
+		"clean": "rm -rf ./out ./dist",
+		"clean-all": "npm run clean"
   },
   "author": {
     "name": "Oracle Labs"

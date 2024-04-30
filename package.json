@@ -3,19 +3,35 @@
 		"@vscode/vsce": "2.24.0"
 	},
 	"scripts": {
-		"prebuild": "npm install && npm run build:common",
-		"build": " npm run build:gcn && npm run build:micronaut && npm run build:micronaut-tools && npm run build:oci-devops && npm run build:graal-cloud-native-pack",
+		"prebuild": "npm install && npm run build:common && npm run install:gcn-extension-tests && npm run build:gcn-extension-tests",
+		"build": "npm run build:gcn && npm run build:micronaut && npm run build:micronaut-tools && npm run build:oci-devops && npm run build:graal-cloud-native-pack",
+		"clean": "npm run clean:gcn && npm run clean:micronaut && npm run clean:micronaut-tools && npm run clean:oci-devops && npm run clean:graal-cloud-native-pack && npm run clean:gcn-extension-tests && npm run clean:tests",
+		
+		"install:gcn-extension-tests": "cd extension-tests && npm install",
+		
 		"build:micronaut-tools": "cd micronaut-tools && npm run build",
 		"build:micronaut": "cd micronaut && npm run build",
 		"build:gcn": "cd gcn && npm run build",
 		"build:oci-devops": "cd oci-devops && npm run build",
 		"build:graal-cloud-native-pack": "cd graal-cloud-native-pack && npm run build",
 		"build:common": "cd common && npm run build",
+		"build:gcn-extension-tests": "cd extension-tests && npm run build",
 
-		"pretests": "npm run build:common",
-		"tests": "npm run tests:gcn",
+		"clean:micronaut-tools": "cd micronaut-tools && npm run clean-all",
+		"clean:micronaut": "cd micronaut && npm run clean-all",
+		"clean:gcn": "cd gcn && npm run clean-all",
+		"clean:oci-devops": "cd oci-devops && npm run clean-all",
+		"clean:graal-cloud-native-pack": "cd graal-cloud-native-pack && npm run clean-all",
+		"clean:common": "cd common && npm run clean-all",
+		"clean:common": "cd common && npm run clean-all",
+		"clean:gcn-extension-tests": "cd extension-tests && npm run clean-all",
+		"clean:tests": "cd tests && npm run clean-all",
+		
+		"pretests": "npm run build:common && npm run build:gcn-extension-tests",
+		"tests": "npm run tests:gcn && npm run tests:oci-devops && npm run tests:api-tests",
 		"tests:gcn": "cd gcn; npm install; npm run compile; npm run test-compile; xvfb-run -a npm run test",
 		"tests:oci-devops": "cd oci-devops; npm install; npm run compile; npm run test-compile; xvfb-run -a npm run test",
+		"tests:api-tests": "cd tests && npm install && npm run compile && npm run test",
 
 		"tests-ui": "npm run tests-ui:gcn",
 		"tests-ui:gcn": "cd gcn; npm install; npm run compile; npm run test-compile; xvfb-run -a npm run test-ui"
