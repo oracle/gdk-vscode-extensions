@@ -86,13 +86,12 @@ vscodeTestsDaily : ${vscodeTestsCommon} {
     ["npm", "run", "tests-ui"]
   ],
   notify_emails: [
-    "stevo.mitric@oracle.com",
     "martin.balin@oracle.com"
   ]
 }
 
 builds += [
-  ${linux-amd64} ${vscodeRunTests} { name: "gate-vscode-tests" },
-  ${linux-amd64} ${vscodeTestsDaily} { name: "daily-vscode-tests" },
+#  ${linux-amd64} ${vscodeRunTests} { name: "gate-vscode-tests" },
+#  ${linux-amd64} ${vscodeTestsDaily} { name: "daily-vscode-tests" },
   ${linux-amd64} ${linux_jdk17} ${vscodeBuildGate} { name: "gate-vscode-build" }
 ]
