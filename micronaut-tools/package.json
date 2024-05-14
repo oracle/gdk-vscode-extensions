@@ -378,6 +378,26 @@
 				},
 				"category": "Micronaut Tools",
 				"enablement": "visualvm.view != extension-micronaut-tools-visualvm"
+			},
+			{
+				"command": "extension.micronaut-tools.new.entity",
+				"title": "New Data Entity Classes from Database...",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.new.repository",
+				"title": "New Data Repository Interfaces from Entities...",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.new.controller",
+				"title": "New Controller Class...",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools.new.controller.data",
+				"title": "New Controller Classes from Data Repositories...",
+				"category": "Micronaut Tools"
 			}
 		],
 		"viewsContainers": {
@@ -481,7 +501,41 @@
 				"when": "workspaceFolderCount > 0 && micronautFoldersComputed"
 			}
 		],
+		"submenus": [
+			{
+				"id": "explorer/micronaut",
+				"label": "Micronaut"
+			}
+		],
 		"menus": {
+			"explorer/context": [
+				{
+					"submenu": "explorer/micronaut",
+					"group": "1_javaactions@150"
+				}
+			],
+			"explorer/micronaut": [
+				{
+					"command": "extension.micronaut-tools.new.entity",
+					"when": "explorerResourceIsFolder && micronautProjectExists && nbJavaLSReady",
+					"group": "context@1"
+				},
+				{
+					"command": "extension.micronaut-tools.new.repository",
+					"when": "explorerResourceIsFolder && micronautProjectExists && nbJavaLSReady",
+					"group": "context@2"
+				},
+				{
+					"command": "extension.micronaut-tools.new.controller",
+					"when": "explorerResourceIsFolder && micronautProjectExists && nbJavaLSReady",
+					"group": "context@3"
+				},
+				{
+					"command": "extension.micronaut-tools.new.controller.data",
+					"when": "explorerResourceIsFolder && micronautProjectExists && nbJavaLSReady",
+					"group": "context@4"
+				}
+			],
 			"commandPalette": [
 				{
 					"command": "extension.micronaut-tools.build",
