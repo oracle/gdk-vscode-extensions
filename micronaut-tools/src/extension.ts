@@ -79,6 +79,18 @@ export function activate(context: vscode.ExtensionContext) {
 		logUtils.logInfo(`[NBLS] Download Wallet action: name: ${name}; id: ${id}`);
 		vscode.commands.executeCommand('nbls:Tools:org.netbeans.modules.cloud.oracle.actions.DownloadWalletAction', info);
 	}));
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.new.entity', (ctx) => {
+		vscode.commands.executeCommand('nbls.workspace.new', ctx, 'Micronaut/Entity');
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.new.repository', (ctx) => {
+		vscode.commands.executeCommand('nbls.workspace.new', ctx, 'Micronaut/Repository');
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.new.controller', (ctx) => {
+		vscode.commands.executeCommand('nbls.workspace.new', ctx, 'Micronaut/Controller');
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools.new.controller.data', (ctx) => {
+		vscode.commands.executeCommand('nbls.workspace.new', ctx, 'Micronaut/ControllerFromRepository');
+	}));
 
 	dbSupport.activate(context);
 

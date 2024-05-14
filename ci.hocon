@@ -34,7 +34,7 @@ windows : ${common} {
 linux-amd64 : ${linux} {
   capabilities : [linux, amd64],
   docker: {
-    "image": "phx.ocir.io/oraclelabs2/c_graal/buildslave:buildslave_ol7", # Use this docker image
+    "image": "phx.ocir.io/oraclelabs2/c_graal/buildslave:buildslave_ol9", # Use this docker image
     "mount_modules": true
   }
 }
