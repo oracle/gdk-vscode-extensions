@@ -6,9 +6,9 @@
 *** Technology Preview ***
 
 ## Overview
-Tools for Micronaut® framework is a powerful extension for using [GraalVM](https://www.oracle.com/java/graalvm/) to develop [Micronaut framework](https://micronaut.io/) and [Graal Cloud Native](https://graal.cloud/) (GCN) applications within VS Code.
+Tools for Micronaut® framework is a powerful extension for using [GraalVM](https://www.oracle.com/java/graalvm/) to develop [Micronaut framework](https://micronaut.io/) and [Graal Development Kit for Micronaut](https://graal.cloud/gdk/) (GDK for Micronaut) applications within VS Code.
 
-Install the [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack), which contains this extension and others.
+Install the [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack), which contains this extension and others.
 
 ## Features
 * [View Suggested Code Completions](#view-suggested-code-completions)
@@ -48,7 +48,7 @@ You can also find the extension listed on the [VS Code Marketplace](https://mark
 The Tools for Micronaut® framework page opens as soon as the extension is installed.
 You can also open this page using the Command Palette command **Micronaut Tools: Show Micronaut Tools Page**.
 
-> **Note**: This extension is part of the [Graal Cloud Native Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack). We recommend you install the Graal Cloud Native Extensions Pack as it provides additional extensions for Micronaut development, including the [Launch for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extension.
+> **Note**: This extension is part of the [_Graal Development Kit for Micronaut_ Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack). We recommend you install the _Graal Development Kit for Micronaut_ Extensions Pack as it provides additional extensions for Micronaut development, including the [Launch for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extension.
 
 > **Note**: This extension includes the _Apache NetBeans Language Server for Java_ to provide hints and code completion. It occasionally takes some time to start, its status is displayed in the VS Code Status Bar. 
 
@@ -314,14 +314,14 @@ To configure your application's container registry, see the documentation for [M
 
 **Prerequisites:**
 * An Oracle Cloud Infrastructure (OCI) account.
-* The [OCI DevOps Tools extension](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops) (part of the [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack)).
+* The [OCI DevOps Tools extension](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops) (part of the [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack)).
 
 The OCI DevOps Tools extension provisions build and deployment pipelines for:
 * An OCI native executable container: a containerized native executable
 * An OCI Java container: a containerized Micronaut application
 
 It can also provision a cluster to run your container on Oracle's [Container Engine for Kubernetes](https://docs.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm).
-For more information about using the OCI DevOps Tools Extension, see [Using OCI DevOps Tools Extensions in VS Code](https://www.graal.cloud/gcn/get-started/using-gcn-vscode-tools/).
+For more information about using the OCI DevOps Tools Extension, see [Using OCI DevOps Tools Extensions in VS Code](https://www.graal.cloud/gdk/vscode-tools/using-gdk-vscode-tools/).
 
 ### Connect to an Oracle Autonomous Database
 
@@ -356,7 +356,7 @@ The Micronaut Tools VS Code extension can store an application's database config
 
 To make use of this feature, first create an [OCI Vault](https://docs.oracle.com/iaas/Content/KeyManagement/Tasks/managingvaults_topic-To_create_a_new_vault.htm) and [Master Encryption Key](https://docs.oracle.com/iaas/Content/KeyManagement/Tasks/managingkeys_topic-To_create_a_new_key.htm) using the Oracle Cloud Console. Please consult the OCI documentation, previously linked, on how to do this.
 
->If your project uses the [OCI DevOps service](https://www.oracle.com/devops/devops-service/), then make sure the [OKE Deployments Pipelines are created](https://graal.cloud/gcn/vscode-tools/oci-devops-tools/#build-and-deploy-project-artifacts) before you proceed.
+>If your project uses the [OCI DevOps service](https://www.oracle.com/devops/devops-service/), then make sure the [OKE Deployments Pipelines are created](https://graal.cloud/gdk/vscode-tools/oci-devops-tools/#build-and-deploy-project-artifacts) before you proceed.
 
 To store your application database connection details using OCI Vault and for these to be made available to your application when you deploy to OKE using the OCI DevOps service, you must:
 
