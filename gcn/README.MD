@@ -9,7 +9,7 @@
 
 This extension provides a wizard to easily create a new GDK project.
 
-It is recommended to install the [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack), which contains this extension and others, as the easiest way to get started.
+You are recommended to install the [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack), which contains this extension and others, as the easiest way to get started.
 
 ## <a name='gcn-projects-generation-wizard'></a>Create New Project Wizard
 ​
@@ -50,4 +50,5 @@ The _Graal Development Kit for Micronaut_ Launcher extension is part of the [_Gr
 
 Read the [Oracle Privacy Policy](https://www.oracle.com/legal/privacy/privacy-policy.html) to learn more.
 
-Micronaut® is a registered trademark of Object Computing, Inc. Use is for referential purposes and does not imply any endorsement or affiliation with any third-party product. Unauthorized use is strictly prohibited.
+---
+Micronaut&reg; is a registered trademark of Object Computing, Inc. Use is for referential purposes and does not imply any endorsement or affiliation with any third-party product. Unauthorized use is strictly prohibited.

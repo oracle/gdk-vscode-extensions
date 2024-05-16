@@ -6,14 +6,14 @@
 
 [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) is a collection of extensions that help you create, build, and deploy Graal Development Kit for Micronaut (GDK) applications.
 
-The _Graal Development Kit for Micronaut_ Extension Pack bundles the [_Graal Development Kit for Micronaut_ Launcher](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn), [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops), [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) and [Launch for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extensions.
+The _Graal Development Kit for Micronaut_ Extension Pack bundles the [_Graal Development Kit for Micronaut_ Launcher](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn), [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops), [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools), and [Launch for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extensions.
 
 ### Graal Development Kit for Micronaut Support
 
-The extension pack bundles support for [Graal Development Kit for Micronaut](https://graal.cloud/gdk/) applications. In particular:
+The extension pack bundles support for [GDK](https://graal.cloud/gdk/) applications. In particular:
 
 1. Integrated GDK and Micronaut project creation wizards.
-2. Support for the core [Oracle Cloud Infrastructure](https://www.oracle.com/cloud/) services in VS Code including: Object Storage; Authentication; Secret Management; Streaming; etc.;
+2. Support for the core [Oracle Cloud Infrastructure](https://www.oracle.com/cloud/) services in VS Code including: Object Storage, Authentication; Secret Management, Streaming, and so on.
 3. Tools to support Micronaut application development.
    * YAML files code completion.
    * Database development support.
@@ -34,10 +34,10 @@ The extension pack also bundles support for using Oracle Cloud Infrastructure's 
 
 ## Extensions Included
 
-* [_Graal Development Kit for Micronaut_ Launcher](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn) - an extension that provides a launcher for GDK for Micronaut projects.
-* [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops) - an extension that provides support for Oracle Cloud Infrastructure’s DevOps service in VS Code with the creation of build and deployment pipelines along with source code management that makes it easy to transition from local development to cloud-based development and deployment.
-* [Launch for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) - an extension that provides a launcher for Micronaut projects.
-* [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) - an extension that provides Micronaut and GDK project support and delivers JDBC drivers supported by Oracle GCN.
+* [_Graal Development Kit for Micronaut_ Launcher](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn) &mdash; an extension that provides a launcher for GDK projects.
+* [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops) &mdash; an extension that provides support for Oracle Cloud Infrastructure’s DevOps service in VS Code with the creation of build and deployment pipelines along with source code management that makes it easy to transition from local development to cloud-based development and deployment.
+* [Launch for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) &mdash; an extension that provides a launcher for Micronaut projects.
+* [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) &mdash; an extension that provides Micronaut and GDK project support and delivers JDBC drivers supported by Oracle GCN.
 
 ### Feedback
 
@@ -48,4 +48,5 @@ The extension pack also bundles support for using Oracle Cloud Infrastructure's 
 
 Please read the [Oracle Privacy Policy](https://www.oracle.com/legal/privacy/privacy-policy.html) to learn more.
 
-Micronaut® is a registered trademark of Object Computing, Inc. Use is for referential purposes and does not imply any endorsement or affiliation with any third-party product. Unauthorized use is strictly prohibited.
+---
+Micronaut&reg; is a registered trademark of Object Computing, Inc. Use is for referential purposes and does not imply any endorsement or affiliation with any third-party product. Unauthorized use is strictly prohibited.

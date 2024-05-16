@@ -14,7 +14,7 @@ OCI DevOps Tools extension for Visual Studio Code provides features and tools to
 * Deploys the built project containers to an Oracle Kubernetes Engine (OKE)
 * Performs audits for vulnerabilities in Java project's third-party libraries
 
-For the best experience it is recommended to install the [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which contains this extension and others.
+For the best experience, install the [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which contains this extension and others.
 
 ## Supported Java Projects
 * [Micronaut](https://micronaut.io/).
@@ -101,7 +101,7 @@ The [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.v
 
 All details, including prerequisites, can be found in the [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) extension documentation. See the section *Use OCI Vault to Store Database Connection Properties*.
 
-This action creates new a project artifact named <_project_name_>__oke_configmap_, which contains the `datasources.default.*` properties stored in your OCI Vault. It also extends both predefined Deployment Pipelines to use this Kubernetes manifest in order to run a database application in OKE in a secure and seamless way.
+This action creates new a project artifact named &gt;_project_name_&lt;__oke_configmap_, which contains the `datasources.default.*` properties stored in your OCI Vault. It also extends both predefined Deployment Pipelines to use this Kubernetes manifest in order to run a database application in OKE in a secure and seamless way.
 
 </details>
 
@@ -191,4 +191,5 @@ Project members with write access to the repository will determine and assign an
 
 See the [CHANGELOG](CHANGELOG.md)
 
-Micronaut® is a registered trademark of Object Computing, Inc. Use is for referential purposes and does not imply any endorsement or affiliation with any third-party product. Unauthorized use is strictly prohibited.
+---
+Micronaut&reg; is a registered trademark of Object Computing, Inc. Use is for referential purposes and does not imply any endorsement or affiliation with any third-party product. Unauthorized use is strictly prohibited.
