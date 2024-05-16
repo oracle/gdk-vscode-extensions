@@ -6,7 +6,7 @@
 *** Technology Preview ***
 
 ## Overview
-Tools for Micronaut® framework is a powerful extension for using [GraalVM](https://www.oracle.com/java/graalvm/) to develop [Micronaut framework](https://micronaut.io/) and [Graal Development Kit for Micronaut](https://graal.cloud/gdk/) (GDK for Micronaut) applications within VS Code.
+Tools for Micronaut® framework is a powerful extension for using [GraalVM](https://www.oracle.com/java/graalvm/) to develop [Micronaut&reg; framework](https://micronaut.io/) and [Graal Development Kit for Micronaut](https://graal.cloud/gdk/) (GDK) applications within VS Code.
 
 Install the [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack), which contains this extension and others.
 

@@ -18,7 +18,7 @@ For the best experience it is recommended to install the [_Graal Development Kit
 
 ## Supported Java Projects
 * [Micronaut](https://micronaut.io/).
-* [Graal Development Kit for Micronaut](https://graal.cloud/gdk/) (GDK for Micronaut).
+* [Graal Development Kit for Micronaut](https://graal.cloud/gdk/) (GDK).
 * [Helidon SE](https://helidon.io/).
 * [SpringBoot](https://spring.io/projects/spring-boot) (the GraalVM Native Support dependency must be enabled in the project).
 
@@ -94,7 +94,7 @@ To deploy a built container artifact, invoke the Run Deployment Pipeline action 
 The [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) provides an easy and secure way to run Micronaut Database applications in the Oracle Kubernetes Environment (OKE) using OCI Vault.
 
 1. Install the [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack).
-2. GDK for Micronaut or Micronaut application is already deployed to OCI DevOps service using this extension
+2. GDK or Micronaut application is already deployed to OCI DevOps service using this extension
 3. Right-click on a database name in the Databases panel and choose **Add to OCI Vault**. Follow the steps.
 
    ![Add to OCI Vault](images/add_to_oci_vault.png)

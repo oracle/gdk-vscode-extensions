@@ -5,28 +5,28 @@
 
 *** Technology Preview ***
 
-[Graal Development Kit for Microanut](https://graal.cloud/gdk/) (GDK for Micronaut) is a cloud-agnostic development framework, built on top of [Micronaut® framework](https://micronaut.io/). Using GDK for Micronaut you can write once and then run the same code on multiple cloud platforms.
+[Graal Development Kit for Micronaut](https://graal.cloud/gdk/) (GDK) is a cloud-agnostic development framework, built on top of [Micronaut® framework](https://micronaut.io/). Using GDK you can write once and then run the same code on multiple cloud platforms.
 
-This extension provides a wizard to easily create a new GDK for Micronaut project.
+This extension provides a wizard to easily create a new GDK project.
 
 It is recommended to install the [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack), which contains this extension and others, as the easiest way to get started.
 
 ## <a name='gcn-projects-generation-wizard'></a>Create New Project Wizard
 ​
-The wizard can generate different types of GDK for Micronaut and serverless applications. If building a GDK for Micronaut application, you can select the GDK for Micronaut features you want your project to include.
+The wizard can generate different types of GDK and serverless applications. If building a GDK application, you can select the GDK features you want your project to include.
 
 <!-- TODO: This requires updating in the future -->
 1. Go to **View**, **Command Palette**, search for "Graal Cloud Native", and invoke the **Graal Cloud Native: Create New Project** command.
 
     ![Create New Project Action](images/gcn-vscode-actions.png)
 
-2. Follow the command prompts to generate a new Maven or Gradle project. For example, to create a simple Java-based GDK for Micronaut application:
+2. Follow the command prompts to generate a new Maven or Gradle project. For example, to create a simple Java-based GDK application:
     - Select the Micronaut version
     - Select an Application type
     - Select an installed JDK
     - Provide a name for the project
     - Provide a base package
-    - Pick the GDK for Micronaut services to be included in the project
+    - Pick the GDK services to be included in the project
     - Pick Features to be included in the project. E.g. when Database was selected in Services step then in this step pick Oracle Cloud Autonomous Transaction Processing (ATP) feature which will add necassary dependencies to access Autonomous DB.
     - Select a build tool: Maven or Gradle
     - Select a unit test framework: JUnit, Spock, or Kotest
@@ -34,11 +34,11 @@ The wizard can generate different types of GDK for Micronaut and serverless appl
 
 3. Finally, you are asked where to save your new project. You can then choose to open it in a new VS Code window or add it to a workspace in the current VS Code window.
 
-You now have a new GDK for Micronaut application, complete with example code showing you how to start using [GDK for Micronaut](https://graal.cloud/gdk/).
+You now have a new GDK application, complete with example code showing you how to start using [GDK](https://graal.cloud/gdk/).
 
 ## <a name='gcn-extension-pack'></a>_Graal Development Kit for Micronaut_ Extension Pack
 The _Graal Development Kit for Micronaut_ Launcher extension is part of the [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which is the recommended to get started. The extension pack also provides support for:
-1. Oracle Cloud Infrastructure DevOps integration to provision build pipelines for GDK for Micronaut, or Micronaut projects. GraalVM Native Image builds are provisioned automatically.
+1. Oracle Cloud Infrastructure DevOps integration to provision build pipelines for GDK, or Micronaut projects. GraalVM Native Image builds are provisioned automatically.
 2. Micronaut development support including the Micronaut project wizard, REST Explorer, code completion, database drivers for Oracle DB and MySQL databases, and much more.
 
 ## <a name='provide-feedback-or-seek-help'></a>Provide Feedback or Seek Help
