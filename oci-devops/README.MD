@@ -25,7 +25,7 @@ For the best experience, install the [_Graal Development Kit for Micronaut_ Exte
 ## Requirements
 * [Extension Pack for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack).
 * [Kubernetes](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools).
-* [GraalVM](https://www.graalvm.org/) 22.x, 23.0 Java 17, or higher.
+* [GraalVM](https://www.graalvm.org/) for JDK 17, or higher.
 * [Git](https://git-scm.com/) version control system.
 * A Docker-API compatible container runtime such as Rancher Desktop or Docker.
 ​
@@ -101,7 +101,7 @@ The [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.v
 
 All details, including prerequisites, can be found in the [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) extension documentation. See the section *Use OCI Vault to Store Database Connection Properties*.
 
-This action creates new a project artifact named &gt;_project_name_&lt;__oke_configmap_, which contains the `datasources.default.*` properties stored in your OCI Vault. It also extends both predefined Deployment Pipelines to use this Kubernetes manifest in order to run a database application in OKE in a secure and seamless way.
+This action creates new a project artifact named &lt;_project_name_&gt;__oke_configmap_, which contains the `datasources.default.*` properties stored in your OCI Vault. It also extends both predefined Deployment Pipelines to use this Kubernetes manifest in order to run a database application in OKE in a secure and seamless way.
 
 </details>
 

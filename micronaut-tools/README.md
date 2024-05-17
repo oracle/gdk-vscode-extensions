@@ -48,7 +48,7 @@ You can also find the extension listed on the [VS Code Marketplace](https://mark
 The Tools for Micronaut® framework page opens as soon as the extension is installed.
 You can also open this page using the Command Palette command **Micronaut Tools: Show Micronaut Tools Page**.
 
-> **Note**: This extension is part of the [_Graal Development Kit for Micronaut_ Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack). We recommend you install the _Graal Development Kit for Micronaut_ Extensions Pack as it provides additional extensions for Micronaut development, including the [Launch for Micronaut&reg; framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extension.
+> **Note**: This extension is part of the [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack). We recommend you install the _Graal Development Kit for Micronaut_ Extension Pack as it provides additional extensions for Micronaut development, including the [Launch for Micronaut&reg; framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) extension.
 
 > **Note**: This extension includes the _Apache NetBeans Language Server for Java_ to provide hints and code completion. It occasionally takes some time to start, its status is displayed in the VS Code Status Bar. 
 

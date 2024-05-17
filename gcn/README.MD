@@ -30,7 +30,7 @@ The wizard can generate different types of GDK and serverless applications. If b
     - Pick Features to be included in the project. E.g. when Database was selected in Services step then in this step pick Oracle Cloud Autonomous Transaction Processing (ATP) feature which will add necassary dependencies to access Autonomous DB.
     - Select a build tool: Maven or Gradle
     - Select a unit test framework: JUnit, Spock, or Kotest
-    - Select cloud providers to support: Oracle Cloud Infrastructure and/or Amazon Web Services; Note: you need to select OCI if you want OCI DevOps support
+    - Select cloud providers to support: Oracle Cloud Infrastructure, Amazon Web Services, Google Cloud Platform; Note: you need to select OCI if you want OCI DevOps support
 
 3. Finally, you are asked where to save your new project. You can then choose to open it in a new VS Code window or add it to a workspace in the current VS Code window.
 
@@ -38,7 +38,7 @@ You now have a new GDK application, complete with example code showing you how t
 
 ## <a name='gcn-extension-pack'></a>_Graal Development Kit for Micronaut_ Extension Pack
 The _Graal Development Kit for Micronaut_ Launcher extension is part of the [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which is the recommended way to get started. The extension pack also provides support for:
-1. Oracle Cloud Infrastructure DevOps integration to provision build pipelines for GDK, or Micronaut projects. GraalVM Native Image builds are provisioned automatically.
+1. Oracle Cloud Infrastructure DevOps integration to provision build pipelines for GDK or Micronaut projects. GraalVM Native Image builds are provisioned automatically.
 2. Micronaut development support including the Micronaut project wizard, REST Explorer, code completion, database drivers for Oracle DB and MySQL databases, and much more.
 
 ## <a name='provide-feedback-or-seek-help'></a>Provide Feedback or Seek Help
