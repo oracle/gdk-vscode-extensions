@@ -14,10 +14,12 @@ import { logError } from '../../../../../../../common/lib/logUtils';
 
 import * as projectUtils from '../../../../../../../oci-devops/out/projectUtils';
 import { waitForStatup } from '../helpers';
+import * as fs from 'fs';
+import path from 'path';
 
 let wf = vscode.workspace.workspaceFolders;
 
-suite('Extension Test Suite', function () {
+suite(`Extension Test Suite ${wf![0].name}` , function () {
   vscode.window.showInformationMessage('Start all tests.');
 
   /* Wait for the NBLS to start */
@@ -87,7 +89,16 @@ suite('Extension Test Suite', function () {
       assert.throws(() => logError('Extension host did not load any workspace folders!'));
     } else {
       const projectFolder = await projectUtils.getProjectFolder(wf[0]);
-      assert.strictEqual(projectFolder.projectType, 'GCN', 'Specified project should be deployable to OCI');
+      if (projectFolder.uri.fsPath) {
+        let expectedProjectType;
+
+        if (fs.existsSync(path.join(projectFolder.uri.fsPath, 'oci'))) {
+          expectedProjectType = 'GCN';
+        } else {
+          expectedProjectType = 'Micronaut';
+        }
+        assert.strictEqual(projectFolder.projectType, expectedProjectType, 'Specified project should be deployable to OCI');
+      }
     }
   });
 });

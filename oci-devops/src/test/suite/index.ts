@@ -8,8 +8,23 @@
 import * as path from 'path';
 import * as Mocha from 'mocha';
 import * as glob from 'glob';
+import { setGlobalDispatcher, EnvHttpProxyAgent } from 'undici';
 
-export function run(): Promise<void> {
+export async function run(): Promise<void> {
+	let opts = {};
+
+	if (process.env['GLOBAL_AGENT_HTTP_PROXY']) {
+		opts = {
+			httpProxy: process.env['GLOBAL_AGENT_HTTP_PROXY'],
+			httpsProxy: process.env['GLOBAL_AGENT_HTTP_PROXY'],
+			noProxy: process.env['GLOBAL_AGENT_NO_PROXY']
+		};
+	}
+	const dispatcher = new EnvHttpProxyAgent(opts);
+	setGlobalDispatcher(dispatcher);
+
+	await require('handlebars-loader');
+
 	// Create the mocha test
 	const mocha = new Mocha({
 		ui: 'tdd',
@@ -19,7 +34,8 @@ export function run(): Promise<void> {
 
 	const testsRoot = path.resolve(__dirname, '..');
 	
-	const globPattern = process.env["TEST_GLOB_PATTER"] ? process.env["TEST_GLOB_PATTER"] : "**/*.test.js";
+
+	const globPattern = process.env["TEST_GLOB_PATTERN"] ? process.env["TEST_GLOB_PATTERN"] : "**/*.test.js";
 	console.log(globPattern);
 	return new Promise((c, e) => {
 		glob(globPattern, { cwd: testsRoot }, (err, files) => {

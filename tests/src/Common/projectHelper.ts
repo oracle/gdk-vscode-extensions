@@ -6,14 +6,31 @@
  */
 
 import path from 'path';
-import { copyRecursiveSync, generateUID, getSubDirs } from './helpers';
+import { copyRecursiveSync, generateUID, getSubDirs, findFiles } from './helpers';
 import { BuildTool, GeneratedProject, ProjectDescription, TestFolder, TestFolders } from './types';
 import { AbstractTestDescriptor } from './abstractTestDescriptor';
+import { getDescriptor } from './testHelper';
 
 const rootPath = path.resolve(__dirname, '..', '..');
 const generatedProjectsPath = path.join(rootPath, 'generated-projects');
 const testProjectsPath = path.join(rootPath, 'out', 'test-projects');
 export type TestRun = { [projectPath: string]: string[] };
+
+
+export function enumerateTests(base : string, args : string[]) {
+  const tmp: { [directory: string]: string[] } = findFiles(base, ...args);
+  const out: TestFolders = {};
+  for (const dir in tmp) {
+    const newFiles = [];
+    for (const file of tmp[dir]) {
+      if (file.endsWith('test.js')) newFiles.push(file);
+    }
+    if (newFiles.length === 0) continue;
+    const desc = getDescriptor(dir);
+    if (desc) out[dir] = [desc, newFiles];
+  }
+  return out;
+}
 
 /**
  * Prepare projects to be used by API tests

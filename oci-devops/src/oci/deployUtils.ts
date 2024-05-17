@@ -68,12 +68,19 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
     const dumpData: any = dump(null);
     const deployData: any = dumpData || {};
 
+    logUtils.logInfo(`[deploy] deployData for the operation: ${JSON.stringify(deployData)}`);
+
     for (const folder of folders) {
         if (!deployData.repositories || !deployData.repositories[removeSpaces(folder.name)]?.git) {
-            if (gitUtils.getHEAD(folder.uri, true)) {
-                dialogs.showErrorMessage(`Folder ${folder.name} is already versioned and cannot be added to an OCI DevOps project.`);
-                logUtils.logInfo(`[deploy] Folder ${folder.name} is already versioned and cannot be added to an OCI DevOps project.`);
-                return false;
+            try {
+                if (gitUtils.getHEAD(folder.uri, true)) {
+                    dialogs.showErrorMessage(`Folder ${folder.name} is already versioned and cannot be added to an OCI DevOps project.`);
+                    logUtils.logInfo(`[deploy] Folder ${folder.name} is already versioned and cannot be added to an OCI DevOps project.`);
+                    return false;
+                }
+            } catch (err : any) {
+                logUtils.logError(`[deploy] git HEAD failed: ${JSON.stringify(err)}`);
+                throw err;
             }
         }
     }
@@ -95,6 +102,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
 
     const incrementalDeploy = openContexts?.length;
     let auth: ociAuthentication.Authentication | undefined;
+    logUtils.logInfo('[deploy] obtaining OCI profile');
     if (incrementalDeploy) {
         const profiles: string[] = [];
         for (const context of openContexts) {
@@ -114,13 +122,17 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
         auth = await ociAuthentication.resolve(actionName, deployOptions?.selectProfile?deployOptions.selectProfile:deployData.profile);
     }
 
+    logUtils.logInfo(`[deploy] OCI profile: ${deployData.profile}`);
+
     const authentication = auth;
     if (!authentication) {
+        logUtils.logInfo('[deploy] no authentication found');
         dump();
         return false;
     }
     const configurationProblem = authentication.getConfigurationProblem();
     if (configurationProblem) {
+        logUtils.logError(`[deploy] Error in OCI configuration, profile: ${deployData.profile}: ${configurationProblem}`);
         dialogs.showErrorMessage(configurationProblem);
         return false;
     }
@@ -133,8 +145,11 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
     if (!deployData.namespace) {
         try {
             deployData.namespace = await ociUtils.getObjectStorageNamespace(provider);
-        } catch (err) {}
+        } catch (err : any) {
+            logUtils.logError(`[deploy] Error resolving storage namespace: ${JSON.stringify(err)}`);
+        }
         if (!deployData.namespace) {
+            logUtils.logError(`[deploy] Could not resolve storage namespace`);
             dialogs.showErrorMessage('Cannot resolve object storage namespace.');
             dump();
             return false;
@@ -151,7 +166,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
             if (!compartment) {
                 deployData.compartment = undefined;
             }
-        } catch (err) {
+        } catch (err : any) {
+            logUtils.logError(`[deploy] Unable to obtain compartment ${deployData.compartment}`, err);
             deployData.compartment = undefined;
         }
     }
@@ -166,6 +182,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
             }
             const selectedProject = await ociDialogs.selectDevOpsProjectFromList(provider, projects, true, actionName);
             if (selectedProject) {
+                logUtils.logInfo(`[deploy] Selected project: ${selectedProject} from ${projects.length} projects`);
                 if (projects.length === 1) {
                     // folder(s) would be deployed immediately without any confirmation (compartment & devops project are preselected)
                     const confirmOption = folders.length === 1 ? 'Add Folder' : 'Add Folders';
@@ -173,6 +190,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                     const foldersMsg = folders.length === 1 ? `folder ${folders[0].name}` : `${folders.length} folders`;
                     const choice = await vscode.window.showInformationMessage(`Confirm adding ${foldersMsg} to an existing OCI DevOps project:`, confirmOption, cancelOption);
                     if (choice !== confirmOption) {
+                        logUtils.logInfo('[deploy] Project not confirmed, deploy cancelled.');
                         return false;
                     }
                 }
@@ -181,6 +199,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                 deployData.compartment = { ocid: selectedProject.compartment, name: selectedProject.compartment };
             }
         } else {
+            logUtils.logInfo(`[deploy] UI-selecting compartment`);
             deployData.compartment = await ociDialogs.selectCompartment(provider, actionName);
         }
         if (!deployData.compartment) {
@@ -196,10 +215,12 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                 deployData.okeCluster = undefined;
             }
         } catch (err) {
+            logUtils.logError(`Error getting OKE clusters.`, err);
             deployData.okeCluster = undefined;
         }
     }
     if (!deployData.okeCluster && (!deployOptions || !deployOptions.skipOKESupport ) ) {
+        logUtils.logInfo(`[deploy] Selecting OKE cluster`);
         const cluster = await okeUtils.selectOkeCluster(provider, deployData.compartment.ocid, provider.getRegion().regionId, true, deployData.compartment.name, true);
         if (cluster === undefined) {
             dump();
@@ -208,12 +229,14 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
         if (cluster) {
             deployData.okeCluster = { id: cluster.id, compartmentId: cluster.compartmentId };
             if (!cluster.vcnID) {
+                logUtils.logError(`[deploy] Cannot resolve cluster network configuration.`, cluster);
                 dialogs.showErrorMessage('Cannot resolve cluster network configuration.');
                 dump();
                 return false;
             }
             const subnet = await vcnUtils.selectNetwork(provider, cluster.vcnID);
             if (!subnet) {
+                logUtils.logError(`[deploy] Could not find a network for ${cluster.vcnID}`);
                 dump();
                 return false;
             }
@@ -236,11 +259,13 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
             if (deployOptions?.projectName) {
                 devopsProjectName = deployOptions.projectName;
             } else {
+                logUtils.logInfo(`[deploy] Selecting project name`);
                 devopsProjectName = await selectProjectName(actionName, folders.length === 1 ? removeSpaces(folders[0].name) : undefined);
             }
         }
     }
     if (!devopsProjectName) {
+        logUtils.logError(`[deploy] Could not determine project name`);
         dump();
         return false;
     }
@@ -745,8 +770,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         'devops_tooling_description': knowledgeBaseDescription,
                         'devops_tooling_usage': 'oci-devops-adm-audit'
                     });
+                    
                     knowledgePromise = ociUtils.admWaitForResourceCompletionStatus(provider, `Knowledge base for project ${projectName}`, deployData.knowledgeBaseWorkRequest).
                         then(ocid => {
+                            logUtils.logInfo(`[deploy] ADM knowledgebase created with OCID: ${ocid}`);
                             deployData.knowledgeBaseOCID = ocid;
                             knowledgeBaseOCID = ocid;
                             if (!projectResources.knowledgeBases) {
@@ -756,6 +783,10 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 ocid: ocid,
                                 originalName: `${projectName}Audits` // TODO: better to be resolved from the created KB
                             });
+                        }).catch((err : any )=> {
+                            logUtils.logError(`[deploy] ADM knowledgebase creation failed with error: ${JSON.stringify(err)}`);
+                            knowledgeCompleted = true;
+                            throw err;
                         }).finally(() => knowledgeCompleted = true);
                 } catch (err) {
                     resolve(dialogs.getErrorMessage('Failed to create knowledge base', err));
@@ -3376,7 +3407,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                 const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir, folderData, async () => {
                     if (!deployData.user) {
                         const user = await ociUtils.getUser(provider);
-                        deployData.user = { name: user.description, email: user.email };
+                        // In the test environment, the email for git commits can be specified externally
+                        deployData.user = { name: user.description, email: process.env['TEST_GIT_USER_EMAIL'] || user.email };
                     }
                     return deployData.user;
                 }, /*, storage*/);

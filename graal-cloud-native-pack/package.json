@@ -34,7 +34,9 @@
     },
     "scripts": {
         "prebuild": "npm install",
-        "build": "cross-os build"
+        "build": "cross-os build",
+		"clean": "rm -rf ./out ./dist",
+		"clean-all": "npm run clean"
     },
     "cross-os": {
         "build": {

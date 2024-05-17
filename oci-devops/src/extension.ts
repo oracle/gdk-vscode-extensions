@@ -18,6 +18,12 @@ import * as persistenceUtils from './persistenceUtils';
 export const CLOUD_SUPPORTS: model.CloudSupport[] = [];
 
 export function activate(context: vscode.ExtensionContext) {
+	if (!!process.env['TEST_VSCODE_EXTENSION']) {
+		context.subscriptions.push(
+			// allow to get extension context in test environment. Allows the test to cleanup state storage to re-run tests cleanly.
+			vscode.commands.registerCommand('_oci.devops.getExtensionContext', () => context)
+		);
+	}
 	logUtils.registerExtensionForLogging(context);
 	logUtils.logInfo('[extension] Activating extension');
 

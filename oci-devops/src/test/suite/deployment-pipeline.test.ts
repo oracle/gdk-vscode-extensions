@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { waitForStatup } from './extension.test';
+import { waitForStatup } from './common';
 import * as ociAuthentication from '../../oci/ociAuthentication';
 import * as ociUtils from '../../oci/ociUtils';
 import * as vcnUtils from '../../oci/vcnUtils';

@@ -25,7 +25,7 @@ export async function generate(args: string[]) {
   // Passed to --extensionTestsPath
   const extensionTestsPath = path.join(suitePath, 'genindex');
 
-  const vscodeExecutablePath = await downloadAndUnzipVSCode('1.76.0');
+  const vscodeExecutablePath = await downloadAndUnzipVSCode('1.84.0');
   await runTests({
     vscodeExecutablePath,
     extensionDevelopmentPath,

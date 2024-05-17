@@ -34,9 +34,12 @@ export function logWarning(record: string) {
     LOG_OUTPUT.warn(record);
 }
 
-export function logError(record: string) {
+export function logError(record: string, error?: any) {
     if (!LOG_OUTPUT) { throw new Error("Extension isn't registered for logging."); }
     LOG_OUTPUT.error(record);
+    if (error) {
+        LOG_OUTPUT.error(`  --> Error data: ${JSON.stringify(error)}`);
+    }
 }
 
 export function logAndThrow(record: string, errFnc?: (err: Error) => Error) {

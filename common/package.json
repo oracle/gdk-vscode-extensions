@@ -7,12 +7,11 @@
     "name": "Oracle Labs"
   },
   "scripts": {
-    "compile-tests": "tsc -p . --outDir out",
-    "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "clean": "rm -rf ./out ./dist",
+    "clean-all": "npm run clean",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js",
     "prebuild": "npm install",
+    "compile": "tsc -p . --declaration",
     "build": "tsc"
   },
   "browser": {

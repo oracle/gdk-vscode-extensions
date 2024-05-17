@@ -12,7 +12,7 @@ import type { BuildTool, CopiedProject, Feature, GeneratedProject, SupportedJava
 import { findFiles } from './helpers';
 import { Type } from './types';
 
-function getDescriptor(dir: string): AbstractTestDescriptor {
+export function getDescriptor(dir: string): AbstractTestDescriptor {
   const tsFile = path.join(dir, 'testDescriptor');
   return fs.existsSync(tsFile + '.js') ? new (require(tsFile).TestDescriptor)() : undefined;
 }

@@ -12,3 +12,11 @@ buildagent/nbproject
 
 # Ignore POM processing byproducts
 buildagent/dependency-reduced-pom.xml
+
+buildagent/bin
+buildagent/**/.project
+buildagent/**/.settings
+buildagent/**/.classpath
+buildagent/**/.factorypath
+
+jdtls.ext/**/.settings

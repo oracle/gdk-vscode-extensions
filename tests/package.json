@@ -6,25 +6,36 @@
   "scripts": {
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "tslint -p tsconfig.json",
+    "watch": "tsc --watch",
     "format-lint": "npm run format; npm run lint",
     "compile-extension-tests": "cd ../extension-tests; npm install; npm run compile",
-    "compile-common": "cd ../common; npm install; npm run compile-tests; npm run build",
+    "compile-common": "cd ../common; npm install; npm run compile; npm run build",
     "compile-gcn": "cd ../gcn; npm install; npm run compile; npm run test-compile",
     "compile-micronaut": "cd ../micronaut; npm install;  npm run compile; npm run test-compile",
     "compile-micronautTools": " cd ../micronaut-tools; npm install; npm run compile; npm run test-compile",
     "compile-ociDevops": " cd ../oci-devops; npm install; npm run compile; npm run test-compile",
-    "dependency-compile": "npm run compile-common; npm run compile-gcn; npm run compile-micronaut; npm run compile-micronautTools; npm run compile-ociDevops",
-    "clean": "rm -rf ../**/out",
+    "dependency-compile": "npm run compile-common; npm run compile-extension-tests; npm run compile-gcn; npm run compile-micronaut; npm run compile-micronautTools; npm run compile-ociDevops",
+    "clean": "rm -rf ./out ./dist",
     "clean-projects": "rm -rf ./generated-projects; find . -type d -name projects -exec rm -rf {} \\;",
     "clean-resources": "rm -rf test-resources; rm -rf .vscode-test; rm -rf mochawesome-report; npm run clean-projects",
+    "clean-all": "npm run clean && npm run clean-projects && npm run clean-resources",
     "compile": "tsc -p . --outDir out",
     "generate": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --generate",
-    "pre-test": "npm install; npm run clean; npm run dependency-compile; npm run clean-resources; npm run compile; npm run generate",
-    "jenkins-pre-test": "npm install; npm run clean; npm run dependency-compile; npm run clean-resources; npm run compile; npm run headless generate",
+    "pre-test": "npm install; npm run clean; npm run dependency-compile; npm run clean-resources; npm run compile; npm run prepare-vscode ; npm run generate ; npm run prepare-tests",
+    "jenkins-pre-test": "npm install; npm run clean; npm run dependency-compile; npm run clean-resources; npm run compile; npm run headless prepare-vscode; npm run headless generate ; npm run headless prepare-tests; npm run headless generate",
     "headless": "xvfb-run -a npm run",
     "test": "cross-env DEBUG=true GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --runTest",
     "pre-test-ui": "npm run pre-test",
-    "test-ui": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --runTest-ui"
+    "test-ui": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --runTest-ui",
+    "prepare-vscode": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --prepareVscode",
+    "prepare-tests": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --prepareTest",
+    "vscode-test-env": "cross-os run-test-vscode",
+    "test-install-extension": "code --extensions-dir .vscode-test/extensions --user-data-dir .vscode-test/user-data --install-extension"
+  },
+  "cross-os": {
+    "run-test-vscode": {
+      "linux": "code --extensions-dir .vscode-test/extensions --user-data-dir .vscode-test/user-data"
+    }
   },
   "author": {
     "name": "Oracle Labs"
@@ -34,7 +45,7 @@
     "@types/decompress": "^4.2.4",
     "@types/glob": "^8.0.1",
     "@types/mocha": "^10.0.1",
-    "@types/node": "^14.18.63",
+    "@types/node": "^18.14",
     "@types/node-fetch": "^2.6.9",
     "@types/uuid": "^9.0.5",
     "@types/vscode": "^1.83.1",
@@ -49,8 +60,12 @@
     "encoding": "^0.1.13",
     "eslint": "^8.35.0",
     "eslint-webpack-plugin": "^4.0.0",
+    "follow-redirects": "^1.15.4",
     "fs": "^0.0.1-security",
+    "glob": "^10.3.12",
     "global-agent": "^3.0.0",
+		"handlebars": "^4.7.8",
+		"handlebars-loader": "^1.7.3",
     "isexe": "^3.1.1",
     "jdk-utils": "^0.4.4",
     "mocha": "^10.2.0",
@@ -60,17 +75,20 @@
     "mochawesome-report-generator": "^6.2.0",
     "node-abort-controller": "^3.1.1",
     "node-fetch": "^2.6.9",
+    "nodejs-file-downloader": "^4.12.1",
     "object-keys": "^1.1.1",
     "oci-sdk": "^2.68.1",
     "ts-loader": "^9.4.2",
     "tslint": "^6.1.3",
     "typescript": "^4.9.5",
+    "undici": "^6.14.0",
     "uuid": "^9.0.1",
     "vscode": "^1.1.37",
     "vscode-extension-tester": "^5.10.0",
     "webpack": "^5.74.0",
-    "webpack-cli": "^4.10.0",
-		"nodejs-file-downloader": "^4.12.1",
-    "follow-redirects": "^1.15.4"
+    "webpack-cli": "^4.10.0"
+  },
+  "dependencies": {
+    "semver": "^7.6.0"
   }
 }

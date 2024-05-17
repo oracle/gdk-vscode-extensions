@@ -28,7 +28,7 @@ export async function runTest() {
 		const testWorkspace = path.resolve(__dirname, '../../../fixtures/base-oci-template');
 
 		// Install NBLS extension
-		const vscodeExecutablePath = await downloadAndUnzipVSCode('1.76.0');
+		const vscodeExecutablePath = await downloadAndUnzipVSCode('1.84.0');
 		console.log(vscodeExecutablePath);
 		const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
 
@@ -53,7 +53,10 @@ export async function runTest() {
 			vscodeExecutablePath,
 			extensionDevelopmentPath,
 			extensionTestsPath: extensionTestsPath,
-			launchArgs: [testWorkspace]
+			launchArgs: [testWorkspace],
+			extensionTestsEnv: {
+				"TEST_VSCODE_EXTENSION" : "true"
+			}
 		});
 	} catch (err) {
 		console.error('Failed to run tests', err);

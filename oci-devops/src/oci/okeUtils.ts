@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import * as common from 'oci-common';
 import * as dialogs from '../../../common/lib/dialogs';
+import * as logUtils from '../../../common/lib/logUtils';
 import * as ociUtils from './ociUtils';
 import * as ociDialogs from './ociDialogs';
 import * as ociFeatures from './ociFeatures';
@@ -29,6 +30,7 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
                     compartmentName = '<unknown>';
                 }
             }
+            logUtils.logInfo(`[oci] Listing clusters in compartment ${compartmentID}`);
             ociUtils.listClusters(authenticationDetailsProvider, compartmentID).then(clusters => {
                 const choices: dialogs.QuickPickObject[] = [];
                 for (const cluster of clusters) {
@@ -39,11 +41,14 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
                 }
                 resolve(choices);
             }).catch(err => {
+                logUtils.logError(`[oci] Could not list OKE clusters from compartment ${compartmentID}`);
                 dialogs.showErrorMessage('Failed to read available OKE clusters', err);
                 resolve(undefined);
             });
         });
     });
+
+    logUtils.logInfo(`[oci] Listed existing clusters: ${JSON.stringify(existingContentChoices)}`);
 
     if (allowSkip && !existingContentChoices?.length) {
         const createOption = 'Create New or Choose Existing OKE Cluster';
@@ -52,8 +57,10 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
         const msg = 'No OKE cluster in compartment.';
         const sel = await vscode.window.showWarningMessage(msg, ...options);
         if (!sel) {
+            logUtils.logInfo(`[oci] Clusters skipped.`);
             return undefined;
         } else if (sel === cancelOption) {
+            logUtils.logInfo(`[oci] Deployment cancelled because of no clusters.`);
             return null;
         }
     }
@@ -61,6 +68,7 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
     // NOTE: If there's exactly one OKE cluster in the selected compartment, we'll select it implicitly for the user
     //       This makes it easier to use in preconfigured (demo) environments, but might not be the best approach for real usage
     if (autoSelect && existingContentChoices && existingContentChoices.length === 1) {
+        logUtils.logInfo(`[oci] Selected cluster ${existingContentChoices[0].object.id}`);
         return existingContentChoices[0].object;
     }
 
@@ -91,6 +99,7 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
     }
     choices.push(switchCompartmentChoice);
 
+    logUtils.logInfo(`[oci] Selecting OKE cluster: ${JSON.stringify(choices)}`);
     const choice = await vscode.window.showQuickPick(choices, {
         title: `${ACTION_NAME} in ${compartmentName}`,
         placeHolder: `Select target OKE cluster${existingContentChoices?.length ? '' : ' (no clusters available in this compartment)'}`

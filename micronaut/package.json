@@ -83,10 +83,14 @@
 		"compile": "webpack --mode development",
 		"info": "webpack --display-modules",
 		"watch": "webpack --mode development --watch",
+		"test-compile-dependencies": "npm run compile",
+		"test-clean": "npm run clean",
 		"test-compile": "tsc -p . --declaration --outDir out",
 		"prebuild": "npm install",
 		"build": "cross-os build",
-		"lint": "eslint src --ext ts"
+		"lint": "eslint src --ext ts",
+		"clean": "rm -rf ./out ./dist",
+		"clean-all": "npm run clean"
 	},
 	"cross-os": {
 		"build": {

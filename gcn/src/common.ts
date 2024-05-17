@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode';
 import * as dialogs from '../../common/lib/dialogs';
-import { logInfo } from '../../common/lib/logUtils';
+import { logError, logInfo } from '../../common/lib/logUtils';
 import { JavaVMType } from '../../common/lib/types';
 
 require('../lib/gcn.ui.api');
@@ -97,6 +97,7 @@ export async function initialize(): Promise<any> {
 }
 
 export async function writeProjectContents(options: CreateOptions, fileHandler:FileHandler) {
+   await initialize();
    function j(multi?: string[]) {
     if (!multi) {
         return "";
@@ -131,6 +132,7 @@ export async function writeProjectContents(options: CreateOptions, fileHandler:F
     await Promise.all(fileHandler.fileHandlerPromises);
 
    } catch (err : any) {
+    logError(JSON.stringify(err));
     dialogs.showErrorMessage(`Project generation failed: ${err.getMessage().$as('string')}`);
     throw err;
    }

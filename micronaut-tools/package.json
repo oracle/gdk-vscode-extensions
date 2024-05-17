@@ -964,8 +964,12 @@
 	"scripts": {
 		"vscode:prepublish": "npm run build-server && webpack --mode production",
 		"compile": "webpack --mode development",
+		"clean": "rm -rf ./out ./dist",
+		"clean-all": "npm run clean",
 		"info": "webpack --display-modules",
 		"watch": "webpack --mode development --watch",
+		"test-clean": "npm run clean",
+		"test-compile-dependencies": "cd ../extension-tests && npm run compile",
 		"test-compile": "tsc -p . --declaration --outDir out",
 		"prebuild": "npm install",
 		"build": "npm run build-server && cross-os build",

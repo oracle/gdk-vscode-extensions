@@ -23,9 +23,20 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
+			"env": {
+				// Use one or more glob patterns to select tests
+				"TEST_GLOB_PATTERN" : "**/*.test.js",
+				// deploy in a separate testing compartment
+				"TEST_DEPLOY_COMPARTMENT_OCID": "${config:gcn.test.compartmentOCID}",
+				"GLOBAL_AGENT_NO_PROXY": "${env:no_proxy}",
+				"GLOBAL_AGENT_HTTP_PROXY": "${env:http_proxy}",
+				// ALWAYS make sure the test project name differs from other users in the OCI tenancy.
+				"TEST_DEPLOY_PROJECT_NAME": "test-deploy-project-${env:USER}"
+			},
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}",
 				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index",
+				// replace with the project that you want to use for tests
 				"${workspaceFolder}/fixtures/base-oci-template"
 			],
 			"outFiles": [
@@ -41,13 +52,19 @@
 		{
 			"name": "Extension UI Tests",
 			"type": "node",
-			//"runtimeExecutable": "C:/Program Files/nodejs/node.exe", // WINDOWS: default node
 			"request": "launch",
+			"runtimeExecutable": "${config:gcn.test.nodePath}",
 			"program": "${workspaceFolder}/node_modules/vscode-extension-tester/out/cli.js",
 			"args": [
 				"run-tests",
 				"./out/**/*.ui-test.js"
 			],
+			"env": {
+				"GLOBAL_AGENT_NO_PROXY": "${env:no_proxy}",
+				"GLOBAL_AGENT_HTTP_PROXY": "${env:http_proxy}",
+				// deploy in a separate testing compartment
+				"TEST_DEPLOY_COMPARTMENT_OCID": "${config:gcn.test.compartmentOCID}",
+			},
 			"console": "integratedTerminal",
 			"internalConsoleOptions": "neverOpen",
 			"preLaunchTask": "tasks: tests-ui-prerequisites"

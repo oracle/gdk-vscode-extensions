@@ -37,18 +37,18 @@ export async function getMicronautCreateOptions(buildTool: BuildTool, java: Supp
  * Creates Micronaut project with given specification
  * @param buildTool is a tool you want the project to be initialized with
  * @param java is a java runtime you want the project to be initialized with
- * @param path a path where the project shoudl be created
+ * @param p a path where the project shoudl be created
  * @returns path to the created project
  */
 export async function createMicronautProject(
   buildTool: BuildTool,
   java: SupportedJava = SupportedJava.AnyJava,
-  path: string[] | string,
+  p: string[] | string,
 ): Promise<string> {
   try {
     await micronaut.creatorInit();
     const options = await getMicronautCreateOptions(buildTool, java);
-    const projFolder: string = resolveProjFolder(path, getName(buildTool, ['micronaut']));
+    const projFolder: string = resolveProjFolder(p, getName(buildTool, ['micronaut']));
 
     if (!fs.existsSync(projFolder)) {
       fs.mkdirSync(projFolder, { recursive: true });
@@ -56,6 +56,18 @@ export async function createMicronautProject(
     options.target = projFolder;
 
     await micronaut.__writeProject(options, false);
+    let files = fs.readdirSync(options.target);
+    if (files && files.length == 1 && fs.statSync(path.join(options.target, files[0])).isDirectory()) {
+      // move all contents of the single directory one level up, to 'target'.
+      const subdir = path.join(options.target, files[0]);
+      for (let f of fs.readdirSync(subdir)) {
+        let org = path.join(subdir, f);
+        let dest = path.join(options.target, f);
+        fs.renameSync(org, dest);
+      }
+      // remove the obsolete dir
+      fs.rmdirSync(subdir);
+    }
     return options.target;
   } catch (e: any) {
     assert.fail('Project options were not resolved properly: ' + e.message);

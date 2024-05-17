@@ -246,6 +246,10 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
       }
     }
 
+    // erase the deployment state
+    let extContext : vscode.ExtensionContext = await vscode.commands.executeCommand('_oci.devops.getExtensionContext');
+    extContext.workspaceState.update('devops_tooling_deployData', undefined);
+
     if (!projectId) {
       const compartment = await ociUtils.getCompartment(provider, COMPARTMENT_OCID);
 
@@ -269,6 +273,8 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
         projectCompartment = project.compartmentId;
       }
     }
+    assert.ok(projectId, 'Deployed project must be listed');
+    assert.ok(projectCompartment, 'Deployed project has no compartment');
     let dirs: any = await vscode.commands.executeCommand('nbls.server.directories');
     assert.ok(dirs, 'Incompatible version of NBLS is present');
     admCacheDir = path.join(dirs['cache'], 'oracle-cloud-adm');
@@ -482,9 +488,40 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
       let gav = `${item.groupId}:${item.artifactId}:${item.versionSpec}`;
       artifacts.set(gav, 1);
     }
-    assert.strictEqual(3, artifacts.size);
+    let expectedCount = 4;
+    switch (f.name) {
+      case 'oci-adm-g':
+        expectedCount = 5;
+        break;
+      case 'oci-adm-g-simple':
+        expectedCount = 5;
+        break;
+      case 'oci-adm-m':
+        expectedCount = 4;
+        break;
+    }
+    assert.strictEqual(artifacts.size, expectedCount);
   });
 
+  /**
+   * Diags:
+   * 1/ netty-codec-http through micronaut-oraclecloud-atp,
+   * 2/ opentelemetry-sdk through micronaut-tracing-opentelemetry
+   * 3/ opentelemetry-sdk through micronaut-tracing-opentelemetry-http
+   * 4/ netty-codec-http through micronaut-tracing-opentelemetry-http
+   * 5/ logback-core through logback-classic
+   * 6/ logback-classic through logback-classic
+   * 7/ netty-codec-http through micronaut-http-client,
+   * 
+   * Artifacts:
+   * - netty-codec-http
+   * - opentelemetry-sdk
+   * - logback-core
+   * - logbacj-classic
+   */
+  // oci-adm-g-simple: 4 / 6
+  // oci-adm-g: 4 / 7
+  // oci-adm-m: 4 / 4
   test('Check reported vulnerability lines', async () => {
     let f = vscode.workspace.workspaceFolders?.[0];
     assert.ok(f, 'Project workspace folder exists');
@@ -493,7 +530,19 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
 
     let diags: any[] = await vscode.commands.executeCommand('nbls.get.diagnostics', buildscript.toString());
 
-    assert.strictEqual(3, diags.length);
+    let expectedCount = 4;
+
+    switch (f.name) {
+      case 'oci-adm-g':
+        expectedCount = 8;
+        break;
+      case 'oci-adm-g-simple':
+        expectedCount = 7;
+        break;
+      case 'oci-adm-m':
+        expectedCount = 4;
+        break;
+    }
 
     for (let d of diags) {
       let groupAndArtifact;
@@ -506,8 +555,8 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
         groupAndArtifact = res[1];
         assert.ok(groupAndArtifact, 'Group and artifact ID must be present in the vulnerability report');
         let l = d.range.start.line;
+        
         assert.ok(lines.length >= d.range.start.line, 'Vulnerability line must not exceed file line count');
-
         if (projectType === 'gradle') {
           let selected = lines[l];
           assert.ok(selected.indexOf(groupAndArtifact) >= 0, 'Reported dependency must occur on the reported line');
@@ -521,6 +570,7 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
         assert.fail('Unexpected change in vulnerability diag message');
       }
     }
+    assert.strictEqual(diags.length, expectedCount);
   });
 
   // removes line #39 in buildscript, that should remove 2 errors from the output, as the
@@ -550,6 +600,7 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
       removeGradleDependency('micronaut-http-client');
       removeGradleDependency('micronaut-http-server-netty');
       removeGradleDependency('micronaut-oraclecloud-atp');
+      removeGradleDependency('logback-classic');
       fs.writeFileSync(buildGradle, lines.join('\n'));
     } else {
       let pomXml = path.resolve(auditedSubprojectUri.fsPath, 'pom.xml');
@@ -571,6 +622,7 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
       removeMavenDependency('micronaut-http-client');
       removeMavenDependency('micronaut-http-server-netty');
       removeMavenDependency('micronaut-oraclecloud-atp');
+      removeMavenDependency('logback-classic');
 
       fs.writeFileSync(pomXml, lines.join('\n'));
     }
@@ -586,7 +638,7 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
       }
       retryCount--;
     }
-    assert.ok(retryCount, 'Diagnostics fo5r missing dependency must go away');
+    assert.ok(retryCount, 'Diagnostics for missing dependency must go away');
     let filtered = diags.filter((d) => (d.message as string).indexOf('io.netty:netty-') >= 0);
     assert.strictEqual(0, filtered.length, 'All netty vulnerability diagnostics should be gone');
   });
@@ -608,7 +660,12 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
         suppressErrors: true,
       },
     );
-    assert.strictEqual(3, auditData.vulnerableCount, 'Audit report was not recomputed, should still show old data');
+    let expectedCount = 4;
+    if (/-adm-g/.exec(f.name)) {
+      // different dependency structure in gradle
+      expectedCount++;
+    }
+    assert.strictEqual(auditData.vulnerableCount, expectedCount, 'Audit report was not recomputed, should still show old data');
   });
 
   test('Update vulnerability report', async () => {
