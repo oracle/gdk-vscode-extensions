@@ -19,13 +19,13 @@ export async function runTest() {
 	try {
 		// The folder containing the Extension Manifest package.json
 		// Passed to `--extensionDevelopmentPath`
-		const extensionDevelopmentPath = path.resolve(__dirname, '../../../');
+		const extensionDevelopmentPath = process.env['TEST_EXTENSION_DIR'] || path.resolve(__dirname, '../../');
 
 		// The path to test runner
 		// Passed to --extensionTestsPath
-		const extensionTestsPath = path.resolve(__dirname, '../../../out/test/suite/index');
+		const extensionTestsPath = path.resolve(extensionDevelopmentPath, 'out', 'test', 'suite', 'index');
 
-		const testWorkspace = path.resolve(__dirname, '../../../fixtures/base-oci-template');
+		const testWorkspace = path.resolve(extensionDevelopmentPath, 'fixtures', 'base-oci-template');
 
 		// Install NBLS extension
 		const vscodeExecutablePath = await downloadAndUnzipVSCode('1.84.0');
