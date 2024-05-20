@@ -47,7 +47,12 @@ export async function runTest() {
 				stdio: 'inherit'
 			});
 		}
-
+		let restArgs = process.argv.slice(process.argv.indexOf('--runTest') + 1);
+		let pattern = '';
+		if (restArgs.length) {
+			// support just one glob pattern
+			pattern = restArgs[0];
+		}
 		// Download VS Code, unzip it and run the integration test
 		await runTests({
 			vscodeExecutablePath,
@@ -55,6 +60,7 @@ export async function runTest() {
 			extensionTestsPath: extensionTestsPath,
 			launchArgs: [testWorkspace],
 			extensionTestsEnv: {
+				"TEST_GLOB_PATTERN": pattern,
 				"TEST_VSCODE_EXTENSION" : "true"
 			}
 		});
