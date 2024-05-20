@@ -9,9 +9,20 @@ import * as path from 'path';
 import * as Mocha from 'mocha';
 import * as glob from 'glob';
 import { setGlobalDispatcher, EnvHttpProxyAgent } from 'undici';
+import * as vscode from 'vscode';
 
 export async function run(): Promise<void> {
 	let opts = {};
+
+	console.log('Pre-Activating oci-devops extension...');
+	const ext = vscode.extensions.getExtension("oracle-labs-graalvm.oci-devops");
+	if (ext) {
+		await ext.activate();
+		let commandList = await vscode.commands.getCommands();
+		if (!commandList.includes('oci.devops.deployToCloud_GlobalSync')) {
+			console.log('OCI extension did not activate, tests are likely to fail');
+		}
+	}
 
 	if (process.env['GLOBAL_AGENT_HTTP_PROXY']) {
 		opts = {
@@ -20,6 +31,7 @@ export async function run(): Promise<void> {
 			noProxy: process.env['GLOBAL_AGENT_NO_PROXY']
 		};
 	}
+
 	const dispatcher = new EnvHttpProxyAgent(opts);
 	setGlobalDispatcher(dispatcher);
 
