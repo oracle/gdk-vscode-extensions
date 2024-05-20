@@ -151,7 +151,12 @@ export function locallyModified(target: vscode.Uri): boolean | undefined {
         dialogs.showErrorMessage(`Cannot find Git repository for ${target}`);
         return undefined;
     }
-    return repository.state.indexChanges.length > 0 || repository.state.mergeChanges.length > 0 || repository.state.workingTreeChanges.length > 0;
+    let check = repository.state.indexChanges.length > 0 || repository.state.mergeChanges.length > 0 || repository.state.workingTreeChanges.length > 0;
+    if (check) {
+        const unstaged = repository.state.workingTreeChanges.map((r : any) => r?.uri?.toString()).join('\n\t');
+        logUtils.logInfo(`[git] Detected working tree changes: ${unstaged}`);
+    }
+    return check;
 }
 
 export async function pushLocalBranch(target: vscode.Uri): Promise<boolean | undefined> {
