@@ -54,10 +54,6 @@ vscodeCommon: {
 vscodeBuildGate : ${vscodeCommon} {
   targets : [ gate ],
   run : [
-    [ "ls", "-l", "/cm/shared/apps" ],
-    [ "ls", "-l", "/cm/shared/apps/nodejs"],
-    [ "ls", "-l", "/cm/shared/apps/nodejs/20.13.1"],
-    [ "ls", "-l", "/cm/shared/apps/nodejs/20.13.1/bin"],
     ["npm", "run", "build"]
   ]
 }
