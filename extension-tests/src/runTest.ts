@@ -29,7 +29,6 @@ export async function runTest() {
 
 		// Install NBLS extension
 		const vscodeExecutablePath = await downloadAndUnzipVSCode('1.84.0');
-		console.log(vscodeExecutablePath);
 		const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
 
 		let extensionList : string[] = [
@@ -40,7 +39,7 @@ export async function runTest() {
 		if ( process.env["MOCHA_EXTENSION_LIST"]) {
 			extensionList = extensionList.concat( process.env["MOCHA_EXTENSION_LIST"].split(",") );
 		}
-
+		console.log(`Installling extensions ${extensionList} into vscode at ${vscodeExecutablePath}}`);
 		for (let extensionId of extensionList) {
 			cp.spawnSync(cli, [...args, '--install-extension', extensionId], {
 				encoding: 'utf-8',
@@ -48,7 +47,7 @@ export async function runTest() {
 			});
 		}
 		let restArgs = process.argv.slice(process.argv.indexOf('--runTest') + 1);
-		let pattern = '';
+		let pattern = process.env['TEST_GLOB_PATTERN'];
 		if (restArgs.length) {
 			// support just one glob pattern
 			pattern = restArgs[0];
