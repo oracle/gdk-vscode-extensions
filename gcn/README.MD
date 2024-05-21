@@ -9,7 +9,7 @@
 
 This extension provides a wizard to easily create a new GDK project.
 
-You are recommended to install the [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack), which contains this extension and others, as the easiest way to get started.
+You are recommended to install the [Graal Development Kit for Micronaut Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack), which contains this extension and others, as the easiest way to get started.
 
 ## <a name='gcn-projects-generation-wizard'></a>Create New Project Wizard
 ​
@@ -37,7 +37,7 @@ The wizard can generate different types of GDK and serverless applications. If b
 You now have a new GDK application, complete with example code showing you how to start using [GDK](https://graal.cloud/gdk/).
 
 ## <a name='gcn-extension-pack'></a>_Graal Development Kit for Micronaut_ Extension Pack
-The _Graal Development Kit for Micronaut_ Launcher extension is part of the [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which is the recommended way to get started. The extension pack also provides support for:
+The _Graal Development Kit for Micronaut_ Launcher extension is part of the [Graal Development Kit for Micronaut Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which is the recommended way to get started. The extension pack also provides support for:
 1. Oracle Cloud Infrastructure DevOps integration to provision build pipelines for GDK or Micronaut projects. GraalVM Native Image builds are provisioned automatically.
 2. Micronaut development support including the Micronaut project wizard, REST Explorer, code completion, database drivers for Oracle DB and MySQL databases, and much more.
 

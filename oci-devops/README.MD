@@ -14,7 +14,7 @@ OCI DevOps Tools extension for Visual Studio Code provides features and tools to
 * Deploys the built project containers to an Oracle Kubernetes Engine (OKE)
 * Performs audits for vulnerabilities in Java project's third-party libraries
 
-For the best experience, install the [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which contains this extension and others.
+For the best experience, install the [Graal Development Kit for Micronaut Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which contains this extension and others.
 
 ## Supported Java Projects
 * [Micronaut](https://micronaut.io/).
@@ -91,9 +91,9 @@ To deploy a built container artifact, invoke the Run Deployment Pipeline action 
 ![Build and Deployment Pipelines](images/oke_test_app.png)
 
 ### Use an OCI Vault for a Deployed Database Application
-The [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) provides an easy and secure way to run Micronaut Database applications in the Oracle Kubernetes Environment (OKE) using OCI Vault.
+The [Graal Development Kit for Micronaut Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) provides an easy and secure way to run Micronaut Database applications in the Oracle Kubernetes Environment (OKE) using OCI Vault.
 
-1. Install the [_Graal Development Kit for Micronaut_ Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack).
+1. Install the [Graal Development Kit for Micronaut Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack).
 2. GDK or Micronaut application is already deployed to OCI DevOps service using this extension
 3. Right-click on a database name in the Databases panel and choose **Add to OCI Vault**. Follow the steps.
 
