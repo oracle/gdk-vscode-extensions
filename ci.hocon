@@ -20,7 +20,7 @@ linux_jdk17 : {
   
 linux : ${common} {
   packages: {
-    nodejs : ">=14.16.0"
+    nodejs : ">=18.0.0"
     maven: ">=3.6.3"
   }
 }
@@ -54,6 +54,10 @@ vscodeCommon: {
 vscodeBuildGate : ${vscodeCommon} {
   targets : [ gate ],
   run : [
+    [ "ls", "-l", "/cm/shared/apps" ],
+    [ "ls", "-l", "/cm/shared/apps/nodejs"],
+    [ "ls", "-l", "/cm/shared/apps/nodejs/20.13.1"],
+    [ "ls", "-l", "/cm/shared/apps/nodejs/20.13.1/bin"],
     ["npm", "run", "build"]
   ]
 }
