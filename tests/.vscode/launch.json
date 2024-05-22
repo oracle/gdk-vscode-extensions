@@ -95,6 +95,27 @@
 			"internalConsoleOptions": "neverOpen",
 			"preLaunchTask": "tasks: tests-prerequisites"
 		},
+		{
+			"name": "Test generator",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"env": {
+				"generator": "testDescriptor.js"
+			},
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}/../graal-cloud-native-pack",
+				"--extensionTestsPath=${workspaceFolder}/out/test/suite/genindex.js",
+			],
+			"outFiles": [
+				"${workspaceFolder}/out/**/*.js",
+				"${workspaceFolder}/dist/**/*.js"
+			],
+            "resolveSourceMapLocations": [
+                "${workspaceFolder}/**",
+                "!**/node_modules/**"
+            ],
+		},
 
 		//------------------------------------------------------------------------------------------------------------------------
 
