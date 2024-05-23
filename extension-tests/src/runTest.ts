@@ -7,9 +7,43 @@
 
 import * as path from 'path';
 import * as cp from 'child_process';
+import * as fs from 'fs';
+import * as semver from 'semver';
+import { globSync } from 'glob';
+import Downloader from 'nodejs-file-downloader';
+import { downloadJSON } from '../../common/lib/connections';
+import { prepareVSCode, prepareVscodeAndExtensions } from './vscodeHelper';
 
 import { runTests, downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron';
 import { AbortController } from 'node-abort-controller';
+
+const basePath = process.env['TEST_EXTENSION_DIR'] || process.cwd();
+const downloadPath = path.resolve(basePath, 'downloadedExtensions');
+
+/**
+ * Prepares test data for test execution. Generates or copies sample projects to their appropriate locations,
+ * so test suites can be run by the vscode instance. Sets up vscode instance in .vscode-test to contain the required
+ * exetensions.
+ * 
+ * @param args testsuite glob patterns
+ */
+export async function prepareVscodeInstallation() : Promise<string> {
+let vscodeExecutablePath;
+if (!process.env['TEST_SKIP_EXTENSIONS']) {
+	let extensionList : string[] = [
+		'oracle-labs-graalvm.graalvm',
+	];
+	if ( process.env["MOCHA_EXTENSION_LIST"]) {
+		extensionList.push(...extensionList.concat( process.env["MOCHA_EXTENSION_LIST"].split(",") ));
+	} else if (fs.existsSync(path.resolve(basePath, '.test-extension-list'))) {
+		extensionList.push(...fs.readFileSync(path.resolve(basePath, '.test-extension-list')).toString().split('\n').map(s => s.trim()).filter(s => s.length && !s.startsWith('#')));
+	}
+	vscodeExecutablePath = await prepareVscodeAndExtensions(extensionList);
+} else {
+	vscodeExecutablePath = await prepareVSCode();
+}
+return vscodeExecutablePath;
+}
 
 export async function runTest() {
 	// BuildBot Abort controller fix
@@ -19,7 +53,7 @@ export async function runTest() {
 	try {
 		// The folder containing the Extension Manifest package.json
 		// Passed to `--extensionDevelopmentPath`
-		const extensionDevelopmentPath = process.env['TEST_EXTENSION_DIR'] || path.resolve(__dirname, '../../');
+		const extensionDevelopmentPath = basePath;
 
 		// The path to test runner
 		// Passed to --extensionTestsPath
@@ -28,27 +62,11 @@ export async function runTest() {
 		const testWorkspace = path.resolve(extensionDevelopmentPath, 'fixtures', 'base-oci-template');
 
 		// Install NBLS extension
-		const vscodeExecutablePath = await downloadAndUnzipVSCode('1.84.0');
-		console.log(vscodeExecutablePath);
+		const vscodeExecutablePath = await prepareVSCode();
 		const [cli, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
 
-		let extensionList : string[] = [
-			'oracle-labs-graalvm.graalvm',
-		];
-
-		// download additional extensions
-		if ( process.env["MOCHA_EXTENSION_LIST"]) {
-			extensionList = extensionList.concat( process.env["MOCHA_EXTENSION_LIST"].split(",") );
-		}
-
-		for (let extensionId of extensionList) {
-			cp.spawnSync(cli, [...args, '--install-extension', extensionId], {
-				encoding: 'utf-8',
-				stdio: 'inherit'
-			});
-		}
 		let restArgs = process.argv.slice(process.argv.indexOf('--runTest') + 1);
-		let pattern = '';
+		let pattern = process.env['TEST_GLOB_PATTERN'];
 		if (restArgs.length) {
 			// support just one glob pattern
 			pattern = restArgs[0];

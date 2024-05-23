@@ -25,7 +25,7 @@
 			"runtimeExecutable": "${execPath}",
 			"env": {
 				// Use one or more glob patterns to select tests
-				"TEST_GLOB_PATTERN" : "**/*.test.js",
+				"TEST_GLOB_PATTERN" : "**/build-pipeline.test.js",
 				// deploy in a separate testing compartment
 				"TEST_DEPLOY_COMPARTMENT_OCID": "${config:gcn.test.compartmentOCID}",
 				"GLOBAL_AGENT_NO_PROXY": "${env:no_proxy}",
@@ -68,6 +68,35 @@
 			"console": "integratedTerminal",
 			"internalConsoleOptions": "neverOpen",
 			"preLaunchTask": "tasks: tests-ui-prerequisites"
+		},
+		{
+			"name": "OCI test vscode prepare",
+			"type": "node",
+			"request": "launch",
+			"program": "${workspaceFolder}/node_modules/gcn-extension-tests/bin/main.js",
+			"runtimeArgs": [
+				"--require", "global-agent/bootstrap"
+			],
+			"args": [
+				"--prepareVscode"
+			],
+			"env": {
+				"GLOBAL_AGENT_NO_PROXY": "${env:no_proxy}",
+				"GLOBAL_AGENT_HTTP_PROXY": "${env:http_proxy}",
+				// deploy in a separate testing compartment
+				"TEST_DEPLOY_COMPARTMENT_OCID": "${config:gcn.test.compartmentOCID}",
+				"TEST_EXTENSION_DOWNLOADS": "${config:gcn.test.extensionDownloads}",
+				"TEST_JENKINS_BUILDERS": "${gcn.test.jenkinsBuilders}"
+			},
+			"sourceMaps": true,
+			"resolveSourceMapLocations": [
+				"${workspaceFolder}/**",
+				"${workspaceFolder}/../extension-tests/out/**",
+				"!**/node_modules/**"
+			],
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen",
+			//"preLaunchTask": "tasks: tests-ui-prerequisites"
 		}
 	]
 }

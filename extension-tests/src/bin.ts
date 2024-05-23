@@ -6,7 +6,10 @@
  */
 
 function main() {
-    if (process.argv.indexOf('--runTest') != -1) {
+    if (process.argv.indexOf('--prepareVscode') != -1) {
+        const test = require('./runTest');
+        test.prepareVscodeInstallation();
+    } else if (process.argv.indexOf('--runTest') != -1) {
         const test = require('./runTest');
         test.runTest();
     } else if (process.argv.indexOf('--runTest-ui') != -1) {
