@@ -5,7 +5,6 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
-import * as jdkUtils from 'jdk-utils';
 import * as assert from 'assert';
 import * as path from 'path';
 import { BuildTool, SupportedJava } from './types';
@@ -13,15 +12,10 @@ import * as micronaut from '../../../micronaut/out/projectCreate';
 import { CreateOptions } from '../../../micronaut/out/projectCreate';
 import { getName, resolveProjFolder } from './projectHelper';
 import * as fs from 'fs';
+import { selectJavaRuntime } from './helpers';
 
 export async function getMicronautCreateOptions(buildTool: BuildTool, java: SupportedJava): Promise<CreateOptions> {
-  const javaRuntimes = await jdkUtils.findRuntimes({ checkJavac: true });
-  const selectedJavaRuntime = javaRuntimes.find((x) => x.homedir.includes(java));
-  if (selectedJavaRuntime == null) {
-    throw new Error(
-      `${java} was not found, only these GraalVMs are present:` + javaRuntimes.map((x) => x.homedir).join(';\n'),
-    );
-  }
+  const selectedJavaRuntime = await selectJavaRuntime(java);
 
   const projectName = 'demo';
   return {

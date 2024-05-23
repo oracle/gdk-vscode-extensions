@@ -9,7 +9,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
 import { v4 as uuidv4 } from 'uuid';
-import type { Arg, CopiedProject } from './types';
+import { SupportedJava, type Arg, type CopiedProject } from './types';
+import * as jdkUtils from 'jdk-utils';
 
 /**
  * Return list of names of sub directories in parent folder
@@ -103,4 +104,40 @@ export function generateUID(): string {
   const fullUUID = uuidv4();
   const shortUUID = fullUUID.substr(0, 8);
   return shortUUID;
+}
+
+/**
+ * 
+ * @param java supported java
+ * @returns selected java runtime
+ */
+export async function selectJavaRuntime (java: SupportedJava): Promise<jdkUtils.IJavaRuntime> {
+  let javaRuntimes = await jdkUtils.findRuntimes({ checkJavac: true, withVersion: true });
+  
+  let major : number | undefined;
+  switch (java) {
+    case SupportedJava.AnyJava: 
+      major = 11; 
+      break;
+    case SupportedJava.JDK_17: 
+    case SupportedJava.AnyJava17: 
+      major = 17; 
+      break;
+    case SupportedJava.Unsupported:
+    default:
+      major = undefined;
+      break;
+  }
+
+  const selectedJavaRuntime = javaRuntimes.find((x) => 
+      major == undefined || (x.version && x.version.major >= major
+  ));
+
+  if (selectedJavaRuntime === null || selectedJavaRuntime === undefined) {
+    throw new Error(
+      `${java} was not found, only these GraalVMs are present:` + javaRuntimes.map((x) => x.homedir).join(';\n'),
+    );
+  }
+
+  return selectedJavaRuntime;
 }
