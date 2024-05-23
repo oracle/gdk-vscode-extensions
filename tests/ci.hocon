@@ -78,7 +78,7 @@ vscodeTestsDaily : ${vscodeTestsCommon} {
   targets : [ daily ],
   environment: {
     EXTESTER_EXTENSION_LIST: "asf.apache-netbeans-java,vscjava.vscode-java-pack,oracle-labs-graalvm.gcn,oracle-labs-graalvm.graalvm,oracle-labs-graalvm.oci-devops",
-    TEST_GLOB_PATTER: "**/extension.test.js",
+    TEST_GLOB_PATTERN: "**/extension.test.js",
     MOCHA_EXTENSION_LIST: "asf.apache-netbeans-java,redhat.java,vscjava.vscode-java-pack,vscjava.vscode-java-debug,ms-kubernetes-tools.vscode-kubernetes-tools"
   },
   run: [
