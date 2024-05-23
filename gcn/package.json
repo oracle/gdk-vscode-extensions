@@ -64,6 +64,7 @@
 		"test-clean": "npm run clean",
 		"test-compile-dependencies": "cd ../extension-tests && npm run compile",
 		"test-compile": "tsc -p . --declaration --outDir out",
+		"pre-test": "cross-env TEST_EXTENSION_DIR=$INIT_CWD GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./node_modules/gcn-extension-tests/bin/main.js --prepareVscode",
 		"test": "cross-env TEST_EXTENSION_DIR=$INIT_CWD GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./node_modules/gcn-extension-tests/bin/main.js --runTest",
 		"test-ui": "cross-env TEST_EXTENSION_DIR=$INIT_CWD GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./node_modules/gcn-extension-tests/bin/main.js --runTest-ui",
 		"prebuild": "npm install",
