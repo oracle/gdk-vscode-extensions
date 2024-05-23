@@ -13,7 +13,7 @@ import { merge } from 'mochawesome-merge';
 import { runTests } from '@vscode/test-electron';
 import { AbortController } from 'node-abort-controller';
 import { gatherTestFolders } from './Common/testHelper';
-import { prepareAPITests } from './Common/projectHelper';
+import { prepareAPITests, TestRun } from './Common/projectHelper';
 import { TestFolders, TestFolder, Extension } from './Common/types';
 import * as fs from 'fs';
 import { prepareExtensions, prepareVSCode } from './Common/vscodeHelper';
@@ -43,7 +43,7 @@ export async function prepareVscodeInstallation(installExtensions  : boolean) : 
   return vscodeExecutablePath;
 }
 
-export async function prepareTests(args : string[]) : Promise<[ folders: TestFolders, vscodePath: string]> {
+export async function prepareTests(args : string[]) : Promise<[ folders: TestFolders, vscodePath: string, testRun : TestRun]> {
   fs.rmSync(path.resolve(__dirname, '..', 'mochawesome-report'), { recursive: true, force: true });
   fs.rmSync(path.resolve(__dirname, '..', 'out', 'test-projects'), { recursive: true, force: true });
 
@@ -51,10 +51,10 @@ export async function prepareTests(args : string[]) : Promise<[ folders: TestFol
   const bigTestPath = path.resolve(__dirname, '..', 'out', 'test', 'suite', 'Gates', 'API');
   const testCases = gatherTestFolders(bigTestPath, ...(args.length > 0 ? args : ['**test.js']));
   // copy out test projects
-  prepareAPITests(testCases);
+  let testRun = prepareAPITests(testCases);
   
   const vscodeExecutablePath = await prepareVscodeInstallation(false);
-  return [ testCases, vscodeExecutablePath ];
+  return [ testCases, vscodeExecutablePath, testRun ];
 }
 
 /**
@@ -67,8 +67,7 @@ export async function runTest(args: string[]) : Promise<boolean> {
   // @ts-ignore
   global.AbortController = AbortController;
 
-  const [ testCases, vscodeExecutablePath ] = await prepareTests(args);
-  const testRun = prepareAPITests(testCases);
+  const [ testCases, vscodeExecutablePath, testRun ] = await prepareTests(args);
   let statusAll: boolean = true;
 
   for (const directory in testRun) {
