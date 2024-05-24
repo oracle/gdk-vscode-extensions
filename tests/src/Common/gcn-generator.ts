@@ -7,29 +7,19 @@
 
 import * as Common from '../../../gcn/out/common';
 import { NodeFileHandler } from '../../../gcn/out/gcnProjectCreate';
-import * as jdkUtils from 'jdk-utils';
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { BuildTool, CreateOptions, Feature, SupportedJava } from './types';
 import { getName, resolveProjFolder } from './projectHelper';
+import { selectJavaRuntime } from './helpers';
 
 export async function getGcnCreateOptions(
   ourBuildTool: BuildTool,
   java: SupportedJava,
   services: string[],
 ): Promise<CreateOptions> {
-  let javaRuntimes;
-
-  javaRuntimes = await jdkUtils.findRuntimes({ checkJavac: true });
-
-  const selectedJavaRuntime = javaRuntimes.find((x) => x.homedir.includes(java));
-
-  if (selectedJavaRuntime === null || selectedJavaRuntime === undefined) {
-    throw new Error(
-      `${java} was not found, only these GraalVMs are present:` + javaRuntimes.map((x) => x.homedir).join(';\n'),
-    );
-  }
+  const selectedJavaRuntime = await selectJavaRuntime(java);
 
   return {
     homeDir: selectedJavaRuntime.homedir,
