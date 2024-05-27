@@ -14,22 +14,22 @@ OCI DevOps Tools extension for Visual Studio Code provides features and tools to
 * Deploys the built project containers to an Oracle Kubernetes Engine (OKE)
 * Performs audits for vulnerabilities in Java project's third-party libraries
 
-For the best experience it is recommended to install the [Graal Cloud Native Extensions Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which contains this extension and others.
+For the best experience, install the [Graal Development Kit for Micronaut Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) which contains this extension and others.
 
 ## Supported Java Projects
-* Micronaut
-* Graal Cloud Native
-* Helidon SE 
-* SpringBoot (GraalVM Native Support dependency must be enabled in project)
+* [Micronaut](https://micronaut.io/).
+* [Graal Development Kit for Micronaut](https://graal.cloud/gdk/) (GDK).
+* [Helidon SE](https://helidon.io/).
+* [SpringBoot](https://spring.io/projects/spring-boot) (the GraalVM Native Support dependency must be enabled in the project).
 
 ## Requirements
-* [Extension Pack for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack)
-* [Kubernetes](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools)
-* [GraalVM](https://www.graalvm.org/) 22.x, 23.0 Java 17, or higher
-* Git version control system
-* A Docker-API compatible container runtime such as Rancher Desktop or Docker
+* [Extension Pack for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack).
+* [Kubernetes](https://marketplace.visualstudio.com/items?itemName=ms-kubernetes-tools.vscode-kubernetes-tools).
+* [GraalVM](https://www.graalvm.org/) for JDK 17, or higher.
+* [Git](https://git-scm.com/) version control system.
+* A Docker-API compatible container runtime such as Rancher Desktop or Docker.
 ​
-> Note: The extension depends on the [Apache NetBeans Language Server](https://marketplace.visualstudio.com/items?itemName=ASF.apache-netbeans-java), [GraalVM Extension Pack for Java](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graalvm-pack). VS Code installs these required extensions for you.
+> Note: The extension depends on the [Apache NetBeans Language Server](https://marketplace.visualstudio.com/items?itemName=ASF.apache-netbeans-java). VS Code installs this required extension for you.
 
 <details>
 <summary>Proxy Setup</summary>
@@ -91,17 +91,17 @@ To deploy a built container artifact, invoke the Run Deployment Pipeline action 
 ![Build and Deployment Pipelines](images/oke_test_app.png)
 
 ### Use an OCI Vault for a Deployed Database Application
-The [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) provides an easy and secure way to run Micronaut Database applications in the Oracle Kubernetes Environment (OKE) using OCI Vault.
+The [Graal Development Kit for Micronaut Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack) provides an easy and secure way to run Micronaut Database applications in the Oracle Kubernetes Environment (OKE) using OCI Vault.
 
-1. Install the [Graal Cloud Native Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack).
-2. GCN or Micronaut application is already deployed to OCI DevOps service using this extension
+1. Install the [Graal Development Kit for Micronaut Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack).
+2. GDK or Micronaut application is already deployed to OCI DevOps service using this extension
 3. Right-click on a database name in the Databases panel and choose **Add to OCI Vault**. Follow the steps.
 
    ![Add to OCI Vault](images/add_to_oci_vault.png)
 
 All details, including prerequisites, can be found in the [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) extension documentation. See the section *Use OCI Vault to Store Database Connection Properties*.
 
-This action creates new a project artifact named <_project_name_>__oke_configmap_, which contains the `datasources.default.*` properties stored in your OCI Vault. It also extends both predefined Deployment Pipelines to use this Kubernetes manifest in order to run a database application in OKE in a secure and seamless way.
+This action creates new a project artifact named &lt;_project_name_&gt;__oke_configmap_, which contains the `datasources.default.*` properties stored in your OCI Vault. It also extends both predefined Deployment Pipelines to use this Kubernetes manifest in order to run a database application in OKE in a secure and seamless way.
 
 </details>
 
@@ -163,7 +163,7 @@ Whenever a DevOps resource has a dedicated view in the Oracle Cloud Console, it 
 
 ## Documentation
 
-A detailed documentation on the OCI DevOps Tools extension is available [here](http://graal.cloud/gcn/vscode-tools/oci-devops-tools/).
+A detailed documentation on the OCI DevOps Tools extension is available [here](http://graal.cloud/gdk/vscode-tools/oci-devops-tools/).
 
 ## Settings
 
@@ -190,3 +190,6 @@ Project members with write access to the repository will determine and assign an
 ## Release Notes
 
 See the [CHANGELOG](CHANGELOG.md)
+
+---
+Micronaut&reg; is a registered trademark of Object Computing, Inc. Use is for referential purposes and does not imply any endorsement or affiliation with any third-party product. Unauthorized use is strictly prohibited.
