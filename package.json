@@ -23,7 +23,6 @@
 		"clean:oci-devops": "cd oci-devops && npm run clean-all",
 		"clean:graal-cloud-native-pack": "cd graal-cloud-native-pack && npm run clean-all",
 		"clean:common": "cd common && npm run clean-all",
-		"clean:common": "cd common && npm run clean-all",
 		"clean:gcn-extension-tests": "cd extension-tests && npm run clean-all",
 		"clean:tests": "cd tests && npm run clean-all",
 		
