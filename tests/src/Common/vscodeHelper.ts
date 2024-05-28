@@ -22,6 +22,7 @@ export async function prepareVSCode(): Promise<string> {
   cp.spawnSync(cli, [...args, '--list-extensions'], {
     encoding: 'utf-8',
     stdio: 'inherit',
+    shell: true
   });
 
 
@@ -96,6 +97,7 @@ export async function prepareExtensions(vscodeExecutablePath: string, extensionL
     cp.spawnSync(cli, [...args, '--install-extension', extensionId], {
       encoding: 'utf-8',
       stdio: 'inherit',
+      shell: true
     });
   }
 }
