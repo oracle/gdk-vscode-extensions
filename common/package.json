@@ -1,5 +1,5 @@
 {
-  "name": "gcn-common",
+  "name": "gdk-common",
   "version": "0.0.1",
   "displayName": "VSCode Common Utils",
   "description": "Common Utils module of Oracle Labs Extensions for VSCode.",
