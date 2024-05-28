@@ -43,7 +43,7 @@ export async function getGcnCreateOptions(
 }
 
 /**
- * Creates GCN project with given specification
+ * Creates GDK project with given specification
  * @param buildTool is a tool you want the project to be initialized with
  * @param services are services you want the project to be initialized with
  * @param path a path where the project shoudl be created

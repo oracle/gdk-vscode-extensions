@@ -31,7 +31,7 @@ export async function prepareVscodeInstallation(installExtensions  : boolean) : 
     let extensionList: string[] = [
       'redhat.java',
       Extension.GVM,
-      Extension.GCN,
+      Extension.GDK,
       Extension.NBLS,
       Extension.OCI,
       'ms-kubernetes-tools.vscode-kubernetes-tools',

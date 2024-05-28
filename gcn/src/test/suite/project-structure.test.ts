@@ -118,18 +118,18 @@ suite('Project structure Test Suite', function() {
 
 	vscode.window.showInformationMessage('Start all tests.');
 
-        // Requirements for testing project structure - GCN extension present, create project action present 
+        // Requirements for testing project structure - GDK extension present, create project action present 
         test("Setup environment", async () => {
             // Make sure writeProjectContents is ready before creating any project
             await Common.initialize();
 
             let extension = vscode.extensions.getExtension('oracle-labs-graalvm.gcn');
-            assert(extension, "No GCN extension found!");
+            assert(extension, "No GDK extension found!");
             await extension.activate();
 
             // check if the command for project creation is present
             let commands : string[] = await vscode.commands.getCommands(true);
-            assert(commands.indexOf("gcn.createGcnProject") != -1, "Command to create gcn project not found");
+            assert(commands.indexOf("gdk.createGdkProject") != -1, "Command to create GDK project not found");
         });
 
         // configuration for creating a project

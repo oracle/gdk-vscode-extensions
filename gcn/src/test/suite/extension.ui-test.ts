@@ -69,9 +69,9 @@ describe('Extension UI tests', function () {
         let input: InputBox = await InputBox.create();
 
         // check if the command exists
-        await input.setText('> Graal Cloud Native: Create');
+        await input.setText('> Graal Dev Kit: Create');
         const picks = await input.getQuickPicks();
-        assert.ok(picks.length > 0, "Command 'Create GCN Project' not found");
+        assert.ok(picks.length > 0, "Command 'Create GDK Project' not found");
 
         // select the command
         await input.selectQuickPick(0);

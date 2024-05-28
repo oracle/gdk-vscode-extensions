@@ -8,10 +8,10 @@
 import * as vscode from 'vscode';
 import * as logUtils from './logUtils';
 
-export type ProjectType = "GCN" | "Micronaut";
+export type ProjectType = "GDK" | "Micronaut";
 
 /**
- * Handles the creation of a new GCN project.
+ * Handles the creation of a new GDK project.
  *
  * @param {vscode.Uri} uri - The URI of the newly created project.
  * @param {ProjectType} projectType - Project type name.
@@ -46,7 +46,7 @@ export async function checkGCNExtensions(context: vscode.ExtensionContext) {
         && !vscode.extensions.getExtension('oracle-labs-graalvm.graal-cloud-native-pack')) {
 		const INSTALL_OPTION = 'Install';
 		const DO_NOT_ASK_OPTION = 'Do not Ask Again';
-		const option = await vscode.window.showInformationMessage(`Do you want to install the 'Graal Cloud Native Extensions Pack' recommended for work with Micronaut / Graal Cloud Native projects?`, INSTALL_OPTION, DO_NOT_ASK_OPTION);
+		const option = await vscode.window.showInformationMessage(`Do you want to install the 'Graal Development Kit for Micronaut Extension Pack' recommended for work with Micronaut / Graal Development Kit for Micronaut projects?`, INSTALL_OPTION, DO_NOT_ASK_OPTION);
 		if (option === INSTALL_OPTION) {
 			await vscode.commands.executeCommand('workbench.extensions.installExtension', 'oracle-labs-graalvm.graal-cloud-native-pack');
 		} else if (option === DO_NOT_ASK_OPTION) {

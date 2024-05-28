@@ -10,7 +10,7 @@ To install **gcn-extension-tests**, use the following command:
 npm install gcn-extension-tests
 ```
 
-This will download and install the package from the npm registry. At the time of writing of this document, the package has been installed for the `GCN` extension.
+This will download and install the package from the npm registry. At the time of writing of this document, the package has been installed for the `GDK` extension.
 
 ## Dependencies
 **gcn-extension-tests** relies on the following dependencies:

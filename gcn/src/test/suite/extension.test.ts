@@ -40,20 +40,20 @@ suite('Extension Test Suite', function () {
                 // await java.activate();
 
                 let extension = vscode.extensions.getExtension('oracle-labs-graalvm.gcn');
-                assert(extension, "No GCN extension found!");
+                assert(extension, "No GDK extension found!");
                 await extension.activate();
         });
-        // Check if GCN commands have been loaded
-        test("GCN commands loaded", async () => {
+        // Check if GDK commands have been loaded
+        test("GDK commands loaded", async () => {
                 let commands = await vscode.commands.getCommands(true);
 
                 let containsGcnCommands = false;
                 for (const command of commands) {
-                        if (command.indexOf("gcn.") === 0)
+                        if (command.indexOf("gdk.") === 0)
                                 containsGcnCommands = true;
                 }
 
-                assert.ok(containsGcnCommands, "No GCN command has been loaded");
+                assert.ok(containsGcnCommands, "No GDK command has been loaded");
 
         });
 
@@ -77,7 +77,7 @@ suite('Extension Test Suite', function () {
                 features: undefined,
         };
 
-        test("Create GCN project - Project options", async () => {
+        test("Create GDK project - Project options", async () => {
                 // init gcnAPI
                 await Common.initialize();
 
@@ -102,7 +102,7 @@ suite('Extension Test Suite', function () {
         });
 
         // create OCI project
-        test("Create GCN project - Create project", async () => {
+        test("Create GDK project - Create project", async () => {
 
                 let projFolder = path.resolve(__dirname, '../../../out/test/temp-proj');
 

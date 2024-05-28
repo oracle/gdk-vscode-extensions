@@ -15,7 +15,7 @@ require('../lib/gcn.ui.api');
 /**
  * Title for the whole Wizard
  */
- const title = 'Create New GCN Project';
+ const title = 'Create New GDK Project';
 
  /**
   * Number of fixed steps. Update whenever steps in selectCreateOptions change

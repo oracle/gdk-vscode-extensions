@@ -111,7 +111,7 @@ suite(`Oci Combined pipelines test: ${wf![0].name}`, function () {
 
             projectType = projectFolder.projectType;
             assert.ok(
-              projectType === 'GCN' || projectType === 'Micronaut',
+              projectType === 'GDK' || projectType === 'Micronaut',
               'Specified project should be deployable to OCI',
             );
           }
@@ -130,7 +130,7 @@ suite(`Oci Combined pipelines test: ${wf![0].name}`, function () {
           const directoryName = project.uri.fsPath;
           assert.ok(directoryName);
           let controllerPath: string;
-          if (projectType === 'GCN') {
+          if (projectType === 'GDK') {
             controllerPath = path.join('oci', 'src', 'main', 'java', 'com', 'example');
           } else if (projectType === 'Micronaut') {
             controllerPath = path.join('src', 'main', 'java', 'com', 'example');

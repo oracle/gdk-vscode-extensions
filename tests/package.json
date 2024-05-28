@@ -1,7 +1,7 @@
 {
   "name": "tests",
   "version": "1.0.0",
-  "description": "Test environment for GCN extensions",
+  "description": "Test environment for GDK extensions",
   "main": "./out/index.js",
   "scripts": {
     "format": "prettier --write \"src/**/*.ts\"",

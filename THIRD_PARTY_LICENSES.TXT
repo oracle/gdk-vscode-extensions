@@ -2,8 +2,8 @@
 ===============================================================================
 
 The following sections contain licensing information for libraries that we have
-included with the Graal Cloud Native Visual Studio Code source. We are thankful 
-to all individuals that have created these.
+included with the Graal Development Kit for Micronaut Visual Studio Code source.
+We are thankful to all individuals that have created these.
 
 The following software may be included in this product:
 ================================================================================

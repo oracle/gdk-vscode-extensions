@@ -1,7 +1,7 @@
 {
     "name": "graal-cloud-native-pack",
-    "displayName": "Graal Cloud Native Extensions Pack",
-    "description": "Create, Build & Deploy Graal Cloud Native Applications.",
+    "displayName": "Graal Development Kit for Micronaut Extension Pack",
+    "description": "Create, Build & Deploy Graal Development Kit for Micronaut Applications.",
     "version": "0.0.6",
     "preview": true,
     "license": "UPL-1.0",

@@ -89,7 +89,7 @@ suite('Extension Test Suite', function() {
 			assert.throws(()=>logError("Extension host did not load any workspace folders!") );
 		} else {
 			const projectFolder = await projectUtils.getProjectFolder(wf[0]);
-			assert.strictEqual(projectFolder.projectType, "GCN", "Specified project should be deployable to OCI");
+			assert.strictEqual(projectFolder.projectType, "GDK", "Specified project should be deployable to OCI");
 		}
 
 	});

@@ -38,7 +38,7 @@ export enum Feature {
 export enum Extension {
   NBLS = 'asf.apache-netbeans-java',
   OCI = 'oracle-labs-graalvm.oci-devops',
-  GCN = 'oracle-labs-graalvm.gcn',
+  GDK = 'oracle-labs-graalvm.gcn',
   GVM = 'oracle-labs-graalvm.graalvm',
   MN = 'oracle-labs-graalvm.micronaut',
   MNT = 'oracle-labs-graalvm.micronaut-tools',
@@ -48,7 +48,7 @@ export type ExtensionName = (typeof Extension)[keyof typeof Extension];
 export type ExtensionMap<T> = { [Key in ExtensionName]?: T };
 
 export enum Type {
-  GCN,
+  GDK,
   MICRONAUT,
 }
 

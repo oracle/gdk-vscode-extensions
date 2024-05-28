@@ -110,7 +110,7 @@ async function openItemInExplorer(tree: DefaultTreeSection, ...itemPath: string[
   const labels = await Promise.all(items.map((item) => item.getLabel()));
 
   if (labels.includes('oci')) {
-    // for GCN
+    // for GDK
     children = await tree.openItem('oci', ...itemPath);
   } else if (labels.includes('src')) {
     // for Micronaut

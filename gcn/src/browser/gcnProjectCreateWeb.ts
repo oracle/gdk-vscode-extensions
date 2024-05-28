@@ -60,7 +60,7 @@ export async function createProjectBase(context: vscode.ExtensionContext, option
     
     await writeProjectContents(options,new WebFileHandler(targetLocationUri));
 
-    handleNewGCNProject(context, targetLocationUri, "GCN");
+    handleNewGCNProject(context, targetLocationUri, "GDK");
 }
 
 async function selectLocation(options: CreateOptions) {

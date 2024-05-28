@@ -1,7 +1,7 @@
 {
 	"name": "gcn",
-	"displayName": "Graal Cloud Native Launcher",
-	"description": "Oracle Graal Cloud Native Project Wizard",
+	"displayName": "Graal Development Kit for Micronaut Launcher",
+	"description": "Oracle Graal Development Kit for Micronaut Project Creation Wizard",
 	"version": "0.9.9",
 	"preview": true,
 	"license": "UPL-1.0",
@@ -27,8 +27,8 @@
 	],
 	"keywords": [
 		"java",
-		"gcn",
-		"graal",
+		"gdk",
+		"graal development kit",
 		"native image"
 	],
 	"activationEvents": [
@@ -39,9 +39,9 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "gcn.createGcnProject",
+				"command": "gdk.createGdkProject",
 				"title": "Create New Project",
-				"category": "Graal Cloud Native"
+				"category": "Graal Dev Kit"
 			}
 		]
 	},

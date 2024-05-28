@@ -59,7 +59,7 @@ function getName(buildTool: BuildTool, services: string[]) {
 }
 
 /**
- * Creates GCN project with given specification
+ * Creates GDK project with given specification
  * @param buildTool is a tool you want the project to be initialized with
  * @param services are services you want the project to be initialized with
  * @param java is a java runtime you want the project to be initialized with

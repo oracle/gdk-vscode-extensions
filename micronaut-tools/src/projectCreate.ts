@@ -12,8 +12,8 @@ const EXTENSION_ID_MICRONAUT = 'oracle-labs-graalvm.micronaut';
 const EXTENSION_NAME_MICRONAUT = 'Launch for Micronaut® framework';
 const COMMAND_PROJECT_CREATE_MICRONAUT = 'extension.micronaut.createProject';
 const EXTENSION_ID_GCN = 'oracle-labs-graalvm.gcn';
-const EXTENSION_NAME_GCN = 'Graal Cloud Native Tools';
-const COMMAND_PROJECT_CREATE_GCN = 'gcn.createGcnProject';
+const EXTENSION_NAME_GCN = 'Graal Development Kit for Micronaut Launcher';
+const COMMAND_PROJECT_CREATE_GCN = 'gdk.createGdkProject';
 
 export function createExternalMicronaut() {
     createOrInstall(EXTENSION_ID_MICRONAUT, EXTENSION_NAME_MICRONAUT, COMMAND_PROJECT_CREATE_MICRONAUT);

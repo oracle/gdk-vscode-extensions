@@ -306,9 +306,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                 logUtils.logInfo(`[deploy] Folder ${folder.uri.fsPath} identified as project of type ${projectFolder.projectType} with build system ${projectFolder.buildSystem}`);
                 projectFolders.push(projectFolder);
                 totalSteps += 3; // code repository, cloud services config, populating code repository
-                if (projectFolder.projectType === 'GCN') {
+                if (projectFolder.projectType === 'GDK') {
                     if (!projectFolder.subprojects.find(sub => sub.name === 'oci')) {
-                        resolve(`GCN project not configured for OCI: ${folder.name}. Creating OCI DevOps Project is not supported.`);
+                        resolve(`GDK project not configured for OCI: ${folder.name}. Creating OCI DevOps Project is not supported.`);
                         return;
                     }
                     totalSteps += 4; // Jar build spec and pipeline, NI build spec and pipeline
@@ -1367,8 +1367,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                     }
                 }
 
-                if (folder.projectType === 'GCN') {
-                    logUtils.logInfo(`[deploy] Recognized GCN project in ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                if (folder.projectType === 'GDK') {
+                    logUtils.logInfo(`[deploy] Recognized GDK project in ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                     for (const subName of projectUtils.getCloudSpecificSubProjectNames(folder)) {
                         if (subName !== 'lib' && subName !== 'app') {
                             if (!folderData.subs) {
@@ -1379,7 +1379,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 subData = folderData.subs[subName] = {};
                             }
 
-                            logUtils.logInfo(`[deploy] Setting up GCN ${subName} project resources for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            logUtils.logInfo(`[deploy] Setting up GDK ${subName} project resources for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
 
                             const project_native_executable_artifact_location = pathForTargetPlatform(await projectUtils.getProjectNativeExecutableArtifactLocation(folder, subName));
                             if (!project_native_executable_artifact_location) {
