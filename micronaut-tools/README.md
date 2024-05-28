@@ -73,7 +73,7 @@ Run the **Go to Symbol in Workspace** command using Ctrl+T (Cmd+T on macOS) and 
 ![Navigate Micronaut Source Code](images/micronaut-navigation.png)
 
 ### View Defined Beans and Endpoints
-You can display all beans and request mappings defined by a Micronaut or GCN application in the **BEANS** and **ENDPOINTS** views of the Micronaut Tools activity bar.
+You can display all beans and request mappings defined by a Micronaut or GDK application in the **BEANS** and **ENDPOINTS** views of the Micronaut Tools activity bar.
 
 If Monitoring and Management capabilities are enabled when the extension launches an application (or connects to an existing application), beans and endpoints available in the application are indicated with a green icon. Disabled beans are indicated with an orange icon, and their tooltips provide additional information. See [Monitor and Manage Your Micronaut Application](#monitor-and-manage-micronaut-application) for details.
 
@@ -113,7 +113,7 @@ The extension provides full editor support for the Micronaut Expression Language
 
 ### Configure and Control Your Micronaut Application
 
-You can visually configure and control your Micronaut or GCN application using the **APPLICATIONS** view of the Micronaut Tools activity. The view displays all Micronaut and GCN applications in the current workspace:
+You can visually configure and control your Micronaut or GDK application using the **APPLICATIONS** view of the Micronaut Tools activity. The view displays all Micronaut and GDK applications in the current workspace:
 
 ![APPLICATIONS view](images/applications-view.png)
 
@@ -129,8 +129,8 @@ Represents the logical application, and provides the following actions based on 
 * **Disconnect from Application**: to disconnect from an application to which you connected.
 * **Open Application in Browser**: to open your application in a web browser using the `address:port` defined by the **Address** node.
 
-#### _Subproject_ Node (GCN applications only)
-Represents a subproject/module of a modular GCN application. All the settings you configure in this view are stored and used in context of this subproject. It provides the following action:
+#### _Subproject_ Node (GDK applications only)
+Represents a subproject/module of a modular GDK application. All the settings you configure in this view are stored and used in context of this subproject. It provides the following action:
 * **Change Subproject**: to switch the subproject context.
 
 #### _Address_ Node
@@ -457,7 +457,7 @@ See your docker tools documentation.
 * **Micronaut Tools: Create Kubernetes Service Resource**: create a Kubernetes service resource for your application.
 * **Micronaut Tools: Deploy to Kubernetes**: deploy to a running Kubernetes service. The service must be configured using the Kubernetes tools (`kubectl`) on the machine from which deployment is initiated.
 * **Micronaut Tools: Run in Kubernetes**:  run already deployed application in Kubernetes service. This command automatically forwards the port of the container, so the application can be accessed from the browser on your local machine.
-* **Micronaut Tools: Edit Target Application Address**: To customize the base URL of the running Micronaut or GCN application; the default is _http://localhost:8080_.
+* **Micronaut Tools: Edit Target Application Address**: To customize the base URL of the running Micronaut or GDK application; the default is _http://localhost:8080_.
 * **Micronaut Tools: Search/Filter Beans**: Search or filter the items in the Beans view.
 * **Micronaut Tools: Search/Filter Endpoints**:  Search or filter the items in the Endpoints view.
 

@@ -381,10 +381,10 @@ async function createJVMDeploymentPipeline(deploy: DeploymentResources): Promise
         return new Promise(async (resolve) => {
             const codeRepoPrefix = (deploy.pipeline.freeformTags?.devops_tooling_codeRepoPrefix || '');
             const displayNamePrefix = codeRepoPrefix + 'Build ';
-            const displayName = deploy.pipeline.displayName?.startsWith(displayNamePrefix) ? deploy.pipeline.displayName.slice(displayNamePrefix.length) : `${deploy.projectInfo.projectFolder.projectType === 'GCN' ? ' OCI ' : ' '}Container`;
+            const displayName = deploy.pipeline.displayName?.startsWith(displayNamePrefix) ? deploy.pipeline.displayName.slice(displayNamePrefix.length) : `${deploy.projectInfo.projectFolder.projectType === 'GDK' ? ' OCI ' : ' '}Container`;
             const deployPipelineName = `Deploy ${displayName} to OKE`;
             const descriptionPrefix = 'Build pipeline to build ';
-            const descriptionPart = deploy.pipeline.description?.startsWith(descriptionPrefix) ? deploy.pipeline.description.slice(descriptionPrefix.length) : `container for ${deploy.projectInfo.projectFolder.projectType === 'GCN' ? 'OCI & ' : ''}devops project ${deploy.projectInfo.project.name} & repository ${deploy.repository.name}`;
+            const descriptionPart = deploy.pipeline.description?.startsWith(descriptionPrefix) ? deploy.pipeline.description.slice(descriptionPrefix.length) : `container for ${deploy.projectInfo.projectFolder.projectType === 'GDK' ? 'OCI & ' : ''}devops project ${deploy.projectInfo.project.name} & repository ${deploy.repository.name}`;
             const deployPipelineDescription = `Deployment pipeline to deploy ${descriptionPart} to OKE`;
             const tags: { [key:string]: string } = {
                 'devops_tooling_codeRepoID': deploy.repository.id,

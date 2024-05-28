@@ -106,7 +106,7 @@ async function testAll(
 /**
  * Main suite test function
  */
-suite('GCN Extension Test Suite', () => {
+suite('GDK Extension Test Suite', () => {
   const multiplicator = convertStringToInt(process.env.TIMEOUT_MULTIPLICATOR, 1);
   const timeInterval = 12000000;
   const testTimeout = timeInterval * multiplicator;

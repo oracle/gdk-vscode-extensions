@@ -62,12 +62,12 @@ When switching on/off VPN, the following has to be set or adjusted. **Failure to
 You **must configure custom SSH options** in `.ssh/config` and host key in `.ssh/known_hosts`. It is sufficient to run `Create OCI project` from the `oci-devops` extension, it will set up the SSH on your machine appropriately.
 
 Since the compartment ID and paths cannot be stored in GIT for everyone, the `launch.json` launch configuration references your vscode's settings. You **must set up** these vscode user settings (in your user or workspace `settings.json`):
-- `gcn.test.compartmentOCID` - OCID of your compartment
-- `gcn.test.compartmentName` - name of your compartment, including parent compartments, as a path. i.e. `myorg/My_PersonalCompartment`.
-- `gcn.test.nodePath` - path to the `node` executable on your machine
+- `gdk.test.compartmentOCID` - OCID of your compartment
+- `gdk.test.compartmentName` - name of your compartment, including parent compartments, as a path. i.e. `myorg/My_PersonalCompartment`.
+- `gdk.test.nodePath` - path to the `node` executable on your machine
 
 You **must** customize your vscode settings:
-- `gcn.test.jenkinsBuilders`: set to semicolon (`;`) separated list of Jenkins JSON artifact descriptors.
+- `gdk.test.jenkinsBuilders`: set to semicolon (`;`) separated list of Jenkins JSON artifact descriptors.
 
 You may define the environment variables in vsode's Preferences > settings for `Integrated Terminal`, e.g. `terminal.integrated.env.linux` or `terminal.integrated.env.windows`, depending on your system. You may also create scripts that set up the environment for you.
 
@@ -99,13 +99,13 @@ refer to vscode configuration variables, that should be set in either *User Sett
 
 | Setting name | Mandatory | Description |
 | ------------ | --------- | ----------- |
-| `gcn.test.compartmentOCID` |  Yes | OCID of your compartment. Tests will publish / delete resources there |
-| `gcn.test.compartmentName` |  Yes | `name of your compartment, including parent compartments, as a path. i.e. `myorg/My_PersonalCompartment`. |
-| `gcn.test.nodePath` | Yes | path to the `node` executable on your machine |
-| `gcn.test.ssh.userName` | - | Custom OCI SSH login username, in form {email}@{tenancy} |
-| `gcn.test.extensionDownloads` | - | Glob paths to VSIX files or folders containing VSIX files. In vscode settings (shared between projects), use absolute paths. |
-| `gcn.test.jenkinsBuilders` | - | URL of Jenkins build JSON resources, separated by semicolon (`;`) |
-| `gcn.test.clean.regexp` | Yes | regexp to select projects to clean by the OCI cleaner |
+| `gdk.test.compartmentOCID` |  Yes | OCID of your compartment. Tests will publish / delete resources there |
+| `gdk.test.compartmentName` |  Yes | `name of your compartment, including parent compartments, as a path. i.e. `myorg/My_PersonalCompartment`. |
+| `gdk.test.nodePath` | Yes | path to the `node` executable on your machine |
+| `gdk.test.ssh.userName` | - | Custom OCI SSH login username, in form {email}@{tenancy} |
+| `gdk.test.extensionDownloads` | - | Glob paths to VSIX files or folders containing VSIX files. In vscode settings (shared between projects), use absolute paths. |
+| `gdk.test.jenkinsBuilders` | - | URL of Jenkins build JSON resources, separated by semicolon (`;`) |
+| `gdk.test.clean.regexp` | Yes | regexp to select projects to clean by the OCI cleaner |
 
 # Prepare for testing
 Make sure that all necessary environment variables, especially proxies are defined in the terminal.  **Important**: Check if you can access public NPM registry, or you need to set up `npm` to work with e.g. a corporate NPM registry. You need access to NPM registry for the following setup steps, as well as access to **all** extension builders. Check your network and NPM configuration.
@@ -193,10 +193,10 @@ There are preconfigured launch targets:
 - `Run API tests`
 - `Run UI tests`
 
-You can set location(s) of your locally build extensions to `gcn.test.extensionDownloads` vscode setting, for example `{/path/to/vscode-extensions}/*/`, will include all `vsix` files built in this project. The launch configurations will pass `gcn.test.extensionDownloads` and `gcn.test.jenkinsBuilders` in appropriate env variables. Note that you may override `gcn.test.extensionDownloads` in your **workspace settings**: Save your workspace (one level above 
+You can set location(s) of your locally build extensions to `gdk.test.extensionDownloads` vscode setting, for example `{/path/to/vscode-extensions}/*/`, will include all `vsix` files built in this project. The launch configurations will pass `gdk.test.extensionDownloads` and `gdk.test.jenkinsBuilders` in appropriate env variables. Note that you may override `gdk.test.extensionDownloads` in your **workspace settings**: Save your workspace (one level above 
 the root of the git clone, for texample) to create workspace file, then add
 ```
-  "gcn.test.extensionDownloads": "/path/to/vscode-extensions/*/"
+  "gdk.test.extensionDownloads": "/path/to/vscode-extensions/*/"
 ```
 to its `settings` section. Note that you *need* to use absolute paths, as relative ones are resolved relatively to the launch.json's workspace folder. Absolute paths will resolve 
 
@@ -218,7 +218,7 @@ Note that changes may be made to those projects; if you want to start tests from
 Cleaner section.
 
 # Test suites in individual extensions.
-The GCN and oci-devops projects have their own test suites, defined from their `launch.json` configurations. They run in usual `extensionHost` mode. It is **recommended** to use one's own *compartment* to run tests, so that one can reliably clean up after failed test cases. **All tests should** honour environment variable `TEST_DEPLOY_COMPARTMENT_OCID`. You need to set up this env variable to the OCID of your personal compartment so the tests do not interfere with CI and other users. 
+The GDK and oci-devops projects have their own test suites, defined from their `launch.json` configurations. They run in usual `extensionHost` mode. It is **recommended** to use one's own *compartment* to run tests, so that one can reliably clean up after failed test cases. **All tests should** honour environment variable `TEST_DEPLOY_COMPARTMENT_OCID`. You need to set up this env variable to the OCID of your personal compartment so the tests do not interfere with CI and other users. 
 
 You **must install** the required extensions into your development vscode instance. You **must disable** the extension that you want to debug/test in the development vscode's workspace settings (or not install it at all).
 
@@ -229,7 +229,7 @@ Setup necessary environment variables. From the extensions' directory, run
 - `npm run compile` - compile the extension itself
 - `npm run test` - execute tests.
 
-Check your vscode settings for `gcn.test.compartmentOCID` setting, the predefined launch configuration use it to set up the environment variable.
+Check your vscode settings for `gdk.test.compartmentOCID` setting, the predefined launch configuration use it to set up the environment variable.
 
 You can select 'Extension Tests' from the launch menu. Note that in this mode, the debugged test host **shares the extensions and settings** with the development installation. You need to install **all required extensions** into the development vscode. The recommended setup is to **disable** the extensions needed for our extensions but not needed for the development **in workspace only**, which affects the development environment. You must install extensions **from your local build**, or the CI in order to get newest fixes and features into the development environment.
 The tested instance will use a different workspace, and will default to enabled state for these extensions.

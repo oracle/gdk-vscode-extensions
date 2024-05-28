@@ -442,10 +442,10 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
             return new Promise(async (resolve) => {
                 const codeRepoPrefix = (buildPipeline.freeformTags?.devops_tooling_codeRepoPrefix || '');
                 const displayNamePrefix = codeRepoPrefix + 'Build ';
-                const displayName = buildPipeline.displayName?.startsWith(displayNamePrefix) ? buildPipeline.displayName.slice(displayNamePrefix.length) : `${projectType === 'GCN' ? ' OCI ' : ' '}Container`;
+                const displayName = buildPipeline.displayName?.startsWith(displayNamePrefix) ? buildPipeline.displayName.slice(displayNamePrefix.length) : `${projectType === 'GDK' ? ' OCI ' : ' '}Container`;
                 const deployPipelineName = `Deploy ${displayName} to OKE`;
                 const descriptionPrefix = 'Build pipeline to build ';
-                const descriptionPart = buildPipeline.description?.startsWith(descriptionPrefix) ? buildPipeline.description.slice(descriptionPrefix.length) : `container for ${projectType === 'GCN' ? 'OCI & ' : ''}devops project ${projectName} & repository ${repositoryName}`;
+                const descriptionPart = buildPipeline.description?.startsWith(descriptionPrefix) ? buildPipeline.description.slice(descriptionPrefix.length) : `container for ${projectType === 'GDK' ? 'OCI & ' : ''}devops project ${projectName} & repository ${repositoryName}`;
                 const deployPipelineDescription = `Deployment pipeline to deploy ${descriptionPart} to OKE`;
                 const tags: { [key:string]: string } = {
                     'devops_tooling_codeRepoID': oci.getCodeRepository(),

@@ -15,8 +15,7 @@ You are recommended to install the [Graal Development Kit for Micronaut Extensio
 ​
 The wizard can generate different types of GDK and serverless applications. If building a GDK application, you can select the GDK features you want your project to include.
 
-<!-- TODO: This requires updating in the future -->
-1. Go to **View**, **Command Palette**, search for "Graal Cloud Native", and invoke the **Graal Cloud Native: Create New Project** command.
+1. Go to **View**, **Command Palette**, search for "Graal Dev Kit", and invoke the **Graal Dev Kit: Create New Project** command.
 
     ![Create New Project Action](images/gcn-vscode-actions.png)
 

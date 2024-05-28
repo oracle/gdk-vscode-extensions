@@ -1,7 +1,7 @@
 {
 	"name": "micronaut-tools",
 	"displayName": "Tools for Micronaut® framework",
-	"description": "Micronaut and Graal Cloud Native project support for VS Code",
+	"description": "Micronaut and Graal Development Kit for Micronaut project support for VS Code",
 	"version": "0.6.5",
 	"preview": true,
 	"license": "UPL-1.0",
@@ -31,8 +31,8 @@
 	],
 	"keywords": [
 		"micronaut",
-		"graal cloud native",
-		"gcn",
+		"graal development kit",
+		"gdk",
 		"native image",
 		"microservices",
 		"java"
@@ -366,7 +366,7 @@
 			},
 			{
 				"command": "extension.micronaut-tools.database.register",
-				"title": "Register Database for Micronaut/GCN",
+				"title": "Register Database for Micronaut/GDK",
 				"category": "Micronaut Tools"
 			},
 			{

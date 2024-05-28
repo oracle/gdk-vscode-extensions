@@ -93,7 +93,7 @@ suite(`Extension Test Suite ${wf![0].name}` , function () {
         let expectedProjectType;
 
         if (fs.existsSync(path.join(projectFolder.uri.fsPath, 'oci'))) {
-          expectedProjectType = 'GCN';
+          expectedProjectType = 'GDK';
         } else {
           expectedProjectType = 'Micronaut';
         }

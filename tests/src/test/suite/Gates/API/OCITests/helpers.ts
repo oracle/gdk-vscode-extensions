@@ -245,12 +245,12 @@ export async function createJVMDeploymentPipeline(deploy: DeploymentResources): 
         const displayNamePrefix = codeRepoPrefix + 'Build ';
         const displayName = deploy.pipeline.displayName?.startsWith(displayNamePrefix)
           ? deploy.pipeline.displayName.slice(displayNamePrefix.length)
-          : `${deploy.projectInfo.projectFolder.projectType === 'GCN' ? ' OCI ' : ' '}Container`;
+          : `${deploy.projectInfo.projectFolder.projectType === 'GDK' ? ' OCI ' : ' '}Container`;
         const deployPipelineName = `Deploy ${displayName} to OKE`;
         const descriptionPrefix = 'Build pipeline to build ';
         const descriptionPart = deploy.pipeline.description?.startsWith(descriptionPrefix)
           ? deploy.pipeline.description.slice(descriptionPrefix.length)
-          : `container for ${deploy.projectInfo.projectFolder.projectType === 'GCN' ? 'OCI & ' : ''}devops project ${
+          : `container for ${deploy.projectInfo.projectFolder.projectType === 'GDK' ? 'OCI & ' : ''}devops project ${
               deploy.projectInfo.project.name
             } & repository ${deploy.repository.name}`;
         const deployPipelineDescription = `Deployment pipeline to deploy ${descriptionPart} to OKE`;

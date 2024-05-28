@@ -85,7 +85,7 @@ let auditedSubprojectUri: vscode.Uri;
 let buildscript: vscode.Uri;
 
 /**
- * If true, then simple project is used, not GCN-like structure. Like normal Micronaut
+ * If true, then simple project is used, not GDK-like structure. Like normal Micronaut
  * or Springboot project.
  */
 // let simpleProject : boolean;
@@ -712,7 +712,7 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
         if (simpleProject) {
             assert.strictEqual(1, prjs.length, 'Single project must be present');
         } else {
-            assert.ok(prjs.length > 2, `Full GCN project must contain parent project + at least 2 subprojects. Found ${prjs}`);
+            assert.ok(prjs.length > 2, `Full GDK project must contain parent project + at least 2 subprojects. Found ${prjs}`);
         }
 
         for (let p of prjs) {

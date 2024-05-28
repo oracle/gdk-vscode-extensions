@@ -107,7 +107,7 @@ export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<
                     fs.existsSync(path.join(resPath,  'application-oraclecloud.properties')) ||
                     fs.existsSync(path.join(resPath, 'application-ec2.yml')) ||
                     fs.existsSync(path.join(resPath, 'application-ec2.properties'))) {
-                    const projectType : ProjectType = 'GCN';
+                    const projectType : ProjectType = 'GDK';
                     return Object.assign({}, folder, { projectType, buildSystem, subprojects, deploySubproject: sub });
                 }
                 if (fs.existsSync(path.join(resPath, 'application.yaml')) ||
@@ -150,7 +150,7 @@ export async function getProjectFolder(folder: vscode.WorkspaceFolder): Promise<
         }
         const resPath = path.join(folder.uri.fsPath, 'src', 'main', 'resources');
         if (fs.existsSync(path.join(subprojects.length > 0 ? path.join(folder.uri.fsPath, 'app') : folder.uri.fsPath, 'src', 'main', 'resources', 'application.yml'))) {
-            const projectType: ProjectType = infos[0].subprojects?.length ? 'GCN' : 'Micronaut';
+            const projectType: ProjectType = infos[0].subprojects?.length ? 'GDK' : 'Micronaut';
             return Object.assign({}, folder, { projectType, buildSystem, subprojects });
         } else if (fs.existsSync(path.join(folder.uri.fsPath, 'micronaut-cli.yml'))) {
             const projectType: ProjectType = 'Micronaut';
@@ -198,7 +198,7 @@ export async function getProjectBuildCommand(folder: ProjectFolder, subfolder: s
         if (folder.projectType === 'Helidon') {
             return 'mvn package --no-transfer-progress -DskipTests';
         }
-        if (folder.projectType === 'GCN') {
+        if (folder.projectType === 'GDK') {
             return `chmod 777 ./mvnw && ./mvnw package -pl ${subfolder} -am --no-transfer-progress -DskipTests`;
         }
         return await vscode.window.showInputBox({ title: 'Provide Command to Build Project', value: 'mvn package'});
@@ -207,7 +207,7 @@ export async function getProjectBuildCommand(folder: ProjectFolder, subfolder: s
         if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {
             return 'chmod 777 ./gradlew && ./gradlew build -x test';
         }
-        if (folder.projectType === 'GCN') {
+        if (folder.projectType === 'GDK') {
             return `chmod 777 ./gradlew && ./gradlew ${subfolder}:build -x test`;
         }
         return await vscode.window.showInputBox({ title: 'Provide Command to Build Project', value: 'gradle build'});
@@ -226,7 +226,7 @@ export async function getProjectBuildNativeExecutableCommand(folder: ProjectFold
         if (folder.projectType === 'Helidon') {
             return 'mvn --no-transfer-progress package -Pnative-image -DskipTests';
         }
-        if (folder.projectType === 'GCN') {
+        if (folder.projectType === 'GDK') {
             let appName = undefined;
             if (fs.existsSync(path.join(folder.uri.fsPath, 'app'))) {
                 appName = 'app';
@@ -244,7 +244,7 @@ export async function getProjectBuildNativeExecutableCommand(folder: ProjectFold
         if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {
             return 'chmod 777 ./gradlew && ./gradlew nativeCompile -x test';
         }
-        if (folder.projectType === 'GCN') {
+        if (folder.projectType === 'GDK') {
             return `chmod 777 ./gradlew && ./gradlew ${subfolder || 'oci'}:nativeCompile -x test`;
         }
         return await vscode.window.showInputBox({ title: 'Provide Command to Build Native Executable for Project', value: 'gradle nativeCompile'});
@@ -291,7 +291,7 @@ export async function getProjectBuildArtifactLocation(folder: ProjectFolder, sub
         // hint the query to return the uber-jar, if available.
         opts['tags'] = '<shaded>';
     }
-    if (folder.projectType === 'GCN') {
+    if (folder.projectType === 'GDK') {
         const uri = folder.subprojects.find(sub => sub.name === subfolder)?.uri;
         if (uri) {
             artifacts = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, uri.toString(), opts);
@@ -313,7 +313,7 @@ export async function getProjectBuildArtifactLocation(folder: ProjectFolder, sub
         if (folder.projectType === 'SpringBoot' || folder.projectType === 'Helidon') {
             return `target/${folder.name}-${tryReadMavenVersion(folder.uri.fsPath)}.jar`;
         }
-        if (folder.projectType === 'GCN') {
+        if (folder.projectType === 'GDK') {
             const subPath = path.resolve(folder.uri.fsPath, subfolder);
             return `${subfolder}/target/${subfolder}-${tryReadMavenVersion(subPath)}.jar`;
         }
@@ -325,7 +325,7 @@ export async function getProjectBuildArtifactLocation(folder: ProjectFolder, sub
         if (folder.projectType === 'SpringBoot' || folder.projectType === 'Helidon') {
             return `build/libs/${folder.name}-${tryReadGradleVersion(folder.uri.fsPath, '0.0.1')}-SNAPSHOT.jar`;
         }
-        if (folder.projectType === 'GCN') {
+        if (folder.projectType === 'GDK') {
             const subPath = path.resolve(folder.uri.fsPath, subfolder);
             return `${subfolder}/build/libs/${subfolder}-${tryReadGradleVersion(subPath)}-all.jar`;
         }
@@ -336,7 +336,7 @@ export async function getProjectBuildArtifactLocation(folder: ProjectFolder, sub
 export async function getProjectNativeExecutableArtifactLocation(folder: ProjectFolder, subfolder: string = 'oci'): Promise<string | undefined> {
     const projectPath: string = folder.uri.path;
     let artifacts: any[] | undefined = undefined;
-    if (folder.projectType === 'GCN') {
+    if (folder.projectType === 'GDK') {
         const uri = folder.subprojects.find(sub => sub.name === subfolder)?.uri;
         if (uri) {
             artifacts = await vscode.commands.executeCommand(GET_PROJECT_ARTIFACTS, uri, NATIVE_BUILD);
@@ -352,7 +352,7 @@ export async function getProjectNativeExecutableArtifactLocation(folder: Project
         if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot' || folder.projectType === 'Helidon') {
             return `target/${folder.name}`;
         }
-        if (folder.projectType === 'GCN') {
+        if (folder.projectType === 'GDK') {
             return `${subfolder}/target/${subfolder}`;
         }
     }
@@ -360,7 +360,7 @@ export async function getProjectNativeExecutableArtifactLocation(folder: Project
         if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {
             return `build/native/nativeCompile/${folder.name}`;
         }
-        if (folder.projectType === 'GCN') {
+        if (folder.projectType === 'GDK') {
             return `${subfolder}/build/native/nativeCompile/${subfolder}`;
         }
     }
@@ -375,7 +375,7 @@ export function getDockerfiles(folder: ProjectFolder): string[] {
     return fs.readdirSync(folder.uri.fsPath).filter(name => name === 'Dockerfile' || name.startsWith('Dockerfile.'));
 }
 
-export type ProjectType = 'GCN' | 'Micronaut' | 'SpringBoot' | 'Helidon' | 'Unknown';
+export type ProjectType = 'GDK' | 'Micronaut' | 'SpringBoot' | 'Helidon' | 'Unknown';
 export type BuildSystemType = 'Maven' | 'Gradle';
 
 export interface ProjectFolder extends vscode.WorkspaceFolder {

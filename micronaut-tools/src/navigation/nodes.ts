@@ -306,7 +306,7 @@ export class ApplicationModuleNode extends BaseNode {
 
     constructor(application: applications.Application, treeChanged: TreeChanged) {
         super('Subproject:', application.getSelectedModule().getName() || 'reading...', ApplicationModuleNode.BASE_CONTEXT, null, undefined);
-        this.tooltip = 'Subproject of the GCN application';
+        this.tooltip = 'Subproject of the GDK application';
         this.application = application;
         this.editable = application.getSelectedModule().getTotalModules() > 1;
 

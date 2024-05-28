@@ -23,7 +23,7 @@ suite('Creating projects', function () {
   const comparator = (project: GeneratedProject) => project.type == Type.MICRONAUT;
   projects.forEach((x) => (comparator(x) ? micronautProjects.push(x) : gcnProjects.push(x)));
 
-  test(`Generating ${gcnProjects.length} GCN Projects...`, async () => {
+  test(`Generating ${gcnProjects.length} GDK Projects...`, async () => {
     await generateProjects(gcnProjects);
   });
 

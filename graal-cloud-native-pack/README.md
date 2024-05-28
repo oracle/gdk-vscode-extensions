@@ -1,4 +1,4 @@
-# _Graal Development Kit for Micronaut_ Extension Pack
+# Graal Development Kit for Micronaut Extension Pack
 [![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/oracle-labs-graalvm.graal-cloud-native-pack?style=for-the-badge&label=VS%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack)
 [![Installs](https://img.shields.io/visual-studio-marketplace/i/oracle-labs-graalvm.graal-cloud-native-pack?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack)
 [![License](https://img.shields.io/github/license/oracle/gcn-vscode-extensions?style=for-the-badge&logo=upl)](https://github.com/oracle/gcn-vscode-extensions/blob/main/LICENSE.txt)
@@ -37,7 +37,7 @@ The extension pack also bundles support for using Oracle Cloud Infrastructure's 
 * [Graal Development Kit for Micronaut Launcher](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn) &mdash; an extension that provides a launcher for GDK projects.
 * [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops) &mdash; an extension that provides support for Oracle Cloud Infrastructure’s DevOps service in VS Code with the creation of build and deployment pipelines along with source code management that makes it easy to transition from local development to cloud-based development and deployment.
 * [Launch for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut) &mdash; an extension that provides a launcher for Micronaut projects.
-* [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) &mdash; an extension that provides Micronaut and GDK project support and delivers JDBC drivers supported by Oracle GCN.
+* [Tools for Micronaut® framework](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) &mdash; an extension that provides Micronaut and GDK project support and delivers JDBC drivers supported by Oracle GDK.
 
 ### Feedback
 

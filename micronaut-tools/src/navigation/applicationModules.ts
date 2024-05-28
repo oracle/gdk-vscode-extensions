@@ -29,7 +29,7 @@ export type OnModuleChanged = (singleModule: boolean | undefined, uri: vscode.Ur
 export class SelectedModule {
 
     private readonly applicationUri: vscode.Uri;
-    private module: string | null | undefined; // null === root module (Micronaut), string === submodule (GCN), undefined === not determined yet (waiting for NBLS)
+    private module: string | null | undefined; // null === root module (Micronaut), string === submodule (GDK), undefined === not determined yet (waiting for NBLS)
     private singleModule: boolean | undefined;
     private totalModules: number = 0;
 
@@ -39,7 +39,7 @@ export class SelectedModule {
         // Resolve previously saved module, resolves to undefined if not saved yet
         this.module = settings.getForUri(this.applicationUri, SETTING_SELECTED_MODULE_KEY);
         
-        // Single module (Micronaut) saved as null => this.module set means it's a multi-module project (GCN)
+        // Single module (Micronaut) saved as null => this.module set means it's a multi-module project (GDK)
         if (this.module) {
             this.singleModule = false;
         }
@@ -54,7 +54,7 @@ export class SelectedModule {
         if (this.module === undefined) {
             if (projectUtils.isRunnableUri(this.applicationUri)) { // Try to set the root module (likely a Micronaut project)
                 this.module = null;
-            } else { // Check for known modules (likely a GCN project)
+            } else { // Check for known modules (likely a GDK project)
                 if (gcnLikeLayout(this.applicationUri)) {
                     this.singleModule = false;
                 }

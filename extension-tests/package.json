@@ -1,7 +1,7 @@
 {
   "name": "gcn-extension-tests",
   "version": "1.2.1",
-  "description": "Test environment for GCN extensions",
+  "description": "Test environment for GDK extensions",
   "main": "./out/index.js",
   "scripts": {
     "compile": "tsc -p .",

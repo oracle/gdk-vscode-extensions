@@ -61,7 +61,7 @@ export function gatherTestFolders(testFolder: string, ...globPatterns: string[])
 export function genProj(
   buildTool: BuildTool,
   features: Feature[],
-  type: Type = Type.GCN,
+  type: Type = Type.GDK,
   name?: string,
   java?: SupportedJava,
 ): GeneratedProject {

@@ -45,7 +45,7 @@ export interface NbArtifactSpec {
     versionSpec?: string;
 }
 
-// Tries to guess whether the folder contains a supported Micronaut or Graal Cloud Native project
+// Tries to guess whether the folder contains a supported Micronaut or GDK project
 export function isSupportedFolder(workspaceFolder: vscode.WorkspaceFolder): boolean {
     const micronautCli = getMicronautCli(workspaceFolder);
     if (micronautCli) {
@@ -178,7 +178,7 @@ export async function getProjectInfo(uri: vscode.Uri): Promise<ProjectInfo> {
             runnableModules.push('');
         }
 
-        for (const subproject of infos[0].subprojects) { // multimodule - most likely GCN
+        for (const subproject of infos[0].subprojects) { // multimodule - most likely GDK
             if (isRunnableUri(vscode.Uri.parse(subproject))) {
                 runnableModules.push(subproject);
             }

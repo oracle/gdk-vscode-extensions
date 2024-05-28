@@ -79,7 +79,7 @@ export async function createProjectBase(context: vscode.ExtensionContext, option
     await writeProjectContents(options,new NodeFileHandler(vscode.Uri.file(targetLocation)));
 
     const uri = vscode.Uri.file(targetLocation);
-    dialogs.handleNewGCNProject(context, uri, "GCN");
+    dialogs.handleNewGCNProject(context, uri, "GDK");
 }
 
 async function selectLocation(context: vscode.ExtensionContext, options: CreateOptions) {

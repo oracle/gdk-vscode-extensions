@@ -169,7 +169,7 @@ async function openItemInExplorer(
   const labels = await Promise.all(items.map((item) => item.getLabel()));
 
   if (labels.includes("oci")) {
-    // for GCN
+    // for GDK
     children = await tree.openItem("oci", ...path);
   } else if (labels.includes("src")) {
     // for Micronaut

@@ -42,19 +42,19 @@ export async function prepareVSCode(): Promise<string> {
   includeInPreferences("java.configuration.updateBuildConfiguration", "automatic");
   if (process.env['TEST_JENKINS_BUILDERS']) {
     includeInPreferences(
-      'gcn.test.jenkinsBuilders',
+      'gdk.test.jenkinsBuilders',
       process.env['TEST_JENKINS_BUILDERS']
     );
   }
   if (process.env['TEST_EXTENSION_DOWNLOADS']) {
     includeInPreferences(
-      'gcn.test.extensionDownloads',
+      'gdk.test.extensionDownloads',
       process.env['TEST_EXTENSION_DOWNLOADS']
     );
   }
   if (process.env['TEST_DEPLOY_COMPARTMENT_OCID']) {
     includeInPreferences(
-      'gcn.test.compartmentOCID',
+      'gdk.test.compartmentOCID',
       process.env['TEST_DEPLOY_COMPARTMENT_OCID']
     );
   }

@@ -9,7 +9,7 @@
     <groupId>org.netbeans.modules.gcn</groupId>
     <artifactId>database-drivers</artifactId>
     <packaging>nbm</packaging>
-    <name>GCN Database Drivers Pack</name>
+    <name>GDK Database Drivers Pack</name>
     <build>
         <plugins>
             <plugin>
