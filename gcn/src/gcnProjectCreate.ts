@@ -21,8 +21,9 @@ import {
  /**
   * Global option
   */
- const LAST_PROJECT_PARENTDIR: string = 'lastCreateProjectParentDirs';
+const LAST_PROJECT_PARENTDIR: string = 'lastCreateProjectParentDirs';
 
+const CREATE_ACTION_NAME = 'Create New GDK Project';
 
 export async function createProject(context: vscode.ExtensionContext): Promise<void> {
     var options: CreateOptions | undefined;
@@ -87,6 +88,8 @@ async function selectLocation(context: vscode.ExtensionContext, options: CreateO
     const dirId = `${vscode.env.remoteName || ''}:${vscode.env.machineId}`;
     const dirName : string | undefined = lastDirs[dirId];
     let defaultDir: vscode.Uri | undefined;
+    let suggestedName: string = options.projectName;
+    let counter = 1;
     if (dirName) {
         try {
             defaultDir = vscode.Uri.parse(dirName, true);
@@ -107,6 +110,21 @@ async function selectLocation(context: vscode.ExtensionContext, options: CreateO
     if (location && location.length > 0) {
         lastDirs[dirId] = location[0].toString();
         await context.globalState.update(LAST_PROJECT_PARENTDIR, lastDirs);
+        while (await checkProjectFolderExists(location[0].fsPath, options.projectName)) {
+            if (suggestedName !== options.projectName) {
+                counter = 1;
+                suggestedName = options.projectName.replace(/_\d+$/, '') + '_' + counter++;
+            }
+            while (await checkProjectFolderExists(location[0].fsPath, suggestedName)) {
+                suggestedName = options.projectName.replace(/_\d+$/, '') + '_' + counter++;
+            }
+            let newName: string | undefined = await addNewProjectName(CREATE_ACTION_NAME, suggestedName);
+            if (newName) {
+                options.projectName = newName;
+            } else {
+                return undefined;
+            }
+        }
         let appName = options.basePackage;
         if (appName) {
             appName += '.' + options.projectName;
@@ -117,6 +135,39 @@ async function selectLocation(context: vscode.ExtensionContext, options: CreateO
     } else {
         return undefined;
     }
+}
+
+async function checkProjectFolderExists(defaultDir: string, projectName: string) {
+    if (!projectName || projectName.trim().length === 0) {
+        return true;
+    }
+    const projectPath = path.join(defaultDir, projectName);
+    if (fs.existsSync(projectPath)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+async function addNewProjectName(actionName: string, suggestedName?: string): Promise<string | undefined>  {
+    const warningMessage: string = `The project name you're targeting already exists in the selected directory. Click OK to proceed with "${suggestedName}", or use Change Name to define different name.`;
+    const changeNameButton: string = 'Change Name';
+    const okButton: string = 'OK';
+    let projectName: string | undefined; 
+
+    return vscode.window.showWarningMessage(warningMessage, okButton, changeNameButton)
+    .then(async (result) => {
+        if (result === changeNameButton) {
+            projectName = await vscode.window.showInputBox({
+                title: `${actionName}: Provide project name`,
+                placeHolder: 'Provide unique project name',
+                value: suggestedName,
+            });
+        } else if (result === okButton) {
+            projectName = suggestedName;
+        }
+        return projectName;
+    });
 }
 
 /**
