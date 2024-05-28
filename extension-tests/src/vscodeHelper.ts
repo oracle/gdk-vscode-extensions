@@ -25,6 +25,7 @@ export async function prepareVSCode(): Promise<string> {
   cp.spawnSync(cli, [...args, '--list-extensions'], {
     encoding: 'utf-8',
     stdio: 'inherit',
+    shell: true
   });
 
 

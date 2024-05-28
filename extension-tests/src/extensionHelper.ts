@@ -135,6 +135,7 @@ export async function prepareExtensions(vscodeExecutablePath: string, extensionL
 	  cp.spawnSync(cli, [...args, '--install-extension', extensionId], {
 		encoding: 'utf-8',
 		stdio: 'inherit',
+		shell: true
 	  });
 	}
   }
