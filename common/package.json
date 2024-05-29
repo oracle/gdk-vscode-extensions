@@ -1,6 +1,7 @@
 {
-  "name": "vscode-common",
-  "displayName": "VSCode Common Utils",
+  "name": "gcn-common",
+  "version": "0.0.1",
+  "displayName": "GCN Common Utils",
   "description": "Common Utils module of Oracle Labs Extensions for VSCode.",
   "publisher": "oracle-labs-graalvm",
   "author": {
