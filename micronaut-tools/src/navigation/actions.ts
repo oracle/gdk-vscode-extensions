@@ -186,6 +186,7 @@ export function initialize(context: vscode.ExtensionContext) {
 
 async function revealInEditor(symbol: symbols.Symbol): Promise<vscode.TextEditor> {
     return vscode.window.showTextDocument(symbol.uri, {
+        viewColumn: vscode.ViewColumn.One,
         preview: false,
         selection: new vscode.Range(symbol.startPos, symbol.endPos)
     });
