@@ -6,7 +6,7 @@
   "scripts": {
     "compile": "tsc -p .",
     "build": "npm install && npm run compile",
-    "clean": "rm -rf ./out ./dist",
+    "clean": "shx rm -rf ./out ./dist",
     "clean-all": "npm run clean"
   },
   "author": {
@@ -25,6 +25,7 @@
     "node-abort-controller": "^3.1.1",
     "nodejs-file-downloader": "^4.12.1",
     "semver": "^7.6.0",
+    "shx": "^0.3.4",
     "typescript": "^4.9.5",
     "vscode-extension-tester": "^5.5.1"
   }
