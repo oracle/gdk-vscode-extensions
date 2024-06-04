@@ -16,6 +16,7 @@ import * as settings from './settings';
 export const COMMAND_COMPOSE_REST_QUERY = 'extension.micronaut-tools.navigation.composeRestQuery';
 export const COMMAND_NAME_COMPOSE_REST_QUERY = vscode.l10n.t('Compose REST Query');
 
+const COMMAND_NBLS_MICRONAUT_GET_ENDPOINT_REQUEST_BODY = 'nbls.micronaut.get.endpoint.request.body';
 const SETTING_DONT_SUGGEST_CLIENT_EXT_KEY = 'extension.micronaut-tools.navigation.dontSuggestClientExt';
 const SETTING_DONT_SUGGEST_CLIENT_EXT_DEFAULT = false;
 const dontSuggestClientExt = new settings.BooleanSetting(SETTING_DONT_SUGGEST_CLIENT_EXT_KEY, SETTING_DONT_SUGGEST_CLIENT_EXT_DEFAULT, true);
@@ -95,10 +96,22 @@ async function createRestQuery(endpoint: symbols.Endpoint): Promise<string | und
     const address = await targetAddress.getEndpointAddress(endpoint, COMMAND_NAME_COMPOSE_REST_QUERY);
     if (address) {
         const httpVersion = 'HTTP/1.1';
-        return `${type} ${address} ${httpVersion}`;
+        const body = await getRequestBody(endpoint);
+        return `${type} ${address} ${httpVersion}${body}`;
     } else {
         return undefined;
     }
+}
+
+async function getRequestBody(endpoint: symbols.Endpoint): Promise<string> {
+    switch (endpoint.type) {
+        case symbols.EndpointType.TYPE_POST:
+        case symbols.EndpointType.TYPE_PUT:
+            if ((await vscode.commands.getCommands()).includes(COMMAND_NBLS_MICRONAUT_GET_ENDPOINT_REQUEST_BODY)) {
+                return (await vscode.commands.executeCommand(COMMAND_NBLS_MICRONAUT_GET_ENDPOINT_REQUEST_BODY, endpoint.uri.toString(), endpoint.type, endpoint.startPos)) || '';
+            }
+    }
+    return '';
 }
 
 let externalExtChecked: boolean = false;
