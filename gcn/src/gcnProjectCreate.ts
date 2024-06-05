@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dialogs from '../../common/lib/dialogs';
-import { getJavaVMs } from '../../common/lib/utils';
+import { getJavaVMs, checkProjectFolderExists, addNewProjectName } from '../../common/lib/utils';
 import {
     initialize,
     selectCreateOptions,
@@ -135,39 +135,6 @@ async function selectLocation(context: vscode.ExtensionContext, options: CreateO
     } else {
         return undefined;
     }
-}
-
-async function checkProjectFolderExists(defaultDir: string, projectName: string) {
-    if (!projectName || projectName.trim().length === 0) {
-        return true;
-    }
-    const projectPath = path.join(defaultDir, projectName);
-    if (fs.existsSync(projectPath)) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-async function addNewProjectName(actionName: string, suggestedName?: string): Promise<string | undefined>  {
-    const warningMessage: string = `The project name you're targeting already exists in the selected directory. Click OK to proceed with "${suggestedName}", or use Change Name to define different name.`;
-    const changeNameButton: string = 'Change Name';
-    const okButton: string = 'OK';
-    let projectName: string | undefined; 
-
-    return vscode.window.showWarningMessage(warningMessage, okButton, changeNameButton)
-    .then(async (result) => {
-        if (result === changeNameButton) {
-            projectName = await vscode.window.showInputBox({
-                title: `${actionName}: Provide project name`,
-                placeHolder: 'Provide unique project name',
-                value: suggestedName,
-            });
-        } else if (result === okButton) {
-            projectName = suggestedName;
-        }
-        return projectName;
-    });
 }
 
 /**

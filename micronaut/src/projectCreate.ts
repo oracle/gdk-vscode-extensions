@@ -13,7 +13,7 @@ import * as path from 'path';
 import * as os from 'os';
 import * as AdmZip from 'adm-zip';
 import { getMicronautHome, getMicronautLaunchURL } from './utils';
-import { getJavaHome, getJavaVMs } from "../../common/lib/utils";
+import { getJavaHome, getJavaVMs, checkProjectFolderExists, addNewProjectName } from "../../common/lib/utils";
 import { simpleProgress, MultiStepInput, handleNewGCNProject } from "../../common/lib/dialogs";
 import { downloadJSON } from "../../common/lib/connections";
 
@@ -27,6 +27,7 @@ const FEATURES: string = '/features';
 const VERSIONS: string = '/versions';
 const CREATE: string = '/create';
 const LAST_PROJECT_PARENTDIR: string = 'lastCreateProjectParentDirs';
+const CREATE_ACTION_NAME = 'Create New Micronaut Project';
 
 let cliMNVersion: {label: string; serviceUrl: string; description: string} | undefined;
 
@@ -340,8 +341,11 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 
         const lastDirs: any = context.globalState.get(LAST_PROJECT_PARENTDIR) || new Map<string, string>();
         const dirId = `${vscode.env.remoteName || ''}:${vscode.env.machineId}`;
-        const dirName : string | undefined = lastDirs[dirId];
+        const dirName: string | undefined = lastDirs[dirId];
         let defaultDir: vscode.Uri | undefined;
+        let suggestedName: string = state.projectName;
+        let counter = 1;
+
         if (dirName) {
             try {
                 defaultDir = vscode.Uri.parse(dirName, true);
@@ -359,15 +363,34 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
             title: 'Choose Project Directory',
             openLabel: 'Create Here'
         });
+
         if (location && location.length > 0) {
             lastDirs[dirId] = location[0].toString();
             await context.globalState.update(LAST_PROJECT_PARENTDIR, lastDirs);
+
+            while (await checkProjectFolderExists(location[0].fsPath, state.projectName)) {
+                if (suggestedName !== state.projectName) {
+                    counter = 1;
+                    suggestedName = state.projectName.replace(/_\d+$/, '') + '_' + counter++;
+                }
+                while (await checkProjectFolderExists(location[0].fsPath, suggestedName)) {
+                    suggestedName = state.projectName.replace(/_\d+$/, '') + '_' + counter++;
+                }
+                let newName: string | undefined = await addNewProjectName(CREATE_ACTION_NAME, suggestedName);
+                if (newName) {
+                    state.projectName = newName;
+                } else {
+                    return undefined;
+                }
+            }
+
             let appName = state.basePackage;
             if (appName) {
                 appName += '.' + state.projectName;
             } else {
                 appName = state.projectName;
             }
+
             if (state.micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || state.micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL)) {
                 let query = `?javaVersion=JDK_${state.javaVersion.target}`;
                 query += `&lang=${state.language.value}`;
@@ -384,6 +407,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
                     java: state.javaVersion && state.javaVersion.value.length > 0 ? state.javaVersion.value : undefined
                 };
             }
+
             let args = [state.applicationType.name];
             args.push(`--java-version=${state.javaVersion.target}`);
             args.push(`--lang=${state.language.value}`);
@@ -405,8 +429,11 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
                 buildTool: state.buildTool.value,
                 java: state.javaVersion && state.javaVersion.value.length > 0 ? state.javaVersion.value : undefined
             };
+        } else {
+            return undefined;
         }
     }
+
     return undefined;
 }
 
