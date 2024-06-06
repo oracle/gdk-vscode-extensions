@@ -19,7 +19,7 @@ suite('Micronaut Symbols Test Suite', function () {
 
   /* Wait for the NBLS to start */
   // the timeout will propagate to beforeAll hook
-  this.timeout(30000);
+  this.timeout(180000);
   this.beforeAll(async () => {
     await waitForStatup(wf![0]);
   });
@@ -40,7 +40,7 @@ suite('Micronaut Symbols Test Suite', function () {
 
   // Check Micronaut endpoint symbols
   test('Micronaut endpoint symbols', async () => {
-    const endpoints: any[] = await vscode.commands.executeCommand('nbls.workspace.symbols', '@/');
+    const endpoints: any[] = await getSymbols('@/');
     assert.ok(endpoints.length > 0, 'No endpoint symbols found');
     for (const endpoint of endpoints) {
       try {
@@ -66,7 +66,7 @@ suite('Micronaut Symbols Test Suite', function () {
 
   // Check Micronaut bean symbols
   test('Micronaut bean symbols', async () => {
-    const beans: any[] = await vscode.commands.executeCommand('nbls.workspace.symbols', '@+');
+    const beans: any[] = await getSymbols('@+');
     assert.ok(beans.length > 0, 'No bean symbols found');
     for (const bean of beans) {
       try {
@@ -89,4 +89,18 @@ suite('Micronaut Symbols Test Suite', function () {
       }
     }
   });
+
+  async function getSymbols(prefix: string): Promise<any[]> {
+    return new Promise(resolve => {
+      const disp = vscode.commands.registerCommand('test.symbols.reload', async () => {
+        const symbols: any[] = await vscode.commands.executeCommand('nbls.workspace.symbols', prefix);
+        if (symbols.length > 0) {
+          disp.dispose();
+          resolve(symbols);
+        }
+      });
+      vscode.commands.executeCommand('nbls.addEventListener', 'nbls.scanFinished', 'test.symbols.reload');
+      vscode.commands.executeCommand('test.symbols.reload');
+    });
+  }
 });
