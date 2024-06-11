@@ -56,6 +56,10 @@ export class Host {
     private monitoringId: number = 0;
 
     constructor(addr: string, port: number) {
+        if (port < 0 || port > 65535) {
+            throw new Error(`Host port is out of range: ${port}`);
+        }
+
         this.addr = addr;
         this.port = port;
     }
