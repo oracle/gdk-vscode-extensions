@@ -142,7 +142,16 @@ export class Application {
             placeHolder: vscode.l10n.t('Provide address of the application ({0})', targetAddress.SETTING_TARGET_ADDRESS_DEFAULT),
             value: address,
             valueSelection: selection,
-            prompt: 'Leave blank for default.'
+            prompt: 'Leave blank for default.',
+            validateInput: value => {
+                const port = targetAddress.getPort(value);
+                if (!Number.isNaN(port)) {
+                    if (port < 1024 || port > 65535) {
+                        return 'Port number is out of the allowed range'
+                    }
+                }
+                return undefined;
+            }
         }).then(address => {
             if (address !== undefined) {
                 this.setAddress(address);
@@ -194,29 +203,35 @@ export class Application {
             }
             this.setState(State.CONNECTING_LAUNCH);
             const address = this.getPlainAddress();
-            const host = hosts.forAddress(address);
-            host.isReachable(Application.LOCAL_HEARTBEAT_TIMEOUT_LAUNCH).then(async reachable => {
-                if (reachable) {
-                    const changePortOption = 'Change Port';
-                    const startOption = 'Start Anyway';
-                    const cancelOption = 'Cancel';
-                    const selected = await vscode.window.showWarningMessage(`Another process is already running on ${address}.`, changePortOption, startOption, cancelOption);
-                    if (selected !== startOption) {
-                        this.setState(State.IDLE);
-                        if (selected === changePortOption) {
-                            this.editAddress(true);
+            try {
+                const host = hosts.forAddress(address);
+                host.isReachable(Application.LOCAL_HEARTBEAT_TIMEOUT_LAUNCH).then(async reachable => {
+                    if (reachable) {
+                        const changePortOption = 'Change Port';
+                        const startOption = 'Start Anyway';
+                        const cancelOption = 'Cancel';
+                        const selected = await vscode.window.showWarningMessage(`Another process is already running on ${address}.`, changePortOption, startOption, cancelOption);
+                        if (selected !== startOption) {
+                            this.setState(State.IDLE);
+                            if (selected === changePortOption) {
+                                this.editAddress(true);
+                            }
+                            return;
                         }
-                        return;
                     }
-                }
-                // TODO: timeout connecting if starting fails?
-                projectUtils.runModule(runMode, moduleUri, moduleName, buildSystem).catch(err => {
-                    logUtils.logError(err);
-                    console.log(err);
-                    this.cleanupDebugSession();
-                    vscode.window.showErrorMessage('Failed to start project: ' + err);
+                    // TODO: timeout connecting if starting fails?
+                    projectUtils.runModule(runMode, moduleUri, moduleName, buildSystem).catch(err => {
+                        logUtils.logError(err);
+                        console.log(err);
+                        this.cleanupDebugSession();
+                        vscode.window.showErrorMessage('Failed to start project: ' + err);
+                    });
                 });
-            });
+            } catch (err) {
+                logUtils.logError(`${err}`);
+                this.cleanupDebugSession();
+                vscode.window.showErrorMessage('Failed to start project: ' + err);
+            }
         }
     }
 
@@ -232,21 +247,27 @@ export class Application {
             if (this.state !== State.CONNECTING_LAUNCH) {
                 this.setState(State.CONNECTING_LAUNCH);
             }
-            this.host = hosts.forAddress(this.getPlainAddress());
-            this.host.onReachable(count => {
-                if (count === 1) {
-                    this.setState(State.CONNECTED_LAUNCH);
-                }
-                this.notifyAliveTick(count);
-            });
-            this.host.onUnreachable(() => {
-                if (this.state === State.CONNECTED_LAUNCH) {
-                    this.setState(State.CONNECTING_LAUNCH);
-                }
-                // TODO: ask to terminate DebugSession if count > N?
-            });
-            this.host.startMonitoring(Application.LOCAL_HEARTBEAT_RATE, Application.LOCAL_HEARTBEAT_TIMEOUT);
-            this.debugSession = session;
+            try {
+                this.host = hosts.forAddress(this.getPlainAddress());
+                this.host.onReachable(count => {
+                    if (count === 1) {
+                        this.setState(State.CONNECTED_LAUNCH);
+                    }
+                    this.notifyAliveTick(count);
+                });
+                this.host.onUnreachable(() => {
+                    if (this.state === State.CONNECTED_LAUNCH) {
+                        this.setState(State.CONNECTING_LAUNCH);
+                    }
+                    // TODO: ask to terminate DebugSession if count > N?
+                });
+                this.host.startMonitoring(Application.LOCAL_HEARTBEAT_RATE, Application.LOCAL_HEARTBEAT_TIMEOUT);
+                this.debugSession = session;
+            } catch (err) {
+                logUtils.logError(`${err}`);
+                this.cleanupDebugSession();
+                vscode.window.showErrorMessage('Failed to start new session: ' + err);
+            }
         }
     }
 
@@ -270,23 +291,29 @@ export class Application {
     connectToRunning() {
         if (this.state === State.IDLE) {
             this.setState(State.CONNECTING_ATTACH);
-            this.host = hosts.forAddress(this.getPlainAddress());
-            this.host.onReachable(count => {
-                if (count === 1) {
-                    this.setState(State.CONNECTED_ATTACH);
-                }
-                this.notifyAliveTick(count);
-            });
-            this.host.onUnreachable(() => {
-                if (this.state === State.CONNECTED_ATTACH) {
-                    this.setState(State.CONNECTING_ATTACH);
-                }
-                // TODO: ask to terminate DebugSession if count > N?
-            });
-            const isLocal = this.isLocal();
-            const rate = isLocal ? Application.LOCAL_HEARTBEAT_RATE : Application.REMOTE_HEARTBEAT_RATE;
-            const timeout = isLocal ? Application.LOCAL_HEARTBEAT_TIMEOUT : Application.REMOTE_HEARTBEAT_TIMEOUT;
-            this.host.startMonitoring(rate, timeout);
+            try {
+                this.host = hosts.forAddress(this.getPlainAddress());
+                this.host.onReachable(count => {
+                    if (count === 1) {
+                        this.setState(State.CONNECTED_ATTACH);
+                    }
+                    this.notifyAliveTick(count);
+                });
+                this.host.onUnreachable(() => {
+                    if (this.state === State.CONNECTED_ATTACH) {
+                        this.setState(State.CONNECTING_ATTACH);
+                    }
+                    // TODO: ask to terminate DebugSession if count > N?
+                });
+                const isLocal = this.isLocal();
+                const rate = isLocal ? Application.LOCAL_HEARTBEAT_RATE : Application.REMOTE_HEARTBEAT_RATE;
+                const timeout = isLocal ? Application.LOCAL_HEARTBEAT_TIMEOUT : Application.REMOTE_HEARTBEAT_TIMEOUT;
+                this.host.startMonitoring(rate, timeout);
+            } catch (err) {
+                logUtils.logError(`${err}`);
+                this.cleanupDebugSession();
+                vscode.window.showErrorMessage('Failed to connect to externally started application: ' + err);
+            }
         }
     }
 
