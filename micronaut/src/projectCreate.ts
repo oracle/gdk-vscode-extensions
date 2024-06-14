@@ -454,10 +454,10 @@ async function getJavaVersions(micronautVersion: {label: string; serviceUrl: str
             let parsed = JSON.parse(data).jdkVersion;
             let parsedVersions: number[] = parsed.options.map((version: any) => parseInt(version.label));
 
-            return { default: parseJavaVersion(parsed.defaultOption.label) || 11, versions: parsedVersions };
+            return { default: parseJavaVersion(parsed.defaultOption.label) || DEFAULT_SOURCE_LEVEL, versions: parsedVersions };
         });
     }
-    return { default: 11, versions: [] }; // Listing supported Java versions not available using CLI
+    return { default: DEFAULT_SOURCE_LEVEL, versions: [] }; // Listing supported Java versions not available using CLI
 }
 
 function normalizeJavaVersion(version: number | undefined, supportedVersions: number[], defaultVersion : number = 8): number {
