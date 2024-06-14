@@ -178,14 +178,15 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
             shouldResume: () => Promise.resolve(false)
         });
 
-        const sourceLevelJava = selected ? selected.value : javaVersions.default;
+        const resolvedVersion = selected ? selected.value : undefined;
+        const sourceLevelJava = resolvedVersion ||  javaVersions.default;
         state.sourceLevelJava = {
             label: selected.label,
             value: sourceLevelJava,
         };
 
-        if (!selected) {
-            vscode.window.showInformationMessage(`Java version not selected. The project will target Java ${DEFAULT_SOURCE_LEVEL}. Adjust the setting in the generated project file(s).`);
+        if (!resolvedVersion) {
+            vscode.window.showInformationMessage(`Java version not selected. The project will target Java ${javaVersions.default}. Adjust the setting in the generated project file(s).`);
         }
         return (input: MultiStepInput) => projectName(input, state);
     }
