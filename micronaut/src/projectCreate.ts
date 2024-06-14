@@ -28,6 +28,7 @@ const VERSIONS: string = '/versions';
 const CREATE: string = '/create';
 const LAST_PROJECT_PARENTDIR: string = 'lastCreateProjectParentDirs';
 const CREATE_ACTION_NAME = 'Create New Micronaut Project';
+const DEFAULT_SOURCE_LEVEL: number = 17;
 
 let cliMNVersion: {label: string; serviceUrl: string; description: string} | undefined;
 
@@ -161,7 +162,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 	}
 
     async function pickSourceLevelJava(input: MultiStepInput, state: Partial<State>) {
-        const javaVersions = state.micronautVersion ? await getJavaVersions(state.micronautVersion) : { default: 11, versions: [] };
+        const javaVersions = state.micronautVersion ? await getJavaVersions(state.micronautVersion) : { default: DEFAULT_SOURCE_LEVEL, versions: [] };
         const supportedVersions = javaVersions.versions.sort((a, b) => b - a);
 
         const items: { label: string; value: string; description?: string }[] = supportedVersions.
@@ -184,7 +185,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
         };
 
         if (!selected) {
-            vscode.window.showInformationMessage('Java version not selected. The project will target Java 8. Adjust the setting in the generated project file(s).');
+            vscode.window.showInformationMessage(`Java version not selected. The project will target Java ${DEFAULT_SOURCE_LEVEL}. Adjust the setting in the generated project file(s).`);
         }
         return (input: MultiStepInput) => projectName(input, state);
     }
