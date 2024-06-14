@@ -13,7 +13,7 @@ import * as path from 'path';
 import * as os from 'os';
 import * as AdmZip from 'adm-zip';
 import { getMicronautHome, getMicronautLaunchURL } from './utils';
-import { getJavaHome, getJavaVMs, checkProjectFolderExists, addNewProjectName } from "../../common/lib/utils";
+import { getJavaHome, checkProjectFolderExists, addNewProjectName } from "../../common/lib/utils";
 import { simpleProgress, MultiStepInput, handleNewGCNProject } from "../../common/lib/dialogs";
 import { downloadJSON } from "../../common/lib/connections";
 
@@ -58,7 +58,6 @@ export interface CreateOptions {
     name: string;
     target: string;
     buildTool: string;
-    java?: string;
 }
 
 export async function createProject(context: vscode.ExtensionContext) {
@@ -72,7 +71,7 @@ export async function createProject(context: vscode.ExtensionContext) {
 /**
  * Exported so it can be tested 
  * */
-export async function __writeProject(options: CreateOptions, openDialog: boolean = true): Promise<boolean> {
+export async function __writeProject(options: CreateOptions): Promise<boolean> {
 {
         let created = false;
         if (options.url.startsWith(HTTP_PROTOCOL) || options.url.startsWith(HTTPS_PROTOCOL)) {
@@ -95,23 +94,11 @@ export async function __writeProject(options: CreateOptions, openDialog: boolean
             }
         }
 
-        if (!created) {
-            return false;
-        }
-        if (!options.java || !openDialog) {
-            return true;
-        }
-
-        const commands: string[] = await vscode.commands.getCommands();
-        if (commands.includes('extension.graalvm.selectGraalVMHome')) {
-            await vscode.commands.executeCommand('extension.graalvm.selectGraalVMHome', options.java, true);
-        }
-        return true;
+        return created;
     }
 }
 
 async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{url: string; args?: string[]; name: string; target: string; buildTool: string; java?: string} | undefined> {
-    const javaVMs = await getJavaVMs();
     interface State {
 		micronautVersion: {label: string; serviceUrl: string};
 		applicationType: {label: string; name: string};
@@ -394,12 +381,10 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
                     name: state.projectName,
                     target: location[0].fsPath,
                     buildTool: state.buildTool.value,
-                    java: state.javaVersion && state.javaVersion.value.length > 0 ? state.javaVersion.value : undefined
                 };
             }
 
             let args = [state.applicationType.name];
-            args.push(`--java-version=${state.javaVersion.target}`);
             args.push(`--lang=${state.language.value}`);
             args.push(`--build=${state.buildTool.value}`);
             args.push(`--test=${state.testFramework.value}`);
@@ -417,7 +402,6 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
                 name: state.projectName,
                 target: location[0].fsPath,
                 buildTool: state.buildTool.value,
-                java: state.javaVersion && state.javaVersion.value.length > 0 ? state.javaVersion.value : undefined
             };
         } else {
             return undefined;
