@@ -37,6 +37,7 @@ export interface ValueAndLabel {
 interface State {
     micronautVersion: { label: string; serviceUrl: string};
     applicationType: ValueAndLabel;
+    sourceLevelJava: ValueAndLabel;
     
     javaVersion: {
         label: string; 
