@@ -9,9 +9,20 @@ import Mocha from 'mocha';
 import * as path from 'path';
 import { findFiles } from '../../Common/helpers';
 import { setGlobalDispatcher, EnvHttpProxyAgent } from 'undici';
+import * as vscode from 'vscode';
 
 
 export async function run(): Promise<void> {
+	console.log('Pre-Activating oci-devops extension...');
+	const ext = vscode.extensions.getExtension("oracle-labs-graalvm.oci-devops");
+	if (ext) {
+		await ext.activate();
+		let commandList = await vscode.commands.getCommands();
+		if (!commandList.includes('oci.devops.deployToCloud_GlobalSync')) {
+			console.log('OCI extension did not activate, tests are likely to fail');
+		}
+	}
+
   let opts = {};
   if (process.env['GLOBAL_AGENT_HTTP_PROXY']) {
     opts = {
