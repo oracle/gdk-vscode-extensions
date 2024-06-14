@@ -115,7 +115,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
     interface State {
 		micronautVersion: {label: string; serviceUrl: string};
 		applicationType: {label: string; name: string};
-        sourceLevelJava: {label: string; value: string};
+        sourceLevelJava: {label: string; value: number};
         javaVersion: {label: string; value: string; target: number};
         projectName: string;
         basePackage: string;
@@ -245,7 +245,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 
     async function pickedFeaturesValid(state : Partial<State>) : Promise<any> {
         if (state.micronautVersion && (state.micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || state.micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL))) {
-            let query = `?javaVersion=JDK_${state.javaVersion?.target}`;
+            let query = `?javaVersion=JDK_${state.sourceLevelJava?.value}`;
             query += `&lang=${state.language?.value}`;
             state.features?.forEach((feature: {label: string; detail: string; name: string}) => {
                 query += `&features=${feature.name}`;
@@ -264,7 +264,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
     }
 
 	async function pickFeatures(input: MultiStepInput, state: Partial<State>) {
-        const features = state.micronautVersion && state.applicationType && state.javaVersion ? await getFeatures(state.micronautVersion, state.applicationType, state.javaVersion) : [];
+        const features = state.micronautVersion && state.applicationType && state.sourceLevelJava ? await getFeatures(state.micronautVersion, state.applicationType, state.sourceLevelJava) : [];
         const items: vscode.QuickPickItem[] = [];
         let category: string | undefined;
         for (const feature of features) {
@@ -382,7 +382,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
             }
 
             if (state.micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || state.micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL)) {
-                let query = `?javaVersion=JDK_${state.javaVersion.target}`;
+                let query = `?javaVersion=JDK_${state.sourceLevelJava.value}`;
                 query += `&lang=${state.language.value}`;
                 query += `&build=${state.buildTool.value}`;
                 query += `&test=${state.testFramework.value}`;
@@ -513,7 +513,7 @@ function getTestFrameworks() {
     ];
 }
 
-async function getFeatures(micronautVersion: {label: string; serviceUrl: string}, applicationType: {label: string; name: string}, javaVersion: {target: number}): Promise<{label: string; detail?: string; category: string; name: string}[]> {
+async function getFeatures(micronautVersion: {label: string; serviceUrl: string}, applicationType: {label: string; name: string}, javaVersion: {value: number}): Promise<{label: string; detail?: string; category: string; name: string}[]> {
     const comparator = (f1: any, f2: any) => f1.category < f2.category ? -1 : f1.category > f2.category ? 1 : f1.label < f2.label ? -1 : 1;
     if (micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL)) {
         return downloadJSON(micronautVersion.serviceUrl + APPLICATION_TYPES + '/' + applicationType.name + FEATURES).then(data => {
@@ -522,19 +522,19 @@ async function getFeatures(micronautVersion: {label: string; serviceUrl: string}
     }
     try {
         // will throw an error if javaVersion.target is not supported by the CLI
-        return getMNFeatures(micronautVersion.serviceUrl, applicationType.name, javaVersion.target).sort(comparator);
+        return getMNFeatures(micronautVersion.serviceUrl, applicationType.name, javaVersion.value).sort(comparator);
     } catch (e: any) {
         let msg = e.message.toString();
-        const err = `Unsupported JDK version: ${javaVersion.target}. Supported values are `;
+        const err = `Unsupported JDK version: ${javaVersion.value}. Supported values are `;
         const idx = msg.indexOf(err);
         if (idx !== 0) {
             // javaVersion.target not supported by the CLI
             // list of the supported versions is part of the error message
             const supportedVersions = msg.substring(idx + err.length + 1, msg.length - 3).split(', ');
-            const supportedVersion = normalizeJavaVersion(javaVersion.target, supportedVersions);
+            const supportedVersion = normalizeJavaVersion(javaVersion.value, supportedVersions);
             try {
                 const features: {label: string; detail?: string; category: string; name: string}[] = getMNFeatures(micronautVersion.serviceUrl, applicationType.name, supportedVersion);
-                javaVersion.target = supportedVersion; // update the target platform
+                javaVersion.value = supportedVersion; // update the target platform
                 return features.sort(comparator);
             } catch (e: any) {
                 msg = e.message.toString();
