@@ -115,6 +115,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
     interface State {
 		micronautVersion: {label: string; serviceUrl: string};
 		applicationType: {label: string; name: string};
+        sourceLevelJava: {label: string; value: string};
         javaVersion: {label: string; value: string; target: number};
         projectName: string;
         basePackage: string;
@@ -169,48 +170,37 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 			shouldResume: () => Promise.resolve(false)
         });
         state.applicationType = selected;
-		return (input: MultiStepInput) => pickJavaVersion(input, state);
+		return (input: MultiStepInput) => pickSourceLevelJava(input, state);
 	}
 
-	async function pickJavaVersion(input: MultiStepInput, state: Partial<State>) {
+    async function pickSourceLevelJava(input: MultiStepInput, state: Partial<State>) {
         const javaVersions = state.micronautVersion ? await getJavaVersions(state.micronautVersion) : { default: 11, versions: [] };
         const supportedVersions = javaVersions.versions.sort((a, b) => b - a);
-        
-        function isJavaAccepted(java : string) : boolean {
-            const resolvedVersion = parseJavaVersion(java);
-            if (!resolvedVersion) {
-                // don't know, let the user choose
-                return true;
-            }
-            return normalizeJavaVersion(resolvedVersion, supportedVersions, -1) > -1;
-        }
 
-        const items: {label: string; value: string; description?: string}[] = javaVMs.
-            filter(item => isJavaAccepted(item.name)).
-            map(item => ({label: item.name, value: item.path, description: item.active ? '(active)' : undefined}));
-        
-        items.push({label: 'Other Java', value: '', description: '(manual configuration)'});
-		const selected: any = await input.showQuickPick({
-			title,
-			step: 3,
-			totalSteps: totalSteps(state),
-			placeholder: 'Select installed Java runtime to use for local builds',
-			items,
-			activeItems: state.javaVersion,
-			shouldResume: () => Promise.resolve(false)
+        const items: { label: string; value: string; description?: string }[] = supportedVersions.
+            map(item => ({ label: `JDK ${item}`, value: `${item}` }));
+
+        const selected: any = await input.showQuickPick({
+            title,
+            step: 3,
+            totalSteps: totalSteps(state),
+            placeholder: 'Select target Java runtime for the project',
+            items,
+            activeItems: state.sourceLevelJava,
+            shouldResume: () => Promise.resolve(false)
         });
-        const resolvedVersion = selected ? parseJavaVersion(selected.label) : undefined;
-        const javaVersion = normalizeJavaVersion(resolvedVersion, supportedVersions, javaVersions.default);
-        state.javaVersion = {
+
+        const sourceLevelJava = selected ? selected.value : javaVersions.default;
+        state.sourceLevelJava = {
             label: selected.label,
-            value: selected.value,
-            target: javaVersion
+            value: sourceLevelJava,
         };
-        if (!resolvedVersion) {
+
+        if (!selected) {
             vscode.window.showInformationMessage('Java version not selected. The project will target Java 8. Adjust the setting in the generated project file(s).');
         }
-		return (input: MultiStepInput) => projectName(input, state);
-	}
+        return (input: MultiStepInput) => projectName(input, state);
+    }
 
 	async function projectName(input: MultiStepInput, state: Partial<State>) {
 		state.projectName = await input.showInputBox({
