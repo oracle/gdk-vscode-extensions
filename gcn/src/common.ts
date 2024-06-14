@@ -8,7 +8,6 @@
 import * as vscode from 'vscode';
 import * as dialogs from '../../common/lib/dialogs';
 import { logError, logInfo } from '../../common/lib/logUtils';
-import { JavaVMType } from '../../common/lib/types';
 
 require('../lib/gcn.ui.api');
 
@@ -293,7 +292,7 @@ function findSelectedItems(from: ValueAndLabel[], selected: ValueAndLabel[] | Va
     return ret;
 }
 
-export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateOptions | undefined> {    
+export async function selectCreateOptions(): Promise<CreateOptions | undefined> {    
 	
     async function collectInputs(): Promise<State | undefined> {
 		const state = {} as Partial<State>;
