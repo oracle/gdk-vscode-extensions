@@ -198,62 +198,86 @@ export class MultiStepInput {
 		return ok;
 	}
 
-	async showQuickPick<T extends vscode.QuickPickItem, P extends QuickPickParameters<T>>({ title, step, totalSteps, items, activeItems, placeholder, canSelectMany, buttons, shouldResume }: P) {
+	/**
+	 * Runs a prepared QuickPick as a part of multi-step input. This allows to prepare a QuickPick with custom event handlers. The method
+	 * just configures the QuickPick with the parameters passed as options; only the filled options will be placed into the quick pick to avoid
+	 * possible other customizations. The QuickPick is not shown, but just configured and decorated with handlers. The caller is responsible to
+	 * call show() on the quickpick, after it is done with post-customizations.
+	 * <p/>
+	 * The returned value is a Promise for QuickPick's results. It can be await-ed on or returned as async result.
+	 * 
+	 * @param input a created and possibly pre-configured vscode.QuickPick
+	 * @param param1 options 
+	 * @returns promise for Quickpick's results.
+	 */
+	async setupQuickPick<T extends vscode.QuickPickItem, P extends QuickPickParameters<T>>(input : vscode.QuickPick<T>, { title, step, totalSteps, items, activeItems, placeholder, canSelectMany, buttons, shouldResume }: P) {
 		const disposables: vscode.Disposable[] = [];
-		try {
-			return await new Promise<T | readonly T[] | (P extends { buttons: (infer I)[] } ? I : never)>((resolve, reject) => {
-				const input = vscode.window.createQuickPick<T>();
+		const promise = new Promise<T | readonly T[] | (P extends { buttons: (infer I)[] } ? I : never)>((resolve, reject) => {
+			if (input.title) {
 				input.title = title;
+			}
+			if (step >= 0) {
 				input.step = step;
+			}
+			if (totalSteps > 0) {
 				input.totalSteps = totalSteps;
+			}
+			if (placeholder) {
 				input.placeholder = placeholder;
-				input.items = items;
-				if (canSelectMany) {
-					input.canSelectMany = canSelectMany;
-					if (activeItems) {
-						input.selectedItems = Array.isArray(activeItems) ? activeItems : [activeItems];
+			}
+			input.items = items;
+			if (canSelectMany) {
+				input.canSelectMany = canSelectMany;
+				if (activeItems) {
+					input.selectedItems = Array.isArray(activeItems) ? activeItems : [activeItems];
+				}
+			} else if (activeItems) {
+				input.activeItems = Array.isArray(activeItems) ? activeItems : [activeItems];
+			}
+			input.buttons = [
+				...(this.steps.length > 1 ? [vscode.QuickInputButtons.Back] : []),
+				...(buttons || [])
+			];
+			input.ignoreFocusOut = true;
+			disposables.push(
+				input.onDidTriggerButton(item => {
+					if (item === vscode.QuickInputButtons.Back) {
+						reject(InputFlowAction.back);
+					} else {
+						resolve(<any>item);
 					}
-				} else if (activeItems) {
-					input.activeItems = Array.isArray(activeItems) ? activeItems : [activeItems];
-				}
-				input.buttons = [
-					...(this.steps.length > 1 ? [vscode.QuickInputButtons.Back] : []),
-					...(buttons || [])
-				];
-				input.ignoreFocusOut = true;
-				disposables.push(
-					input.onDidTriggerButton(item => {
-						if (item === vscode.QuickInputButtons.Back) {
-							reject(InputFlowAction.back);
+				}),
+				input.onDidAccept(() => {
+					if (canSelectMany) {
+						resolve(input.selectedItems);
 						} else {
-							resolve(<any>item);
+						if (input?.selectedItems[0]) {
+							resolve(input.selectedItems[0]);
 						}
-					}),
-					input.onDidAccept(() => {
-						if (canSelectMany) {
-							resolve(input.selectedItems);
-						 } else {
-							if (input?.selectedItems[0]) {
-								resolve(input.selectedItems[0]);
-							}
-						 }
-					}),
-					input.onDidHide(() => {
-						(async () => {
-							reject(shouldResume && await shouldResume() ? InputFlowAction.resume : InputFlowAction.cancel);
-						})()
-							.catch(reject);
-					})
-				);
-				if (this.current) {
-					this.current.dispose();
-				}
-				this.current = input;
-				this.current.show();
-			});
-		} finally {
+						}
+				}),
+				input.onDidHide(() => {
+					(async () => {
+						reject(shouldResume && await shouldResume() ? InputFlowAction.resume : InputFlowAction.cancel);
+					})()
+						.catch(reject);
+				})
+			);
+			if (this.current) {
+				this.current.dispose();
+			}
+			this.current = input;
+		});
+		return promise.finally(() => {
 			disposables.forEach(d => d.dispose());
-		}
+		});
+	}
+
+	async showQuickPick<T extends vscode.QuickPickItem, P extends QuickPickParameters<T>>({ title, step, totalSteps, items, activeItems, placeholder, canSelectMany, buttons, shouldResume }: P) {
+		const input = vscode.window.createQuickPick<T>();
+		const promise = this.setupQuickPick(input, { title, step, totalSteps, items, activeItems, placeholder, canSelectMany, buttons, shouldResume });
+		input.show();
+		return promise;
 	}
 
 	async showInputBox<P extends InputBoxParameters>({ title, step, totalSteps, value, prompt, validate, buttons, shouldResume }: P) {
