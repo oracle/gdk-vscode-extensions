@@ -393,7 +393,7 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 	}
 
 	async function pickServices(input: dialogs.MultiStepInput, state: Partial<State>) {
-        const choices = state.micronautVersion && state.applicationType && state.javaVersion ? __getServices() : [];
+        const choices = state.micronautVersion && state.applicationType && state.sourceLevelJava ? __getServices() : [];
 		const selected: any = await input.showQuickPick({
 			title,
 			step: 6,
@@ -409,7 +409,7 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 	}
 
     async function pickFeatures(input: dialogs.MultiStepInput, state: Partial<State>) {
-        const choices = state.micronautVersion && state.applicationType && state.javaVersion ? getFeatures() : [];
+        const choices = state.micronautVersion && state.applicationType && state.sourceLevelJava ? getFeatures() : [];
 		const selected: any = await input.showQuickPick({
 			title,
 			step: 7,
@@ -526,7 +526,7 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 
         basePackage: s.basePackage,
         projectName: s.projectName,
-        javaVersion: "JDK_" + s.javaVersion.target,
+        javaVersion: `JDK_${s.sourceLevelJava.value}`,
 
         clouds: values(s.clouds),
         services: values(s.services),
