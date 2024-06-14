@@ -49,6 +49,7 @@ interface State {
     clouds: ValueAndLabel[];
     target?: string;
     exampleCode: boolean;
+    showUntestedFetures?: boolean;
 }
 
 /**
@@ -221,7 +222,7 @@ export function __getServices(): ValueAndLabel[] {
     return ret;
 }
 
-function getFeatures(): ValueAndLabel[] {
+function getFeatures(untested : boolean): ValueAndLabel[] {
     let features = gcnApi.features();
     let categories = features.keySet().toArray();
     let res = [];
@@ -238,7 +239,7 @@ function getFeatures(): ValueAndLabel[] {
             const community = value.isCommunity().$as('boolean');
             const tested = value.isGcnTested().$as('boolean');
             logInfo(`Feature: ${value.getTitle().$as('string')}, preview: ${preview}, community: ${community}, tested: ${tested}`);
-            if (tested) {
+            if (untested || tested) {
                 if (separator) {
                     res.push({
                         label: categoryName,
@@ -402,19 +403,54 @@ export async function selectCreateOptions(): Promise<CreateOptions | undefined> 
 		return (input: dialogs.MultiStepInput) => pickFeatures(input, state);
 	}
 
-    async function pickFeatures(input: dialogs.MultiStepInput, state: Partial<State>) {
-        const choices = state.micronautVersion && state.applicationType && state.sourceLevelJava ? getFeatures() : [];
-		const selected: any = await input.showQuickPick({
-			title,
-			step: 7,
-			totalSteps: totalSteps(state),
-            placeholder: 'Pick features',
-            items: choices,
-            activeItems: findSelectedItems(choices, state.features, 'graalvm'),
-            canSelectMany: true,
-			shouldResume: () => Promise.resolve(false)
-        });
-        state.features = selected;
+    async function pickFeatures(input: dialogs.MultiStepInput, state: Partial<State>) : Promise<any> {
+        if (state.showUntestedFetures === undefined) {
+            state.showUntestedFetures = false;
+        }
+        const disposables: vscode.Disposable[] = [];
+        try {
+            const choices  = state.micronautVersion && state.applicationType && state.sourceLevelJava ? getFeatures(state.showUntestedFetures) : [];
+            const qp = vscode.window.createQuickPick<ValueAndLabel>();
+
+            const promise = input.setupQuickPick(qp, {
+                title,
+                step: 7,
+                totalSteps: totalSteps(state),
+                placeholder: state.showUntestedFetures ? 'Pick features (experimental and untested included)' : 'Pick features',
+                items: choices,
+                activeItems: findSelectedItems(choices, state.features, 'graalvm'),
+                canSelectMany: true,
+                shouldResume: () => Promise.resolve(false)
+            });
+            const enableUntested : vscode.QuickInputButton = {
+                iconPath: new vscode.ThemeIcon('workspace-unknown'),
+                tooltip: 'Shows and allows to select experimental features'
+            };
+            const disableUntested : vscode.QuickInputButton = {
+                iconPath: new vscode.ThemeIcon('workspace-trusted'),
+                tooltip: 'Shows only tested features'
+            };
+            const newButtons = qp.buttons.slice(0);
+            newButtons.push(state.showUntestedFetures ? disableUntested : enableUntested);
+            qp.buttons = newButtons;
+
+            disposables.push(qp.onDidTriggerButton((button) => {
+                const nowShow : boolean = button == enableUntested;
+                if (nowShow === state.showUntestedFetures) {
+                    return;
+                }
+                state.showUntestedFetures = nowShow;
+            }));
+            qp.show();
+            const selected : any = await promise;
+            if (qp.buttons.includes(selected)) {
+                state.features = qp.selectedItems.slice(0);
+                return (input: dialogs.MultiStepInput) => pickFeatures(input, state);
+            }
+            state.features = selected;
+        } finally {
+            disposables.forEach(d => d.dispose());
+        }
         return (input: dialogs.MultiStepInput) => pickBuildTool(input, state);
     }
 
