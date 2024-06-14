@@ -39,11 +39,6 @@ interface State {
     applicationType: ValueAndLabel;
     sourceLevelJava: ValueAndLabel;
     
-    javaVersion: {
-        label: string; 
-        value: string; 
-        target: string;
-    };
     projectName: string;
     basePackage: string;
     language: ValueAndLabel;
