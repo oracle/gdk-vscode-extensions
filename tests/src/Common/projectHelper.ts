@@ -179,7 +179,7 @@ export async function generateMicronautProjects(projects: GeneratedProject[]) {
   const generator = require('./micronaut-generator');
   for (const project of projects) {
     const destination = getProjectFolder(project);
-    await generator.createMicronautProject(project.buildTool, project.java, destination);
+    await generator.createMicronautProject(project.buildTool, destination);
   }
 }
 
