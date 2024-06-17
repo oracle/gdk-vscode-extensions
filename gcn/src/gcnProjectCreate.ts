@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dialogs from '../../common/lib/dialogs';
-import { getJavaVMs, checkProjectFolderExists, addNewProjectName } from '../../common/lib/utils';
+import { checkProjectFolderExists, addNewProjectName } from '../../common/lib/utils';
 import {
     initialize,
     selectCreateOptions,
@@ -28,10 +28,7 @@ const CREATE_ACTION_NAME = 'Create New GDK Project';
 export async function createProject(context: vscode.ExtensionContext): Promise<void> {
     var options: CreateOptions | undefined;
 
-    options = await initialize().then(async () => {
-        let javaVMs = await getJavaVMs();
-        return selectCreateOptions(javaVMs);
-    });
+    options = await initialize().then(async () =>  selectCreateOptions());
 
     if (!options) {
         return;

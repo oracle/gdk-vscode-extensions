@@ -7,10 +7,8 @@
  
 import * as vscode from 'vscode';
 import { handleNewGCNProject } from '../../../common/lib/dialogs';
-import { JavaVMType } from '../../../common/lib/types';
 import { 
     CreateOptions, 
-    getJavaVersions, 
     initialize, 
     selectCreateOptions, 
     writeProjectContents,
@@ -20,10 +18,7 @@ import {
 
 export async function createProject(context: vscode.ExtensionContext): Promise<void> {
     var options: CreateOptions | undefined;
-    options = await initialize().then(async () => {
-        let javaVMs = await getJavaVMs();
-        return selectCreateOptions(javaVMs);
-    });
+    options = await initialize().then(async () => selectCreateOptions());
 
     if (!options) {
         return;
@@ -83,13 +78,6 @@ async function selectLocation(options: CreateOptions) {
     } else {
         return undefined;
     }
-}
-
-async function getJavaVMs(): Promise<JavaVMType[]> {
-    const javaVMs: JavaVMType[] = getJavaVersions().map(version => {
-                return  {name: `Java ${version}`, path: '', active: false};
-            });
-    return javaVMs;
 }
 
 /**

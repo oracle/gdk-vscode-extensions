@@ -8,7 +8,6 @@
 import * as vscode from 'vscode';
 import * as dialogs from '../../common/lib/dialogs';
 import { logError, logInfo } from '../../common/lib/logUtils';
-import { JavaVMType } from '../../common/lib/types';
 
 require('../lib/gcn.ui.api');
 
@@ -37,12 +36,8 @@ export interface ValueAndLabel {
 interface State {
     micronautVersion: { label: string; serviceUrl: string};
     applicationType: ValueAndLabel;
+    sourceLevelJava: ValueAndLabel;
     
-    javaVersion: {
-        label: string; 
-        value: string; 
-        target: string;
-    };
     projectName: string;
     basePackage: string;
     language: ValueAndLabel;
@@ -298,7 +293,7 @@ function findSelectedItems(from: ValueAndLabel[], selected: ValueAndLabel[] | Va
     return ret;
 }
 
-export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateOptions | undefined> {    
+export async function selectCreateOptions(): Promise<CreateOptions | undefined> {    
 	
     async function collectInputs(): Promise<State | undefined> {
 		const state = {} as Partial<State>;
@@ -331,73 +326,36 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 			shouldResume: () => Promise.resolve(false)
         });
         state.applicationType = selected;
-		return (input: dialogs.MultiStepInput) => pickJavaVersion(input, state);
+		return (input: dialogs.MultiStepInput) => pickSourceLevelJava(input, state);
 	}
 
-    async function pickJavaVersion(input: dialogs.MultiStepInput, state: Partial<State>) {
+    async function pickSourceLevelJava(input: dialogs.MultiStepInput, state: Partial<State>) {
         const supportedVersions = state.micronautVersion ? getJavaVersions() : [];
 
-
-        function isJavaAccepted(java : string) : string {
-            const version: string[] | null = java.match(/Java (\d+)/);
-            const resolvedVersion = version && version.length > 1 ? version[1] : undefined;
-            if (!resolvedVersion) {
-                // don't know, let the user choose. Do not return '' as it indicates rejection.
-                return '-';
-            }
-            return normalizeJavaVersion(resolvedVersion, supportedVersions, '');
-        }
-
-        const items: (ValueAndLabel & { description? : string; target? : string })[] = [];
-
-        javaVMs.forEach(item => {
-            let n = item.name;
-            let v  = isJavaAccepted(item.name);
-            if (!v) {
-                return;
-            }
-            if (v !== '-') {
-                const version: string[] | null = n.match(/Java (\d+)/);
-                const resolvedVersion = version && version.length > 1 ? version[1] : undefined;
-                if (!resolvedVersion) {
-                    return;
-                }
-                if (resolvedVersion !== v) {
-                    n += ` (target ${v})`;
-                }
-            } else {
-                v = '';
-            }
-            let jdk = {label: n, value: item.path, description: item.active ? '(active)' : undefined, target: v };
-            if (item.active) {
-                items.unshift(jdk);
-            } else {
-                items.push(jdk);
-            }
-        });
-        
-        items.push({label: 'Other Java', value: '', target: '', description: '(manual configuration)'});
+        const items: ValueAndLabel[] = supportedVersions.
+            map(item => ({ label: `JDK ${item}`, value: `${item}` }));
 
         const selected: any = await input.showQuickPick({
 			title,
 			step: 3,
 			totalSteps: totalSteps(state),
-			placeholder: 'Select installed Java runtime to use for local builds',
+            placeholder: 'Select Java version',
 			items,
-			activeItems: findSelection(items, state.javaVersion),
+			activeItems: findSelection(items, state.sourceLevelJava),
 			shouldResume: () => Promise.resolve(false)
         });
-        const resolvedVersion = selected ? selected.target : undefined;
-        const javaVersion = resolvedVersion || getDefaultJavaVersion();
-        state.javaVersion = {
+
+        const resolvedVersion = selected ? selected.value : undefined;
+        const sourceLevelJava = resolvedVersion || getDefaultJavaVersion();
+
+        state.sourceLevelJava = {
             label: selected.label,
-            value: selected.value,
-            target: javaVersion
+            value: sourceLevelJava,
         };
+
         if (!resolvedVersion) {
             let defVersion = getDefaultJavaVersion();
             vscode.window.showInformationMessage(`Java version not selected. The project will target Java ${defVersion}. Adjust the setting in the generated project file(s).`);
-            state.javaVersion.target = defVersion;
         }
 		return (input: dialogs.MultiStepInput) => projectName(input, state);
 	}
@@ -430,7 +388,7 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 	}
 
 	async function pickServices(input: dialogs.MultiStepInput, state: Partial<State>) {
-        const choices = state.micronautVersion && state.applicationType && state.javaVersion ? __getServices() : [];
+        const choices = state.micronautVersion && state.applicationType && state.sourceLevelJava ? __getServices() : [];
 		const selected: any = await input.showQuickPick({
 			title,
 			step: 6,
@@ -451,7 +409,7 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
         }
         const disposables: vscode.Disposable[] = [];
         try {
-            const choices  = state.micronautVersion && state.applicationType && state.javaVersion ? getFeatures(state.showUntestedFetures) : [];
+            const choices  = state.micronautVersion && state.applicationType && state.sourceLevelJava ? getFeatures(state.showUntestedFetures) : [];
             const qp = vscode.window.createQuickPick<ValueAndLabel>();
 
             const promise = input.setupQuickPick(qp, {
@@ -598,7 +556,7 @@ export async function selectCreateOptions(javaVMs:JavaVMType[]): Promise<CreateO
 
         basePackage: s.basePackage,
         projectName: s.projectName,
-        javaVersion: "JDK_" + s.javaVersion.target,
+        javaVersion: `JDK_${s.sourceLevelJava.value}`,
 
         clouds: values(s.clouds),
         services: values(s.services),

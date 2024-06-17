@@ -7,41 +7,35 @@
 
 import * as assert from 'assert';
 import * as path from 'path';
-import { BuildTool, SupportedJava } from './types';
+import { BuildTool } from './types';
 import * as micronaut from '../../../micronaut/out/projectCreate';
 import { CreateOptions } from '../../../micronaut/out/projectCreate';
 import { getName, resolveProjFolder } from './projectHelper';
 import * as fs from 'fs';
-import { selectJavaRuntime } from './helpers';
 
-export async function getMicronautCreateOptions(buildTool: BuildTool, java: SupportedJava): Promise<CreateOptions> {
-  const selectedJavaRuntime = await selectJavaRuntime(java);
-
+export async function getMicronautCreateOptions(buildTool: BuildTool): Promise<CreateOptions> {
   const projectName = 'demo';
   return {
     url: `https://launch.micronaut.io/create/default/com.example.demoty?javaVersion=JDK_17&lang=JAVA&build=${buildTool}&test=JUNIT`,
     name: projectName,
     target: path.join(__dirname, projectName, buildTool),
     buildTool: buildTool,
-    java: selectedJavaRuntime.homedir,
   };
 }
 
 /**
  * Creates Micronaut project with given specification
  * @param buildTool is a tool you want the project to be initialized with
- * @param java is a java runtime you want the project to be initialized with
  * @param p a path where the project shoudl be created
  * @returns path to the created project
  */
 export async function createMicronautProject(
   buildTool: BuildTool,
-  java: SupportedJava = SupportedJava.AnyJava,
   p: string[] | string,
 ): Promise<string> {
   try {
     await micronaut.creatorInit();
-    const options = await getMicronautCreateOptions(buildTool, java);
+    const options = await getMicronautCreateOptions(buildTool);
     const projFolder: string = resolveProjFolder(p, getName(buildTool, ['micronaut']));
 
     if (!fs.existsSync(projFolder)) {
@@ -49,7 +43,7 @@ export async function createMicronautProject(
     }
     options.target = projFolder;
 
-    await micronaut.__writeProject(options, false);
+    await micronaut.__writeProject(options);
     let files = fs.readdirSync(options.target);
     if (files && files.length == 1 && fs.statSync(path.join(options.target, files[0])).isDirectory()) {
       // move all contents of the single directory one level up, to 'target'.

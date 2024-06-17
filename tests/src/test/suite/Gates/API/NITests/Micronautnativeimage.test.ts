@@ -6,7 +6,7 @@
  */
 
 import { TestHelper, Tests, convertStringToInt, createMicronautProjectNiTest } from './NItest';
-import { BuildTool, SupportedJava } from '../../../../../Common/types';
+import { BuildTool } from '../../../../../Common/types';
 import * as vscode from 'vscode';
 import * as os from 'os';
 import * as path from 'path';
@@ -73,15 +73,13 @@ function getRunParameters(buildTool: BuildTool, test: Tests): [string, string[]]
  * @param compileTest do you want to compile the project
  * @param maven run for maven
  * @param gradle run for gradle
- * @param java to test with
  */
 async function testAll(
   creator: TestHelper,
   runTest: boolean = true,
   compileTest: boolean = true,
   maven: boolean = true,
-  gradle: boolean = true,
-  java: SupportedJava = SupportedJava.AnyJava17,
+  gradle: boolean = true
 ) {
   await creator.CreateProject(
     async (tool: BuildTool) => await createProject(tool),
@@ -93,7 +91,7 @@ async function testAll(
   );
 
   async function createProject(buildTool: BuildTool): Promise<string> {
-    const value = await createMicronautProjectNiTest(buildTool, creator.getFolder(buildTool).split('/'), java);
+    const value = await createMicronautProjectNiTest(buildTool, creator.getFolder(buildTool).split('/'));
     return value;
   }
 }

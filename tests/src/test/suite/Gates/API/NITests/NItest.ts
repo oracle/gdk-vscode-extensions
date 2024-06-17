@@ -55,14 +55,13 @@ export async function createGcnProjectNiTest(
 export async function createMicronautProjectNiTest(
   buildTool: BuildTool,
   relativePath: string[],
-  java: SupportedJava = SupportedJava.AnyJava,
 ): Promise<string> {
   try {
     await Common.initialize();
 
     relativePath = relativePath.slice(-5);
 
-    const options = await getMicronautCreateOptions(buildTool, java);
+    const options = await getMicronautCreateOptions(buildTool);
 
     const relPath = path.join(...relativePath);
     const projFolder: string = path.resolve(relPath);
@@ -72,10 +71,10 @@ export async function createMicronautProjectNiTest(
     }
     assert.ok(fs.existsSync(projFolder));
     options.target = projFolder;
-    await __writeProject(options, false);
+    await __writeProject(options);
     assert.ok(fs.existsSync(options.target));
-    assert.ok(options.java);
-    return options.java;
+    assert.ok(options.url);
+    return options.url;
   } catch (e: any) {
     assert.fail('Project options were not resolved properly: ' + e.message);
   }

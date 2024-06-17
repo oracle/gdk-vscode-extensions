@@ -13,7 +13,7 @@ import * as path from 'path';
 import * as os from 'os';
 import * as AdmZip from 'adm-zip';
 import { getMicronautHome, getMicronautLaunchURL } from './utils';
-import { getJavaHome, getJavaVMs, checkProjectFolderExists, addNewProjectName } from "../../common/lib/utils";
+import { getJavaHome, checkProjectFolderExists, addNewProjectName } from "../../common/lib/utils";
 import { simpleProgress, MultiStepInput, handleNewGCNProject } from "../../common/lib/dialogs";
 import { downloadJSON } from "../../common/lib/connections";
 
@@ -28,6 +28,7 @@ const VERSIONS: string = '/versions';
 const CREATE: string = '/create';
 const LAST_PROJECT_PARENTDIR: string = 'lastCreateProjectParentDirs';
 const CREATE_ACTION_NAME = 'Create New Micronaut Project';
+const DEFAULT_SOURCE_LEVEL: number = 17;
 
 let cliMNVersion: {label: string; serviceUrl: string; description: string} | undefined;
 
@@ -58,7 +59,6 @@ export interface CreateOptions {
     name: string;
     target: string;
     buildTool: string;
-    java?: string;
 }
 
 export async function createProject(context: vscode.ExtensionContext) {
@@ -72,7 +72,7 @@ export async function createProject(context: vscode.ExtensionContext) {
 /**
  * Exported so it can be tested 
  * */
-export async function __writeProject(options: CreateOptions, openDialog: boolean = true): Promise<boolean> {
+export async function __writeProject(options: CreateOptions): Promise<boolean> {
 {
         let created = false;
         if (options.url.startsWith(HTTP_PROTOCOL) || options.url.startsWith(HTTPS_PROTOCOL)) {
@@ -95,26 +95,15 @@ export async function __writeProject(options: CreateOptions, openDialog: boolean
             }
         }
 
-        if (!created) {
-            return false;
-        }
-        if (!options.java || !openDialog) {
-            return true;
-        }
-
-        const commands: string[] = await vscode.commands.getCommands();
-        if (commands.includes('extension.graalvm.selectGraalVMHome')) {
-            await vscode.commands.executeCommand('extension.graalvm.selectGraalVMHome', options.java, true);
-        }
-        return true;
+        return created;
     }
 }
 
 async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{url: string; args?: string[]; name: string; target: string; buildTool: string; java?: string} | undefined> {
-    const javaVMs = await getJavaVMs();
     interface State {
 		micronautVersion: {label: string; serviceUrl: string};
 		applicationType: {label: string; name: string};
+        sourceLevelJava: {label: string; value: number};
         javaVersion: {label: string; value: string; target: number};
         projectName: string;
         basePackage: string;
@@ -169,48 +158,38 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 			shouldResume: () => Promise.resolve(false)
         });
         state.applicationType = selected;
-		return (input: MultiStepInput) => pickJavaVersion(input, state);
+		return (input: MultiStepInput) => pickSourceLevelJava(input, state);
 	}
 
-	async function pickJavaVersion(input: MultiStepInput, state: Partial<State>) {
-        const javaVersions = state.micronautVersion ? await getJavaVersions(state.micronautVersion) : { default: 11, versions: [] };
+    async function pickSourceLevelJava(input: MultiStepInput, state: Partial<State>) {
+        const javaVersions = state.micronautVersion ? await getJavaVersions(state.micronautVersion) : { default: DEFAULT_SOURCE_LEVEL, versions: [] };
         const supportedVersions = javaVersions.versions.sort((a, b) => b - a);
-        
-        function isJavaAccepted(java : string) : boolean {
-            const resolvedVersion = parseJavaVersion(java);
-            if (!resolvedVersion) {
-                // don't know, let the user choose
-                return true;
-            }
-            return normalizeJavaVersion(resolvedVersion, supportedVersions, -1) > -1;
-        }
 
-        const items: {label: string; value: string; description?: string}[] = javaVMs.
-            filter(item => isJavaAccepted(item.name)).
-            map(item => ({label: item.name, value: item.path, description: item.active ? '(active)' : undefined}));
-        
-        items.push({label: 'Other Java', value: '', description: '(manual configuration)'});
-		const selected: any = await input.showQuickPick({
-			title,
-			step: 3,
-			totalSteps: totalSteps(state),
-			placeholder: 'Select installed Java runtime to use for local builds',
-			items,
-			activeItems: state.javaVersion,
-			shouldResume: () => Promise.resolve(false)
+        const items: { label: string; value: string; description?: string }[] = supportedVersions.
+            map(item => ({ label: `JDK ${item}`, value: `${item}` }));
+
+        const selected: any = await input.showQuickPick({
+            title,
+            step: 3,
+            totalSteps: totalSteps(state),
+            placeholder: 'Select Java version',
+            items,
+            activeItems: state.sourceLevelJava,
+            shouldResume: () => Promise.resolve(false)
         });
-        const resolvedVersion = selected ? parseJavaVersion(selected.label) : undefined;
-        const javaVersion = normalizeJavaVersion(resolvedVersion, supportedVersions, javaVersions.default);
-        state.javaVersion = {
+
+        const resolvedVersion = selected ? selected.value : undefined;
+        const sourceLevelJava = resolvedVersion ||  javaVersions.default;
+        state.sourceLevelJava = {
             label: selected.label,
-            value: selected.value,
-            target: javaVersion
+            value: sourceLevelJava,
         };
+
         if (!resolvedVersion) {
-            vscode.window.showInformationMessage('Java version not selected. The project will target Java 8. Adjust the setting in the generated project file(s).');
+            vscode.window.showInformationMessage(`Java version not selected. The project will target Java ${javaVersions.default}. Adjust the setting in the generated project file(s).`);
         }
-		return (input: MultiStepInput) => projectName(input, state);
-	}
+        return (input: MultiStepInput) => projectName(input, state);
+    }
 
 	async function projectName(input: MultiStepInput, state: Partial<State>) {
 		state.projectName = await input.showInputBox({
@@ -255,7 +234,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 
     async function pickedFeaturesValid(state : Partial<State>) : Promise<any> {
         if (state.micronautVersion && (state.micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || state.micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL))) {
-            let query = `?javaVersion=JDK_${state.javaVersion?.target}`;
+            let query = `?javaVersion=JDK_${state.sourceLevelJava?.value}`;
             query += `&lang=${state.language?.value}`;
             state.features?.forEach((feature: {label: string; detail: string; name: string}) => {
                 query += `&features=${feature.name}`;
@@ -274,7 +253,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
     }
 
 	async function pickFeatures(input: MultiStepInput, state: Partial<State>) {
-        const features = state.micronautVersion && state.applicationType && state.javaVersion ? await getFeatures(state.micronautVersion, state.applicationType, state.javaVersion) : [];
+        const features = state.micronautVersion && state.applicationType && state.sourceLevelJava ? await getFeatures(state.micronautVersion, state.applicationType, state.sourceLevelJava) : [];
         const items: vscode.QuickPickItem[] = [];
         let category: string | undefined;
         for (const feature of features) {
@@ -392,7 +371,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
             }
 
             if (state.micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || state.micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL)) {
-                let query = `?javaVersion=JDK_${state.javaVersion.target}`;
+                let query = `?javaVersion=JDK_${state.sourceLevelJava.value}`;
                 query += `&lang=${state.language.value}`;
                 query += `&build=${state.buildTool.value}`;
                 query += `&test=${state.testFramework.value}`;
@@ -404,12 +383,10 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
                     name: state.projectName,
                     target: location[0].fsPath,
                     buildTool: state.buildTool.value,
-                    java: state.javaVersion && state.javaVersion.value.length > 0 ? state.javaVersion.value : undefined
                 };
             }
 
             let args = [state.applicationType.name];
-            args.push(`--java-version=${state.javaVersion.target}`);
             args.push(`--lang=${state.language.value}`);
             args.push(`--build=${state.buildTool.value}`);
             args.push(`--test=${state.testFramework.value}`);
@@ -427,7 +404,6 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
                 name: state.projectName,
                 target: location[0].fsPath,
                 buildTool: state.buildTool.value,
-                java: state.javaVersion && state.javaVersion.value.length > 0 ? state.javaVersion.value : undefined
             };
         } else {
             return undefined;
@@ -479,10 +455,10 @@ async function getJavaVersions(micronautVersion: {label: string; serviceUrl: str
             let parsed = JSON.parse(data).jdkVersion;
             let parsedVersions: number[] = parsed.options.map((version: any) => parseInt(version.label));
 
-            return { default: parseJavaVersion(parsed.defaultOption.label) || 11, versions: parsedVersions };
+            return { default: parseJavaVersion(parsed.defaultOption.label) || DEFAULT_SOURCE_LEVEL, versions: parsedVersions };
         });
     }
-    return { default: 11, versions: [] }; // Listing supported Java versions not available using CLI
+    return { default: DEFAULT_SOURCE_LEVEL, versions: [] }; // Listing supported Java versions not available using CLI
 }
 
 function normalizeJavaVersion(version: number | undefined, supportedVersions: number[], defaultVersion : number = 8): number {
@@ -523,7 +499,7 @@ function getTestFrameworks() {
     ];
 }
 
-async function getFeatures(micronautVersion: {label: string; serviceUrl: string}, applicationType: {label: string; name: string}, javaVersion: {target: number}): Promise<{label: string; detail?: string; category: string; name: string}[]> {
+async function getFeatures(micronautVersion: {label: string; serviceUrl: string}, applicationType: {label: string; name: string}, javaVersion: {value: number}): Promise<{label: string; detail?: string; category: string; name: string}[]> {
     const comparator = (f1: any, f2: any) => f1.category < f2.category ? -1 : f1.category > f2.category ? 1 : f1.label < f2.label ? -1 : 1;
     if (micronautVersion.serviceUrl.startsWith(HTTP_PROTOCOL) || micronautVersion.serviceUrl.startsWith(HTTPS_PROTOCOL)) {
         return downloadJSON(micronautVersion.serviceUrl + APPLICATION_TYPES + '/' + applicationType.name + FEATURES).then(data => {
@@ -532,19 +508,19 @@ async function getFeatures(micronautVersion: {label: string; serviceUrl: string}
     }
     try {
         // will throw an error if javaVersion.target is not supported by the CLI
-        return getMNFeatures(micronautVersion.serviceUrl, applicationType.name, javaVersion.target).sort(comparator);
+        return getMNFeatures(micronautVersion.serviceUrl, applicationType.name, javaVersion.value).sort(comparator);
     } catch (e: any) {
         let msg = e.message.toString();
-        const err = `Unsupported JDK version: ${javaVersion.target}. Supported values are `;
+        const err = `Unsupported JDK version: ${javaVersion.value}. Supported values are `;
         const idx = msg.indexOf(err);
         if (idx !== 0) {
             // javaVersion.target not supported by the CLI
             // list of the supported versions is part of the error message
             const supportedVersions = msg.substring(idx + err.length + 1, msg.length - 3).split(', ');
-            const supportedVersion = normalizeJavaVersion(javaVersion.target, supportedVersions);
+            const supportedVersion = normalizeJavaVersion(javaVersion.value, supportedVersions);
             try {
                 const features: {label: string; detail?: string; category: string; name: string}[] = getMNFeatures(micronautVersion.serviceUrl, applicationType.name, supportedVersion);
-                javaVersion.target = supportedVersion; // update the target platform
+                javaVersion.value = supportedVersion; // update the target platform
                 return features.sort(comparator);
             } catch (e: any) {
                 msg = e.message.toString();
