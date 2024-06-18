@@ -32,7 +32,7 @@ The wizard will prompt you to:
 
 - Pick the Micronaut version
 - Pick the application type (for more information, see [Creating a Project](https://docs.micronaut.io/latest/guide/#createProject))
-- Select installed Java runtime to use for local builds (from the list of Java installations found on your system)
+- Select an Java version to be used for the project
 - Enter a project name (or use the default "demo")
 - Enter a base package name (or use the default "com.example")
 - Pick the project language (you can build an application using Java, Groovy, or Kotlin)
