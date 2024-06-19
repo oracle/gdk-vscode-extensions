@@ -22,7 +22,7 @@ The wizard can generate different types of GDK and serverless applications. If b
 2. Follow the command prompts to generate a new Maven or Gradle project. For example, to create a simple Java-based GDK application:
     - Select the Micronaut version
     - Select an Application type
-    - Select an Java version to be used for the project
+    - Select a Java version to be used for the project
     - Provide a name for the project
     - Provide a base package
     - Pick the GDK services to be included in the project
