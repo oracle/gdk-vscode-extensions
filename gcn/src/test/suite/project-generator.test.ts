@@ -24,7 +24,8 @@ export enum BuildTools {
 export enum SupportedJavas {
     AnyJava17 = 'java17',
     Unsupported = 'Unsupported',
-    AnyJava = 'java'
+    AnyJava = 'java',
+    JDK_17 = 'jdk-17'
 }
 
 export enum Features {
@@ -54,15 +55,7 @@ function generateUID(): string {
 
 async function getCreateOptions(buildTool: BuildTools, java: SupportedJavas, services: string[]): Promise<CreateOptions> {
 
-    const javaRuntimes = await jdkUtils.findRuntimes({ checkJavac: true });
-    const selectedJavaRuntime = javaRuntimes.find(x => x.homedir.includes(java));
-
-    // javaRuntimes.forEach(x => console.log(x.homedir));
-
-    if (selectedJavaRuntime == null || selectedJavaRuntime == undefined) {
-        throw new Error(`${java} was not found, only these GraalVMs are present:` + javaRuntimes.map(x => x.homedir).join(";\n"));
-    }
-    // console.log("selected runtime is: " + selectedJavaRuntime.homedir);
+    const selectedJavaRuntime = await selectJavaRuntime(java);
 
     return {
         homeDir: selectedJavaRuntime.homedir,
@@ -88,6 +81,37 @@ async function getCreateOptions(buildTool: BuildTools, java: SupportedJavas, ser
         }
     };
 }
+
+async function selectJavaRuntime (java: SupportedJavas): Promise<jdkUtils.IJavaRuntime> {
+    let javaRuntimes = await jdkUtils.findRuntimes({ checkJavac: true, withVersion: true });
+
+    let major : number | undefined;
+    switch (java) {
+        case SupportedJavas.AnyJava: 
+        major = 11; 
+        break;
+        case SupportedJavas.JDK_17: 
+        case SupportedJavas.AnyJava17: 
+        major = 17; 
+        break;
+        case SupportedJavas.Unsupported:
+        default:
+        major = undefined;
+        break;
+    }
+
+    const selectedJavaRuntime = javaRuntimes.find((x) => 
+        major == undefined || (x.version && x.version.major >= major)
+    );
+
+    if (selectedJavaRuntime === null || selectedJavaRuntime === undefined) {
+        throw new Error(
+        `${java} was not found, only these GraalVMs or JDKs are present:` + javaRuntimes.map((x) => x.homedir).join(';\n'),
+        );
+    }
+
+    return selectedJavaRuntime;
+}  
 
 function getName(buildTool: BuildTools, services: string[]) {
     let name: string = buildTool + "_";
