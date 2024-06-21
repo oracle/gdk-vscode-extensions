@@ -14,6 +14,10 @@ import * as vscode from 'vscode';
 
 export async function run(): Promise<void> {
 	console.log('Pre-Activating oci-devops extension...');
+  const ext2 = vscode.extensions.getExtension("ms-kubernetes-tools.vscode-kubernetes-tools");
+  try {
+    ext2?.activate();
+  } catch (e : any) {}
 	const ext = vscode.extensions.getExtension("oracle-labs-graalvm.oci-devops");
 	if (ext) {
 		await ext.activate();
@@ -36,6 +40,8 @@ export async function run(): Promise<void> {
   const dispatcher = new EnvHttpProxyAgent(opts);
   setGlobalDispatcher(dispatcher);
 
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+
   // Create the mocha test
   const mocha = new Mocha({
     ui: 'tdd',
@@ -45,7 +51,7 @@ export async function run(): Promise<void> {
       // disable overwrite to generate many JSON reports
       overwrite: false,
       // do not generate intermediate HTML reports
-      html: false,
+      html: true,
       // generate intermediate JSON reports
       json: true,
     },
