@@ -15,7 +15,7 @@
     "compile-ociDevops": " cd ../oci-devops && npm install && npm run compile && npm run test-compile",
     "dependency-compile": "npm run compile-common && npm run compile-gcn && npm run compile-micronaut && npm run compile-micronautTools && npm run compile-ociDevops",
     "clean": "shx rm -rf ./out ./dist",
-    "clean-projects": "shx rm -rf ./generated-projects && shx find . -type d -name projects -exec rm -rf {} \\;",
+    "clean-projects": "shx rm -rf ./generated-projects && cross-os find-clean",
     "clean-resources": "shx rm -rf test-resources && shx rm -rf .vscode-test && shx rm -rf mochawesome-report && npm run clean-projects",
     "clean-all": "npm run clean && npm run clean-projects && npm run clean-resources",
     "compile": "tsc -p . --outDir out",
@@ -30,6 +30,13 @@
     "prepare-tests": "cross-env GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./out/bin.js --prepareTest",
     "vscode-test-env": "code --extensions-dir .vscode-test/extensions --user-data-dir .vscode-test/user-data",
     "test-install-extension": "code --extensions-dir .vscode-test/extensions --user-data-dir .vscode-test/user-data --install-extension"
+  },
+  "cross-os": {
+    "find-clean": {
+      "linux": "find . -type d -name projects -exec rm -rf {} \\;",
+      "darwin": "find . -type d -name projects -exec rm -rf {} \\;",
+      "win32": "powershell -Command \"Get-ChildItem -Path . -Directory -Recurse -Filter 'projects' -ErrorAction SilentlyContinue | ForEach-Object { Remove-Item $_.FullName -Recurse -Force }\""
+    }
   },
   "author": {
     "name": "Oracle Labs"
