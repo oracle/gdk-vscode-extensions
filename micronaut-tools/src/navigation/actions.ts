@@ -184,12 +184,15 @@ export function initialize(context: vscode.ExtensionContext) {
     logUtils.logInfo('[actions] Initialized');
 }
 
-async function revealInEditor(symbol: symbols.Symbol): Promise<vscode.TextEditor> {
-    return vscode.window.showTextDocument(symbol.uri, {
-        viewColumn: vscode.ViewColumn.One,
-        preview: false,
-        selection: new vscode.Range(symbol.startPos, symbol.endPos)
-    });
+async function revealInEditor(symbol: symbols.Symbol): Promise<vscode.TextEditor | undefined> {
+    if (await symbol.resolve()) {
+        return vscode.window.showTextDocument(symbol.uri, {
+            viewColumn: vscode.ViewColumn.One,
+            preview: false,
+            selection: new vscode.Range(symbol.startPos, symbol.endPos)
+        });
+    }
+    return undefined;
 }
 
 async function openSymbolInBrowser(symbol: symbols.Endpoint): Promise<boolean> {

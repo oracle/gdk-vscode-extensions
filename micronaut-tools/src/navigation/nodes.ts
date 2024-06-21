@@ -668,6 +668,98 @@ export class ApplicationControlPanelNode extends BaseNode {
 
 }
 
+export class DependenciesNode extends BaseNode {
+
+    constructor(readonly nodeKind: string, data: workspaceFolders.Data, treeChanged: TreeChanged) {
+        super(vscode.l10n.t('From Dependencies'), undefined, undefined, [], false);
+        data.onUpdated((kind: string[], beans: symbols.Bean[], endpoints: symbols.Endpoint[]) => {
+            switch (nodeKind) {
+                case symbols.Bean.KIND:
+                    if (symbols.isBeanKind(kind)) {
+                        this.reloadBeans(beans, treeChanged);
+                    }
+                    break;
+                case symbols.Endpoint.KIND:
+                    if (symbols.isEndpointKind(kind)) {
+                        this.reloadEndpoints(endpoints, treeChanged);
+                    }
+                    break;
+            }
+        });
+        workspaceFolders.onUpdated((added, _removed, _current) => {
+            switch (nodeKind) {
+                case symbols.Bean.KIND:
+                    added.forEach(folder => folder.getApplication().getManagement().getBeansEndpoint().onBeansResolved(beans => {
+                        this.updateRuntimeStatus(beans, this.getChildren() || [], treeChanged);
+                    }));
+                    break;
+                case symbols.Endpoint.KIND:
+                    added.forEach(folder => folder.getApplication().getManagement().getRoutesEndpoint().onEndpointsResolved(endpoints => {
+                        this.updateRuntimeStatus(endpoints, this.getChildren() || [], treeChanged);
+                    }));
+                    break;
+            }
+        });
+    }
+
+    private reloadBeans(beans: symbols.Bean[], treeChanged: TreeChanged) {
+        const children: BaseNode[] = [];
+        for (const bean of beans) {
+            const beanNode = BeanNode.create(bean);
+            children.push(beanNode);
+        }
+        if (children.length) {
+            this.getApplications().then(applications => {
+                const runtimeBeans = applications.map(application => application.getManagement().getBeansEndpoint().getRuntimeBeans() || []).reduce((acc, value) => acc.concat(value), []);
+                this.updateRuntimeStatus(runtimeBeans, children, undefined);
+            });
+        }
+        this.setChildren(children);
+        treeChanged(this);
+    }
+
+    private reloadEndpoints(endpoints: symbols.Endpoint[], treeChanged: TreeChanged) {
+        const children: BaseNode[] = [];
+        for (const endpoint of endpoints) {
+            const endpointNode = EndpointNode.create(endpoint);
+            children.push(endpointNode);
+        }
+        if (children.length) {
+            this.getApplications().then(applications => {
+                const runtimeEndpoints = applications.map(application => application.getManagement().getRoutesEndpoint().getRuntimeEndpoints() || []).reduce((acc, value) => acc.concat(value), []);
+                this.updateRuntimeStatus(runtimeEndpoints, children, undefined);
+            });
+        }
+        this.setChildren(children);
+        treeChanged(this);
+    }
+
+    private async getApplications(): Promise<applications.Application[]> {
+        return (await workspaceFolders.getFolderData()).map(folder => folder.getApplication());
+    }
+
+    private updateRuntimeStatus(runtimeSymbols: symbols.Symbol[] | null | undefined, children: BaseNode[], treeChanged: TreeChanged | undefined) {
+        if (children.length) {
+            const runtimeSymbolsMap: any = {};
+            if (runtimeSymbols) {
+                for (const runtimeSymbol of runtimeSymbols) {
+                    runtimeSymbolsMap[runtimeSymbol.name] = (runtimeSymbol as any).disabledReasons || [];
+                }
+            }
+            for (const child of children) {
+                if (child instanceof SymbolNode) {
+                    const status: string[] | null | undefined = runtimeSymbols ? runtimeSymbolsMap[child.getSymbol().name] : runtimeSymbols;
+                    (child as SymbolNode<symbols.Symbol>).setRuntimeStatus(status);
+                }
+            }
+            if (treeChanged) {
+                treeChanged(this);
+            }
+        }
+    }
+
+}
+
 export class BeansFolderNode extends BaseNode {
 
     private static readonly CONTEXT = 'extension.micronaut-tools.navigation.BeansFolderNode';

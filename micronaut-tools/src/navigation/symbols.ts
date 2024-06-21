@@ -19,6 +19,7 @@ const CONTEXT_ENDPOINTS_INITIALIZED = 'extension.micronaut-tools.navigation.endp
 const COMMAND_NBLS_ADD_EVENT_LISTENER = 'nbls.addEventListener';
 const PARAM_EVENT_TYPE_SCAN_FINSIHED = 'nbls.scanFinished';
 const COMMAND_NBLS_WORKSPACE_SYMBOLS = 'nbls.workspace.symbols';
+const COMMAND_NBLS_WORKSPACE_SYMBOL_RESOLVE = 'nbls.workspace.symbol.resolve';
 const PREFIX_BEANS = '@+';
 export const PREFIX_ENDPOINTS = '@/';
 
@@ -31,7 +32,9 @@ export function initialize(context: vscode.ExtensionContext) {
 }
 
 export abstract class Symbol {
+
     static readonly NO_POSITION = new vscode.Position(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
+
     constructor(
         readonly def: string,
         readonly name: string,
@@ -40,6 +43,21 @@ export abstract class Symbol {
         readonly startPos: vscode.Position,
         readonly endPos: vscode.Position
     ) {}
+
+    async resolve<T extends Symbol>(): Promise<T> {
+        const sym: T = await vscode.commands.executeCommand(COMMAND_NBLS_WORKSPACE_SYMBOL_RESOLVE, {
+            name: this.name,
+            location: {
+                uri: this.uri.toString(),
+                range: {
+                    start: this.startPos,
+                    end: this.endPos
+                }
+            }
+        });
+        return sym;
+    }
+
 }
 
 export abstract class Bean extends Symbol {
@@ -297,6 +315,11 @@ export function byWorkspaceFolder(symbols: Symbol[]): any {
                 byWorkspaceFolder[workspaceFolderPath] = [];
             }
             byWorkspaceFolder[workspaceFolderPath].push(symbol);
+        } else {
+            if (!byWorkspaceFolder['']) {
+                byWorkspaceFolder[''] = [];
+            }
+            byWorkspaceFolder[''].push(symbol);
         }
     }
 

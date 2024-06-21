@@ -25,30 +25,14 @@ export function initialize(context: vscode.ExtensionContext) {
     logUtils.logInfo('[workspaceFolders] Initialized');
 }
 
-export class FolderData {
+export class Data {
 
-    private readonly workspaceFolder: vscode.WorkspaceFolder;
-    
-    private application: applications.Application;
     private beans: symbols.Bean[] | undefined;
     private endpoints: symbols.Endpoint[] | undefined;
 
     private readonly events: symbols.Events = new symbols.Events();
     onUpdating(listener: symbols.OnUpdating) { this.events.onUpdating(listener); }
     onUpdated(listener: symbols.OnUpdated) { this.events.onUpdated(listener); }
-    
-    constructor(workspaceFolder: vscode.WorkspaceFolder) {
-        this.workspaceFolder = workspaceFolder;
-        this.application = new applications.Application(workspaceFolder);
-    };
-
-    getWorkspaceFolder(): vscode.WorkspaceFolder {
-        return this.workspaceFolder;
-    }
-
-    getApplication(): applications.Application {
-        return this.application;
-    }
 
     getBeans(): symbols.Bean[] | undefined {
         return this.beans;
@@ -64,15 +48,15 @@ export class FolderData {
         } catch (err) {
             logUtils.logError(`[FolderData] notifyUpdating ${kind}: ${err}`);
         }
-        
+
         if (symbols.isBeanKind(kind)) {
             this.beans = beans;
         }
-    
+
         if (symbols.isEndpointKind(kind)) {
             this.endpoints = endpoints;
         }
-    
+
         try {
             this.events.notifyUpdated(kind, beans, endpoints);
         } catch (err) {
@@ -82,8 +66,35 @@ export class FolderData {
 
 }
 
+export class FolderData extends Data {
+
+    private readonly workspaceFolder: vscode.WorkspaceFolder;
+
+    private application: applications.Application;
+
+    constructor(workspaceFolder: vscode.WorkspaceFolder) {
+        super();
+        this.workspaceFolder = workspaceFolder;
+        this.application = new applications.Application(workspaceFolder);
+    };
+
+    getWorkspaceFolder(): vscode.WorkspaceFolder {
+        return this.workspaceFolder;
+    }
+
+    getApplication(): applications.Application {
+        return this.application;
+    }
+
+}
+
 const workspaceFolders: vscode.WorkspaceFolder[] = [];
 const folderData: FolderData[] = [];
+const libraryData = new Data();
+
+export function getLibraryData(): Data {
+    return libraryData;
+}
 
 let firstFolderDataPromise: boolean = true;
 let folderDataPromiseResolve: (value: FolderData[] | PromiseLike<FolderData[]>) => void;
@@ -184,6 +195,16 @@ function symbolsUpdated(kind: string[], beans: symbols.Bean[], endpoints: symbol
         }
         folderD.updateSymbols(kind, folderBeans, folderEndpoints);
     }
+    const libraryBeans: symbols.Bean[] = [];
+    if (beansByWorkspaceFolder?.['']) {
+        libraryBeans.push(...(beansByWorkspaceFolder[''] as symbols.Bean[]));
+    }
+    const libraryEndpoints: symbols.Endpoint[] = [];
+    if (endpointsByWorkspaceFolder?.['']) {
+        libraryEndpoints.push(...(endpointsByWorkspaceFolder[''] as symbols.Endpoint[]));
+    }
+    libraryData.updateSymbols(kind, libraryBeans, libraryEndpoints);
+
 }
 
 export async function getFolderData(): Promise<FolderData[]> {

@@ -153,9 +153,29 @@ const applicationsTreeChanged: nodes.TreeChanged = (treeItem?: vscode.TreeItem, 
     applicationsNodeProvider.refresh(treeItem);
 };
 
-class BeansNodeProvider extends NodeProvider {
+abstract class WithDependenciesNodeProvider extends NodeProvider {
+
+    protected dependenciesRoot: nodes.BaseNode | undefined;
+
+    getChildren(element?: vscode.TreeItem): vscode.TreeItem[] {
+        if (!element) {
+            if (this.dependenciesRoot?.getChildren()?.length) {
+                const children = [...super.getChildren(element)];
+                children.push(this.dependenciesRoot);
+                return children;
+            }
+        }
+        return super.getChildren(element);
+    }
+
+}
+
+class BeansNodeProvider extends WithDependenciesNodeProvider {
     
     async buildNodes(roots: nodes.BaseNode[], added: workspaceFolders.FolderData[], removed: workspaceFolders.FolderData[], _current: workspaceFolders.FolderData[]) {
+        if (!this.dependenciesRoot) {
+            this.dependenciesRoot = new nodes.DependenciesNode(symbols.Bean.KIND, workspaceFolders.getLibraryData(), beansTreeChanged);
+        }
         for (const remove of removed) {
             for (let index = 0; index < roots.length; index++) {
                 if ((roots[index] as nodes.BeansFolderNode).getFolderData().getWorkspaceFolder() === remove.getWorkspaceFolder()) {
@@ -184,9 +204,12 @@ const beansTreeChanged: nodes.TreeChanged = (treeItem?: vscode.TreeItem, expand?
     beansNodeProvider.refresh(treeItem);
 };
 
-class EndpointsNodeProvider extends NodeProvider {
+class EndpointsNodeProvider extends WithDependenciesNodeProvider {
     
     async buildNodes(roots: nodes.BaseNode[], added: workspaceFolders.FolderData[], removed: workspaceFolders.FolderData[], _current: workspaceFolders.FolderData[]) {
+        if (!this.dependenciesRoot) {
+            this.dependenciesRoot = new nodes.DependenciesNode(symbols.Endpoint.KIND, workspaceFolders.getLibraryData(), endpointsTreeChanged);
+        }
         for (const remove of removed) {
             for (let index = 0; index < roots.length; index++) {
                 if ((roots[index] as nodes.EndpointsFolderNode).getFolderData().getWorkspaceFolder() === remove.getWorkspaceFolder()) {
