@@ -50,6 +50,7 @@ interface State {
     target?: string;
     exampleCode: boolean;
     showUntestedFetures?: boolean;
+    conflictingFeatures : number;
 }
 
 /**
@@ -93,6 +94,16 @@ export async function initialize(): Promise<any> {
 }
 
 export async function writeProjectContents(options: CreateOptions, fileHandler:FileHandler) {
+    try {
+        await writeProjectContents0(options,fileHandler);
+    } catch (err : any) {
+        logError(JSON.stringify(err));
+        dialogs.showErrorMessage(`Project generation failed: ${err.getMessage().$as('string')}`);
+        throw err;
+    }
+}
+
+async function writeProjectContents0(options: CreateOptions, fileHandler:FileHandler) {
    await initialize();
    function j(multi?: string[]) {
     if (!multi) {
@@ -109,7 +120,6 @@ export async function writeProjectContents(options: CreateOptions, fileHandler:F
    } else {
     name = name + ".project";
    }
-   try {
     await gcnApi.create(
         options.applicationType, 
         name,
@@ -126,12 +136,6 @@ export async function writeProjectContents(options: CreateOptions, fileHandler:F
     );
 
     await Promise.all(fileHandler.fileHandlerPromises);
-
-   } catch (err : any) {
-    logError(JSON.stringify(err));
-    dialogs.showErrorMessage(`Project generation failed: ${err.getMessage().$as('string')}`);
-    throw err;
-   }
 }
 
 /**
@@ -140,7 +144,14 @@ export async function writeProjectContents(options: CreateOptions, fileHandler:F
  * @returns total steps
  */
 function totalSteps(state: Partial<State>) : number {
-    return fixedSteps + (state.featureCategories?.length || 0);
+    return fixedSteps + (state.featureCategories?.length || 0) + (state.conflictingFeatures || 0);
+}
+
+function stepNumber(n : number, state : Partial<State>) : number {
+    if (n < 8 || !state.conflictingFeatures) {
+        return n;
+    }
+    return n + state.conflictingFeatures;
 }
 
 function convertLabelledValues(items: any[]): ValueAndLabel[] {
@@ -222,7 +233,7 @@ export function __getServices(): ValueAndLabel[] {
     return ret;
 }
 
-function getFeatures(untested : boolean): ValueAndLabel[] {
+function getFeatures(untested : boolean, projectType : string): ValueAndLabel[] {
     let features = gcnApi.features();
     let categories = features.keySet().toArray();
     let res = [];
@@ -238,7 +249,13 @@ function getFeatures(untested : boolean): ValueAndLabel[] {
             const preview = value.isPreview().$as('boolean');
             const community = value.isCommunity().$as('boolean');
             const tested = value.isGcnTested().$as('boolean');
-            logInfo(`Feature: ${value.getTitle().$as('string')}, preview: ${preview}, community: ${community}, tested: ${tested}`);
+            // supportedProjects yields now null, see GCN-4653
+            const supportedProjects = value.getSupportedProjectTypes()?.toArray() || [];
+            logInfo(`Feature: ${value.getTitle().$as('string')}, preview: ${preview}, community: ${community}, tested: ${tested}, supportedProjects: ${supportedProjects}`);
+
+            if (projectType && supportedProjects.length && !supportedProjects.includes(projectType)) {
+                continue;
+            }
             if (untested || tested) {
                 if (separator) {
                     res.push({
@@ -291,6 +308,12 @@ function findSelectedItems(from: ValueAndLabel[], selected: ValueAndLabel[] | Va
         }
     }
     return ret;
+}
+function values(vals?: ValueAndLabel[] | undefined) : string[] | undefined {
+    if (!vals || vals.length === 0) {
+        return undefined;
+    }
+    return vals.map((v) => v.value);
 }
 
 export async function selectCreateOptions(): Promise<CreateOptions | undefined> {    
@@ -409,8 +432,9 @@ export async function selectCreateOptions(): Promise<CreateOptions | undefined> 
         }
         const disposables: vscode.Disposable[] = [];
         try {
-            const choices  = state.micronautVersion && state.applicationType && state.sourceLevelJava ? getFeatures(state.showUntestedFetures) : [];
+            const choices  = state.micronautVersion && state.applicationType && state.sourceLevelJava ? getFeatures(state.showUntestedFetures, state.applicationType.value) : [];
             const qp = vscode.window.createQuickPick<ValueAndLabel>();
+            state.conflictingFeatures = 0;
 
             const promise = input.setupQuickPick(qp, {
                 title,
@@ -448,17 +472,49 @@ export async function selectCreateOptions(): Promise<CreateOptions | undefined> 
                 return (input: dialogs.MultiStepInput) => pickFeatures(input, state);
             }
             state.features = selected;
+            let conflicts = await validateFeature(state);
+            if (conflicts.length) {
+                return (input: dialogs.MultiStepInput) => resolveConflictingFeatures(input, state, 1, conflicts);
+            }
         } finally {
             disposables.forEach(d => d.dispose());
         }
         return (input: dialogs.MultiStepInput) => pickBuildTool(input, state);
     }
 
+    async function resolveConflictingFeatures(input: dialogs.MultiStepInput, state: Partial<State>, n : number, features : ValueAndLabel[]) : Promise<any>{
+        state.conflictingFeatures = n;
+		const selected: any = await input.showQuickPick({
+			title,
+			step: 7 + n,
+			totalSteps: totalSteps(state),
+            placeholder: 'Features are in conflict: pick just one of them',
+            items: features,
+            canSelectMany: false,
+			shouldResume: () => Promise.resolve(false)
+        });
+        const newFeatures : ValueAndLabel[] = [];
+        state.features?.forEach(f => {
+            if (!features.find(t => t.value == f.value) || selected.value == f.value) {
+                newFeatures.push(f);
+            }
+        })
+        state.features = newFeatures;
+
+        let conflicts = await validateFeature(state);
+        if (conflicts) {
+            state.conflictingFeatures = (state.conflictingFeatures || 0) + 1
+            return (input: dialogs.MultiStepInput) => resolveConflictingFeatures(input, state, n + 1, conflicts);
+        }
+    
+		return (input: dialogs.MultiStepInput) => pickBuildTool(input, state);
+    }
+
 	async function pickBuildTool(input: dialogs.MultiStepInput, state: Partial<State>) {
         const choices = getBuildTools();
 		const selected: any = await input.showQuickPick({
 			title,
-			step: 8,
+			step: stepNumber(8, state),
 			totalSteps: totalSteps(state),
             placeholder: 'Pick build tool',
             items: choices,
@@ -473,7 +529,7 @@ export async function selectCreateOptions(): Promise<CreateOptions | undefined> 
         const choices = getTestFrameworks();
 		const selected: any = await input.showQuickPick({
 			title,
-			step: 9,
+			step: stepNumber(9, state),
 			totalSteps: totalSteps(state),
             placeholder: 'Pick test framework',
             items: choices,
@@ -488,7 +544,7 @@ export async function selectCreateOptions(): Promise<CreateOptions | undefined> 
         const choices = getClouds() || [];
 		const selected: any = await input.showQuickPick({
 			title,
-			step: 10,
+			step: stepNumber(10, state),
 			totalSteps: totalSteps(state),
             placeholder: 'Pick Cloud Provider(s) to use',
             items: choices,
@@ -514,7 +570,7 @@ export async function selectCreateOptions(): Promise<CreateOptions | undefined> 
     async function selectSampleCode(input: dialogs.MultiStepInput, state: Partial<State>) {
 		const selected: any = await input.showQuickPick({
 			title,
-			step: 11,
+			step: stepNumber(11, state),
 			totalSteps: totalSteps(state),
             placeholder: 'Generate sample code',
             items: sampleYesNo,
@@ -531,18 +587,14 @@ export async function selectCreateOptions(): Promise<CreateOptions | undefined> 
         return undefined;
     }
     
-    function values(vals?: ValueAndLabel[] | undefined) : string[] | undefined {
-        if (!vals || vals.length === 0) {
-            return undefined;
-        }
-        return vals.map((v) => v.value);
-    }
-    
     const featureList: string[] = values(s.features) || [];
     if (s.buildTool.value === 'MAVEN' && !featureList.includes('graalvm')) {
         // automatically add for maven projects:
         featureList.push('graalvm');
     }
+
+    const buildTool = getBuildTools()[0];
+    const testFwk = getTestFrameworks()[0];
 
     return {
         micronautVersion: { 
@@ -550,19 +602,85 @@ export async function selectCreateOptions(): Promise<CreateOptions | undefined> 
             serviceUrl: s.micronautVersion.serviceUrl
         },
         applicationType: s.applicationType.value,
-        buildTool: s.buildTool.value,
+        buildTool: buildTool.value,
         language: 'JAVA',
-        testFramework: s.testFramework.value,
+        testFramework: testFwk.value,
 
         basePackage: s.basePackage,
         projectName: s.projectName,
         javaVersion: `JDK_${s.sourceLevelJava.value}`,
 
-        clouds: values(s.clouds),
+        clouds: [],
         services: values(s.services),
         features: featureList.length > 0 ? featureList : undefined,
         exampleCode: s.exampleCode
     };
+}
+
+async function validateFeature(s : Partial<State>) : Promise<ValueAndLabel[]> {
+    const allFeatures = getFeatures(true, s.applicationType?.value || '');
+    const featureList: string[] = values(s.features) || [];
+    if (s.buildTool?.value === 'MAVEN' && !featureList.includes('graalvm')) {
+        // automatically add for maven projects:
+        featureList.push('graalvm');
+    }
+
+    const buildTool = getBuildTools()[0];
+    const testFwk = getTestFrameworks()[0];
+
+    let options : CreateOptions = {
+        micronautVersion: { 
+            label: s.micronautVersion?.label || '',
+            serviceUrl: s.micronautVersion?.serviceUrl || ''
+        },
+        applicationType: s.applicationType?.value || '',
+        buildTool: buildTool.value,
+        language: 'JAVA',
+        testFramework: testFwk.value,
+
+        basePackage: s.basePackage,
+        projectName: s.projectName || '',
+        javaVersion: `JDK_${s.sourceLevelJava?.value}`,
+
+        clouds: [],
+        services: values(s.services),
+        features: featureList.length > 0 ? featureList : undefined,
+        exampleCode: s.exampleCode
+    };
+
+    class DummyFileHandler extends FileHandler {
+
+        constructor(locationUri:vscode.Uri){
+            super(locationUri);
+        }
+
+        writeFile() {
+            return (_pathName: any, _bytes: any, _isBinary: any, _isExecutable: any) => {};
+        }
+        
+        changeMode(_fileUri: vscode.Uri, _isExecutable: boolean): void {
+            // no op
+        }
+    }
+
+    try {
+        await writeProjectContents0(options,new DummyFileHandler(vscode.Uri.parse('')));
+    } catch (err : any) {
+        const messageText = err.getMessage()?.$as('string');
+        const re = /.*of the following features selected: \[([^]+)\].*/.exec(messageText);
+        if (re) {
+            const listOfFeatures = re[1].split(",").map(s => s.trim()).map(f =>
+                allFeatures.find(t => t.value == f)
+            ).filter(f => f);
+            if (listOfFeatures.length) {
+                // OK, we've filtered undefined-s out.
+                return listOfFeatures as ValueAndLabel[];
+            }
+        }
+        logError(JSON.stringify(err));
+    }
+
+    return [];
 }
 
 export function normalizeJavaVersion(version: string | undefined, supportedVersions: string[], defaultVersion : string = '8'): string {
