@@ -593,24 +593,21 @@ export async function selectCreateOptions(): Promise<CreateOptions | undefined> 
         featureList.push('graalvm');
     }
 
-    const buildTool = getBuildTools()[0];
-    const testFwk = getTestFrameworks()[0];
-
     return {
         micronautVersion: { 
             label: s.micronautVersion.label,
             serviceUrl: s.micronautVersion.serviceUrl
         },
         applicationType: s.applicationType.value,
-        buildTool: buildTool.value,
+        buildTool: s.buildTool.value,
         language: 'JAVA',
-        testFramework: testFwk.value,
+        testFramework: s.testFramework.value,
 
         basePackage: s.basePackage,
         projectName: s.projectName,
         javaVersion: `JDK_${s.sourceLevelJava.value}`,
 
-        clouds: [],
+        clouds: values(s.clouds),
         services: values(s.services),
         features: featureList.length > 0 ? featureList : undefined,
         exampleCode: s.exampleCode
