@@ -35,7 +35,7 @@ suite(`Oci Combined pipelines test: ${wf![0].name}`, function () {
   let comaprtmentOCID: string;
   let jvmItem: any;
   let randomGuid: string;
-  let extContext : vscode.ExtensionContext;
+  let extContext: vscode.ExtensionContext;
 
   suite('Test configuaration', function () {
     suite('Prepare poject', function () {
@@ -119,7 +119,9 @@ suite(`Oci Combined pipelines test: ${wf![0].name}`, function () {
 
         test('Clean extension deploy context', async function() {
           extContext = await vscode.commands.executeCommand('_oci.devops.getExtensionContext');
-          extContext.workspaceState.update('devops_tooling_deployData', undefined);
+          if (extContext) {
+            extContext.workspaceState.update('devops_tooling_deployData', undefined);
+          }
         });
 
         test('Create controller', async function () {
@@ -188,7 +190,7 @@ suite(`Oci Combined pipelines test: ${wf![0].name}`, function () {
           const configurationProblem = auth.getConfigurationProblem();
           assert.ok(!configurationProblem, configurationProblem);
 
-          assert.ok(auth, 'Authentication failed! Check your oci config.'); 
+          assert.ok(auth, 'Authentication failed! Check your oci config.');
           provider = auth.getProvider();
           assert.ok(provider, 'provider is ok');
         });
@@ -223,7 +225,7 @@ suite(`Oci Combined pipelines test: ${wf![0].name}`, function () {
 
         for (let compartment of compartments) {
           if (compartment.id === COMPARTMENT_OCID) {
-            comaprtmentOCID = compartment.id; 
+            comaprtmentOCID = compartment.id;
             break;
           }
           if (compartment.name === DEPLOY_COMPARTMENT_NAME) {
@@ -320,35 +322,28 @@ suite(`Oci Combined pipelines test: ${wf![0].name}`, function () {
       // List build stages
       test('List build stages', async () => {
         assert.ok(provider !== undefined, 'Authentication failed');
+        const stages = await ociUtils.listBuildPipelineStages(provider, JVMContainerPipelineId);
+        assert.ok(stages.length > 0, 'No JVM build pipeline stages found!');
 
-        test('JVM build stage');
-        {
-          const stages = await ociUtils.listBuildPipelineStages(provider, JVMContainerPipelineId);
-          assert.ok(stages.length > 0, 'No JVM build pipeline stages found!');
-
-          jvmItem = stages.find(
-            (item1) =>
-              item1.buildPipelineStageType === devops.models.DeliverArtifactStageSummary.buildPipelineStageType,
-          ) as devops.models.DeliverArtifactStageSummary;
-          assert.ok(jvmItem?.deliverArtifactCollection.items.length, 'Jvm item Not Found ');
-        }
+        jvmItem = stages.find(
+          (item1) =>
+            item1.buildPipelineStageType === devops.models.DeliverArtifactStageSummary.buildPipelineStageType,
+        ) as devops.models.DeliverArtifactStageSummary;
+        assert.ok(jvmItem?.deliverArtifactCollection.items.length, 'Jvm item Not Found ');
       });
 
       test('Artifact', async function () {
-        test('JVM artifact');
-        {
-          const jvmartifact = await ociUtils.getDeployArtifact(
-            provider,
-            jvmItem.deliverArtifactCollection.items[0].artifactId,
-          );
-          assert.ok(
-            jvmartifact.deployArtifactSource.deployArtifactSourceType ===
-              devops.models.OcirDeployArtifactSource.deployArtifactSourceType,
-            'Artifact Not Found',
-          );
-          const image = (jvmartifact.deployArtifactSource as devops.models.OcirDeployArtifactSource).imageUri;
-          assert.ok(image, 'No Image Found');
-        }
+        const jvmartifact = await ociUtils.getDeployArtifact(
+          provider,
+          jvmItem.deliverArtifactCollection.items[0].artifactId,
+        );
+        assert.ok(
+          jvmartifact.deployArtifactSource.deployArtifactSourceType ===
+          devops.models.OcirDeployArtifactSource.deployArtifactSourceType,
+          'Artifact Not Found',
+        );
+        const image = (jvmartifact.deployArtifactSource as devops.models.OcirDeployArtifactSource).imageUri;
+        assert.ok(image, 'No Image Found');
       });
 
       // Start the build pipelines
@@ -577,12 +572,12 @@ suite(`Oci Combined pipelines test: ${wf![0].name}`, function () {
         assert.ok(nativeBuildState !== undefined, 'Build timeout in switching to finishing state');
         assert.ok(
           jvmBuildState === 'oci.devops.deploymentPipelineNode-has-lastdeployment' ||
-            jvmBuildState === 'oci.devops.deploymentPipelineNode-deployments-available',
+          jvmBuildState === 'oci.devops.deploymentPipelineNode-deployments-available',
           'Build switched to unexpected state',
         );
         assert.ok(
           nativeBuildState === 'oci.devops.deploymentPipelineNode-has-lastdeployment' ||
-            nativeBuildState === 'oci.devops.deploymentPipelineNode-deployments-available',
+          nativeBuildState === 'oci.devops.deploymentPipelineNode-deployments-available',
           'Build switched to unexpected state',
         );
       }).timeout(1000 * 60 * 30);
@@ -592,14 +587,15 @@ suite(`Oci Combined pipelines test: ${wf![0].name}`, function () {
         assert.ok(provider !== undefined, 'Authentication failed');
 
         const jvmRuns: any[] = await ociUtils.listDeployments(provider, JVMContainerPipelineId);
+        const nativeRuns: any[] = await ociUtils.listDeployments(provider, nativeContainerPipelineId);
+
         assert.ok(jvmRuns.length > 0, 'No build runs');
         // Check if latest two runs succeeded
-        assert.strictEqual(jvmRuns[0].lifecycleState, 'SUCCEEDED');
+        assert.strictEqual(jvmRuns[0].lifecycleState, 'SUCCEEDED', 'JVM run is in ${jvmRuns[0].lifecycleState} state rather than SUCCEEDED');
 
-        const nativeRuns: any[] = await ociUtils.listDeployments(provider, nativeContainerPipelineId);
         assert.ok(nativeRuns.length > 0, 'No build runs');
         // Check if latest two runs succeeded
-        assert.strictEqual(nativeRuns[0].lifecycleState, 'SUCCEEDED');
+        assert.strictEqual(nativeRuns[0].lifecycleState, 'SUCCEEDED', 'Native run is in ${nativeRuns[0].lifecycleState} state rather than SUCCEEDED');
       });
     });
 

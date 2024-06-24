@@ -5,9 +5,19 @@ import glob from 'glob';
 export function run(): Promise<void> {
 	// Create the mocha test
 	const mocha = new Mocha({
-		ui: 'tdd'
+		ui: 'tdd',
+		color: true,
+		reporter: 'mochawesome',
+		reporterOptions: {
+		  // disable overwrite to generate many JSON reports
+		  overwrite: false,
+		  // do not generate intermediate HTML reports
+		  html: false,
+		  // generate intermediate JSON reports
+		  json: true,
+		},
 	});
- 
+
 	const testsRoot = path.resolve(__dirname, '..');
 
 	return new Promise((c, e) => {

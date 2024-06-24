@@ -7,12 +7,31 @@
 
 import path from 'path';
 import Mocha from 'mocha';
+import * as vscode from 'vscode';
 
-export function run(): Promise<void> {
+
+export async function run(): Promise<void> {
+	console.log('Pre-Activating K8s extension...');
+  const ext = vscode.extensions.getExtension("ms-kubernetes-tools.vscode-kubernetes-tools");
+	if (ext) {
+		await ext.activate();
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+	}
+
   // Create the mocha test
   const mocha = new Mocha({
     ui: 'tdd',
     color: true,
+    reporter: 'mochawesome',
+    reporterOptions: {
+      reportDir: path.join(process.cwd(), 'mochawesome-report-generator'),
+      // disable overwrite to generate many JSON reports
+      overwrite: true,
+      // do not generate intermediate HTML reports
+      html: true,
+      // generate intermediate JSON reports
+      json: true,
+    }
   });
 
   return new Promise((c, e) => {
