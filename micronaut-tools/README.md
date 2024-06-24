@@ -30,6 +30,7 @@ Install the [Graal Development Kit for Micronaut Extension Pack](https://marketp
 * [Connect to an Oracle Autonomous Database](#connect-to-an-oracle-autonomous-database)
 * [Create Entity Classes and Repository Interfaces from an Existing Database Schema](#create-entity-classes-and-repository-interfaces-from-an-existing-database-schema)
 * [Create Micronaut Controller Classes from Micronaut Data Repositories](#create-micronaut-controller-classes-from-micronaut-data-repositories)
+* [Create Tests for Micronaut Controller Endpoints](#create-tests-for-micronaut-controller-endpoints)
 
 To request a feature or report a bug, please [contact us](#feedback).
 
@@ -94,7 +95,7 @@ If an endpoint require parameters, a dialog box is provided for you to enter par
 ### Compose REST Queries
 To easily debug and test the REST API of your application, the **ENDPOINTS** view provides smooth integration with a third-party extension [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client).
 
-To compose a REST query, invoke the **Compose REST Query** action for an endpoint either from the **ENDPOINTS** view or by using the corresponding Code Lens action in the code editor. A dedicated text document is opened, and the corresponding query is inserted. Use the REST Client features to invoke and process the query.
+To compose a REST query, invoke the **Compose REST Query** action for an endpoint either from the **ENDPOINTS** view or by using the corresponding Code Lens action in the code editor. A dedicated text document is opened, and the corresponding query is inserted. For the POST and PUT queries, the necessary request body is pre-created in the code editor in a form of parameterized code snippet. Use the REST Client features to invoke and process the query.
 
 ![Compose REST Query](images/compose_rest_query.png)
 
@@ -427,11 +428,17 @@ By creating Controllers that expose your Micronaut Data repository interfaces, y
 
 A controller that has access to the data repository is generated for each of the Micronaut Data repository interfaces that you selected in the wizard. By default, it contains a REST endpoint to access the repository's `findAll()` method in its `list()` method. 
 
-Other REST Endpoints accessing a repository can be added to the controller. It is possible to add a _delete_ endpoint method, or different _find_ methods. This can be done either through **code completion** (select the desired method from the list) or directly from the editor:  **Source Action... | Generate Data Endpoint...**.
+Other REST Endpoints accessing a repository can be added to the controller. It is possible to add various _get_, _save_, _update_, and _delete_ endpoint methods delegating to methods available in the corresponding repository. This can be done either through **code completion** (select the desired method from the list) or directly from the editor:  **Source Action... | Generate Data Endpoint...**.
 
-Currently, `delete()` and `get()` methods are provided; both are annotated with the Data Entity `@id` parameter. 
+Currently, variants of the `get()`, `save()`, `update()`, and `delete()` methods are provided. 
 
 ![Create Micronaut Controller Classes](./images/create-controllers.gif)
+
+### Create Tests for Micronaut Controller Endpoints
+
+To generate a test class with a test method for every endpoint method of a controller class, invoke **Source Action... | Generate Micronaut Endpoint Tests...** inside of the controller class opened in the editor.
+
+![Create Tests for Micronaut Controller Endpoints](./images/controller-source-actions.png)
 
 ## Extension Settings
 
