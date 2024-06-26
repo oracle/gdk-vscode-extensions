@@ -10,18 +10,18 @@
 export const DEFAULT_JAVA_VERSION = '21';
 export const DEFAULT_GRAALVM_VERSION = '23';
 
-export function getBuildRunGVMVersion(activeGVMVersions?: string[]): string[] {
-    const activeJavaVersion = activeGVMVersions?.[0];
-    const javaVersion = activeJavaVersion ? activeJavaVersion : DEFAULT_JAVA_VERSION;
+export function getBuildRunGVMVersion(requiredGVMVersions?: string[]): string[] {
+    const requiredJavaVersion = requiredGVMVersions?.[0];
+    const javaVersion = requiredJavaVersion ? requiredJavaVersion : DEFAULT_JAVA_VERSION;
     
-    const activeGraalVMVersion = activeGVMVersions?.[1];
+    const requiredGraalVMVersion = requiredGVMVersions?.[1];
     let graalVMVersion;
-    if (activeGraalVMVersion) {
-        if (activeGraalVMVersion.endsWith('.0.0-dev')) { // stable version not available yet for the remote yum
+    if (requiredGraalVMVersion) {
+        if (requiredGraalVMVersion.endsWith('.0.0-dev')) { // stable version not available yet for the remote yum
             graalVMVersion = DEFAULT_GRAALVM_VERSION; // TODO: should use previous stable GraalVM version (major--)?
         } else {
-            const i = activeGraalVMVersion.indexOf('.');
-            graalVMVersion = i === -1 ? activeGraalVMVersion : activeGraalVMVersion.slice(0, i);
+            const i = requiredGraalVMVersion.indexOf('.');
+            graalVMVersion = i === -1 ? requiredGraalVMVersion : requiredGraalVMVersion.slice(0, i);
         }
     } else {
         graalVMVersion = DEFAULT_GRAALVM_VERSION;

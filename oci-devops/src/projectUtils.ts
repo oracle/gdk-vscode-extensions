@@ -283,6 +283,84 @@ function tryReadGradleVersion(folder : string, version: string = '0.1') : string
     return version;
 }
 
+export async function getProjectRequiredJavaVersion(folder: vscode.WorkspaceFolder): Promise<string | undefined> {
+    const project = await getProjectFolder(folder);
+    // TODO: once there's a proper way to read the toolchain languageVersion, should probably be used for all project types, not only SpringBoot
+    if (project.projectType === 'SpringBoot' && project.buildSystem === 'Gradle') {
+        return tryReadGradleToolchainJavaVersion(folder.uri.fsPath);
+    }
+    return undefined;
+}
+
+function tryReadGradleToolchainJavaVersion(folder: string): string | undefined {
+    const buildscript = path.resolve(folder, 'build.gradle');
+    if (fs.existsSync(buildscript)) {
+        try {
+            const lines = fs.readFileSync(buildscript).toString().split(/\r?\n/);
+
+            function chCount(ch: string, string: string): number {
+                let count = 0;
+                for (const char of string) {
+                    if (char === ch) {
+                        count++;
+                    }
+                }
+                return count;
+            }
+            function isBlockStart(block: string, string: string): boolean {
+                string = string.replace(/\s+/g, '');
+                return string.startsWith(`${block}{`);
+            }
+            function getBlockLines(block: string, lines: string[]): string[] | undefined {
+                let blockLines: string[] | undefined;
+                let blockLevel = 0;
+                for (const line of lines) {
+                    if (!blockLines && isBlockStart(block, line)) {
+                        blockLevel += chCount('{', line);
+                        blockLevel -= chCount('}', line);
+                        if (blockLevel > 0) {
+                            blockLines = [];
+                        } else {
+                            break;
+                        }
+                    } else if (blockLines) {
+                        blockLevel += chCount('{', line);
+                        blockLevel -= chCount('}', line);
+                        if (blockLevel > 0) {
+                            blockLines.push(line);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                return blockLines;
+            }
+
+            // TODO: temporary hack, needs a proper way to read the toolchain languageVersion
+            const javaBlockLines = getBlockLines('java', lines);
+            if (javaBlockLines?.length) {
+                const toolchainBlockLines = getBlockLines('toolchain', javaBlockLines);
+                if (toolchainBlockLines?.length) {
+                    for (const rawLine of toolchainBlockLines) {
+                        const line = rawLine.replace(/\s+/g, '');
+                        if (line.startsWith('languageVersion=JavaLanguageVersion.of(')) {
+                            const closingIndex = line.indexOf(')');
+                            if (closingIndex > 0) {
+                                const languageVersion = line.slice('languageVersion=JavaLanguageVersion.of('.length, closingIndex);
+                                logInfo(`[project] Detected SpringBoot Gradle project with toolchain languageVersion=${languageVersion}`);
+                                return languageVersion;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            logError(`[project] Failed to process ${buildscript}: ${err}`);
+        }
+    }
+    return undefined;
+}
+
 export async function getProjectBuildArtifactLocation(folder: ProjectFolder, subfolder: string = 'oci', shaded : boolean = true): Promise<string | undefined> {
     const projectPath: string = folder.uri.path;
     let artifacts: any[] | undefined = undefined;
