@@ -616,13 +616,16 @@ suite(`Oci Combined pipelines test: ${wf![0].name}`, function () {
 
       this.afterAll(() => {
         try {
-          const deleteCommand = 'kubectl delete deployment --all --namespace=default';
-          execSync(deleteCommand);
-          console.log('Deleted all deployments in the default namespace.');
+          const projectName = wf![0].name;
+          let deploymentName = projectName.replace(/_/g, "-");
+          
+          const deleteCommand = `kubectl delete deployment ${deploymentName} -n default`;
+          execSync(deleteCommand, { timeout: 50000 });
+          console.log(`Deployment ${projectName} deleted in the default namespace.`);
         } catch (error) {
           console.error('Error deleting deployments:', error);
         }
-        });
+        }).timeout(60 * 1000);
 
     });
   });
