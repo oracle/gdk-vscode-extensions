@@ -16,6 +16,7 @@
 		],
 		"sourceMap": true,
 		"rootDir": "src",
+		"allowSyntheticDefaultImports": true,
 		/* Strict Type-Checking Option */
 		"strict": true,   /* enable all strict type-checking options */
 		/* Additional Checks */
