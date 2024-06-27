@@ -59,7 +59,7 @@ const config = {
                 loader: 'ts-loader'
             }]
         }],
-        noParse: path.resolve(__dirname, 'lib', 'gcn.ui.api.js')
+        noParse: path.resolve(__dirname, 'lib', 'cloud.graal.gdk.ui.api-single.js')
     },
     plugins: [
         new ESLintPlugin({extensions: ['ts']})
@@ -114,7 +114,7 @@ const devConf = {
                 }
             }]
         }],
-        noParse: path.resolve(__dirname, 'lib', 'gcn.ui.api.js')
+        noParse: path.resolve(__dirname, 'lib', 'cloud.graal.gdk.ui.api-single.js')
     },
     optimization: { 
         minimize: false

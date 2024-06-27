@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 import * as dialogs from '../../common/lib/dialogs';
 import { logError, logInfo } from '../../common/lib/logUtils';
 
-require('../lib/gcn.ui.api');
+require('../lib/cloud.graal.gdk.ui.api-single');
 
 /**
  * Title for the whole Wizard
@@ -89,7 +89,7 @@ export async function initialize(): Promise<any> {
         await graalVMExt.activate();
     }
     return gcnApi ? Promise.resolve(gcnApi) : AotjsVM.run([]).then((vm: any) => {
-        return gcnApi = vm.exports.cloud.graal.gcn.ui.API;
+        return gcnApi = vm.exports.cloud.graal.gdk.ui.API;
     });
 }
 
@@ -248,7 +248,7 @@ function getFeatures(untested : boolean, projectType : string): ValueAndLabel[] 
             let value = featuresArr[k];
             const preview = value.isPreview().$as('boolean');
             const community = value.isCommunity().$as('boolean');
-            const tested = value.isGcnTested().$as('boolean');
+            const tested = value.isGdkTested().$as('boolean');
             // supportedProjects yields now null, see GCN-4653
             const supportedProjects = value.getSupportedProjectTypes()?.toArray() || [];
             logInfo(`Feature: ${value.getTitle().$as('string')}, preview: ${preview}, community: ${community}, tested: ${tested}, supportedProjects: ${supportedProjects}`);
