@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { devops, identity } from 'oci-sdk';
 import * as path from 'path';
+import { execSync } from 'child_process';
 
 import * as projectUtils from '../../../../../../../oci-devops/out/projectUtils';
 import * as ociAuthentication from '../../../../../../../oci-devops/out/oci/ociAuthentication';
@@ -612,6 +613,20 @@ suite(`Oci Combined pipelines test: ${wf![0].name}`, function () {
           }
         }
       }).timeout(50 * 60 * 1000);
+
+      this.afterAll(() => {
+        try {
+          const projectName = wf![0].name;
+          let deploymentName = projectName.replace(/_/g, "-");
+          
+          const deleteCommand = `kubectl delete deployment ${deploymentName} -n default`;
+          execSync(deleteCommand, { timeout: 50000 });
+          console.log(`Deployment ${projectName} deleted in the default namespace.`);
+        } catch (error) {
+          console.error('Error deleting deployments:', error);
+        }
+        }).timeout(60 * 1000);
+
     });
   });
 });
