@@ -24,19 +24,21 @@ steps:
     name: "Define docker image tag"
     timeoutInSeconds: 40
     command: |
+      # This logic ensures DOCKER_TAG_INPUT is set to avoid conflicts in variable naming and guarantee that DOCKER_TAG has a consistent value.
       echo "OCI_BUILD_RUN_ID: ${OCI_BUILD_RUN_ID}"
-      export DOCKER_TAG="latest"
-      echo "DOCKER_TAG: ${DOCKER_TAG}"
+      if [ ! -n "${DOCKER_TAG_INPUT}" ]; then export DOCKER_TAG_INPUT={{{docker_tag_value}}}; fi
+      DOCKER_TAG=${DOCKER_TAG_INPUT}
+      echo "DOCKER_TAG_INPUT: ${DOCKER_TAG_INPUT}"
   - type: Command
     name: "Docker build"
     command: |
       echo "Running docker image build."
-      echo "Docker Image Tag: ${DOCKER_TAG}"
+      echo "Docker Image Tag: ${DOCKER_TAG_INPUT}"
       docker build -f {{{docker_file}}} \
-                   -t {{{image_name}}}:${DOCKER_TAG} .
+                   -t {{{image_name}}}:${DOCKER_TAG_INPUT} .
       echo "Done"
       printf "List of docker images:\n $(docker images)"
 outputArtifacts:
   - name: {{{deploy_artifact_name}}}
     type: DOCKER_IMAGE
-    location: {{{image_name}}}:latest
+    location: {{{image_name}}}:${DOCKER_TAG}

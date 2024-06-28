@@ -234,6 +234,12 @@
 				"category": "OCI DevOps"
 			},
 			{
+				"command": "oci.devops.runBuildPipelineWithParameters",
+				"title": "Run Build Pipeline With Parameters",
+				"icon": "$(run)",
+				"category": "OCI DevOps"
+			},
+			{
 				"command": "oci.devops.stopBuildPipeline",
 				"title": "Stop Current Build",
 				"icon": "$(error)",
@@ -242,6 +248,12 @@
 			{
 				"command": "oci.devops.runDeployPipeline",
 				"title": "Run Deployment Pipeline",
+				"icon": "$(run)",
+				"category": "OCI DevOps"
+			},
+			{
+				"command": "oci.devops.runDeployPipelineWithParameters",
+				"title": "Run Deployment Pipeline With Parameters",
 				"icon": "$(run)",
 				"category": "OCI DevOps"
 			},
@@ -499,11 +511,19 @@
 					"when": "false"
 				},
 				{
+					"command": "oci.devops.runBuildPipelineWithParameters",
+					"when": "false"
+				},
+				{
 					"command": "oci.devops.stopBuildPipeline",
 					"when": "false"
 				},
 				{
 					"command": "oci.devops.runDeployPipeline",
+					"when": "false"
+				},
+				{
+					"command": "oci.devops.runDeployPipelineWithParameters",
 					"when": "false"
 				},
 				{
@@ -726,6 +746,11 @@
 					"group": "context@1@1"
 				},
 				{
+					"command": "oci.devops.runBuildPipelineWithParameters",
+					"when": "viewItem == oci.devops.buildPipelineNode || viewItem == oci.devops.buildPipelineNode-has-lastrun || viewItem == oci.devops.buildPipelineNode-artifacts-available || viewItem == oci.devops.buildPipelineNode-single-download-available || viewItem == oci.devops.buildPipelineNode-single-image-available",
+					"group": "context@1@1"
+				},
+				{
 					"command": "oci.devops.stopBuildPipeline",
 					"when": "viewItem == oci.devops.buildPipelineNode-in-progress",
 					"group": "inline@1"
@@ -742,6 +767,11 @@
 				},
 				{
 					"command": "oci.devops.runDeployPipeline",
+					"when": "viewItem == oci.devops.deploymentPipelineNode || viewItem == oci.devops.deploymentPipelineNode-has-lastdeployment || viewItem == oci.devops.deploymentPipelineNode-deployments-available",
+					"group": "context@1@1"
+				},
+				{
+					"command": "oci.devops.runDeployPipelineWithParameters",
 					"when": "viewItem == oci.devops.deploymentPipelineNode || viewItem == oci.devops.deploymentPipelineNode-has-lastdeployment || viewItem == oci.devops.deploymentPipelineNode-deployments-available",
 					"group": "context@1@1"
 				},
@@ -904,10 +934,10 @@
 		"info": "webpack --display-modules",
 		"watch": "webpack --mode development --watch",
 		"watch-tests": "tsc --outDir out --watch",
-		"clean": "shx rm -rf ./out ./dist",
+		"clean": "rm -rf ./out ./dist",
 		"clean-all": "npm run clean",
 		"test-compile-dependencies": "cd ../extension-tests && npm run compile",
-		"test-clean": "shx rm -r out",
+		"test-clean": "rm -r out",
 		"test-compile": "tsc -p . --declaration --outDir out",
 		"pre-test": "cross-env TEST_EXTENSION_DIR=$INIT_CWD GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./node_modules/gcn-extension-tests/bin/main.js --prepareVscode",
 		"test": "cross-env TEST_EXTENSION_DIR=$INIT_CWD GLOBAL_AGENT_NO_PROXY=$no_proxy GLOBAL_AGENT_HTTP_PROXY=$http_proxy node --require global-agent/bootstrap ./node_modules/gcn-extension-tests/bin/main.js --runTest",
@@ -946,7 +976,7 @@
 		"@typescript-eslint/eslint-plugin": "^5.54.1",
 		"@typescript-eslint/parser": "^5.54.1",
 		"@vscode/codicons": "0.0.20",
-		"@vscode/test-electron": "^2.3.10",
+		"@vscode/test-electron": "^2.2.3",
 		"ajv": "^8.12.0",
 		"cross-env": "^7.0.3",
 		"cross-os": "^1.5.0",
@@ -956,16 +986,15 @@
 		"gcn-extension-tests": "file:../extension-tests",
 		"glob": "^8.1.0",
 		"global-agent": "^3.0.0",
-		"handlebars": "^4.7.8",
-		"handlebars-loader": "^1.7.3",
 		"mocha": "^10.1.0",
 		"mochawesome": "^7.1.3",
 		"node-abort-controller": "^3.1.1",
-		"shx": "^0.3.4",
 		"ts-loader": "^9.4.2",
-		"typescript": "^5.5.2",
+		"handlebars": "^4.7.8",
+		"handlebars-loader": "^1.7.3",
+		"typescript": "^4.9.5",
 		"undici": "^6.14.0",
-		"vscode-extension-tester": "^8.3.0",
+		"vscode-extension-tester": "^5.2.1",
 		"webpack": "^5.74.0",
 		"webpack-cli": "^4.10.0"
 	},
