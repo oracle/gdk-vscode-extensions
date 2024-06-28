@@ -2421,9 +2421,6 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         }
                     }
 
-                    // Add /bin folders created by EDT to .gitignore
-                    gitUtils.addGitIgnoreEntry(folder.uri.fsPath, '**/bin');
-
                 } else { // Micronaut, SpringBoot, Helidon, other Java projects
                     logUtils.logInfo(`[deploy] ${folder.projectType !== 'Unknown' ? 'Recognized ' : ''}${folder.projectType} project in ${deployData.compartment.name}/${projectName}/${repositoryName}`);
 
@@ -3404,6 +3401,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                 }
                 logUtils.logInfo(`[deploy] Populating source code repository ${deployData.compartment.name}/${projectName}/${repositoryName} from ${repositoryDir.fsPath}`);
                 gitUtils.addGitIgnoreEntry(folder.uri.fsPath, folderStorage.getDefaultLocation());
+                // Add /bin folders created by EDT to .gitignore
+                gitUtils.addGitIgnoreEntry(folder.uri.fsPath, '**/bin');
                 const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir, folderData, async () => {
                     if (!deployData.user) {
                         const user = await ociUtils.getUser(provider);
