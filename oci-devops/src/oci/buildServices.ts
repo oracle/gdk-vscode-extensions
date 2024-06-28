@@ -12,6 +12,7 @@ import { isRunBuildPipelineCustomShapeConfirmedPermanently, confirmRunBuildPipel
 import * as dialogs from '../../../common/lib/dialogs';
 import * as gitUtils from '../gitUtils';
 import * as graalvmUtils from '../graalvmUtils';
+import * as projectUtils from '../projectUtils';
 import * as servicesView from '../servicesView';
 import * as logUtils from '../../../common/lib/logUtils';
 import * as ociUtils from './ociUtils';
@@ -382,9 +383,10 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
     async runPipeline(tests: boolean = false) {
         const currentState = this.lastRun?.state;
         if (currentState === devops.models.BuildRun.LifecycleState.Canceling || !ociUtils.isRunning(currentState)) {
-            const folder = servicesView.findWorkspaceFolderByNode(this)?.uri;
-            if (folder) {
-                if (gitUtils.locallyModified(folder)) {
+            const folder = servicesView.findWorkspaceFolderByNode(this);
+            const folderUri = folder?.uri;
+            if (folderUri) {
+                if (gitUtils.locallyModified(folderUri)) {
                     const cancelOption = 'Cancel Build And Show Source Control View';
                     const runBuildOption = 'Build Anyway';
                     const selOption = await vscode.window.showWarningMessage('Local souces differ from the repository content in cloud.', cancelOption, runBuildOption);
@@ -395,19 +397,25 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
                         return;
                     }
                 }
-                const head = gitUtils.getHEAD(folder);
+                const head = gitUtils.getHEAD(folderUri);
                 if (head?.name && !head.upstream) {
                     const cancelOption = 'Cancel Build';
                     const pushOption = 'Publish Branch And Continue';
                     if (pushOption !== await vscode.window.showWarningMessage(`Local branch "${head.name}" has not been published yet.`, cancelOption, pushOption)) {
                         return;
                     } else {
-                        await gitUtils.pushLocalBranch(folder);
+                        await gitUtils.pushLocalBranch(folderUri);
                     }
                 }
                 const buildName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
                 const params: { name: string; value: string }[] = [];
-                const targetGvmVersion = graalvmUtils.getBuildRunGVMVersion();
+                const requiredJavaVersion = await vscode.window.withProgress({
+                        location: { viewId: 'oci-devops' }
+                    }, (_progress, _token) => {
+                        return projectUtils.getProjectRequiredJavaVersion(folder);
+                    }
+                );
+                const targetGvmVersion = graalvmUtils.getBuildRunGVMVersion(requiredJavaVersion ? [requiredJavaVersion, ''] : undefined);
                 const gvmParams = graalvmUtils.getGVMBuildRunParameters(targetGvmVersion);
                 if (gvmParams) {
                     params.push(...gvmParams);
