@@ -50,11 +50,11 @@ export class ServerStopEndpoint extends beanHandler.BeanHandler {
         }
     }
 
-    buildVmArgs(): string | undefined {
+    buildVmArgs(): string[] | undefined {
         // if (!this.isEnabled()) {
         //     return undefined;
         // }
-        return '-Dendpoints.stop.enabled=true -Dendpoints.stop.sensitive=false';
+        return ['-Dendpoints.stop.enabled=true', '-Dendpoints.stop.sensitive=false'];
     }
 
 }

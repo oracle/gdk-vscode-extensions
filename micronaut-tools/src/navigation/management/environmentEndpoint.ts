@@ -34,11 +34,11 @@ export class EnvironmentEndpoint extends beanHandler.UpdatableBeanHandler {
         return this.lastActiveEnvironments;
     }
 
-    buildVmArgs(): string | undefined {
+    buildVmArgs(): string[] | undefined {
         // if (!this.isEnabled()) {
         //     return undefined;
         // }
-        return '-Dendpoints.env.enabled=true -Dendpoints.env.sensitive=false';
+        return ['-Dendpoints.env.enabled=true', '-Dendpoints.env.sensitive=false'];
     }
 
 }

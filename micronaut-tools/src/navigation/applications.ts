@@ -335,31 +335,31 @@ export class Application {
         }
     }
 
-    buildVmArgs(): string | undefined {
+    buildVmArgs(): string[] | undefined {
         const vmArgs: string[] = [];
 
         if (this.isSSL()) {
-            vmArgs.push(`-Dmicronaut.ssl.enabled=true -Dmicronaut.server.ssl.buildSelfSigned=true -Dmicronaut.server.ssl.port=${this.getPort()}`);
+            vmArgs.push(...['-Dmicronaut.ssl.enabled=true', '-Dmicronaut.server.ssl.buildSelfSigned=true', `-Dmicronaut.server.ssl.port=${this.getPort()}`]);
         } else {
             vmArgs.push(`-Dmicronaut.server.port=${this.getPort()}`);
         }
 
         const environmentsVmArgs = this.definedEnvironments.buildVmArgs();
-        if (environmentsVmArgs) {
-            vmArgs.push(environmentsVmArgs);
+        if (environmentsVmArgs?.length) {
+            vmArgs.push(...environmentsVmArgs);
         }
 
         const managementVmArgs = this.management.buildVmArgs();
-        if (managementVmArgs) {
-            vmArgs.push(managementVmArgs);
+        if (managementVmArgs?.length) {
+            vmArgs.push(...managementVmArgs);
         }
 
         const controlPanelVmArgs = this.controlPanel.buildVmArgs();
-        if (controlPanelVmArgs) {
-            vmArgs.push(controlPanelVmArgs);
+        if (controlPanelVmArgs?.length) {
+            vmArgs.push(...controlPanelVmArgs);
         }
 
-        return vmArgs.length ? vmArgs.join(' ') : undefined;
+        return vmArgs.length ? vmArgs : undefined;
     }
 
     getDefinedEnvironments(): applicationEnvironments.DefinedEnvironments {
@@ -421,15 +421,25 @@ class RunCustomizer implements vscode.DebugConfigurationProvider {
                         const vmArgs = data.getApplication().buildVmArgs();
                         // console.log('VMARGS existing ' + config.vmArgs)
                         // console.log('VMARGS updated ' + vmArgs)
-                        if (vmArgs) {
+                        if (vmArgs?.length) {
                             if (!config.vmArgs) {
-                                config.vmArgs = vmArgs;
+                                config.vmArgs = vmArgs.join(' ');
                             } else {
                                 // TODO: override defined args where necessary (port, env, etc.)
-                                config.vmArgs = `${config.vmArgs} ${vmArgs}`;
+                                if (Array.isArray(config.vmArgs)) {
+                                    config.vmArgs.push(...vmArgs);
+                                } else {
+                                    config.vmArgs = `${config.vmArgs} ${vmArgs.join(' ')}`;
+                                }
                             }
-                            if (!config.vmArgs.includes('-XX:PerfMaxStringConstLength=')) {
-                                config.vmArgs = `${config.vmArgs} -XX:PerfMaxStringConstLength=10240`; // support reading long command line parameters using jps/jvmstat
+                            if (Array.isArray(config.vmArgs)) {
+                                if (!config.vmArgs.toString().includes('-XX:PerfMaxStringConstLength=')) {
+                                    config.vmArgs.push('-XX:PerfMaxStringConstLength=10240'); // support reading long command line parameters using jps/jvmstat
+                                }
+                            } else {
+                                if (!config.vmArgs.includes('-XX:PerfMaxStringConstLength=')) {
+                                    config.vmArgs = `${config.vmArgs} -XX:PerfMaxStringConstLength=10240`; // support reading long command line parameters using jps/jvmstat
+                                }
                             }
                         }
                         // console.log('>>> CONFIG:')

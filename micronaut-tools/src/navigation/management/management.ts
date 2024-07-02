@@ -203,58 +203,58 @@ export class Management extends beanHandler.BeanHandler {
         return this.cachesEndpoint;
     }
 
-    buildVmArgs(): string | undefined {
+    buildVmArgs(): string[] | undefined {
         if (!this.isEnabled()) {
             return undefined;
         }
         const vmArgs: string[] = [];
         
         const refreshEndpointVmArgs = this.refreshEndpoint.buildVmArgs();
-        if (refreshEndpointVmArgs) {
-            vmArgs.push(refreshEndpointVmArgs);
+        if (refreshEndpointVmArgs?.length) {
+            vmArgs.push(...refreshEndpointVmArgs);
         }
 
         const serverStopEndpointVmArgs = this.serverStopEndpoint.buildVmArgs();
-        if (serverStopEndpointVmArgs) {
-            vmArgs.push(serverStopEndpointVmArgs);
+        if (serverStopEndpointVmArgs?.length) {
+            vmArgs.push(...serverStopEndpointVmArgs);
         }
 
         const environmentEndpointVmArgs = this.environmentEndpoint.buildVmArgs();
-        if (environmentEndpointVmArgs) {
-            vmArgs.push(environmentEndpointVmArgs);
+        if (environmentEndpointVmArgs?.length) {
+            vmArgs.push(...environmentEndpointVmArgs);
         }
 
         const beansEndpointVmArgs = this.beansEndpoint.buildVmArgs();
-        if (beansEndpointVmArgs) {
-            vmArgs.push(beansEndpointVmArgs);
+        if (beansEndpointVmArgs?.length) {
+            vmArgs.push(...beansEndpointVmArgs);
         }
 
         const routesEndpointVmArgs = this.routesEndpoint.buildVmArgs();
-        if (routesEndpointVmArgs) {
-            vmArgs.push(routesEndpointVmArgs);
+        if (routesEndpointVmArgs?.length) {
+            vmArgs.push(...routesEndpointVmArgs);
         }
 
         const healthEndpointVmArgs = this.healthEndpoint.buildVmArgs();
-        if (healthEndpointVmArgs) {
-            vmArgs.push(healthEndpointVmArgs);
+        if (healthEndpointVmArgs?.length) {
+            vmArgs.push(...healthEndpointVmArgs);
         }
 
         const metricsEndpointVmArgs = this.metricsEndpoint.buildVmArgs();
-        if (metricsEndpointVmArgs) {
-            vmArgs.push(metricsEndpointVmArgs);
+        if (metricsEndpointVmArgs?.length) {
+            vmArgs.push(...metricsEndpointVmArgs);
         }
 
         const loggersEndpointVmArgs = this.loggersEndpoint.buildVmArgs();
-        if (loggersEndpointVmArgs) {
-            vmArgs.push(loggersEndpointVmArgs);
+        if (loggersEndpointVmArgs?.length) {
+            vmArgs.push(...loggersEndpointVmArgs);
         }
 
         const cachesEndpointVmArgs = this.cachesEndpoint.buildVmArgs();
-        if (cachesEndpointVmArgs) {
-            vmArgs.push(cachesEndpointVmArgs);
+        if (cachesEndpointVmArgs?.length) {
+            vmArgs.push(...cachesEndpointVmArgs);
         }
 
-        return vmArgs.length ? vmArgs.join(' ') : undefined;
+        return vmArgs.length ? vmArgs : undefined;
     }
 
     private readonly onFeaturesAvailableChangedListeners: OnFeaturesAvailableChanged[] = [];

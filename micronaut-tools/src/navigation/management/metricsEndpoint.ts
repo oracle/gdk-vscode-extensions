@@ -92,11 +92,11 @@ export class MetricsEndpoint extends beanHandler.UpdatableBeanHandler {
         });
     }
 
-    buildVmArgs(): string | undefined {
+    buildVmArgs(): string[] | undefined {
         // if (!this.isEnabled()) {
         //     return undefined;
         // }
-        return '-Dendpoints.metrics.enabled=true -Dendpoints.metrics.sensitive=false -Dmicronaut.metrics.enabled=true -Dmicronaut.metrics.binders.jvm.enabled=true';
+        return ['-Dendpoints.metrics.enabled=true', '-Dendpoints.metrics.sensitive=false', '-Dmicronaut.metrics.enabled=true', '-Dmicronaut.metrics.binders.jvm.enabled=true'];
     }
 
 }
