@@ -396,8 +396,9 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
 
                 const buildName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
                 const params = await getParams();
-                if (params === null) return;
-                
+                if (params === null) {
+                    return;
+                }
                 LAST_USER_INPUT = graalvmUtils.RAW_USER_INPUT.map(p => `${p.name}=${p.value}`).join(', ');
                 
                 const msg = this.getBuildStartMessage(buildName, params);
@@ -617,7 +618,8 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
 
     async getInput() {
         const placeHolder = 'Enter parameters as PARAMETER_1=value, PARAMETER_2=value, ...';
-    
+        let params: { name: string; value: string }[] = [];
+
         const input = await vscode.window.showInputBox({
             placeHolder: placeHolder,
             value: LAST_USER_INPUT || '',
@@ -633,6 +635,7 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
                     input = input.slice(0, -1);
                 }
                 const parsedParams = graalvmUtils.parseBuildPipelineUserInput(input);
+                params = parsedParams;
                 if (parsedParams.length === 0) {
                     return 'Invalid input format. Please enter valid parameters.';
                 }
@@ -641,9 +644,9 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
         });
 
         if (input) {
-            let params = graalvmUtils.parseBuildPipelineUserInput(input);
+            
             const folder = servicesView.findWorkspaceFolderByNode(this);
-            params = await graalvmUtils.handleJavaVersionWarning(params, folder);
+            params = await graalvmUtils.handleVersionWarning(params, folder);
             if (params.length === 0) {
                 return undefined;
             }
