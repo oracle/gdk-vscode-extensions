@@ -9,11 +9,12 @@
 // TODO: could this be automated somehow based on the GitHub/GDS catalogs?
 
 import * as vscode from 'vscode';
-import { LAST_USER_INPUT } from './oci/buildServices';
+import * as projectUtils from './projectUtils';
 
 let DEFAULT_GRAALVM_VERSION = '23';
 let DEFAULT_JAVA_VERSION = '21';
 let DOCKER_TAG_INPUT = 'latest';
+let RAW_USER_INPUT: { name: string; value: string }[] = [];
 const regex = /^[a-zA-Z0-9_]+=?[a-zA-Z0-9_]*$/;
 
 export function getBuildRunGVMVersion(requiredGVMVersions?: string[]): string[] {
@@ -61,7 +62,11 @@ export function getGVMBuildRunParameters(versions: string[]): { name: string; va
 }
 
 export function parseBuildPipelineUserInput(input: string): { name: string; value: string }[] {
-    const pairs = input.split(/,\s?/);
+    const pairs = input.split(/,\s?/).filter(pair => pair.trim() !== '');
+    RAW_USER_INPUT = pairs.map(pair => {
+      const [name, value] = pair.split('=');
+      return { name: name.trim(), value: value.trim() };
+    });
     const params: { name: string; value: string }[] = [];
     let hasGraalvmVersion = false;
     let hasJavaVersion = false;
@@ -106,54 +111,53 @@ export function parseBuildPipelineUserInput(input: string): { name: string; valu
     return params;
 }
 
-export async function handleJavaVersionWarning(params: { name: string; value: string }[]): Promise<{ name: string; value: string }[]> {
+export async function handleJavaVersionWarning(params: { name: string; value: string }[], folder: vscode.WorkspaceFolder | undefined): Promise<{ name: string; value: string }[]> {
+  if (!folder) {
+    return params;
+  }
+
   const javaVersionParam = params.find(p => p.name === 'JAVA_VERSION');
-  if (javaVersionParam) {
-    const lastJavaVersion = getLastJavaVersionFromInput(LAST_USER_INPUT);
-    if (lastJavaVersion === undefined) {
-      if (javaVersionParam.value !== DEFAULT_JAVA_VERSION) {
-        const selection = await vscode.window.showWarningMessage(
-          'JAVA_VERSION has been modified. This may affect the build pipeline.',
-          'Do Not Modify JAVA_VERSION',
-          'Run Anyway'
-        );
-        if (selection === undefined) {
-          return [];
-        }
-        if (selection === 'Do Not Modify JAVA_VERSION') {
-          javaVersionParam.value = DEFAULT_JAVA_VERSION;
-        }
-      }
-    } else if (javaVersionParam.value !== lastJavaVersion) {
-      const selection = await vscode.window.showWarningMessage(
-        'JAVA_VERSION has been modified. This may affect the build pipeline.',
-        'Do Not Modify JAVA_VERSION',
-        'Run Anyway'
-      );
-      if (selection === undefined) {
-        return [];
-      }
-      if (selection === 'Do Not Modify JAVA_VERSION') {
-        javaVersionParam.value = lastJavaVersion;
-      }
-    }
+  if (!javaVersionParam) {
+    return params;
+  }
+
+  const requiredJavaVersion = await vscode.window.withProgress({
+    location: { viewId: 'oci-devops' }
+  }, (_progress, _token) => {
+    return projectUtils.getProjectRequiredJavaVersion(folder);
+  });
+
+  const versionToCheck = requiredJavaVersion || DEFAULT_JAVA_VERSION;
+  const targetGvmVersion = getBuildRunGVMVersion([versionToCheck, '']);
+  const updatedParams = getGVMBuildRunParameters(targetGvmVersion);
+
+  if (!updatedParams) {
+    return params;
+  }
+
+  const updatedJavaVersionParam = updatedParams.find(p => p.name === 'JAVA_VERSION');
+  if (!updatedJavaVersionParam || updatedJavaVersionParam.value === javaVersionParam.value) {
+    return params;
+  }
+
+  const selection = await vscode.window.showWarningMessage(
+    `The ${requiredJavaVersion ? 'required' : 'default'} JAVA_VERSION (${updatedJavaVersionParam.value}) is different from the current version (${javaVersionParam.value}). This may affect the build pipeline.`,
+    'Do Not Modify JAVA_VERSION',
+    'Run Anyway'
+  );
+
+  if (selection === undefined) {
+    return [];
+  }
+
+  if (selection === 'Do Not Modify JAVA_VERSION') {
+    return params.map(p => p.name === 'JAVA_VERSION' ? { ...p, value: updatedJavaVersionParam.value } : p);
   }
   return params;
 }
 
-function getLastJavaVersionFromInput(input: string): string | undefined {
-  const keyValuePairs = input.split('&');
-  for (const pair of keyValuePairs) {
-    const [key, value] = pair.split('=');
-    if (key === 'JAVA_VERSION') {
-      return value;
-    }
-  }
-  return undefined;
-}
-
 export function parseDeployPipelineUserInput(input: string): { name: string; value: string }[] {
-    const pairs = input.split(/,\s?/);
+    const pairs = input.split(/,\s?/).filter(pair => pair.trim() !== '');
     const params: { name: string; value: string }[] = [];
     let hasDockerTagValue = false;
   
@@ -186,4 +190,4 @@ export function parseDeployPipelineUserInput(input: string): { name: string; val
   }
 
 
-export { DEFAULT_GRAALVM_VERSION, DEFAULT_JAVA_VERSION, DOCKER_TAG_INPUT};
+export { DEFAULT_GRAALVM_VERSION, DEFAULT_JAVA_VERSION, DOCKER_TAG_INPUT, RAW_USER_INPUT};

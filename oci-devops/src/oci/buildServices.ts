@@ -398,7 +398,7 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
                 const params = await getParams();
                 if (params === null) return;
                 
-                LAST_USER_INPUT = params.map(p => `${p.name}=${p.value}`).join(', ');
+                LAST_USER_INPUT = graalvmUtils.RAW_USER_INPUT.map(p => `${p.name}=${p.value}`).join(', ');
                 
                 const msg = this.getBuildStartMessage(buildName, params);
                 logUtils.logInfo(`[build] ${msg}`);
@@ -431,10 +431,13 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
 
     async runPipelineWithParameters(tests: boolean = false) {
         await this.runPipelineCommon(tests, async () => {
-            const input = await this.getInput();
-            return input ? graalvmUtils.parseBuildPipelineUserInput(input) : null;
+          const input = await this.getInput();
+          if (input === undefined) {
+            return null;
+          }
+          return input;
         });
-    }
+      }
 
     private async checkLocalModifications(folderUri: vscode.Uri): Promise<boolean> {
         if (gitUtils.locallyModified(folderUri)) {
@@ -613,7 +616,7 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
     }
 
     async getInput() {
-        const placeHolder = LAST_USER_INPUT || 'Enter parameters as PARAMETER_1=value, PARAMETER_2=value, ...';
+        const placeHolder = 'Enter parameters as PARAMETER_1=value, PARAMETER_2=value, ...';
     
         const input = await vscode.window.showInputBox({
             placeHolder: placeHolder,
@@ -639,13 +642,15 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
 
         if (input) {
             let params = graalvmUtils.parseBuildPipelineUserInput(input);
-            params = await graalvmUtils.handleJavaVersionWarning(params);
-            if (params === undefined) {
-                return;
+            const folder = servicesView.findWorkspaceFolderByNode(this);
+            params = await graalvmUtils.handleJavaVersionWarning(params, folder);
+            if (params.length === 0) {
+                return undefined;
             }
+            return params;
         }
     
-        return input;
+        return undefined;
     }
 
     async pullSingleArtifact() {

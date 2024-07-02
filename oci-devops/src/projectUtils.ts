@@ -267,6 +267,22 @@ function tryReadMavenVersion(folder : string, version: string = '0.1') : string 
     return version;
 }
 
+function tryReadGradleVersion(folder : string, version: string = '0.1') : string | undefined {
+    const buildscript = path.resolve(folder, 'build.gradle');
+    if (fs.existsSync(buildscript)) {
+        fs.readFileSync(buildscript)?.toString().split(os.EOL).find(l => {
+            const re = /^\s*version\s*=\s*((['"])([0-9].*?)(\2))/.exec(l);
+            if (re) {
+                version = re[3];
+                return true;
+            } else {
+                return false;
+            }
+        });
+    }
+    return version;
+}
+
 export async function getProjectRequiredJavaVersion(folder: vscode.WorkspaceFolder): Promise<string | undefined> {
     const project = await getProjectFolder(folder);
     // TODO: once there's a proper way to read the toolchain languageVersion, should probably be used for all project types, not only SpringBoot
@@ -343,22 +359,6 @@ function tryReadGradleToolchainJavaVersion(folder: string): string | undefined {
         }
     }
     return undefined;
-}
-
-function tryReadGradleVersion(folder : string, version: string = '0.1') : string | undefined {
-    const buildscript = path.resolve(folder, 'build.gradle');
-    if (fs.existsSync(buildscript)) {
-        fs.readFileSync(buildscript)?.toString().split(os.EOL).find(l => {
-            const re = /^\s*version\s*=\s*((['"])([0-9].*?)(\2))/.exec(l);
-            if (re) {
-                version = re[3];
-                return true;
-            } else {
-                return false;
-            }
-        });
-    }
-    return version;
 }
 
 export async function getProjectBuildArtifactLocation(folder: ProjectFolder, subfolder: string = 'oci', shaded : boolean = true): Promise<string | undefined> {

@@ -1012,9 +1012,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             folderData.devbuildPipeline = false;
                             folderData.devbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, devbuildPipelineDescription, [
                                 { name: 'GRAALVM_VERSION', defaultValue: DEFAULT_GRAALVM_VERSION, description: 'Major GraalVM version number, e.g. 22 for 22.2.0 release'},
-                                { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'},
-                                { name: 'DOCKER_TAG', defaultValue: DOCKER_TAG_INPUT, description: 'Default Docker tag used for this pipeline.'},
-                                { name: 'DOCKER_TAG_INPUT', defaultValue: DOCKER_TAG_INPUT, description: 'User Docker tag used for this pipeline.'}
+                                { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'}
                             ], {
                                 'devops_tooling_deployID': deployData.tag,
                                 'devops_tooling_codeRepoID': codeRepository.id,

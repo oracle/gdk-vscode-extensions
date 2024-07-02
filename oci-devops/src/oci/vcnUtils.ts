@@ -20,7 +20,7 @@ export async function selectNetwork(authenticationDetailsProvider: common.Config
     }, (_progress, _token) => {
         return new Promise(async resolve => {
             try {
-                logUtils.logInfo(`[oci] Getting VCN details and networks from ${vcnID}`);
+                logUtils.logInfo(`[oci] Getting VCN details and networks from ${vcnID}`)
                 const vcn = await ociUtils.getVCN(authenticationDetailsProvider, vcnID);
                 const subnets = await ociUtils.listSubnets(authenticationDetailsProvider, vcn.compartmentId, vcnID);
                 for (const subnet of subnets) {
