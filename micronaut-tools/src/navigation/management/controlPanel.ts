@@ -99,7 +99,7 @@ export class ControlPanel extends beanHandler.BeanHandler {
         return moduleUri ? projectUtils.checkConfigured(moduleUri, 'Micronaut Control Panel', addMissing, ...REQUIRED_DEPENDENCIES) : false;
     }
 
-    buildVmArgs(): string | undefined {
+    buildVmArgs(): string[] | undefined {
         if (!this.isEnabled()) {
             return undefined;
         }
@@ -107,7 +107,7 @@ export class ControlPanel extends beanHandler.BeanHandler {
         if (!definedEnvironments?.length) {
             return undefined;
         }
-        return `-Dmicronaut.control-panel.enabled=true -Dmicronaut.control-panel.allowed-environments=${definedEnvironments.join(',')}`;
+        return ['-Dmicronaut.control-panel.enabled=true', `-Dmicronaut.control-panel.allowed-environments=${definedEnvironments.join(',')}`];
     }
 
 }

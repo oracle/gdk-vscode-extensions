@@ -34,11 +34,11 @@ export class HealthEndpoint extends beanHandler.UpdatableBeanHandler {
         this.notifyUpdated(data);
     }
 
-    buildVmArgs(): string | undefined {
+    buildVmArgs(): string[] | undefined {
         // if (!this.isEnabled()) {
         //     return undefined;
         // }
-        return '-Dendpoints.health.enabled=true -Dendpoints.health.sensitive=false -Dendpoints.health.details-visible=ANONYMOUS';
+        return ['-Dendpoints.health.enabled=true', '-Dendpoints.health.sensitive=false', '-Dendpoints.health.details-visible=ANONYMOUS'];
     }
 
 }

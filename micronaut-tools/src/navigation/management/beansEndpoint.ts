@@ -62,11 +62,11 @@ export class BeansEndpoint extends beanHandler.BeanHandler {
         }
     }
 
-    buildVmArgs(): string | undefined {
+    buildVmArgs(): string[] | undefined {
         // if (!this.isEnabled()) {
         //     return undefined;
         // }
-        return '-Dendpoints.beans.enabled=true -Dendpoints.beans.sensitive=false';
+        return ['-Dendpoints.beans.enabled=true', '-Dendpoints.beans.sensitive=false'];
     }
 
     private readonly onBeansResolvedListeners: OnBeansResolved[] = [];

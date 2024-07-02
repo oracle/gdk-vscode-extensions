@@ -208,11 +208,11 @@ export class LoggersEndpoint extends beanHandler.UpdatableBeanHandler {
     //     });
     // }
 
-    buildVmArgs(): string | undefined {
+    buildVmArgs(): string[] | undefined {
         // if (!this.isEnabled()) {
         //     return undefined;
         // }
-        return '-Dendpoints.loggers.enabled=true -Dendpoints.loggers.sensitive=false -Dendpoints.loggers.write-sensitive=false';
+        return ['-Dendpoints.loggers.enabled=true', '-Dendpoints.loggers.sensitive=false', '-Dendpoints.loggers.write-sensitive=false'];
     }
 
 }

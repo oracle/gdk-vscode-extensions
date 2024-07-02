@@ -140,11 +140,11 @@ export class CachesEndpoint extends beanHandler.UpdatableBeanHandler {
         this.notifyUpdated(JSON.parse(response.data));
     }
 
-    buildVmArgs(): string | undefined {
+    buildVmArgs(): string[] | undefined {
         // if (!this.isEnabled()) {
         //     return undefined;
         // }
-        return '-Dendpoints.caches.enabled=true -Dendpoints.caches.sensitive=false -Dendpoints.caches.write-sensitive=false';
+        return ['-Dendpoints.caches.enabled=true', '-Dendpoints.caches.sensitive=false', '-Dendpoints.caches.write-sensitive=false'];
         // return '-Dendpoints.caches.enabled=true -Dendpoints.caches.sensitive=false';
     }
 

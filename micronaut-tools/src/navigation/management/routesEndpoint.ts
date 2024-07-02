@@ -55,11 +55,11 @@ export class RoutesEndpoint extends beanHandler.BeanHandler {
         }
     }
 
-    buildVmArgs(): string | undefined {
+    buildVmArgs(): string[] | undefined {
         // if (!this.isEnabled()) {
         //     return undefined;
         // }
-        return '-Dendpoints.routes.enabled=true -Dendpoints.routes.sensitive=false';
+        return ['-Dendpoints.routes.enabled=true', '-Dendpoints.routes.sensitive=false'];
     }
 
     private readonly onEndpointsResolvedListeners: OnEndpointsResolved[] = [];

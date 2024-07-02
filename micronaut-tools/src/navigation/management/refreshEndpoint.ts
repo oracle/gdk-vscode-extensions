@@ -55,11 +55,11 @@ export class RefreshEndpoint extends beanHandler.BeanHandler {
         }
     }
 
-    buildVmArgs(): string | undefined {
+    buildVmArgs(): string[] | undefined {
         // if (!this.isEnabled()) {
         //     return undefined;
         // }
-        return '-Dendpoints.refresh.enabled=true -Dendpoints.refresh.sensitive=false';
+        return ['-Dendpoints.refresh.enabled=true', '-Dendpoints.refresh.sensitive=false'];
     }
 
 }

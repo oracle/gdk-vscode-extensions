@@ -244,12 +244,12 @@ export class DefinedEnvironments {
         });
     }
 
-    buildVmArgs(): string | undefined {
+    buildVmArgs(): string[] | undefined {
         if (!this.definedEnvironments?.length) {
             return undefined;
         }
         const definedEnvironments = this.definedEnvironments.join(',');
-        return `-Dmicronaut.environments=${definedEnvironments}`;
+        return [`-Dmicronaut.environments=${definedEnvironments}`];
     }
 
     private readonly onDefinedEnvironmentsChangedListeners: OnDefinedEnvironmentsChanged[] = [];

@@ -130,7 +130,7 @@ export abstract class BeanHandler {
 
     protected async processResponse(_response: { code: number | undefined; headers: any; data: any }) {}
 
-    buildVmArgs(): string | undefined {
+    buildVmArgs(): string[] | undefined {
         return undefined;
     }
 
