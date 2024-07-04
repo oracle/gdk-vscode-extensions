@@ -793,7 +793,7 @@
 				{
 					"command": "oci.devops.viewBuildLog",
 					"when": "viewItem in oci.devops.viewBuildLogNodes || viewItem == oci.devops.buildPipelineNode-artifacts-available || viewItem == oci.devops.buildPipelineNode-single-download-available || viewItem == oci.devops.buildPipelineNode-single-image-available",
-					"group": "context@1@2"
+					"group": "context@1@3"
 				},
 				{
 					"command": "oci.devops.viewDeploymentLog",
@@ -813,7 +813,7 @@
 				{
 					"command": "oci.devops.downloadSingleBuildArtifact",
 					"when": "viewItem == oci.devops.buildPipelineNode-single-download-available",
-					"group": "context@1@3"
+					"group": "context@1@4"
 				},
 				{
 					"command": "oci.devops.runSingleBuildArtifact",
@@ -828,12 +828,12 @@
 				{
 					"command": "oci.devops.pullSingleBuildArtifact",
 					"when": "viewItem == oci.devops.buildPipelineNode-single-image-available",
-					"group": "context@1@3"
+					"group": "context@1@4"
 				},
 				{
 					"command": "oci.devops.runSingleBuildArtifact",
 					"when": "oci.devops.containerInstancesEnabled && viewItem == oci.devops.buildPipelineNode-single-image-available",
-					"group": "context@1@4"
+					"group": "context@1@5"
 				},
 				{
 					"command": "oci.devops.getBuildArtifact",
@@ -843,7 +843,7 @@
 				{
 					"command": "oci.devops.getBuildArtifact",
 					"when": "viewItem == oci.devops.buildPipelineNode-artifacts-available",
-					"group": "context@1@3"
+					"group": "context@1@4"
 				},
 				{
 					"command": "oci.devops.downloadGenericArtifact",

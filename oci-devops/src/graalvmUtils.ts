@@ -117,26 +117,14 @@ export function parseBuildPipelineUserInput(input: string): { name: string; valu
     return params;
 }
 
-export async function handleVersionWarning(params: { name: string; value: string }[], folder: vscode.WorkspaceFolder | undefined): Promise<{ name: string; value: string }[]> {
+export async function handleJavaVersionWarning(params: { name: string; value: string }[], folder: vscode.WorkspaceFolder | undefined): Promise<{ name: string; value: string }[]> {
   if (!folder) {
     return params;
   }
 
   const javaVersionParam = params.find(p => p.name === 'JAVA_VERSION');
-  const graalvmVersionParam = params.find(p => p.name === 'GRAALVM_VERSION');
-
-  if (!javaVersionParam &&!graalvmVersionParam) {
+  if (!javaVersionParam) {
     return params;
-  }
-
-  let requiredGraalvmVersion = await vscode.window.withProgress({
-    location: { viewId: 'oci-devops' }
-  }, (_progress, _token) => {
-    return projectUtils.getProjectRequiredJavaVersion(folder);
-  });
-
-  if (requiredGraalvmVersion) {
-    requiredGraalvmVersion = '23';
   }
 
   const requiredJavaVersion = await vscode.window.withProgress({
@@ -153,44 +141,25 @@ export async function handleVersionWarning(params: { name: string; value: string
     return params;
   }
 
-  const updatedGraalvmVersionParam = updatedParams.find(p => p.name === 'GRAALVM_VERSION');
   const updatedJavaVersionParam = updatedParams.find(p => p.name === 'JAVA_VERSION');
-
-  let updateParams = params;
-
-  if (updatedGraalvmVersionParam && updatedGraalvmVersionParam.value!== graalvmVersionParam?.value) {
-    const graalvmSelection = await vscode.window.showWarningMessage(
-      `The ${requiredGraalvmVersion? 'required' : 'default'} GRAALVM_VERSION (${updatedGraalvmVersionParam.value}) is different from the current version (${graalvmVersionParam?.value}). This may affect the build pipeline.`,
-      'Do Not Modify GRAALVM_VERSION',
-      'Run Anyway'
-    );
-
-    if (graalvmSelection === undefined) {
-      return [];
-    }
-
-    if (graalvmSelection === 'Do Not Modify GRAALVM_VERSION') {
-      updateParams = updateParams.map(p => p.name === 'GRAALVM_VERSION'? {...p, value: updatedGraalvmVersionParam.value } : p);
-    }
+  if (!updatedJavaVersionParam || updatedJavaVersionParam.value === javaVersionParam.value) {
+    return params;
   }
 
-  if (updatedJavaVersionParam && updatedJavaVersionParam.value!== javaVersionParam?.value) {
-    const javaSelection = await vscode.window.showWarningMessage(
-      `The ${requiredJavaVersion? 'required' : 'default'} JAVA_VERSION (${updatedJavaVersionParam.value}) is different from the current version (${javaVersionParam?.value}). This may affect the build pipeline.`,
-      'Do Not Modify JAVA_VERSION',
-      'Run Anyway'
-    );
+  const selection = await vscode.window.showWarningMessage(
+    `The ${requiredJavaVersion ? 'required' : 'default'} JAVA_VERSION (${updatedJavaVersionParam.value}) is different from the current version (${javaVersionParam.value}). This may affect the build pipeline.`,
+    'Do Not Modify JAVA_VERSION',
+    'Run Anyway'
+  );
 
-    if (javaSelection === undefined) {
-      return [];
-    }
-
-    if (javaSelection === 'Do Not Modify JAVA_VERSION') {
-      updateParams = updateParams.map(p => p.name === 'JAVA_VERSION'? {...p, value: updatedJavaVersionParam.value } : p);
-    }
+  if (selection === undefined) {
+    return [];
   }
 
-  return updateParams;
+  if (selection === 'Do Not Modify JAVA_VERSION') {
+    return params.map(p => p.name === 'JAVA_VERSION' ? { ...p, value: updatedJavaVersionParam.value } : p);
+  }
+  return params;
 }
 
 export function parseDeployPipelineUserInput(input: string): { name: string; value: string }[] {
@@ -224,7 +193,7 @@ export function parseDeployPipelineUserInput(input: string): { name: string; val
     }
   
     return params;
-  }
+}
 
 
 export { DEFAULT_GRAALVM_VERSION, DEFAULT_JAVA_VERSION, DOCKER_TAG_INPUT, RAW_USER_INPUT};

@@ -12,7 +12,6 @@ import { isRunBuildPipelineCustomShapeConfirmedPermanently, confirmRunBuildPipel
 import * as dialogs from '../../../common/lib/dialogs';
 import * as gitUtils from '../gitUtils';
 import * as graalvmUtils from '../graalvmUtils';
-import * as projectUtils from '../projectUtils';
 import * as servicesView from '../servicesView';
 import * as logUtils from '../../../common/lib/logUtils';
 import * as ociUtils from './ociUtils';
@@ -391,19 +390,26 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
             const folder = servicesView.findWorkspaceFolderByNode(this);
             const folderUri = folder?.uri;
             if (folderUri) {
-                if (!await this.checkLocalModifications(folderUri)) return;
-                if (!await this.checkUnpublishedBranch(folderUri)) return;
-
+                if (!await this.checkLocalModifications(folderUri)) {
+                    return;
+                }
+                if (!await this.checkUnpublishedBranch(folderUri)) {
+                    return;
+                }
                 const buildName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
-                const params = await getParams();
+                let params = await getParams();
                 if (params === null) {
+                    return;
+                }
+                params = await graalvmUtils.handleJavaVersionWarning(params, folder);
+                if (params.length === 0) {
                     return;
                 }
                 LAST_USER_INPUT = graalvmUtils.RAW_USER_INPUT.map(p => `${p.name}=${p.value}`).join(', ');
                 
                 const msg = this.getBuildStartMessage(buildName, params);
                 logUtils.logInfo(`[build] ${msg}`);
-
+    
                 await vscode.window.withProgress({
                     location: vscode.ProgressLocation.Notification,
                     title: `${msg}...`,
@@ -415,30 +421,21 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
 
     async runPipeline(tests: boolean = false) {
         await this.runPipelineCommon(tests, async () => {
-            const folder = servicesView.findWorkspaceFolderByNode(this);
-            if (!folder) {
-                return null;
-            }
-            const requiredJavaVersion = await vscode.window.withProgress({
-                location: { viewId: 'oci-devops' }
-            }, (_progress, _token) => {
-                return projectUtils.getProjectRequiredJavaVersion(folder);
-            });
-            const targetGvmVersion = graalvmUtils.getBuildRunGVMVersion(requiredJavaVersion ? [requiredJavaVersion, ''] : undefined);
+            const targetGvmVersion = graalvmUtils.getBuildRunGVMVersion();
             const params = graalvmUtils.getGVMBuildRunParameters(targetGvmVersion);
             return params || [];
         });
     }
-
+    
     async runPipelineWithParameters(tests: boolean = false) {
         await this.runPipelineCommon(tests, async () => {
-          const input = await this.getInput();
-          if (input === undefined) {
-            return null;
-          }
-          return input;
+            const input = await this.getInput();
+            if (input === undefined) {
+                return null;
+            }
+            return input;
         });
-      }
+    }
 
     private async checkLocalModifications(folderUri: vscode.Uri): Promise<boolean> {
         if (gitUtils.locallyModified(folderUri)) {
@@ -618,8 +615,7 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
 
     async getInput() {
         const placeHolder = 'Enter parameters as PARAMETER_1=value, PARAMETER_2=value, ...';
-        let params: { name: string; value: string }[] = [];
-
+        let parsedParams: { name: string; value: string }[] = [];
         const input = await vscode.window.showInputBox({
             placeHolder: placeHolder,
             value: LAST_USER_INPUT || '',
@@ -634,23 +630,15 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
                 if (input.endsWith(',')) {
                     input = input.slice(0, -1);
                 }
-                const parsedParams = graalvmUtils.parseBuildPipelineUserInput(input);
-                params = parsedParams;
+                parsedParams = graalvmUtils.parseBuildPipelineUserInput(input);
                 if (parsedParams.length === 0) {
                     return 'Invalid input format. Please enter valid parameters.';
                 }
                 return undefined;
             }
         });
-
         if (input) {
-            
-            const folder = servicesView.findWorkspaceFolderByNode(this);
-            params = await graalvmUtils.handleVersionWarning(params, folder);
-            if (params.length === 0) {
-                return undefined;
-            }
-            return params;
+            return parsedParams;
         }
     
         return undefined;

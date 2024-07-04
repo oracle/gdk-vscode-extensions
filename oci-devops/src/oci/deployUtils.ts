@@ -1217,9 +1217,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             folderData.nibuildPipeline = false;
                             folderData.nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, nibuildPipelineDescription, [
                                 { name: 'GRAALVM_VERSION', defaultValue: DEFAULT_GRAALVM_VERSION, description: 'Major GraalVM version number, e.g. 22 for 22.2.0 release'},
-                                { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'},
-                                { name: 'DOCKER_TAG', defaultValue: DOCKER_TAG_INPUT, description: 'Docker tag used for this pipeline.'},
-                                { name: 'DOCKER_TAG_INPUT', defaultValue: DOCKER_TAG_INPUT, description: 'User Docker tag used for this pipeline.'}
+                                { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'}
                             ], {
                                 'devops_tooling_deployID': deployData.tag,
                                 'devops_tooling_codeRepoID': codeRepository.id,
@@ -2427,9 +2425,6 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         }
                     }
 
-                    // Add /bin folders created by EDT to .gitignore
-                    gitUtils.addGitIgnoreEntry(folder.uri.fsPath, '**/bin');
-
                 } else { // Micronaut, SpringBoot, Helidon, other Java projects
                     logUtils.logInfo(`[deploy] ${folder.projectType !== 'Unknown' ? 'Recognized ' : ''}${folder.projectType} project in ${deployData.compartment.name}/${projectName}/${repositoryName}`);
 
@@ -3414,6 +3409,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                 }
                 logUtils.logInfo(`[deploy] Populating source code repository ${deployData.compartment.name}/${projectName}/${repositoryName} from ${repositoryDir.fsPath}`);
                 gitUtils.addGitIgnoreEntry(folder.uri.fsPath, folderStorage.getDefaultLocation());
+                // Add /bin folders created by EDT to .gitignore
+                gitUtils.addGitIgnoreEntry(folder.uri.fsPath, '**/bin');
                 const pushErr = await gitUtils.populateNewRepository(codeRepository.sshUrl, repositoryDir, folderData, async () => {
                     if (!deployData.user) {
                         const user = await ociUtils.getUser(provider);
