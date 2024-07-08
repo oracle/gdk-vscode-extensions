@@ -12,6 +12,7 @@ import { isRunBuildPipelineCustomShapeConfirmedPermanently, confirmRunBuildPipel
 import * as dialogs from '../../../common/lib/dialogs';
 import * as gitUtils from '../gitUtils';
 import * as graalvmUtils from '../graalvmUtils';
+import * as projectUtils from '../projectUtils';
 import * as servicesView from '../servicesView';
 import * as logUtils from '../../../common/lib/logUtils';
 import * as ociUtils from './ociUtils';
@@ -30,8 +31,6 @@ export const DATA_NAME = 'buildPipelines';
 
 const ICON = 'play-circle';
 const ICON_IN_PROGRESS = 'gear~spin';
-
-let LAST_USER_INPUT: string = '';
 
 type BuildPipeline = {
     ocid: string;
@@ -384,130 +383,111 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
         return `https://cloud.oracle.com/devops-build/projects/${pipeline.projectId}/build-pipelines/${pipeline.id}`;
     }
 
-    async runPipelineCommon(tests: boolean, getParams: () => Promise<{ name: string; value: string }[] | null>) {
+    private lastProvidedParameters: string | undefined;
+
+    async runPipeline(tests: boolean = false) {
+        return this.runPipelineCommon(tests, undefined);
+    }
+    
+    async runPipelineWithParameters(tests: boolean = false) {
+        return await this.runPipelineCommon(tests, ociDialogs.customizeParameters);
+    }
+    
+    async runPipelineCommon(tests: boolean, customizeParameters: ((lastProvidedParameters: string | undefined, predefinedParameters: { name: string; value: string }[], requiredParameters: { name: string; value: string }[]) => Promise<{ name: string; value: string }[] | undefined>) | undefined) {
         const currentState = this.lastRun?.state;
         if (currentState === devops.models.BuildRun.LifecycleState.Canceling || !ociUtils.isRunning(currentState)) {
             const folder = servicesView.findWorkspaceFolderByNode(this);
             const folderUri = folder?.uri;
             if (folderUri) {
-                if (!await this.checkLocalModifications(folderUri)) {
-                    return;
-                }
-                if (!await this.checkUnpublishedBranch(folderUri)) {
-                    return;
-                }
-                const buildName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
-                let params = await getParams();
-                if (params === null) {
-                    return;
-                }
-                params = await graalvmUtils.handleJavaVersionWarning(params, folder);
-                if (params.length === 0) {
-                    return;
-                }
-                LAST_USER_INPUT = graalvmUtils.RAW_USER_INPUT.map(p => `${p.name}=${p.value}`).join(', ');
-                
-                const msg = this.getBuildStartMessage(buildName, params);
-                logUtils.logInfo(`[build] ${msg}`);
-    
-                await vscode.window.withProgress({
-                    location: vscode.ProgressLocation.Notification,
-                    title: `${msg}...`,
-                    cancellable: false
-                }, (_progress, _token) => this.executeBuildRun(tests, buildName, params, folderUri));
-            }
-        }
-    }
-
-    async runPipeline(tests: boolean = false) {
-        await this.runPipelineCommon(tests, async () => {
-            const targetGvmVersion = graalvmUtils.getBuildRunGVMVersion();
-            const params = graalvmUtils.getGVMBuildRunParameters(targetGvmVersion);
-            return params || [];
-        });
-    }
-    
-    async runPipelineWithParameters(tests: boolean = false) {
-        await this.runPipelineCommon(tests, async () => {
-            const input = await this.getInput();
-            if (input === undefined) {
-                return null;
-            }
-            return input;
-        });
-    }
-
-    private async checkLocalModifications(folderUri: vscode.Uri): Promise<boolean> {
-        if (gitUtils.locallyModified(folderUri)) {
-            const cancelOption = 'Cancel Build And Show Source Control View';
-            const runBuildOption = 'Build Anyway';
-            const selOption = await vscode.window.showWarningMessage('Local sources differ from the repository content in cloud.', cancelOption, runBuildOption);
-            if (runBuildOption !== selOption) {
-                if (cancelOption === selOption) {
-                    vscode.commands.executeCommand('workbench.view.scm');
-                }
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private async checkUnpublishedBranch(folderUri: vscode.Uri): Promise<boolean> {
-        const head = gitUtils.getHEAD(folderUri);
-        if (head?.name && !head.upstream) {
-            const cancelOption = 'Cancel Build';
-            const pushOption = 'Publish Branch And Continue';
-            if (pushOption !== await vscode.window.showWarningMessage(`Local branch "${head.name}" has not been published yet.`, cancelOption, pushOption)) {
-                return false;
-            } else {
-                await gitUtils.pushLocalBranch(folderUri);
-            }
-        }
-        return true;
-    }
-
-    private getBuildStartMessage(buildName: string, params: { name: string; value: string }[]): string {
-        const graalvmVersion = params.find(param => param.name === 'GRAALVM_VERSION')?.value;
-        const javaVersion = params.find(param => param.name === 'JAVA_VERSION')?.value;
-        return `Starting build "${buildName}" using GraalVM ${graalvmVersion}, Java ${javaVersion}`;
-    }
-
-    private async executeBuildRun(tests: boolean, buildName: string, params: { name: string; value: string }[], folderUri: vscode.Uri): Promise<boolean> {
-        return new Promise(async resolve => {
-            try {
-                if (!tests && (!isRunBuildPipelineCustomShapeConfirmedPermanently() && await this.usesCustomRunnerShape())) {
-                    const confirm = await confirmRunBuildPipelineCustomShape();
-                    if (!confirm) {
-                        resolve(false);
+                if (gitUtils.locallyModified(folderUri)) {
+                    const cancelOption = 'Cancel Build And Show Source Control View';
+                    const runBuildOption = 'Build Anyway';
+                    const selOption = await vscode.window.showWarningMessage('Local souces differ from the repository content in cloud.', cancelOption, runBuildOption);
+                    if (runBuildOption !== selOption) {
+                        if (cancelOption === selOption) {
+                            vscode.commands.executeCommand('workbench.view.scm');
+                        }
                         return;
                     }
                 }
-                const repository = await ociUtils.getCodeRepository(this.oci.getProvider(), this.oci.getCodeRepository());
-                let commitInfo;
                 const head = gitUtils.getHEAD(folderUri);
-                if (head?.name && head.commit) {
-                    if (repository && repository.httpUrl && `refs/heads/${head.name}` !== repository.defaultBranch) {
-                        commitInfo = { repositoryUrl: repository.httpUrl, repositoryBranch: head.name, commitHash: head.commit };
+                if (head?.name && !head.upstream) {
+                    const cancelOption = 'Cancel Build';
+                    const pushOption = 'Publish Branch And Continue';
+                    if (pushOption !== await vscode.window.showWarningMessage(`Local branch "${head.name}" has not been published yet.`, cancelOption, pushOption)) {
+                        return;
+                    } else {
+                        await gitUtils.pushLocalBranch(folderUri);
                     }
                 }
-                const buildRunName = repository.name ? `${repository.name}: ${buildName}` : buildName;
-                const buildRun = await ociUtils.createBuildRun(this.oci.getProvider(), this.object.ocid, buildRunName, params, commitInfo);
-                logUtils.logInfo(`[build] Build '${buildName}' started`);
-                resolve(true);
-                if (buildRun) {
-                    this.object.lastBuildRun = buildRun.id;
-                    const service = findByNode(this);
-                    service?.serviceNodesChanged(this);
-                    this.showSucceededFlag = true;
-                    this.updateLastRun(buildRun.id, buildRun.lifecycleState, buildRun.displayName ? vscode.window.createOutputChannel(buildRun.displayName) : undefined);
-                    this.viewLog();
-                    this.updateWhenCompleted(buildRun.id, buildRun.compartmentId, buildName);
+                const buildName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
+                const params: { name: string; value: string }[] = [];
+                const requiredJavaVersion = await vscode.window.withProgress({
+                        location: { viewId: 'oci-devops' }
+                    }, (_progress, _token) => {
+                        return projectUtils.getProjectRequiredJavaVersion(folder);
+                    }
+                );
+                const targetGvmVersion = graalvmUtils.getBuildRunGVMVersion(requiredJavaVersion ? [requiredJavaVersion, ''] : undefined);
+                const gvmParams = graalvmUtils.getGVMBuildRunParameters(targetGvmVersion);
+                if (customizeParameters) {
+                    const customParams = await customizeParameters(this.lastProvidedParameters, gvmParams || [], requiredJavaVersion ? [{ name: 'JAVA_VERSION', value: requiredJavaVersion}] : []);
+                    if (customParams) {
+                        this.lastProvidedParameters = ociDialogs.parametersToString(customParams);
+                        params.length = 0;
+                        params.push(...customParams);
+                    } else {
+                        return;
+                    }
+                } else {
+                    if (gvmParams) {
+                        params.push(...gvmParams);
+                    }
                 }
-            } catch (err) {
-                dialogs.showErrorMessageWithReportIssueCommand(`Failed to start build pipeline '${this.object.displayName}'`, 'oci.devops.openIssueReporter', err);
-                resolve(false);
+                const msg = `Starting build "${buildName}"`;
+                logUtils.logInfo(`[build] ${msg}`);
+                vscode.window.withProgress({
+                    location: vscode.ProgressLocation.Notification,
+                    title: `${msg}...`,
+                    cancellable: false
+                }, (_progress, _token) => {
+                    return new Promise(async resolve => {
+                        try {
+                            if (!tests && (!isRunBuildPipelineCustomShapeConfirmedPermanently() && await this.usesCustomRunnerShape())) {
+                                const confirm = await confirmRunBuildPipelineCustomShape();
+                                if (!confirm) {
+                                    resolve(false);
+                                    return;
+                                }
+                            }
+                            const repository = await ociUtils.getCodeRepository(this.oci.getProvider(), this.oci.getCodeRepository());
+                            let commitInfo;
+                            if (head?.name && head.commit) {
+                                if (repository && repository.httpUrl && `refs/heads/${head.name}` !== repository.defaultBranch) {
+                                    commitInfo = { repositoryUrl: repository.httpUrl, repositoryBranch: head.name, commitHash: head.commit };
+                                }
+                            }
+                            const buildRunName = repository.name ? `${repository.name}: ${buildName}` : buildName;
+                            const buildRun = await ociUtils.createBuildRun(this.oci.getProvider(), this.object.ocid, buildRunName, params, commitInfo);
+                            logUtils.logInfo(`[build] Build '${buildName}' started`);
+                            resolve(true);
+                            if (buildRun) {
+                                this.object.lastBuildRun = buildRun.id;
+                                const service = findByNode(this);
+                                service?.serviceNodesChanged(this);
+                                this.showSucceededFlag = true;
+                                this.updateLastRun(buildRun.id, buildRun.lifecycleState, buildRun.displayName ? vscode.window.createOutputChannel(buildRun.displayName) : undefined);
+                                this.viewLog();
+                                this.updateWhenCompleted(buildRun.id, buildRun.compartmentId, buildName);
+                            }
+                        } catch (err) {
+                            dialogs.showErrorMessageWithReportIssueCommand(`Failed to start build pipeline '${this.object.displayName}'`, 'oci.devops.openIssueReporter', err);
+                            resolve(false);
+                        }
+                    });
+                });
             }
-        });
+        }
     }
 
     cancelPipeline() {
@@ -611,37 +591,6 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
         } else {
             vscode.window.showErrorMessage('No artifact to download.');
         }
-    }
-
-    async getInput() {
-        const placeHolder = 'Enter parameters as PARAMETER_1=value, PARAMETER_2=value, ...';
-        let parsedParams: { name: string; value: string }[] = [];
-        const input = await vscode.window.showInputBox({
-            placeHolder: placeHolder,
-            value: LAST_USER_INPUT || '',
-            ignoreFocusOut: true,
-            validateInput: async (input) => {
-                if (input === '') {
-                    return '';
-                }
-                if (input.trim() === '') {
-                    return 'Input cannot contain only spaces.';
-                }
-                if (input.endsWith(',')) {
-                    input = input.slice(0, -1);
-                }
-                parsedParams = graalvmUtils.parseBuildPipelineUserInput(input);
-                if (parsedParams.length === 0) {
-                    return 'Invalid input format. Please enter valid parameters.';
-                }
-                return undefined;
-            }
-        });
-        if (input) {
-            return parsedParams;
-        }
-    
-        return undefined;
     }
 
     async pullSingleArtifact() {
@@ -850,5 +799,3 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
     }
 
 }
-
-export { LAST_USER_INPUT} ;

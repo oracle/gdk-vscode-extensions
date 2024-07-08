@@ -333,3 +333,116 @@ async function inputPassword(userName: string, actionName?: string) {
     });
     return selected;
 }
+
+export function parametersToString(parameters: { name: string; value: string }[]): string {
+    const parameterPairs = [];
+    for (const parameter of parameters) {
+        parameterPairs.push(`${parameter.name}=${parameter.value}`);
+    }
+    return parameterPairs.join(', ');
+}
+
+export async function customizeParameters(lastProvidedParameters: string | undefined, predefinedParameters: { name: string; value: string }[], requiredParameters: { name: string; value: string }[]): Promise<{ name: string; value: string }[] | undefined> {
+    async function verifyRequiredParameter(paramName: string, paramValue: string, requiredParameters: { name: string; value: string }[]): Promise<{ name: string; value: string } | undefined> {
+        for (const requiredParameter of requiredParameters) {
+            if (requiredParameter.name === paramName) {
+                if (requiredParameter.value !== paramValue) {
+                    const skipOption = `Do Not Modify ${requiredParameter.name}`;
+                    const overrideOption = 'Modify Anyway';
+                    const selected = await vscode.window.showWarningMessage(`Modifying the required parameter ${requiredParameter.name}=${requiredParameter.value} may break the pipeline.`, skipOption, overrideOption);
+                    if (selected === skipOption) {
+                        return { name: requiredParameter.name, value: requiredParameter.value };
+                    } else if (selected === undefined) {
+                        return undefined;
+                    }
+                }
+                break;
+            }
+        }
+        return { name: paramName, value: paramValue };
+    }
+    async function getMissingRequiredParameters(parameters: { name: string; value: string }[], requiredParameters: { name: string; value: string }[]): Promise<{ name: string; value: string }[] | undefined> {
+        const ret = [];
+        const parameterNames = [];
+        for (const parameter of parameters) {
+            parameterNames.push(parameter.name);
+        }
+        for (const requiredParameter of requiredParameters) {
+            if (!parameterNames.includes(requiredParameter.name)) {
+                const addOption = `Add Required ${requiredParameter.name}`;
+                const overrideOption = 'Leave Out Anyway';
+                const selected = await vscode.window.showWarningMessage(`Leaving out the required parameter ${requiredParameter.name}=${requiredParameter.value} may break the pipeline.`, addOption, overrideOption);
+                if (selected === addOption) {
+                    ret.push({ name: requiredParameter.name, value: requiredParameter.value });
+                } else if (selected === undefined) {
+                    return undefined;
+                }
+            }
+        }
+        return ret;
+    }
+    const validParameter = /^[a-zA-Z][a-zA-Z0-9_]*=[a-zA-Z0-9][a-zA-Z0-9_]*$/;
+    const customParameters = await vscode.window.showInputBox({
+        placeHolder: 'Enter parameters as PARAMETER_1=value, PARAMETER_2=value, ...',
+        value: lastProvidedParameters !== undefined ? lastProvidedParameters : parametersToString(predefinedParameters),
+        ignoreFocusOut: true,
+        validateInput: input => {
+            if (input === '') {
+                return '';
+            }
+            if (input.trim() === '') {
+                return 'Input cannot contain only spaces.';
+            }
+            if (input.trim().endsWith(',')) {
+                input = input.slice(0, -1);
+            }
+            if (/\s{2,}$/.test(input)) {
+                return 'Input cannot end with multiple spaces.';
+            }
+            const pairs = input.split(/,\s?/).filter(pair => pair.trim() !== '');
+            if (pairs.length === 0) {
+                return 'Invalid input format. Please enter valid parameters.';
+            }
+
+            for (const pair of pairs) {
+                if (/^\s{2,}|\s{2,}$/.test(pair)) {
+                    return "One space maximum before or after parameters.";
+                }
+                if (/\s/.test(pair.trim())) {
+                    return "No spaces allowed within PARAMETER=value.";
+                }
+                if (!validParameter.test(pair.trim())) {
+                    return 'Invalid parameter format. Use PARAMETER=value.';
+                }
+            }
+
+            return undefined;
+        }
+    });
+
+    if (customParameters === undefined) {
+        return undefined;
+    }
+    const ret = [];
+    if (customParameters.trim()) {
+        const parameters = customParameters.trim().split(/,\s?/).filter(param => param.trim() !== '');
+        for (const parameter of parameters) {
+            const paramPair = parameter.split('=');
+            const paramName = paramPair[0].trim();
+            const paramValue = paramPair[1].trim();
+            const param = await verifyRequiredParameter(paramName, paramValue, requiredParameters);
+            if (param) {
+                ret.push(param);
+            } else {
+                return undefined;
+            }
+        }
+    }
+    const missing = await getMissingRequiredParameters(ret, requiredParameters);
+    if (missing === undefined) {
+        return undefined;
+    } else {
+        ret.push(...missing);
+    }
+    return ret;
+}
