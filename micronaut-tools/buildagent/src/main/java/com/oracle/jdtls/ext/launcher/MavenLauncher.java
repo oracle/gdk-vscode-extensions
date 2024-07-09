@@ -47,12 +47,14 @@ public class MavenLauncher extends LauncherDelegate {
         
     }
     
-    ProcessBuilder createProcessBuilder() {
+    ProcessBuilder createProcessBuilder(Path startIn) {
         Path exec = getOSExecutable(getProjectDirectory(), "mvnw");
         if (exec == null && getProjectRootDirectory() != null) {
             exec = getOSExecutable(getProjectRootDirectory(), "mvnw");
         }
-        if (exec == null) {
+        if (exec != null) {
+            exec = (startIn != null ? startIn : getProjectDirectory()).relativize(exec);
+        } else {
             String m2home = System.getenv("MAVEN_HOME");
             if (m2home != null) {
                 exec = getOSExecutable(Paths.get(m2home), "mvn");
@@ -60,13 +62,14 @@ public class MavenLauncher extends LauncherDelegate {
             if (exec == null) {
                 exec = findExecutableOnPath("mvn");
             }
+            exec = exec.toAbsolutePath();
         }
         
         processBuilder = new ProcessBuilder();
         processBuilder.inheritIO();
-        processBuilder.directory(getProjectDirectory().toFile());
+        processBuilder.directory((startIn != null ? startIn : getProjectDirectory()).toFile());
         // maven executable
-        addCommand(exec.toAbsolutePath().toString());
+        addCommand(exec.toString());
         
         Map<String, String> e = filterEnvironment();
         processBuilder.environment().keySet().retainAll(e.keySet());
@@ -133,7 +136,7 @@ public class MavenLauncher extends LauncherDelegate {
     }
     
     ProcessBuilder configureProcessBuilder() {
-        ProcessBuilder pb = createProcessBuilder();
+        ProcessBuilder pb = createProcessBuilder(getProjectDirectory());
         configureMavenProperties();
 
         // TODO allow the user to configure an exec goal though System Properties or env variables.
@@ -160,8 +163,7 @@ public class MavenLauncher extends LauncherDelegate {
         if (!Boolean.valueOf(env(LauncherBuilder.ORACLE_MAVEN_DEPENDENCIES, "true"))) {
             return null;
         }
-        ProcessBuilder b = createProcessBuilder();
-        b.directory(getProjectRootDirectory().toFile());
+        ProcessBuilder b = createProcessBuilder(getProjectRootDirectory());
         addCommand("-DskipTests", "--also-make");
         addCommand("--projects", getProjectRootDirectory().relativize(getProjectDirectory()).toString());
         addCommand("install");
