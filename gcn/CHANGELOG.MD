@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 0.9.10
+* Rebranding to Graal Development Kit for Micronaut
+* Show also untested features in project multistep wizard
+* GitHub repo name updated
 
 ## Version 0.9.9
 * GCN Updated to 4.3.7

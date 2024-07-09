@@ -1,7 +1,7 @@
 # Launch for Micronaut&reg; framework
 [![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/oracle-labs-graalvm.micronaut?style=for-the-badge&label=VS%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut)
 [![Installs](https://img.shields.io/visual-studio-marketplace/i/oracle-labs-graalvm.micronaut?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut)
-[![License](https://img.shields.io/github/license/oracle/gcn-vscode-extensions?style=for-the-badge&logo=upl)](https://github.com/oracle/gcn-vscode-extensions/blob/main/LICENSE.txt)
+[![License](https://img.shields.io/github/license/oracle/gdk-vscode-extensions?style=for-the-badge&logo=upl)](https://github.com/oracle/gdk-vscode-extensions/blob/main/LICENSE.txt)
 
 *** Technology Preview ***
 
@@ -67,8 +67,8 @@ The following command is available for Micronaut project creation:
 
 If you have suggestions for new features, or if you have found a bug or issue, we would love to hear from you. Use the links below:
 
-* [Request a feature](https://github.com/oracle/gcn-vscode-extensions/issues/new?labels=enhancement)
-* [File a bug](https://github.com/oracle/gcn-vscode-extensions/issues/new?labels=bug)
+* [Request a feature](https://github.com/oracle/gdk-vscode-extensions/issues/new?labels=enhancement)
+* [File a bug](https://github.com/oracle/gdk-vscode-extensions/issues/new?labels=bug)
 
 ## Contributing
 
