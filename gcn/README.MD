@@ -1,7 +1,7 @@
 # Graal Development Kit for Micronaut Launcher
 [![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/oracle-labs-graalvm.gcn?style=for-the-badge&label=VS%20Marketplace&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn)
 [![Installs](https://img.shields.io/visual-studio-marketplace/i/oracle-labs-graalvm.gcn?style=for-the-badge)](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.gcn)
-[![License](https://img.shields.io/github/license/oracle/gcn-vscode-extensions?style=for-the-badge&logo=upl)](https://github.com/oracle/gcn-vscode-extensions/blob/main/LICENSE.txt)
+[![License](https://img.shields.io/github/license/oracle/gdk-vscode-extensions?style=for-the-badge&logo=upl)](https://github.com/oracle/gdk-vscode-extensions/blob/main/LICENSE.txt)
 
 *** Technology Preview ***
 
@@ -42,8 +42,8 @@ The _Graal Development Kit for Micronaut_ Launcher extension is part of the [Gra
 
 ## <a name='provide-feedback-or-seek-help'></a>Provide Feedback or Seek Help
 
-* [Request a feature](https://github.com/oracle/gcn-vscode-extensions/issues/new?labels=enhancement)
-* [File a bug](https://github.com/oracle/gcn-vscode-extensions/issues/new?labels=bug)
+* [Request a feature](https://github.com/oracle/gdk-vscode-extensions/issues/new?labels=enhancement)
+* [File a bug](https://github.com/oracle/gdk-vscode-extensions/issues/new?labels=bug)
 
 ### <a name='privacy-policy'></a>Privacy Policy
 

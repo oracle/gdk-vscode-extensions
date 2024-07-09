@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 0.0.7
+* Rebranding to Graal Development Kit for Micronaut
+* GitHub repo name updated
+
 ## Version 0.0.5
 * Open sourcing changes
 

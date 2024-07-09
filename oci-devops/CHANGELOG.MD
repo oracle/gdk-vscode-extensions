@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 0.9.8
+* GitHub repo renamed to GDK
+* Various bug fixes
+
 ## Version 0.9.7
 * Helidon SE projects support
 * Added possibility to easily report issues directly to GitHub

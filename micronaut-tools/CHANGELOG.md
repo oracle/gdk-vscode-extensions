@@ -1,5 +1,13 @@
 # Change Log
 
+# Version 0.6.6
+* Endpoints and Beans explorers display symbols originating in dependent libraries.
+* Assist at composing of REST queries in REST Client
+* Source code actions for creation of non database endpoints in Controllers
+* Create tests for Micronaut endpoints
+* GitHub repo name updated
+* Various bug fixes included...
+
 # Version 0.6.5
 * Renamed to "Tools for Micronaut® framework"
 * Bug fixes
