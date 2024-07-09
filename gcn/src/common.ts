@@ -459,7 +459,7 @@ export async function selectCreateOptions(): Promise<CreateOptions | undefined> 
             qp.buttons = newButtons;
 
             disposables.push(qp.onDidTriggerButton((button) => {
-                const nowShow : boolean = button == enableUntested;
+                const nowShow : boolean = button === enableUntested;
                 if (nowShow === state.showUntestedFetures) {
                     return;
                 }
@@ -495,15 +495,15 @@ export async function selectCreateOptions(): Promise<CreateOptions | undefined> 
         });
         const newFeatures : ValueAndLabel[] = [];
         state.features?.forEach(f => {
-            if (!features.find(t => t.value == f.value) || selected.value == f.value) {
+            if (!features.find(t => t.value === f.value) || selected.value === f.value) {
                 newFeatures.push(f);
             }
-        })
+        });
         state.features = newFeatures;
 
         let conflicts = await validateFeature(state);
         if (conflicts) {
-            state.conflictingFeatures = (state.conflictingFeatures || 0) + 1
+            state.conflictingFeatures = (state.conflictingFeatures || 0) + 1;
             return (input: dialogs.MultiStepInput) => resolveConflictingFeatures(input, state, n + 1, conflicts);
         }
     
@@ -667,7 +667,7 @@ async function validateFeature(s : Partial<State>) : Promise<ValueAndLabel[]> {
         const re = /.*of the following features selected: \[([^]+)\].*/.exec(messageText);
         if (re) {
             const listOfFeatures = re[1].split(",").map(s => s.trim()).map(f =>
-                allFeatures.find(t => t.value == f)
+                allFeatures.find(t => t.value === f)
             ).filter(f => f);
             if (listOfFeatures.length) {
                 // OK, we've filtered undefined-s out.

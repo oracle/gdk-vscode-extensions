@@ -147,7 +147,7 @@ export class Application {
                 const port = targetAddress.getPort(value);
                 if (!Number.isNaN(port)) {
                     if (port < 1024 || port > 65535) {
-                        return 'Port number is out of the allowed range'
+                        return 'Port number is out of the allowed range';
                     }
                 }
                 return undefined;
