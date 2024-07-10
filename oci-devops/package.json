@@ -891,7 +891,7 @@
 		}
 	},
 	"vsce": {
-		"baseImagesUrl": "https://github.com/oracle/gdk-vscode-extensions/raw/main/oci-devops"
+		"baseImagesUrl": "https://github.com/oracle/gdk-vscode-extensions/raw/release/v4.5.0/oci-devops"
 	},
 	"config": {
 		"winBuildPath": "..\\node_modules\\.bin\\vsce",
