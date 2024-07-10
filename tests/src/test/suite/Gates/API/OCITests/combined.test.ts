@@ -617,7 +617,7 @@ suite(`Oci Combined pipelines test: ${wf![0].name}`, function () {
       this.afterAll(() => {
         try {
           const projectName = wf![0].name;
-          let deploymentName = projectName.replace(/_/g, "-");
+          let deploymentName = projectName.replace(/_/g, "-").toLowerCase();
           
           const deleteCommand = `kubectl delete deployment ${deploymentName} -n default`;
           execSync(deleteCommand, { timeout: 50000 });
