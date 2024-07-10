@@ -54,6 +54,9 @@ public class MavenLauncher extends LauncherDelegate {
         }
         if (exec != null) {
             exec = (startIn != null ? startIn : getProjectDirectory()).relativize(exec);
+            if (exec.getNameCount() == 1) {
+                exec = Paths.get(".").resolve(exec); // NOI18N
+            }
         } else {
             String m2home = System.getenv("MAVEN_HOME");
             if (m2home != null) {
