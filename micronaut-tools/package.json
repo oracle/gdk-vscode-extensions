@@ -954,7 +954,7 @@
 		}
 	},
 	"vsce": {
-	  "baseImagesUrl": "https://github.com/oracle/gdk-vscode-extensions/raw/main/micronaut-tools"
+	  "baseImagesUrl": "https://github.com/oracle/gdk-vscode-extensions/raw/release/v4.5.0/micronaut-tools"
 	},
 	"config": {
 		"winBuildPath": "..\\node_modules\\.bin\\vsce",
