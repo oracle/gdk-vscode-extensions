@@ -27,7 +27,7 @@ The wizard can generate different types of GDK and serverless applications. If b
     - Provide a base package
     - Pick the GDK services to be included in the project
     - Pick Features to be included in the project. E.g. when Database was selected in Services step then in this step pick Oracle Cloud Autonomous Transaction Processing (ATP) feature which will add necassary dependencies to access Autonomous DB.
-       - Click the shield icon in this step to make also experimental (untested) features available for project
+       - Click the shield icon in this step to make also experimental (untested) features available for the project.
        ![Experimental Features](images/experimental_features.png)
     - Select a build tool: Maven or Gradle
     - Select a unit test framework: JUnit, Spock, or Kotest
