@@ -38,6 +38,21 @@ suite('Micronaut Symbols Test Suite', function () {
     assert.ok(commands.includes('nbls.workspace.symbols'), '"nbls.workspace.symbols" command has not been loaded');
   });
 
+  // Check there are no errors in workspace
+  test('No error in workspace', async () => {
+    let msg = '';
+    for (const diag of vscode.languages.getDiagnostics()) {
+      for (const report of diag[1]) {
+        if (report.severity === vscode.DiagnosticSeverity.Error) {
+          msg += `${diag[0].fsPath}: ${report.message}\n`;
+        }
+      }
+    }
+    if (msg.length > 0) {
+      assert.fail(`Errors in workspace:\n${msg}`);
+    }
+  });
+
   // Check Micronaut endpoint symbols
   test('Micronaut endpoint symbols', async () => {
     const endpoints: any[] = await getSymbols('@/');
@@ -101,6 +116,10 @@ suite('Micronaut Symbols Test Suite', function () {
       });
       vscode.commands.executeCommand('nbls.addEventListener', 'nbls.scanFinished', 'test.symbols.reload');
       vscode.commands.executeCommand('test.symbols.reload');
+      setTimeout(() => {
+        disp.dispose();
+        resolve([]);
+      }, 60000);
     });
   }
 });

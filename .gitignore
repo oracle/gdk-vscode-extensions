@@ -19,6 +19,7 @@
 /oci-devops/fixtures/base-oci-template/oci/bin/
 /*/test-resources/
 /*/mochawesome-report/
+/*/mochawesome-report-generator/
 **/projects
 tests/generated-projects/
 tests/test-projects/**/.gradle
