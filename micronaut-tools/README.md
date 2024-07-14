@@ -32,9 +32,9 @@ Install the [Graal Development Kit for Micronaut Extension Pack](https://marketp
 * [Create Micronaut Controller Classes from Micronaut Data Repositories](#create-micronaut-controller-classes-from-micronaut-data-repositories)
 * [Create Tests for Micronaut Controller Endpoints](#create-tests-for-micronaut-controller-endpoints)
 * [Troubleshooting](#troubleshooting)
-  * [Code lenses](#code-lenses)
-  * [Space in path](#space-in-path)
-  * [Failed to launch debugee in terminal](#failed-to-launch-debugee-in-terminal)
+  * [Code Lenses](#code-lenses)
+  * [Space in Path](#space-in-path)
+  * [Failed to Launch Debuggee in Terminal](#failed-to-launch-debuggee-in-terminal)
 
 To request a feature or report a bug, please [contact us](#feedback).
 
@@ -473,7 +473,7 @@ See your docker tools documentation.
 * **Micronaut Tools: Search/Filter Endpoints**:  Search or filter the items in the Endpoints view.
 
 ## Troubleshooting
-### Code lenses
+### Code Lenses
 This extension modifies the **Java** environment so that the application is launched using the build system (Gradle, Maven). Not all environment customizations are supported and for some projects this functionality may need to be turned off.
 
 To enable or disable the enhanced Run feature, navigate to `File - Preferences - Settings`, locate `Micronaut Tools` extension section and turn on/off the `Use build system to run or debug applications`. The relevant setting (in JSON format) is `micronaut-tools.buildsystemExecution`
@@ -481,7 +481,7 @@ To enable or disable the enhanced Run feature, navigate to `File - Preferences -
 In some configurations the Enhanced Run feature code lenses, `Run | Debug | Run with Micronaut Continuous Mode`, are not displayed for **Gradle** projects when **Gradle for Java extension** is enabled. 
 To resolve this, disable Gradle for Java extension, reload VS Code, and then enable Gradle for Java again.
 
-### Space in path
+### Space in Path
 The Apache NetBeans Language Server for Java fails on Linux and macOS if the path of VSCode extensions directory contains a space, for example _/User/great code/.vscode/extensions_. (The extensions directory contains all VSCode extensions are installed.) The default path is:
 
 * Windows _%USERPROFILE%\.vscode\extensions_
@@ -493,27 +493,27 @@ Change the path by removing any spaces:
 * Temporarily by launching VSCode from the command line with the option `--extensions-dir`, for example `$ code --extensions-dir "/User/code_user/extensions_dir"`.
 * It cannot be changed in VSCode Settings.
 
-### Failed to launch debugee in terminal
-When launching Micronaut or GDK application in VSCode for debugging you might sometimes experience this error:
+### Failed to Launch Debuggee in Terminal
+When running a Micronaut or GDK application in debug mode, you might sometimes experience this error in VS code:
 
 ![Debugee Timeout](./images/debugee_timeout.png)
 
-This is caused by long project build time and run which exceeds hard coded timeout in VSCode (20 seconds) for which VSCode waits for debugee process to connect to debugger.
-It could be caused by Test Resources enabled in Micronaut or GDK application project file which sometimes start for a long time and workaround is to disable these.
-Maven (pom.xml) projects:
-  * Open pom.xml being executed
-  * Change this property to false: ```<micronaut.test.resources.enabled>false</micronaut.test.resources.enabled>```
+This is caused by a long project build and run time which exceeds a default timeout in VS Code (20 seconds) for which VS Code waits for a debuggee process to connect to a debugger.
+It can also be caused by Test Resources enabled in a Micronaut or GDK application project which sometimes start longer. The workaround is to disable those.
+In a Maven project:
+  * Open _pom.xml_ being executed
+  * Change this property to `false`: 
+     ```<micronaut.test.resources.enabled>false</micronaut.test.resources.enabled>```
 
-Gradle projects:
-  * Open build.gradle being executed
-  * Add following code into it ```micronaut {``` section:
+In a Gradle project:
+  * Open _build.gradle_ being executed
+  * Add the following code into the ```micronaut {``` section:
   ```
   testResources {
         enabled.set(false)
     }
   ```
-  Rerun the project using Debug code lense or Debug from Micronaut Panel.
-
+  Rerun the project using Debug on the CodeLens of the application `main()` method or Debug from the Micronaut panel.
 
 ## Feedback
 
