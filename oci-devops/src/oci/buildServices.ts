@@ -386,10 +386,10 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
             const folder = servicesView.findWorkspaceFolderByNode(this);
             const folderUri = folder?.uri;
             if (folderUri) {
-                if (gitUtils.locallyModified(folderUri)) {
+                if (await gitUtils.locallyModified(folderUri)) {
                     const cancelOption = 'Cancel Build And Show Source Control View';
                     const runBuildOption = 'Build Anyway';
-                    const selOption = await vscode.window.showWarningMessage('Local souces differ from the repository content in cloud.', cancelOption, runBuildOption);
+                    const selOption = await vscode.window.showWarningMessage('Local sources differ from the repository content in cloud.', cancelOption, runBuildOption);
                     if (runBuildOption !== selOption) {
                         if (cancelOption === selOption) {
                             vscode.commands.executeCommand('workbench.view.scm');
