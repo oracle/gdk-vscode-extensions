@@ -135,7 +135,7 @@ export function getHEAD(target: vscode.Uri, silent?: boolean): { name?: string; 
     return repository.state.HEAD;
 }
 
-export function locallyModified(target: vscode.Uri): boolean | undefined {
+export async function locallyModified(target: vscode.Uri): Promise<boolean | undefined> {
     logUtils.logInfo(`[git] Check locally modified ${target.fsPath}`);
     const gitApi = getGitAPI();
     if (!gitApi) {
@@ -149,6 +149,12 @@ export function locallyModified(target: vscode.Uri): boolean | undefined {
     const repository = gitApi.getRepository(target);
     if (!repository) {
         dialogs.showErrorMessage(`Cannot find Git repository for ${target}`);
+        return undefined;
+    }
+    try {
+        await vscode.commands.executeCommand('git.refresh', [repository]);
+    } catch (err) {
+        dialogs.showErrorMessage('Error while refreshing a repository', err);
         return undefined;
     }
     let check = repository.state.indexChanges.length > 0 || repository.state.mergeChanges.length > 0 || repository.state.workingTreeChanges.length > 0;
