@@ -2761,7 +2761,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     increment,
                                 });
                                 logUtils.logInfo(`[deploy] Using already created OKE native deployment configuration artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                            } else {
+                            } else if (folder.projectType !== 'Unknown') {
                                 // --- Create OKE native deployment configuration artifact
                                 progress.report({
                                     increment,
@@ -2791,6 +2791,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     return;
                                 }
                                 dump(deployData);
+                            } else {
+                                folderData.oke_deployNativeConfigArtifact = false;
                             }
 
                             const oke_deployNativePipelineName = `Deploy ${NI_CONTAINER_NAME} to OKE`;
@@ -2812,7 +2814,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     increment,
                                 });
                                 logUtils.logInfo(`[deploy] Using already created deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                            } else {
+                            } else if (folder.projectType !== 'Unknown') {
                                 // --- Create OKE native deployment pipeline
                                 progress.report({
                                     increment,
@@ -2848,6 +2850,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     return;
                                 }
                                 dump(deployData);
+                            } else {
+                                logUtils.logInfo(`[deploy] Skipped creating deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC}`);
+                                folderData.oke_deployNativePipeline = false;
                             }
                             if (folderData.setupSecretForDeployNativeStage) {
                                 try {
@@ -2861,7 +2866,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             }
                             if (folderData.setupSecretForDeployNativeStage) {
                                 logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                            } else {
+                            } else if (folderData.oke_deployNativePipeline) {
                                 try {
                                     logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.setupSecretForDeployNativeStage = false;
@@ -2875,6 +2880,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     return;
                                 }
                                 dump(deployData);
+                            } else {
+                                folderData.setupSecretForDeployNativeStage = false;  
                             }
                             if (folderData.deployNativeToOkeStage) {
                                 try {
@@ -2888,7 +2895,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             }
                             if (folderData.deployNativeToOkeStage) {
                                 logUtils.logInfo(`[deploy] Using already created deploy to OKE stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                            } else {
+                            } else if (folderData.oke_deployNativePipeline) {
                                 try {
                                     logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.deployNativeToOkeStage = false;
@@ -2902,6 +2909,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     return;
                                 }
                                 dump(deployData);
+                            } else {
+                                folderData.deployNativeToOkeStage = false;
                             }
                             if (folderData.applyNativeConfigMapStage) {
                                 try {
@@ -2915,7 +2924,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             }
                             if (folderData.applyNativeConfigMapStage) {
                                 logUtils.logInfo(`[deploy] Using already created apply ConfigMap stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                            } else {
+                            } else if (folderData.oke_deployNativePipeline) {
                                 try {
                                     logUtils.logInfo(`[deploy] Creating apply ConfigMap stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.applyNativeConfigMapStage = false;
@@ -2929,6 +2938,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     return;
                                 }
                                 dump(deployData);
+                            } else {
+                                folderData.applyNativeConfigMapStage = false;
                             }
                             if (ociFeatures.NI_PIPELINES_ENABLED) {
                                 deployPipelines.push({ 'ocid': folderData.oke_deployNativePipeline, 'displayName': oke_deployNativePipelineName });
@@ -3207,7 +3218,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     increment,
                                 });
                                 logUtils.logInfo(`[deploy] Using already created OKE jvm deployment configuration artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                            } else {
+                            } else if (folder.projectType !== 'Unknown') {
                                 // --- Create OKE jvm deployment configuration artifact
                                 progress.report({
                                     increment,
@@ -3237,6 +3248,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     return;
                                 }
                                 dump(deployData);
+                            } else {
+                                folderData.oke_deployJvmConfigArtifact = false;
                             }
 
                             const oke_deployJvmPipelineName = `Deploy ${JVM_CONTAINER_NAME} to OKE`;
@@ -3258,7 +3271,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     increment,
                                 });
                                 logUtils.logInfo(`[deploy] Using already created deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                            } else {
+                            } else if (folder.projectType !== 'Unknown') {
                                 // --- Create OKE jvm deployment pipeline
                                 progress.report({
                                     increment,
@@ -3294,6 +3307,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     return;
                                 }
                                 dump(deployData);
+                            } else {
+                                logUtils.logInfo(`[deploy] Skipped creating deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC}`);
+                                folderData.oke_deployJvmPipeline = false;  
                             }
                             if (folderData.setupSecretForDeployJvmStage) {
                                 try {
@@ -3307,7 +3323,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             }
                             if (folderData.setupSecretForDeployJvmStage) {
                                 logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                            } else {
+                            } else if (folderData.oke_deployJvmPipeline) {
                                 try {
                                     logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.setupSecretForDeployJvmStage = false;
@@ -3321,6 +3337,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     return;
                                 }
                                 dump(deployData);
+                            } else {
+                                folderData.setupSecretForDeployJvmStage = false; 
                             }
                             if (folderData.deployJvmToOkeStage) {
                                 try {
@@ -3334,7 +3352,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             }
                             if (folderData.deployJvmToOkeStage) {
                                 logUtils.logInfo(`[deploy] Using already created deploy to OKE stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                            } else {
+                            } else if (folderData.oke_deployJvmPipeline) {
                                 try {
                                     logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.deployJvmToOkeStage = false;
@@ -3348,6 +3366,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     return;
                                 }
                                 dump(deployData);
+                            } else {
+                                folderData.deployJvmToOkeStage = false;
                             }
                             if (folderData.applyConfigMapStage) {
                                 try {
@@ -3361,7 +3381,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             }
                             if (folderData.applyConfigMapStage) {
                                 logUtils.logInfo(`[deploy] Using already created apply ConfigMap stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                            } else {
+                            } else if (folderData.oke_deployJvmPipeline) {
                                 try {
                                     logUtils.logInfo(`[deploy] Creating apply ConfigMap stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.applyConfigMapStage = false;
@@ -3375,6 +3395,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     return;
                                 }
                                 dump(deployData);
+                            } else {
+                                folderData.applyConfigMapStage = false;
                             }
                             deployPipelines.push({ 'ocid': folderData.oke_deployJvmPipeline, 'displayName': oke_deployJvmPipelineName });
                         }
