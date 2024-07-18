@@ -86,7 +86,7 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
         }
         return undefined;
     };
-    const switchCompartmentChoice: dialogs.QuickPickObject = new dialogs.QuickPickObject(`$(arrow-small-right) Change compartment...`, undefined, undefined, switchCompartment);
+    const switchCompartmentChoice: dialogs.QuickPickObject = new dialogs.QuickPickObject(`$(arrow-small-right) Change OKE compartment...`, undefined, undefined, switchCompartment);
     
     const choices: dialogs.QuickPickObject[] = [];
     if (existingContentChoices?.length) {
