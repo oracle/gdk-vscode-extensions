@@ -349,6 +349,11 @@
 			},
 			{
 				"view": "oci-devops",
+				"contents": "\n\nPlease select an OKE cluster to continue (notification pending).",
+				"when": "oci.devops.servicesInitialized && oci.devops.deployInProgress && oci.devops.selectOKECluster"
+			},
+			{
+				"view": "oci-devops",
 				"contents": "Adding folder(s) to OCI DevOps project...",
 				"when": "oci.devops.servicesInitialized && oci.devops.addInProgress"
 			},
