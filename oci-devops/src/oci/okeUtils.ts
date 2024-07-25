@@ -55,7 +55,9 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
         const cancelOption = 'Skip OKE Support';
         const options = ociFeatures.MANAGE_VIEW_ITEMS_ENABLED ? [createOption, cancelOption] : [createOption];
         const msg = 'No OKE cluster in compartment.';
+        await vscode.commands.executeCommand('setContext', 'oci.devops.selectOKECluster', true);
         const sel = await vscode.window.showWarningMessage(msg, ...options);
+        await vscode.commands.executeCommand('setContext', 'oci.devops.selectOKECluster', false);
         if (!sel) {
             logUtils.logInfo(`[oci] Clusters skipped.`);
             return undefined;
