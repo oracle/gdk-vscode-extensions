@@ -763,19 +763,6 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
     
     async runPipelineCommon(customizeParameters: ((lastProvidedParameters: string | undefined, predefinedParameters: { name: string; value: string }[], requiredParameters: { name: string; value: string }[]) => Promise<{ name: string; value: string }[] | undefined>) | undefined) {
         const currentState = this.lastDeployment?.state;
-    
-        const params: { name: string; value: string }[] = [];
-        if (customizeParameters) {
-            const customParams = await customizeParameters(this.lastProvidedParameters, params, []);
-            if (customParams) {
-                this.lastProvidedParameters = ociDialogs.parametersToString(customParams);
-                params.length = 0;
-                params.push(...customParams);
-            } else {
-                return;
-            }
-        }
-    
         if (currentState === devops.models.Deployment.LifecycleState.Canceling || !ociUtils.isRunning(currentState)) {
             const deploymentName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
             logUtils.logInfo(`[deploy] Starting deployment '${deploymentName}'`);
@@ -808,8 +795,20 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
                             resolve(false);
                             return;
                         }
-                        if (dockerTag && !params.some(p => p.name === dockerTagVarName)) {
+                        const params: { name: string; value: string }[] = [];
+                        if (dockerTag) {
                             params.push({ name: dockerTagVarName, value: dockerTag });
+                        }
+                        if (customizeParameters) {
+                            const customParams = await customizeParameters(this.lastProvidedParameters, params, []);
+                            if (customParams) {
+                                this.lastProvidedParameters = ociDialogs.parametersToString(customParams);
+                                params.length = 0;
+                                params.push(...customParams);
+                            } else {
+                                resolve(false);
+                                return;
+                            }
                         }
                         const repository = await ociUtils.getCodeRepository(this.oci.getProvider(), this.oci.getCodeRepository());
                         const deploymentRunName = repository.name ? `${repository.name}: ${deploymentName}` : deploymentName;

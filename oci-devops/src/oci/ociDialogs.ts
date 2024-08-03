@@ -386,36 +386,22 @@ export async function customizeParameters(lastProvidedParameters: string | undef
         placeHolder: 'Enter parameters as PARAMETER_1=value, PARAMETER_2=value, ...',
         value: lastProvidedParameters !== undefined ? lastProvidedParameters : parametersToString(predefinedParameters),
         ignoreFocusOut: true,
-        validateInput: input => {
-            if (input === '') {
-                return '';
-            }
+         validateInput: input => {
             if (input.trim() === '') {
-                return 'Input cannot contain only spaces.';
+                return undefined;
             }
-            if (input.trim().endsWith(',')) {
-                input = input.slice(0, -1);
-            }
-            if (/\s{2,}$/.test(input)) {
-                return 'Input cannot end with multiple spaces.';
+            if (/\s{3,}$/.test(input)) {
+                return 'Invalid input format. Please enter valid parameters.';
             }
             const pairs = input.split(/,\s?/).filter(pair => pair.trim() !== '');
             if (pairs.length === 0) {
                 return 'Invalid input format. Please enter valid parameters.';
             }
-
             for (const pair of pairs) {
-                if (/^\s{2,}|\s{2,}$/.test(pair)) {
-                    return "One space maximum before or after parameters.";
-                }
-                if (/\s/.test(pair.trim())) {
-                    return "No spaces allowed within PARAMETER=value.";
-                }
                 if (!validParameter.test(pair.trim())) {
                     return 'Invalid parameter format. Use PARAMETER=value.';
                 }
             }
-
             return undefined;
         }
     });

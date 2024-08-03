@@ -385,12 +385,12 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
 
     private lastProvidedParameters: string | undefined;
 
-    async runPipeline(tests: boolean = false) {
+    runPipeline(tests: boolean = false) {
         return this.runPipelineCommon(tests, undefined);
     }
     
-    async runPipelineWithParameters(tests: boolean = false) {
-        return await this.runPipelineCommon(tests, ociDialogs.customizeParameters);
+    runPipelineWithParameters(tests: boolean = false) {
+        return this.runPipelineCommon(tests, ociDialogs.customizeParameters);
     }
     
     async runPipelineCommon(tests: boolean, customizeParameters: ((lastProvidedParameters: string | undefined, predefinedParameters: { name: string; value: string }[], requiredParameters: { name: string; value: string }[]) => Promise<{ name: string; value: string }[] | undefined>) | undefined) {
