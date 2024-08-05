@@ -782,9 +782,10 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
                             const buildRunId = lastBuilds?.find(build => ociUtils.isSuccess(build.lifecycleState))?.id;
                             if (buildRunId) {
                                 try {
-                                    const buildOutputs = (await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId)).buildOutputs;
+                                    const buildRun = await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId);
+                                    const buildOutputs = buildRun.buildOutputs;
                                     artifactsCount = buildOutputs?.deliveredArtifacts?.items.length;
-                                    dockerTag = buildOutputs?.exportedVariables?.items.find(v => v.name === dockerTagVarName)?.value;
+                                    dockerTag = buildRun.buildRunArguments?.items.find(v => v.name === dockerTagVarName)?.value || buildOutputs?.exportedVariables?.items.find(v => v.name === dockerTagVarName)?.value;
                                 } catch (err) {
                                     // TODO: handle?
                                 }

@@ -386,26 +386,24 @@ export async function customizeParameters(lastProvidedParameters: string | undef
         placeHolder: 'Enter parameters as PARAMETER_1=value, PARAMETER_2=value, ...',
         value: lastProvidedParameters !== undefined ? lastProvidedParameters : parametersToString(predefinedParameters),
         ignoreFocusOut: true,
-         validateInput: input => {
-            if (input.trim() === '') {
+        validateInput: input => {
+            input = input.trim();
+            if (input === '') {
                 return undefined;
             }
-            if (/\s{3,}$/.test(input)) {
-                return 'Invalid input format. Please enter valid parameters.';
-            }
-            const pairs = input.split(/,\s?/).filter(pair => pair.trim() !== '');
+            const pairs = input.split(/,\s?/);
             if (pairs.length === 0) {
                 return 'Invalid input format. Please enter valid parameters.';
             }
-            for (const pair of pairs) {
-                if (!validParameter.test(pair.trim())) {
-                    return 'Invalid parameter format. Use PARAMETER=value.';
+            for (const [index, pair] of pairs.entries()) {
+                const trimmedPair = pair.trim();
+                if ((trimmedPair === '' && index !== pairs.length - 1) || (trimmedPair !== '' && !validParameter.test(trimmedPair))) {
+                    return 'Invalid input format. Please enter valid parameters.';
                 }
             }
             return undefined;
         }
     });
-
     if (customParameters === undefined) {
         return undefined;
     }
