@@ -18,6 +18,7 @@ export async function getGcnCreateOptions(
   ourBuildTool: BuildTool,
   java: SupportedJava,
   services: string[],
+  featuresList?: string[] | undefined
 ): Promise<CreateOptions> {
   const selectedJavaRuntime = await selectJavaRuntime(java);
 
@@ -37,7 +38,7 @@ export async function getGcnCreateOptions(
       javaVersion: `JDK_17`, // TODO make a variable
       clouds: ['OCI'],
       services: [...services],
-      features: undefined,
+      features: featuresList,
     },
   };
 }
@@ -55,10 +56,11 @@ export async function createGcnProject(
   services: Feature[],
   path: string[] | string,
   java: SupportedJava = SupportedJava.AnyJava,
+  features?: string[] | undefined 
 ): Promise<string> {
   try {
     await Common.initialize();
-    const options = await getGcnCreateOptions(buildTool, java, services);
+    const options = await getGcnCreateOptions(buildTool, java, services, features);
     const projFolder: string = resolveProjFolder(path, getName(buildTool, services));
 
     if (!fs.existsSync(projFolder)) {

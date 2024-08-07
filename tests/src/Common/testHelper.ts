@@ -8,7 +8,7 @@
 import * as fs from 'fs';
 import path from 'path';
 import { AbstractTestDescriptor } from './abstractTestDescriptor';
-import type { BuildTool, CopiedProject, Feature, GeneratedProject, SupportedJava, TestFolders } from './types';
+import type { BuildTool, CopiedProject, Feature, GeneratedProject, Service, SupportedJava, TestFolders } from './types';
 import { findFiles } from './helpers';
 import { Type } from './types';
 
@@ -62,10 +62,11 @@ export function genProj(
   buildTool: BuildTool,
   features: Feature[],
   type: Type = Type.GDK,
+  services?: Service[] | undefined,
   name?: string,
   java?: SupportedJava,
 ): GeneratedProject {
-  return { _type: 'generated', buildTool, features, java, name, type };
+  return { _type: 'generated', buildTool, features, java, name, type , services};
 }
 
 /**
