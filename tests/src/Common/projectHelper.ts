@@ -172,7 +172,7 @@ export async function generateProjects(projects: GeneratedProject[]) {
   const generator = require('./gcn-generator');
   for (const project of projects) {
     const destination = getProjectFolder(project);
-    if (project.features[1] == Feature.OBJECTSTORE && project.features[0] == Feature.DATABASE) {
+    if (project.features.includes(Feature.OBJECTSTORE) && project.features.includes(Feature.DATABASE)) {
       const projectFolder = await generator.createGcnProject(project.buildTool, project.features, destination, project.java, project.services);
       const applicationPropertiesPath = path.join(projectFolder,'oci', 'src','main','resources', 'application.properties');
       const applicationOracleCloudPropertiesPath = path.join(projectFolder,'oci', 'src','main','resources', 'application-oraclecloud.properties');
