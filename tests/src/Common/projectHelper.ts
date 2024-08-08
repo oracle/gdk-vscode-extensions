@@ -7,9 +7,10 @@
 
 import path from 'path';
 import { copyRecursiveSync, generateUID, getSubDirs, findFiles } from './helpers';
-import { BuildTool, GeneratedProject, ProjectDescription, TestFolder, TestFolders } from './types';
+import { BuildTool, Feature, GeneratedProject, ProjectDescription, TestFolder, TestFolders } from './types';
 import { AbstractTestDescriptor } from './abstractTestDescriptor';
 import { getDescriptor } from './testHelper';
+import * as fs from 'fs';
 
 const rootPath = path.resolve(__dirname, '..', '..');
 const generatedProjectsPath = path.join(rootPath, 'generated-projects');
@@ -171,7 +172,30 @@ export async function generateProjects(projects: GeneratedProject[]) {
   const generator = require('./gcn-generator');
   for (const project of projects) {
     const destination = getProjectFolder(project);
-    await generator.createGcnProject(project.buildTool, project.features, destination, project.java);
+    if (project.features.includes(Feature.OBJECTSTORE) && project.features.includes(Feature.DATABASE)) {
+      const projectFolder = await generator.createGcnProject(project.buildTool, project.features, destination, project.java, project.services);
+      const applicationPropertiesPath = path.join(projectFolder,'oci', 'src','main','resources', 'application.properties');
+      const applicationOracleCloudPropertiesPath = path.join(projectFolder,'oci', 'src','main','resources', 'application-oraclecloud.properties');
+      const configuration = 
+`oci.config.instance-principal.enabled=${process.env['OCI_CONFIG_INSTANCE_PRINCIPAL_ENABLED']}
+datasources.default.ocid=${process.env['DATASOURCES_DEFAULT_OCID']}
+datasources.default.driverClassName=${process.env['DATASOURCES_DEFAULT_DRIVER_CLASS_NAME']}
+datasources.default.username=${process.env['DATASOURCES_DEFAULT_USERNAME']}
+datasources.default.password=${process.env['DATASOURCES_DEFAULT_PASSWORD']}
+datasources.default.walletPassword=${process.env['DATASOURCES_DEFAULT_WALLET_PASSWORD']}
+micronaut.object-storage.oracle-cloud.default.enabled=${process.env['MICRONAUT_OBJECT_STORAGE_ORACLE_CLOUD_DEFAULT_ENABLED']}
+micronaut.object-storage.oracle-cloud.default.namespace=${process.env['MICRONAUT_OBJECT_STORAGE_ORACLE_CLOUD_DEFAULT_NAMESPACE']}
+micronaut.object-storage.oracle-cloud.default.bucket=${process.env['MICRONAUT_OBJECT_STORAGE_ORACLE_CLOUD_DEFAULT_BUCKET']}`;
+      // Delete applicationProperties content
+      fs.writeFileSync(applicationPropertiesPath, '', 'utf-8');
+      // Delete applicationOracleCloudProperties content
+      fs.writeFileSync(applicationOracleCloudPropertiesPath, '', 'utf-8');
+
+      // Add new configuration to applicationOracleCloudProperties
+      fs.writeFileSync(applicationOracleCloudPropertiesPath, configuration, 'utf-8');
+    } else {
+      await generator.createGcnProject(project.buildTool, project.features, destination, project.java);
+    }
   }
 }
 

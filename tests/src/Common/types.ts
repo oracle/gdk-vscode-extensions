@@ -21,6 +21,11 @@ export enum SupportedJava { // TODO: use from env property
   JDK_17 = 'jdk-17',
 }
 
+// GDK Features
+export enum Service {
+  ATP = 'oracle-cloud-atp',
+}
+
 export enum Feature {
   DATABASE = 'DATABASE',
   EMAIL = 'EMAIL',
@@ -57,6 +62,7 @@ type NamedProject<T extends string> = { name?: string; _type: T };
 export type GeneratedProject = NamedProject<'generated'> & {
   buildTool: BuildTool;
   features: Feature[];
+  services: Service[] | undefined;
   java?: SupportedJava;
   type?: Type;
 };

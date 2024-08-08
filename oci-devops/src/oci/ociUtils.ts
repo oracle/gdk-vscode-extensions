@@ -147,7 +147,7 @@ export async function devopsWaitForResourceCompletionStatus(
     let requestState : devops.models.WorkRequest | undefined;
 
     // TODO: make this configurable, in vscode/workspace options
-    const maxWaitingTimeMillis = 60 * 1000; 
+    const maxWaitingTimeMillis = 5 * 60 * 1000; 
     const initialPollTime = 2000;
     W: for (let waitCount = (maxWaitingTimeMillis / initialPollTime); waitCount > 0; waitCount--) {
         // console.log(`>>> getRequest ${req.workRequestId}`);
