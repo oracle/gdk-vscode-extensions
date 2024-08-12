@@ -47,6 +47,9 @@ export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.runBuildPipeline', (node: BuildPipelineNode) => {
 		node.runPipeline();
 	}));
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.runBuildPipelineWithParameters', (node: BuildPipelineNode) => {
+		node.runPipelineWithParameters();
+	}));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.stopBuildPipeline', (node: BuildPipelineNode) => {
 		node.cancelPipeline();
 	}));
@@ -380,7 +383,17 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
         return `https://cloud.oracle.com/devops-build/projects/${pipeline.projectId}/build-pipelines/${pipeline.id}`;
     }
 
-    async runPipeline(tests: boolean = false) {
+    private lastProvidedParameters: string | undefined;
+
+    runPipeline(tests: boolean = false) {
+        return this.runPipelineCommon(tests, undefined);
+    }
+    
+    runPipelineWithParameters(tests: boolean = false) {
+        return this.runPipelineCommon(tests, ociDialogs.customizeParameters);
+    }
+    
+    async runPipelineCommon(tests: boolean, customizeParameters: ((lastProvidedParameters: string | undefined, predefinedParameters: { name: string; value: string }[], requiredParameters: { name: string; value: string }[]) => Promise<{ name: string; value: string }[] | undefined>) | undefined) {
         const currentState = this.lastRun?.state;
         if (currentState === devops.models.BuildRun.LifecycleState.Canceling || !ociUtils.isRunning(currentState)) {
             const folder = servicesView.findWorkspaceFolderByNode(this);
@@ -417,10 +430,21 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
                 );
                 const targetGvmVersion = graalvmUtils.getBuildRunGVMVersion(requiredJavaVersion ? [requiredJavaVersion, ''] : undefined);
                 const gvmParams = graalvmUtils.getGVMBuildRunParameters(targetGvmVersion);
-                if (gvmParams) {
-                    params.push(...gvmParams);
+                if (customizeParameters) {
+                    const customParams = await customizeParameters(this.lastProvidedParameters, gvmParams || [], requiredJavaVersion ? [{ name: 'JAVA_VERSION', value: requiredJavaVersion}] : []);
+                    if (customParams) {
+                        this.lastProvidedParameters = ociDialogs.parametersToString(customParams);
+                        params.length = 0;
+                        params.push(...customParams);
+                    } else {
+                        return;
+                    }
+                } else {
+                    if (gvmParams) {
+                        params.push(...gvmParams);
+                    }
                 }
-                const msg = `Starting build "${buildName}" using GraalVM ${targetGvmVersion[1]}, Java ${targetGvmVersion[0]}`;
+                const msg = `Starting build "${buildName}"`;
                 logUtils.logInfo(`[build] ${msg}`);
                 vscode.window.withProgress({
                     location: vscode.ProgressLocation.Notification,

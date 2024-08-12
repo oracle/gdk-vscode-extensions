@@ -41,7 +41,6 @@ env:
   exportedVariables:
     - JAVA_HOME
     - APP_FILE
-    - DOCKER_TAG
 steps:
   - type: Command
     name: "Install GraalVM EE - JDK and Native Image"
@@ -71,7 +70,7 @@ steps:
     timeoutInSeconds: 40
     command: |
       echo "OCI_BUILD_RUN_ID: ${OCI_BUILD_RUN_ID}"
-      export DOCKER_TAG="latest"
+      if [ ! -n "${DOCKER_TAG}" ]; then export DOCKER_TAG={{{docker_tag_value}}}; fi
       echo "DOCKER_TAG: ${DOCKER_TAG}"
   - type: Command
     name: "Build application native executable"
@@ -93,10 +92,10 @@ steps:
       echo "APP_FILE: ${APP_FILE}"
       docker build -f ./.devops/Dockerfile.native \
                   --build-arg APP_FILE={{{project_artifact_location}}} \
-                  -t {{{image_name}}}:${DOCKER_TAG} -t {{{image_name}}}:latest .
+                  -t {{{image_name}}}:${DOCKER_TAG} .
       echo "Done"
       printf "List of docker images:\n $(docker images)"
 outputArtifacts:
   - name: {{{deploy_artifact_name}}}
     type: DOCKER_IMAGE
-    location: {{{image_name}}}:latest
+    location: {{{image_name}}}:${DOCKER_TAG}

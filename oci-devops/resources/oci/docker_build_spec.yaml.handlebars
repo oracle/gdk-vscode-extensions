@@ -18,14 +18,13 @@ runAs: root
 shell: bash
 env:
   exportedVariables:
-    - DOCKER_TAG
 steps:
   - type: Command
     name: "Define docker image tag"
     timeoutInSeconds: 40
     command: |
       echo "OCI_BUILD_RUN_ID: ${OCI_BUILD_RUN_ID}"
-      export DOCKER_TAG="latest"
+      if [ ! -n "${DOCKER_TAG}" ]; then export DOCKER_TAG={{{docker_tag_value}}}; fi
       echo "DOCKER_TAG: ${DOCKER_TAG}"
   - type: Command
     name: "Docker build"
@@ -39,4 +38,4 @@ steps:
 outputArtifacts:
   - name: {{{deploy_artifact_name}}}
     type: DOCKER_IMAGE
-    location: {{{image_name}}}:latest
+    location: {{{image_name}}}:${DOCKER_TAG}

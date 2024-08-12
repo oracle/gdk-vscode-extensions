@@ -14,6 +14,7 @@ import * as projectUtils from '../projectUtils';
 import * as logUtils from '../../../common/lib/logUtils';
 import * as ociUtils from './ociUtils';
 import * as ociContext from './ociContext';
+import * as ociDialogs from './ociDialogs';
 import * as ociService from './ociService';
 import * as ociServices  from './ociServices';
 import * as dataSupport from './dataSupport';
@@ -47,6 +48,9 @@ export function initialize(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.runDeployPipeline', (node: DeploymentPipelineNode) => {
 		node.runPipeline();
+	}));
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.runDeployPipelineWithParameters', (node: DeploymentPipelineNode) => {
+		node.runPipelineWithParameters();
 	}));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.stopDeployPipeline', (node: DeploymentPipelineNode) => {
 		node.cancelPipeline();
@@ -464,10 +468,9 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                 }
                 let deployPipeline;
                 try {
-                    deployPipeline = (await ociUtils.createDeployPipeline(oci.getProvider(), oci.getDevOpsProject(), `${codeRepoPrefix}${deployPipelineName}`, deployPipelineDescription, [{
-                        name: 'DOCKER_TAG',
-                        defaultValue: 'latest'
-                    }], tags));
+                    deployPipeline = (await ociUtils.createDeployPipeline(oci.getProvider(), oci.getDevOpsProject(), `${codeRepoPrefix}${deployPipelineName}`, deployPipelineDescription, [
+                        { name: 'DOCKER_TAG', defaultValue: deployUtils.DEFAULT_DOCKER_TAG, description: 'Tag for the container image'}
+                    ], tags));
                 } catch (err) {
                     resolve(undefined);
                     dialogs.showErrorMessageWithReportIssueCommand(`Failed to create deployment to OKE pipeline for ${repositoryName}`, 'oci.devops.openIssueReporter', err);
@@ -748,14 +751,24 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
         return `https://cloud.oracle.com/devops-deployment/projects/${pipeline.projectId}/pipelines/${pipeline.id}`;
     }
 
+    private lastProvidedParameters: string | undefined;
+
     runPipeline() {
+        return this.runPipelineCommon(undefined);
+    }
+    
+    runPipelineWithParameters() {
+        return this.runPipelineCommon(ociDialogs.customizeParameters);
+    }
+    
+    async runPipelineCommon(customizeParameters: ((lastProvidedParameters: string | undefined, predefinedParameters: { name: string; value: string }[], requiredParameters: { name: string; value: string }[]) => Promise<{ name: string; value: string }[] | undefined>) | undefined) {
         const currentState = this.lastDeployment?.state;
         if (currentState === devops.models.Deployment.LifecycleState.Canceling || !ociUtils.isRunning(currentState)) {
             const deploymentName = `${this.label}-${ociUtils.getTimestamp()} (from VS Code)`;
             logUtils.logInfo(`[deploy] Starting deployment '${deploymentName}'`);
             vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
-                title: `Starting deployment "${deploymentName}"...`,
+                title: `Starting deployment "${deploymentName}"`,
                 cancellable: false
             }, (_progress, _token) => {
                 return new Promise(async resolve => {
@@ -769,9 +782,10 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
                             const buildRunId = lastBuilds?.find(build => ociUtils.isSuccess(build.lifecycleState))?.id;
                             if (buildRunId) {
                                 try {
-                                    const buildOutputs = (await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId)).buildOutputs;
+                                    const buildRun = await ociUtils.getBuildRun(this.oci.getProvider(), buildRunId);
+                                    const buildOutputs = buildRun.buildOutputs;
                                     artifactsCount = buildOutputs?.deliveredArtifacts?.items.length;
-                                    dockerTag = buildOutputs?.exportedVariables?.items.find(v => v.name === dockerTagVarName)?.value;
+                                    dockerTag = buildRun.buildRunArguments?.items.find(v => v.name === dockerTagVarName)?.value || buildOutputs?.exportedVariables?.items.find(v => v.name === dockerTagVarName)?.value;
                                 } catch (err) {
                                     // TODO: handle?
                                 }
@@ -782,9 +796,24 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
                             resolve(false);
                             return;
                         }
+                        const params: { name: string; value: string }[] = [];
+                        if (dockerTag) {
+                            params.push({ name: dockerTagVarName, value: dockerTag });
+                        }
+                        if (customizeParameters) {
+                            const customParams = await customizeParameters(this.lastProvidedParameters, params, []);
+                            if (customParams) {
+                                this.lastProvidedParameters = ociDialogs.parametersToString(customParams);
+                                params.length = 0;
+                                params.push(...customParams);
+                            } else {
+                                resolve(false);
+                                return;
+                            }
+                        }
                         const repository = await ociUtils.getCodeRepository(this.oci.getProvider(), this.oci.getCodeRepository());
                         const deploymentRunName = repository.name ? `${repository.name}: ${deploymentName}` : deploymentName;
-                        const deployment = await ociUtils.createDeployment(this.oci.getProvider(), this.object.ocid, deploymentRunName, dockerTag ? [{ name: dockerTagVarName, value: dockerTag }] : undefined);
+                        const deployment = await ociUtils.createDeployment(this.oci.getProvider(), this.object.ocid, deploymentRunName, params.length ? params : undefined);
                         logUtils.logInfo(`[deploy] Deployment '${deploymentName}' started`);
                         resolve(true);
                         if (deployment) {

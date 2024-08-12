@@ -28,6 +28,7 @@ import * as ociFeatures from './ociFeatures';
 import * as vcnUtils from './vcnUtils';
 import { RESOURCES } from './ociResources';
 import { DEFAULT_GRAALVM_VERSION, DEFAULT_JAVA_VERSION } from '../graalvmUtils';
+export const DEFAULT_DOCKER_TAG = 'latest';
 
 const CREATE_ACTION_NAME = 'Create OCI DevOps Project';
 const ADD_ACTION_NAME = 'Add Folder(s) to OCI DevOps Project';
@@ -1446,6 +1447,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 const docker_nibuildArtifactName = `${repositoryName}_${subName}_native_docker_image`;
                                 logUtils.logInfo(`[deploy] Creating ${subName} ${NI_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                 const docker_nibuildTemplate = expandTemplate(RESOURCES[docker_nibuildspec_template], {
+                                    docker_tag_value: DEFAULT_DOCKER_TAG,
                                     default_graalvm_version: DEFAULT_GRAALVM_VERSION,
                                     default_java_version: DEFAULT_JAVA_VERSION,
                                     project_build_command: project_build_native_executable_command,
@@ -1547,7 +1549,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                         subData.docker_nibuildPipeline = false;
                                         subData.docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_nibuildPipelineDescription, [
                                             { name: 'GRAALVM_VERSION', defaultValue: DEFAULT_GRAALVM_VERSION, description: 'Major GraalVM version number, e.g. 22 for 22.2.0 release'},
-                                            { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'}
+                                            { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'},
+                                            { name: 'DOCKER_TAG', defaultValue: DEFAULT_DOCKER_TAG, description: 'Tag for the container image'}
                                         ], {
                                             'devops_tooling_deployID': deployData.tag,
                                             'devops_tooling_codeRepoID': codeRepository.id,
@@ -1789,10 +1792,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                                 logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 const pipelineName = `${repositoryNamePrefix}${oke_deployNativePipelineName}`;
                                                 subData.oke_deployNativePipeline = false;
-                                                subData.oke_deployNativePipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, pipelineName, oke_deployNativePipelineDescription, [{
-                                                    name: 'DOCKER_TAG',
-                                                    defaultValue: 'latest'
-                                                }], {
+                                                subData.oke_deployNativePipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, pipelineName, oke_deployNativePipelineDescription, [
+                                                    { name: 'DOCKER_TAG', defaultValue: DEFAULT_DOCKER_TAG, description: 'Tag for the container image'}
+                                                ], {
                                                     'devops_tooling_deployID': deployData.tag,
                                                     'devops_tooling_codeRepoID': codeRepository.id,
                                                     'devops_tooling_codeRepoPrefix': repositoryNamePrefix,
@@ -1969,6 +1971,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     const docker_jvmbuildArtifactName = `${repositoryName}_${subName}_jvm_docker_image`;
                                     logUtils.logInfo(`[deploy] Creating ${subName} ${JVM_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     const docker_jvmbuildTemplate = expandTemplate(RESOURCES[docker_jvmbuildspec_template], {
+                                        docker_tag_value: DEFAULT_DOCKER_TAG,
                                         default_graalvm_version: DEFAULT_GRAALVM_VERSION,
                                         default_java_version: DEFAULT_JAVA_VERSION,
                                         project_build_command: project_devbuild_command,
@@ -2068,7 +2071,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             subData.docker_jvmbuildPipeline = false;
                                             subData.docker_jvmbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_jvmbuildPipelineDescription, [
                                                 { name: 'GRAALVM_VERSION', defaultValue: DEFAULT_GRAALVM_VERSION, description: 'Major GraalVM version number, e.g. 22 for 22.2.0 release'},
-                                                { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'}
+                                                { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'},
+                                                { name: 'DOCKER_TAG', defaultValue: DEFAULT_DOCKER_TAG, description: 'Tag for the container image'}
                                             ], {
                                                 'devops_tooling_deployID': deployData.tag,
                                                 'devops_tooling_codeRepoID': codeRepository.id,
@@ -2306,10 +2310,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                                 logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 const pipelineName = `${repositoryNamePrefix}${oke_deployJvmPipelineName}`;
                                                 subData.oke_deployJvmPipeline = false;
-                                                subData.oke_deployJvmPipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, pipelineName, oke_deployJvmPipelineDescription, [{
-                                                    name: 'DOCKER_TAG',
-                                                    defaultValue: 'latest'
-                                                }], {
+                                                subData.oke_deployJvmPipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, pipelineName, oke_deployJvmPipelineDescription, [
+                                                    { name: 'DOCKER_TAG', defaultValue: DEFAULT_DOCKER_TAG, description: 'Tag for the container image'}
+                                                ], {
                                                     'devops_tooling_deployID': deployData.tag,
                                                     'devops_tooling_codeRepoID': codeRepository.id,
                                                     'devops_tooling_codeRepoPrefix': repositoryNamePrefix,
@@ -2482,6 +2485,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         const docker_nibuildArtifactName = `${repositoryName}_native_docker_image`;
                         logUtils.logInfo(`[deploy] Creating ${NI_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const docker_nibuildTemplate = expandTemplate(RESOURCES[folder.projectType === 'Helidon' ? 'docker_build_spec.yaml' : docker_nibuildspec_template], {
+                            docker_tag_value: DEFAULT_DOCKER_TAG,
                             default_graalvm_version: DEFAULT_GRAALVM_VERSION,
                             default_java_version: DEFAULT_JAVA_VERSION,
                             project_build_command: project_build_native_executable_command,
@@ -2582,7 +2586,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 folderData.docker_nibuildPipeline = false;
                                 folderData.docker_nibuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_nibuildPipelineDescription, [
                                     { name: 'GRAALVM_VERSION', defaultValue: DEFAULT_GRAALVM_VERSION, description: 'Major GraalVM version number, e.g. 22 for 22.2.0 release'},
-                                    { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'}
+                                    { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'},
+                                    { name: 'DOCKER_TAG', defaultValue: DEFAULT_DOCKER_TAG, description: 'Tag for the container image'}
                                 ], {
                                     'devops_tooling_deployID': deployData.tag,
                                     'devops_tooling_codeRepoID': codeRepository.id,
@@ -2825,10 +2830,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     const pipelineName = `${repositoryNamePrefix}${oke_deployNativePipelineName}`;
                                     folderData.oke_deployNativePipeline = false;
-                                    folderData.oke_deployNativePipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, pipelineName, oke_deployNativePipelineDescription, [{
-                                        name: 'DOCKER_TAG',
-                                        defaultValue: 'latest'
-                                    }], {
+                                    folderData.oke_deployNativePipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, pipelineName, oke_deployNativePipelineDescription, [
+                                        { name: 'DOCKER_TAG', defaultValue: DEFAULT_DOCKER_TAG, description: 'Tag for the container image'}
+                                    ], {
                                         'devops_tooling_deployID': deployData.tag,
                                         'devops_tooling_codeRepoID': codeRepository.id,
                                         'devops_tooling_codeRepoPrefix': repositoryNamePrefix,
@@ -3005,6 +3009,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         const docker_jvmbuildArtifactName = `${repositoryName}_jvm_docker_image`;
                         logUtils.logInfo(`[deploy] Creating ${JVM_CONTAINER_NAME_LC} build spec for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                         const docker_jvmbuildTemplate = expandTemplate(RESOURCES[folder.projectType === 'Helidon' ? 'docker_build_spec.yaml' : docker_jvmbuildspec_template], {
+                            docker_tag_value: DEFAULT_DOCKER_TAG,
                             default_graalvm_version: DEFAULT_GRAALVM_VERSION,
                             default_java_version: DEFAULT_JAVA_VERSION,
                             project_build_command: project_devbuild_command,
@@ -3105,7 +3110,8 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 folderData.docker_jvmbuildPipeline = false;
                                 folderData.docker_jvmbuildPipeline = (await ociUtils.createBuildPipeline(provider, projectOCID, pipelineName, docker_jvmbuildPipelineDescription, [
                                     { name: 'GRAALVM_VERSION', defaultValue: DEFAULT_GRAALVM_VERSION, description: 'Major GraalVM version number, e.g. 22 for 22.2.0 release'},
-                                    { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'}
+                                    { name: 'JAVA_VERSION', defaultValue: DEFAULT_JAVA_VERSION, description: 'Java version of given GraalVM version e.g. 11 for GraalVM 22.2.0 JDK 11'},
+                                    { name: 'DOCKER_TAG', defaultValue: DEFAULT_DOCKER_TAG, description: 'Tag for the container image'}
                                 ], {
                                     'devops_tooling_deployID': deployData.tag,
                                     'devops_tooling_codeRepoID': codeRepository.id,
@@ -3282,10 +3288,9 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                     logUtils.logInfo(`[deploy] Creating deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     const pipelineName = `${repositoryNamePrefix}${oke_deployJvmPipelineName}`;
                                     folderData.oke_deployJvmPipeline = false;
-                                    folderData.oke_deployJvmPipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, pipelineName, oke_deployJvmPipelineDescription, [{
-                                        name: 'DOCKER_TAG',
-                                        defaultValue: 'latest'
-                                    }], {
+                                    folderData.oke_deployJvmPipeline = (await ociUtils.createDeployPipeline(provider, projectOCID, pipelineName, oke_deployJvmPipelineDescription, [
+                                        { name: 'DOCKER_TAG', defaultValue: DEFAULT_DOCKER_TAG, description: 'Tag for the container image'}
+                                    ], {
                                         'devops_tooling_deployID': deployData.tag,
                                         'devops_tooling_codeRepoID': codeRepository.id,
                                         'devops_tooling_codeRepoPrefix': repositoryNamePrefix,
