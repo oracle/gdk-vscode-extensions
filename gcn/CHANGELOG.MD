@@ -1,5 +1,8 @@
 # Change Log
 
+## Version 0.9.11
+* Fix to make extension backward compatible with GCN branded command
+
 ## Version 0.9.10
 * Rebranding to Graal Development Kit for Micronaut
 * Show also untested features in project multistep wizard
