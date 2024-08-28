@@ -17,6 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
     logUtils.logInfo('[extension] Activating extension');
 
 	context.subscriptions.push(vscode.commands.registerCommand('gdk.createGdkProject', () => gcnProjectCreate.createProject(context)));
+	context.subscriptions.push(vscode.commands.registerCommand('gcn.createGcnProject', () => gcnProjectCreate.createProject(context)));
 	micronautProjectExists().then(exists => {
 		if (exists) {
 			checkGCNExtensions(context);
