@@ -258,6 +258,12 @@
 				"category": "OCI DevOps"
 			},
 			{
+				"command": "oci.devops.runRedeploy",
+				"title": "Redeploy Latest Build",
+				"icon": "$(refresh)",
+				"category": "OCI DevOps"
+			},
+			{
 				"command": "oci.devops.stopDeployPipeline",
 				"title": "Stop Current Deployment",
 				"icon": "$(error)",
@@ -532,6 +538,10 @@
 					"when": "false"
 				},
 				{
+					"command": "oci.devops.runRedeploy",
+					"when": "false"
+				},
+				{
 					"command": "oci.devops.stopDeployPipeline",
 					"when": "false"
 				},
@@ -693,7 +703,7 @@
 				{
 					"command": "oci.devops.openInBrowser",
 					"when": "viewItem == oci.devops.deploymentPipelineNode-deployments-available && oci.devops.portForward == false",
-					"group": "context@1@3"
+					"group": "context@1@4"
 				},
 				{
 					"command": "oci.devops.openInConsole",
@@ -771,6 +781,11 @@
 					"group": "inline@1"
 				},
 				{
+					"command": "oci.devops.runRedeploy",
+					"when": "viewItem == oci.devops.deploymentPipelineNode-deployments-available",
+					"group": "inline@2"
+				},
+				{
 					"command": "oci.devops.runDeployPipeline",
 					"when": "viewItem == oci.devops.deploymentPipelineNode || viewItem == oci.devops.deploymentPipelineNode-has-lastdeployment || viewItem == oci.devops.deploymentPipelineNode-deployments-available",
 					"group": "context@1@1"
@@ -779,6 +794,11 @@
 					"command": "oci.devops.runDeployPipelineWithParameters",
 					"when": "viewItem == oci.devops.deploymentPipelineNode || viewItem == oci.devops.deploymentPipelineNode-has-lastdeployment || viewItem == oci.devops.deploymentPipelineNode-deployments-available",
 					"group": "context@1@2"
+				},
+				{
+					"command": "oci.devops.runRedeploy",
+					"when": "viewItem == oci.devops.deploymentPipelineNode-deployments-available",
+					"group": "context@1@3"
 				},
 				{
 					"command": "oci.devops.stopDeployPipeline",

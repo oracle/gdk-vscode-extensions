@@ -88,6 +88,8 @@ To build a project container artifact, invoke the Run Build Pipeline action for 
 
 To deploy a built container artifact, invoke the Run Deployment Pipeline action for the appropriate deployment pipeline item. The remote deployment pipeline is started and VS Code displays its state and deployment log. After a successful deployment, use the Open In Browser action to set up a port forward from OKE and open the deployed application in web browser.
 
+To quickly redeploy latest build, invoke the Redeploy Latest Build action. This will delete the existing pods and pull the new container image. The Redeploy Latest Build action always uses the latest deployment manifest, which is the result of the most recent successful deployment pipeline. After a successful redeployment, shorcut for Open In Browser action is provided for easy access.
+
 ![Build and Deployment Pipelines](images/oke_test_app.png)
 
 ### Use an OCI Vault for a Deployed Database Application

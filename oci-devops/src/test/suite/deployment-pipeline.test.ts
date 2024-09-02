@@ -255,7 +255,7 @@ async function setupCommandSpecArtifactAndDeployConfigArtifact(provider: ConfigF
                     
                 let repoEndpoint = `${provider.getRegion().regionCode}.ocir.io`;
                 assert.ok(ociResources.cluster && ociResources.cluster.id, "Cluster with given Id not Found - Line 259");
-                const inlineContent = deployUtils.expandTemplate(RESOURCES['oke_docker_secret_setup.yaml'], {
+                const inlineContent = deployUtils.expandTemplate(RESOURCES['oke_pod_deletion.yaml'], {
                     repo_endpoint: repoEndpoint,
                     region: provider.getRegion().regionId,
                     cluster_id: ociResources.cluster.id,
@@ -338,7 +338,7 @@ async function getDeploymentResources(auth: AuthCredentials, projectProvider: Pr
            
             const okeClusterEnvironment = await getOkeClusterEnvironment(auth.provider, project, cluster);
             
-            const secretName = `${repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')}-vscode-generated-ocirsecret`;
+            const secretName = 'docker-bearer-vscode-generated-ocirsecre';
             
             let repository: Repository = {
                 id: repositoryId,
@@ -417,7 +417,7 @@ async function createJVMDeploymentPipeline(deploy: DeploymentResources): Promise
 
             let setupSecretStage;
             try {
-                setupSecretStage = await ociUtils.createSetupKubernetesDockerSecretStage(deploy.auth.provider, deployPipeline.id, deploy.okeConfig.setupCommandSpecArtifact, deploy.subnet.id);
+                setupSecretStage = await ociUtils.createSetupKubernetesPodDeletionStage(deploy.auth.provider, deployPipeline.id, deploy.okeConfig.setupCommandSpecArtifact, deploy.subnet.id);
             } catch (error) {
                 console.warn("setupSecretStage: ", error); 
             }

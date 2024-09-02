@@ -26,6 +26,8 @@ import * as sshUtils from './sshUtils';
 import * as okeUtils from './okeUtils';
 import * as ociFeatures from './ociFeatures';
 import * as vcnUtils from './vcnUtils';
+import * as kubernetesUtils from "../kubernetesUtils";
+import * as k8s from 'vscode-kubernetes-tools-api';
 import { RESOURCES } from './ociResources';
 import { DEFAULT_GRAALVM_VERSION, DEFAULT_JAVA_VERSION } from '../graalvmUtils';
 export const DEFAULT_DOCKER_TAG = 'latest';
@@ -41,6 +43,10 @@ const JVM_CONTAINER_NAME = 'JVM Container';
 const JVM_CONTAINER_NAME_LC = 'JVM container';
 const NI_CONTAINER_NAME = 'Native Executable Container';
 const NI_CONTAINER_NAME_LC = NI_CONTAINER_NAME.toLocaleLowerCase();
+
+export const BEARER_TOKEN_SECRET_NAME = 'docker-bearer-vscode-generated-ocirsecret';
+const SECRET_ROTATION_CRONJOB_NAME = 'secret-rotation-cronjob';
+const SECRET_ROTATION_SVC_ACCOUNT = 'create-secret-svc-account';
 
 export type SaveConfig = (folder: string, config: any) => boolean;
 
@@ -405,6 +411,36 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                 });
                 logUtils.logInfo(`[deploy] Using already created devops project ${deployData.compartment.name}/${projectName}`);
             } else {
+
+                // -- Create secret rotation CronJob
+                if (deployData.okeCluster) {
+                    try {
+                        logUtils.logInfo(`[deploy] Creating service account that allows secret creation`);
+                        await createSvcAccount();
+                        logUtils.logInfo(`[deploy] Creating CronJob: ${SECRET_ROTATION_CRONJOB_NAME}, that will rotate secret`);
+                        await applySecretRotationCronJob(BEARER_TOKEN_SECRET_NAME, SECRET_ROTATION_CRONJOB_NAME, `${provider.getRegion().regionCode}.ocir.io`);
+                    } catch (err: any) {
+                        logUtils.logError(`[deploy] Failed to create secret rotation CronJob: ${err?.message}`);
+                        resolve(dialogs.showErrorMessage(`Failed to create secret rotation CronJob`, err));
+                        return;
+                    }
+                } else {
+                    logUtils.logError(`[deploy] Failed to find OKE Cluster`);
+                    resolve(dialogs.showErrorMessage(`Failed to find OKE Cluster`));
+                    return;
+                }
+
+                // --- Check if cronjob is created
+                try {
+                    if (!await kubernetesResourceExist('cronjob', SECRET_ROTATION_CRONJOB_NAME)) {                        
+                        throw new Error("Secret rotation CronJob does not exist");
+                    }
+                } catch (err: any) {
+                    logUtils.logError(`[deploy] Failed to create secret rotation CronJob: ${err?.message}`);
+                    resolve(dialogs.showErrorMessage(`Failed to create secret rotation CronJob`, err));
+                    return;
+                }
+
                 // -- Create notification topic
                 progress.report({
                     increment,
@@ -1298,55 +1334,51 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                 }
 
                 if (deployData.okeClusterEnvironment) {
-                    folderData.secretName = `${repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')}-vscode-generated-ocirsecret`;
-
-                    // --- Create OKE deployment setup command spec
+                    // --- Create OKE pod deletion command spec
                     progress.report({
                         increment,
-                        message: `Creating OKE deployment setup secret command spec for ${repositoryName}...`
+                        message: `Creating OKE pod deletion command spec for ${repositoryName}...`
                     });
-                    const oke_deploy_setup_command_template = 'oke_docker_secret_setup.yaml';
-                    const oke_deploySetupCommandInlineContent = expandTemplate(RESOURCES[oke_deploy_setup_command_template], {
-                        repo_endpoint: `${provider.getRegion().regionCode}.ocir.io`,
+                    const oke_pod_deletion_command_template = 'oke_pod_deletion.yaml';
+                    const oke_podDeletionCommandInlineContent = expandTemplate(RESOURCES[oke_pod_deletion_command_template], {
                         region: provider.getRegion().regionId,
                         cluster_id: deployData.okeCluster.id,
-                        secret_name: folderData.secretName,
                         app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                     });
-                    if (!oke_deploySetupCommandInlineContent) {
-                        resolve(`Failed to create OKE deployment setup secret command spec for ${repositoryName}`);
+                    if (!oke_podDeletionCommandInlineContent) {
+                        resolve(`Failed to create OKE pod deletion command spec for ${repositoryName}`);
                         return;
                     }
-                    if (folderData.oke_deploySetupCommandArtifact) {
+                    if (folderData.oke_podDeletionCommandArtifact) {
                         progress.report({
-                            message: `Using already created OKE deployment setup secret command spec artifact for ${repositoryName}...`
+                            message: `Using already created OKE pod deletion command spec artifact for ${repositoryName}...`
                         });
                         try {
-                            const artifact = await ociUtils.getDeployArtifact(provider, folderData.oke_deploySetupCommandArtifact);
+                            const artifact = await ociUtils.getDeployArtifact(provider, folderData.oke_podDeletionCommandArtifact);
                             if (!artifact) {
-                                folderData.oke_deploySetupCommandArtifact = undefined;
+                                folderData.oke_podDeletionCommandArtifact = undefined;
                             }
                         } catch (err) {
-                            folderData.oke_deploySetupCommandArtifact = undefined;
+                            folderData.oke_podDeletionCommandArtifact = undefined;
                         }
                     }
-                    if (folderData.oke_deploySetupCommandArtifact) {
+                    if (folderData.oke_podDeletionCommandArtifact) {
                         progress.report({
                             increment,
                         });
-                        logUtils.logInfo(`[deploy] Using already created OKE deployment setup secret command spec artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                        logUtils.logInfo(`[deploy] Using already created OKE pod deletion command spec artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                     } else {
                         // --- Create OKE deployment setup command spec artifact
                         progress.report({
                             increment,
-                            message: `Creating OKE deployment setup secret command spec artifact for ${repositoryName}...`
+                            message: `Creating OKE pod deletion command spec artifact for ${repositoryName}...`
                         });
-                        const oke_deploySetupCommandArtifactName = `${repositoryName}_oke_deploy_docker_secret_setup_command`;
-                        const oke_deploySetupCommandArtifactDescription = `OKE deployment setup secret command specification artifact for devops project ${projectName} & repository ${repositoryName}`;
+                        const oke_podDeletionCommandArtifactName = `${repositoryName}_oke_deploy_docker_secret_setup_command`;
+                        const oke_podDeletionCommandArtifactDescription = `OKE pod deletion command specification artifact for devops project ${projectName} & repository ${repositoryName}`;
                         try {
-                            logUtils.logInfo(`[deploy] Creating OKE deployment setup secret command spec artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                            folderData.oke_deploySetupCommandArtifact = false;
-                            folderData.oke_deploySetupCommandArtifact = (await ociUtils.createOkeDeploySetupCommandArtifact(provider, projectOCID, oke_deploySetupCommandInlineContent, oke_deploySetupCommandArtifactName, oke_deploySetupCommandArtifactDescription, {
+                            logUtils.logInfo(`[deploy] Creating OKE pod deletion command spec artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                            folderData.oke_podDeletionCommandArtifact = false;
+                            folderData.oke_podDeletionCommandArtifact = (await ociUtils.createOkeDeploySetupCommandArtifact(provider, projectOCID, oke_podDeletionCommandInlineContent, oke_podDeletionCommandArtifactName, oke_podDeletionCommandArtifactDescription, {
                                 'devops_tooling_deployID': deployData.tag,
                                 'devops_tooling_codeRepoID': codeRepository.id,
                                 'devops_tooling_oke_cluster': deployData.okeCluster.id
@@ -1355,12 +1387,12 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 codeRepoResources.artifacts = [];
                             }
                             codeRepoResources.artifacts.push({
-                                ocid: folderData.oke_deploySetupCommandArtifact,
-                                originalName: oke_deploySetupCommandArtifactName
+                                ocid: folderData.oke_podDeletionCommandArtifact,
+                                originalName: oke_podDeletionCommandArtifactName
                             });
                         } catch (err) {
-                            resolve(dialogs.getErrorMessage(`Failed to create OKE deployment setup secret command spec artifact for ${repositoryName}`, err));
-                            folderData.oke_deploySetupCommandArtifact = false;
+                            resolve(dialogs.getErrorMessage(`Failed to create OKE pod deletion command spec artifact for ${repositoryName}`, err));
+                            folderData.oke_podDeletionCommandArtifact = false;
                             dump(deployData);
                             return;
                         }
@@ -1644,7 +1676,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                         const oke_deployNativeConfigInlineContent = expandTemplate(RESOURCES[oke_deploy_native_config_template], {
                                             image_name: docker_nibuildImage,
                                             app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
-                                            secret_name: folderData.secretName
+                                            secret_name: BEARER_TOKEN_SECRET_NAME,
                                         });
                                         if (!oke_deployNativeConfigInlineContent) {
                                             resolve(`Failed to create OKE native deployment configuration spec for ${subName} of ${repositoryName}`);
@@ -1817,33 +1849,35 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             }
                                             dump(deployData);
                                         }
-                                        if (subData.setupSecretForDeployNativeStage) {
+
+                                        if (subData.deletePodForDeployNativeStage) {
                                             try {
-                                                const stage = await ociUtils.getDeployStage(provider, subData.setupSecretForDeployNativeStage);
+                                                const stage = await ociUtils.getDeployStage(provider, subData.deletePodForDeployNativeStage);
                                                 if (!stage) {
-                                                    subData.setupSecretForDeployNativeStage = undefined;
+                                                    subData.deletePodForDeployNativeStage = undefined;
                                                 }
                                             } catch (err) {
-                                                subData.setupSecretForDeployNativeStage = undefined;
+                                                subData.deletePodForDeployNativeStage = undefined;
                                             }
                                         }
-                                        if (subData.setupSecretForDeployNativeStage) {
-                                            logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                        if (subData.deletePodForDeployNativeStage) {
+                                            logUtils.logInfo(`[deploy] Using already created pod deletion stage of deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         } else {
                                             try {
-                                                logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                                subData.setupSecretForDeployNativeStage = false;
-                                                subData.setupSecretForDeployNativeStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, subData.oke_deployNativePipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnet.id, {
+                                                logUtils.logInfo(`[deploy] Creating pod deletion stage of deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                subData.deletePodForDeployNativeStage = false;
+                                                subData.deletePodForDeployNativeStage = (await ociUtils.createSetupKubernetesPodDeletionStage(provider, subData.oke_deployNativePipeline, folderData.oke_podDeletionCommandArtifact, deployData.subnet.id, {
                                                     'devops_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
-                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${NI_CONTAINER_NAME_LC} setup secret stage for ${repositoryName}`, err));
-                                                subData.setupSecretForDeployNativeStage = false;
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${NI_CONTAINER_NAME_LC} pod deletion stage for ${repositoryName}`, err));
+                                                subData.deletePodForDeployNativeStage = false;
                                                 dump(deployData);
                                                 return;
                                             }
                                             dump(deployData);
                                         }
+
                                         if (subData.deployNativeToOkeStage) {
                                             try {
                                                 const stage = await ociUtils.getDeployStage(provider, subData.deployNativeToOkeStage);
@@ -1860,7 +1894,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${subName} ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 subData.deployNativeToOkeStage = false;
-                                                subData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage('Deploy to OKE', provider, subData.oke_deployNativePipeline, subData.setupSecretForDeployNativeStage, deployData.okeClusterEnvironment, subData.oke_deployNativeConfigArtifact, {
+                                                subData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage('Deploy to OKE', provider, subData.oke_deployNativePipeline, subData.deletePodForDeployNativeStage, deployData.okeClusterEnvironment, subData.oke_deployNativeConfigArtifact, {
                                                     'devops_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
@@ -1871,6 +1905,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             }
                                             dump(deployData);
                                         }
+
                                         if (subData.applyNativeConfigMapStage) {
                                             try {
                                                 const stage = await ociUtils.getDeployStage(provider, folderData.applyNativeConfigMapStage);
@@ -1898,6 +1933,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             }
                                             dump(deployData);
                                         }
+                                        
                                         if (ociFeatures.NI_PIPELINES_ENABLED) {
                                             deployPipelines.push({ 'ocid': subData.oke_deployNativePipeline, 'displayName': oke_deployNativePipelineName });
                                         }
@@ -2224,7 +2260,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                         const oke_deployJvmConfigInlineContent = expandTemplate(RESOURCES[oke_deploy_jvm_config_template], {
                                             image_name: docker_jvmbuildImage,
                                             app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
-                                            secret_name: folderData.secretName
+                                            secret_name: BEARER_TOKEN_SECRET_NAME,
                                         });
                                         if (!oke_deployJvmConfigInlineContent) {
                                             resolve(`Failed to create OKE jvm deployment configuration spec for ${subName} of ${repositoryName}`);
@@ -2335,33 +2371,35 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             }
                                             dump(deployData);
                                         }
-                                        if (subData.setupSecretForDeployJvmStage) {
+                                        if (subData.podDeletionForDeployJvmStage) {
                                             try {
-                                                const stage = await ociUtils.getDeployStage(provider, subData.setupSecretForDeployJvmStage);
+                                                const stage = await ociUtils.getDeployStage(provider, subData.podDeletionForDeployJvmStage);
                                                 if (!stage) {
-                                                    subData.setupSecretForDeployJvmStage = undefined;
+                                                    subData.podDeletionForDeployJvmStage = undefined;
                                                 }
                                             } catch (err) {
-                                                subData.setupSecretForDeployJvmStage = undefined;
+                                                subData.podDeletionForDeployJvmStage = undefined;
                                             }
                                         }
-                                        if (subData.setupSecretForDeployJvmStage) {
-                                            logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+
+                                        if (subData.podDeletionForDeployJvmStage) {
+                                            logUtils.logInfo(`[deploy] Using already created pod deletion stage of deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                         } else {
                                             try {
-                                                logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                                subData.setupSecretForDeployJvmStage = false;
-                                                subData.setupSecretForDeployJvmStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, subData.oke_deployJvmPipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnet.id, {
+                                                logUtils.logInfo(`[deploy] Creating pod deletion stage of deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                                subData.podDeletionForDeployJvmStage = false;
+                                                subData.podDeletionForDeployJvmStage = (await ociUtils.createSetupKubernetesPodDeletionStage(provider, subData.oke_deployJvmPipeline, folderData.oke_podDeletionCommandArtifact, deployData.subnet.id, {
                                                     'devops_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
-                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${JVM_CONTAINER_NAME_LC} setup secret stage for ${repositoryName}`, err));
-                                                subData.setupSecretForDeployJvmStage = false;
+                                                resolve(dialogs.getErrorMessage(`Failed to create ${subName} ${JVM_CONTAINER_NAME_LC} pod deletion stage for ${repositoryName}`, err));
+                                                subData.podDeletionForDeployJvmStage = false;
                                                 dump(deployData);
                                                 return;
                                             }
                                             dump(deployData);
                                         }
+
                                         if (subData.deployJvmToOkeStage) {
                                             try {
                                                 const stage = await ociUtils.getDeployStage(provider, subData.deployJvmToOkeStage);
@@ -2378,7 +2416,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             try {
                                                 logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${subName} ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                                 subData.deployJvmToOkeStage = false;
-                                                subData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage('Deploy to OKE', provider, subData.oke_deployJvmPipeline, subData.setupSecretForDeployJvmStage, deployData.okeClusterEnvironment, subData.oke_deployJvmConfigArtifact, {
+                                                subData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage('Deploy to OKE', provider, subData.oke_deployJvmPipeline, subData.podDeletionForDeployJvmStage, deployData.okeClusterEnvironment, subData.oke_deployJvmConfigArtifact, {
                                                     'devops_tooling_deployID': deployData.tag
                                                 })).id;
                                             } catch (err) {
@@ -2389,6 +2427,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                             }
                                             dump(deployData);
                                         }
+
                                         if (subData.applyJvmConfigMapStage) {
                                             try {
                                                 const stage = await ociUtils.getDeployStage(provider, subData.applyJvmConfigMapStage);
@@ -2741,7 +2780,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             const oke_deployNativeConfigInlineContent = expandTemplate(RESOURCES[oke_deploy_native_config_template], {
                                 image_name: docker_nibuildImage,
                                 app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
-                                secret_name: folderData.secretName
+                                secret_name: BEARER_TOKEN_SECRET_NAME,
                             });
                             if (!oke_deployNativeConfigInlineContent) {
                                 resolve(`Failed to create OKE native deployment configuration spec for ${repositoryName}`);
@@ -2858,35 +2897,37 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 logUtils.logInfo(`[deploy] Skipped creating deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC}`);
                                 folderData.oke_deployNativePipeline = false;
                             }
-                            if (folderData.setupSecretForDeployNativeStage) {
+                            if (folderData.deletePodForDeployNativeStage) {
                                 try {
-                                    const stage = await ociUtils.getDeployStage(provider, folderData.setupSecretForDeployNativeStage);
+                                    const stage = await ociUtils.getDeployStage(provider, folderData.deletePodForDeployNativeStage);
                                     if (!stage) {
-                                        folderData.setupSecretForDeployNativeStage = undefined;
+                                        folderData.deletePodForDeployNativeStage = undefined;
                                     }
                                 } catch (err) {
-                                    folderData.setupSecretForDeployNativeStage = undefined;
+                                    folderData.deletePodForDeployNativeStage = undefined;
                                 }
                             }
-                            if (folderData.setupSecretForDeployNativeStage) {
-                                logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+
+                            if (folderData.deletePodForDeployNativeStage) {
+                                logUtils.logInfo(`[deploy] Using already created pod deletion stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             } else if (folderData.oke_deployNativePipeline) {
                                 try {
-                                    logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                    folderData.setupSecretForDeployNativeStage = false;
-                                    folderData.setupSecretForDeployNativeStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, folderData.oke_deployNativePipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnet.id, {
+                                    logUtils.logInfo(`[deploy] Creating pod deletion stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    folderData.deletePodForDeployNativeStage = false;
+                                    folderData.deletePodForDeployNativeStage = (await ociUtils.createSetupKubernetesPodDeletionStage(provider, folderData.oke_deployNativePipeline, folderData.oke_podDeletionCommandArtifact, deployData.subnet.id, {
                                         'devops_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {
-                                    resolve(dialogs.getErrorMessage(`Failed to create ${NI_CONTAINER_NAME_LC} setup secret stage for ${repositoryName}`, err));
-                                    folderData.setupSecretForDeployNativeStage = false;
+                                    resolve(dialogs.getErrorMessage(`Failed to create ${NI_CONTAINER_NAME_LC} pod deletion stage for ${repositoryName}`, err));
+                                    folderData.deletePodForDeployNativeStage = false;
                                     dump(deployData);
                                     return;
                                 }
                                 dump(deployData);
                             } else {
-                                folderData.setupSecretForDeployNativeStage = false;  
+                                folderData.deletePodForDeployNativeStage = false;  
                             }
+
                             if (folderData.deployNativeToOkeStage) {
                                 try {
                                     const stage = await ociUtils.getDeployStage(provider, folderData.deployNativeToOkeStage);
@@ -2903,7 +2944,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 try {
                                     logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${NI_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.deployNativeToOkeStage = false;
-                                    folderData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage('Deploy to OKE', provider, folderData.oke_deployNativePipeline, folderData.setupSecretForDeployNativeStage, deployData.okeClusterEnvironment, folderData.oke_deployNativeConfigArtifact, {
+                                    folderData.deployNativeToOkeStage = (await ociUtils.createDeployToOkeStage('Deploy to OKE', provider, folderData.oke_deployNativePipeline, folderData.deletePodForDeployNativeStage, deployData.okeClusterEnvironment, folderData.oke_deployNativeConfigArtifact, {
                                         'devops_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {
@@ -2916,6 +2957,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             } else {
                                 folderData.deployNativeToOkeStage = false;
                             }
+
                             if (folderData.applyNativeConfigMapStage) {
                                 try {
                                     const stage = await ociUtils.getDeployStage(provider, folderData.applyNativeConfigMapStage);
@@ -2945,6 +2987,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             } else {
                                 folderData.applyNativeConfigMapStage = false;
                             }
+
                             if (ociFeatures.NI_PIPELINES_ENABLED) {
                                 deployPipelines.push({ 'ocid': folderData.oke_deployNativePipeline, 'displayName': oke_deployNativePipelineName });
                             }
@@ -3200,7 +3243,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             const oke_deployJvmConfigInlineContent = expandTemplate(RESOURCES[oke_deploy_jvm_config_template], {
                                 image_name: docker_jvmbuildImage,
                                 app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-'),
-                                secret_name: folderData.secretName
+                                secret_name: BEARER_TOKEN_SECRET_NAME,
                             });
                             if (!oke_deployJvmConfigInlineContent) {
                                 resolve(`Failed to create OKE jvm deployment configuration development spec for ${repositoryName}`);
@@ -3316,35 +3359,37 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 logUtils.logInfo(`[deploy] Skipped creating deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC}`);
                                 folderData.oke_deployJvmPipeline = false;  
                             }
-                            if (folderData.setupSecretForDeployJvmStage) {
+                            if (folderData.podDeletionForDeployJvmStage) {
                                 try {
-                                    const stage = await ociUtils.getDeployStage(provider, folderData.setupSecretForDeployJvmStage);
+                                    const stage = await ociUtils.getDeployStage(provider, folderData.podDeletionForDeployJvmStage);
                                     if (!stage) {
-                                        folderData.setupSecretForDeployJvmStage = undefined;
+                                        folderData.podDeletionForDeployJvmStage = undefined;
                                     }
                                 } catch (err) {
-                                    folderData.setupSecretForDeployJvmStage = undefined;
+                                    folderData.podDeletionForDeployJvmStage = undefined;
                                 }
                             }
-                            if (folderData.setupSecretForDeployJvmStage) {
-                                logUtils.logInfo(`[deploy] Using already created setup secret stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+
+                            if (folderData.podDeletionForDeployJvmStage) {
+                                logUtils.logInfo(`[deploy] Using already created pod deletion stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                             } else if (folderData.oke_deployJvmPipeline) {
                                 try {
-                                    logUtils.logInfo(`[deploy] Creating setup secret stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                    folderData.setupSecretForDeployJvmStage = false;
-                                    folderData.setupSecretForDeployJvmStage = (await ociUtils.createSetupKubernetesDockerSecretStage(provider, folderData.oke_deployJvmPipeline, folderData.oke_deploySetupCommandArtifact, deployData.subnet.id, {
+                                    logUtils.logInfo(`[deploy] Creating pod deletion stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                    folderData.podDeletionForDeployJvmStage = false;
+                                    folderData.podDeletionForDeployJvmStage = (await ociUtils.createSetupKubernetesPodDeletionStage(provider, folderData.oke_deployJvmPipeline, folderData.oke_podDeletionCommandArtifact, deployData.subnet.id, {
                                         'devops_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {
-                                    resolve(dialogs.getErrorMessage(`Failed to create ${JVM_CONTAINER_NAME_LC} setup secret stage for ${repositoryName}`, err));
-                                    folderData.setupSecretForDeployJvmStage = false;
+                                    resolve(dialogs.getErrorMessage(`Failed to create ${JVM_CONTAINER_NAME_LC} pod deletion stage for ${repositoryName}`, err));
+                                    folderData.podDeletionForDeployJvmStage = false;
                                     dump(deployData);
                                     return;
                                 }
                                 dump(deployData);
                             } else {
-                                folderData.setupSecretForDeployJvmStage = false; 
+                                folderData.podDeletionForDeployJvmStage = false; 
                             }
+
                             if (folderData.deployJvmToOkeStage) {
                                 try {
                                     const stage = await ociUtils.getDeployStage(provider, folderData.deployJvmToOkeStage);
@@ -3361,7 +3406,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 try {
                                     logUtils.logInfo(`[deploy] Creating deploy to OKE stage of deployment to OKE pipeline for ${JVM_CONTAINER_NAME_LC} of ${deployData.compartment.name}/${projectName}/${repositoryName}`);
                                     folderData.deployJvmToOkeStage = false;
-                                    folderData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage('Deploy to OKE', provider, folderData.oke_deployJvmPipeline, folderData.setupSecretForDeployJvmStage, deployData.okeClusterEnvironment, folderData.oke_deployJvmConfigArtifact, {
+                                    folderData.deployJvmToOkeStage = (await ociUtils.createDeployToOkeStage('Deploy to OKE', provider, folderData.oke_deployJvmPipeline, folderData.podDeletionForDeployJvmStage, deployData.okeClusterEnvironment, folderData.oke_deployJvmConfigArtifact, {
                                         'devops_tooling_deployID': deployData.tag
                                     })).id;
                                 } catch (err) {
@@ -3374,6 +3419,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             } else {
                                 folderData.deployJvmToOkeStage = false;
                             }
+
                             if (folderData.applyConfigMapStage) {
                                 try {
                                     const stage = await ociUtils.getDeployStage(provider, folderData.applyConfigMapStage);
@@ -3403,6 +3449,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             } else {
                                 folderData.applyConfigMapStage = false;
                             }
+
                             deployPipelines.push({ 'ocid': folderData.oke_deployJvmPipeline, 'displayName': oke_deployJvmPipelineName });
                         }
                     }
@@ -3607,6 +3654,44 @@ async function selectProjectName(actionName: string, suggestedName?: string): Pr
         validateInput: input => validateProjectName(input),
     });
     return projectName ? removeSpaces(projectName) : projectName;
+}
+
+async function applySecretRotationCronJob(secretName: string, cronJobName: string, repoEndpoint: string) {
+    const kubectl = await kubernetesUtils.getKubectlAPI();
+    const cronStartMinute = await getCurrentClusterMinute(kubectl);
+
+    const inlineContent = expandTemplate(RESOURCES['oke_secret_rotation_cronjob.yaml'], {
+        repo_endpoint: repoEndpoint,
+        secret_name: secretName,
+        cron_job_name: cronJobName,
+        cron_start_minute: cronStartMinute,
+        service_account_name: SECRET_ROTATION_SVC_ACCOUNT
+    });
+    return await kubectl?.invokeCommand(`apply -f - <<EOF\n${inlineContent}\nEOF`);
+}
+
+// Function returns OKE cluster time (minute part), and we add 2 minutes to it, to ensure that CronJob will be ran right after creation
+async function getCurrentClusterMinute(kubectl: k8s.KubectlV1 | undefined): Promise<string> {
+    if (!kubectl) throw new Error("kubectl not available");
+
+    const command = `run time-check --rm -it --image=busybox --restart=Never -- date +%M`;
+    const result: k8s.KubectlV1.ShellResult | undefined = await kubectl.invokeCommand(command);
+    const minute = Number(result?.stdout?.split('\r')[0]);
+    return `${(minute + 2) % 60}`;
+}
+
+async function createSvcAccount() {
+    const kubectl = await kubernetesUtils.getKubectlAPI();
+    const inlineContent = expandTemplate(RESOURCES['create_secret_service_account.yaml'], {
+        service_account_name: SECRET_ROTATION_SVC_ACCOUNT
+    });
+    return kubectl?.invokeCommand(`apply -f - <<EOF\n${inlineContent}\nEOF`);
+}
+
+async function kubernetesResourceExist(resourceType: string, secretName: string) {
+    const kubectl = await kubernetesUtils.getKubectlAPI();
+    const retval = await kubectl?.invokeCommand(`get ${resourceType} ${secretName}`);
+    return retval?.stdout.includes(`${secretName}`);
 }
 
 function removeSpaces(name: string): string {
