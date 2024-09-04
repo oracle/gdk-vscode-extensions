@@ -986,7 +986,7 @@
 	"dependencies": {
 		"@vscode/l10n": "^0.0.10",
 		"fs-extra": "^10.1.0",
-		"jdk-utils": "^0.4.4",
+		"jdk-utils": "^0.5.1",
 		"vscode-kubernetes-tools-api": "^1.3.0"
 	},
 	"devDependencies": {
