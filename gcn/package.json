@@ -37,6 +37,17 @@
 	"main": "./dist/extension",
 	"browser": "./dist/webExtension",
 	"contributes": {
+		"configuration": {
+			"type": "object",
+			"title": "Graal Dev Kit",
+			"properties": {
+				"gdk.checkToolsExtension": {
+					"type": "boolean",
+					"default": true,
+					"description": "Check for an installation of the Tools for Micronaut® framework extension"
+				}
+			}
+		},
 		"commands": [
 			{
 				"command": "gdk.createGdkProject",

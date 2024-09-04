@@ -7,12 +7,14 @@
  
 import * as vscode from 'vscode';
 import { handleNewGCNProject } from '../../../common/lib/dialogs';
+import * as micronautTools from '../../../common/lib/micronautToolsIntegration';
 import { 
     CreateOptions, 
     initialize, 
     selectCreateOptions, 
     writeProjectContents,
-    FileHandler
+    FileHandler,
+    CONFIGURATION_SECTION
 } from '../common';
 
 
@@ -44,6 +46,15 @@ export async function createProject(context: vscode.ExtensionContext): Promise<v
     if (!targetLocation) {
         return;
     }
+
+    if (options.installMicronautTools === true) {
+        if (!await micronautTools.installExtension()) {
+            return; // An error message has been displayed, do not proceed with project creation until resolved
+        }
+    } else if (options.installMicronautTools === false) {
+        await micronautTools.neverCheckExtensionInstalled(CONFIGURATION_SECTION);
+    }
+
     return createProjectBase(context, options, targetLocation);
 }
 

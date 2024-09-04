@@ -16,6 +16,7 @@ import { getMicronautHome, getMicronautLaunchURL } from './utils';
 import { getJavaHome, checkProjectFolderExists, addNewProjectName } from "../../common/lib/utils";
 import { simpleProgress, MultiStepInput, handleNewGCNProject } from "../../common/lib/dialogs";
 import { downloadJSON } from "../../common/lib/connections";
+import * as micronautTools from '../../common/lib/micronautToolsIntegration';
 
 export const HTTP_PROTOCOL: string = 'http://';
 export const HTTPS_PROTOCOL: string = 'https://';
@@ -29,6 +30,8 @@ const CREATE: string = '/create';
 const LAST_PROJECT_PARENTDIR: string = 'lastCreateProjectParentDirs';
 const CREATE_ACTION_NAME = 'Create New Micronaut Project';
 const DEFAULT_SOURCE_LEVEL: number = 17;
+
+const CONFIGURATION_SECTION = 'micronaut';
 
 let cliMNVersion: {label: string; serviceUrl: string; description: string} | undefined;
 
@@ -59,13 +62,23 @@ export interface CreateOptions {
     name: string;
     target: string;
     buildTool: string;
+    installMicronautTools?: boolean; // true: install, false: never ask, undefined: don't install
 }
 
 export async function createProject(context: vscode.ExtensionContext) {
     const options = await selectCreateOptions(context);
-    if (options && await __writeProject(options)) {
-        const uri = vscode.Uri.file(path.join(options.target, options.name));
-        handleNewGCNProject(context, uri, "Micronaut");
+    if (options) {
+        if (options.installMicronautTools === true) {
+            if (!await micronautTools.installExtension()) {
+                return; // An error message has been displayed, do not proceed with project creation until resolved
+            }
+        } else if (options.installMicronautTools === false) {
+            await micronautTools.neverCheckExtensionInstalled(CONFIGURATION_SECTION);
+        }
+        if (await __writeProject(options)) {
+            const uri = vscode.Uri.file(path.join(options.target, options.name));
+            handleNewGCNProject(context, uri, "Micronaut");
+        }
     }
 }
 
@@ -99,7 +112,7 @@ export async function __writeProject(options: CreateOptions): Promise<boolean> {
     }
 }
 
-async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{url: string; args?: string[]; name: string; target: string; buildTool: string; java?: string} | undefined> {
+async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{url: string; args?: string[]; name: string; target: string; buildTool: string; installMicronautTools: boolean | undefined; java?: string} | undefined> {
     interface State {
 		micronautVersion: {label: string; serviceUrl: string};
 		applicationType: {label: string; name: string};
@@ -111,6 +124,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
         features: {label: string; detail: string; name: string}[];
         buildTool: {label: string; value: string};
         testFramework: {label: string; value: string};
+        installMicronautTools: {label: string; detail: string; value: boolean | undefined};
 	}
 
 	async function collectInputs(): Promise<State> {
@@ -127,7 +141,11 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
      * @returns total steps
      */
     function totalSteps(_ : Partial<State>) : number {
-        return 9;
+        return displayMicronautToolsStep() ? 10 : 9;
+    }
+
+    function displayMicronautToolsStep(): boolean {
+        return micronautTools.canCheckExtensionInstalled(CONFIGURATION_SECTION) ? !micronautTools.isExtensionInstalled() : false;
     }
 
 	async function pickMicronautVersion(input: MultiStepInput, state: Partial<State>) {
@@ -311,12 +329,31 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
 			shouldResume: () => Promise.resolve(false)
         });
         state.testFramework = selected;
+        if (displayMicronautToolsStep()) {
+            return (input: MultiStepInput) => pickInstallMicronautTools(input, state);
+        } else {
+            state.installMicronautTools = getInstallMicronautTools()[1];
+            return undefined;
+        }
+	}
+
+    async function pickInstallMicronautTools(input: MultiStepInput, state: Partial<State>) {
+		const selected: any = await input.showQuickPick({
+			title,
+			step: 10,
+			totalSteps: totalSteps(state),
+            placeholder: `Install ${micronautTools.EXTENSION_NAME} extension?`,
+            items: getInstallMicronautTools(),
+            activeItems: state.installMicronautTools,
+			shouldResume: () => Promise.resolve(false)
+        });
+        state.installMicronautTools = selected;
 	}
 
     const state = await collectInputs();
 
     if (state.micronautVersion && state.applicationType && state.projectName && state.basePackage &&
-        state.language && state.features && state.buildTool && state.testFramework) {
+        state.language && state.features && state.buildTool && state.testFramework && state.installMicronautTools) {
 
         const lastDirs: any = context.globalState.get(LAST_PROJECT_PARENTDIR) || new Map<string, string>();
         const dirId = `${vscode.env.remoteName || ''}:${vscode.env.machineId}`;
@@ -383,6 +420,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
                     name: state.projectName,
                     target: location[0].fsPath,
                     buildTool: state.buildTool.value,
+                    installMicronautTools: state.installMicronautTools.value
                 };
             }
 
@@ -404,6 +442,7 @@ async function selectCreateOptions(context: vscode.ExtensionContext): Promise<{u
                 name: state.projectName,
                 target: location[0].fsPath,
                 buildTool: state.buildTool.value,
+                installMicronautTools: state.installMicronautTools.value
             };
         } else {
             return undefined;
@@ -496,6 +535,14 @@ function getTestFrameworks() {
         { label: 'JUnit', value: 'JUNIT'},
         { label: 'Spock', value: 'SPOCK'},
         { label: 'Kotlintest', value: 'KOTLINTEST'}
+    ];
+}
+
+function getInstallMicronautTools() {
+    return [
+        { label: 'Install', detail: `Install the extension to get full support for Micronaut® projects`, value: true },
+        { label: 'Skip', detail: `Do not install now`, value: undefined },
+        { label: 'Never', detail: `Don't ask me again`, value: false }
     ];
 }
 

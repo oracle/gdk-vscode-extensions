@@ -55,6 +55,11 @@
 					"type": "string",
 					"default": "",
 					"description": "Optional Micronaut Launch URL (e.g. 'https://launch.micronaut.io')"
+				},
+				"micronaut.checkToolsExtension": {
+					"type": "boolean",
+					"default": true,
+					"description": "Check for an installation of the Tools for Micronaut® framework extension"
 				}
 			}
 		},
