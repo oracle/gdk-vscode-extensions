@@ -69,7 +69,7 @@
     "handlebars": "^4.7.8",
     "handlebars-loader": "^1.7.3",
     "isexe": "^3.1.1",
-    "jdk-utils": "^0.4.4",
+    "jdk-utils": "^0.5.1",
     "mocha": "^10.2.0",
     "mocha-each": "^2.0.1",
     "mochawesome": "^7.1.3",

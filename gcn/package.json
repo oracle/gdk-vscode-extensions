@@ -96,7 +96,7 @@
 		"eslint-webpack-plugin": "^4.0.0",
 		"gcn-extension-tests": "file:../extension-tests",
 		"global-agent": "^3.0.0",
-		"jdk-utils": "^0.4.4",
+		"jdk-utils": "^0.5.1",
 		"mocha": "^10.1.0",
 		"mocha-each": "^2.0.1",
 		"mochawesome": "^7.1.3",
