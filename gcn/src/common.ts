@@ -8,8 +8,14 @@
 import * as vscode from 'vscode';
 import * as dialogs from '../../common/lib/dialogs';
 import { logError, logInfo } from '../../common/lib/logUtils';
+import * as micronautTools from '../../common/lib/micronautToolsIntegration';
 
 require('../lib/cloud.graal.gdk.ui.api-single');
+
+/**
+ * Name of extension configuration section (settings.json)
+ */
+export const CONFIGURATION_SECTION = 'gdk';
 
 /**
  * Title for the whole Wizard
@@ -51,6 +57,8 @@ interface State {
     exampleCode: boolean;
     showUntestedFetures?: boolean;
     conflictingFeatures : number;
+
+    installMicronautTools: { label: string; detail: string; value: boolean | undefined };
 }
 
 /**
@@ -71,6 +79,8 @@ export interface CreateOptions {
 
     target?: string;
     exampleCode? : boolean;
+
+    installMicronautTools?: boolean; // true: install, false: never ask, undefined: don't install
 }
 
 /**
@@ -144,7 +154,11 @@ async function writeProjectContents0(options: CreateOptions, fileHandler:FileHan
  * @returns total steps
  */
 function totalSteps(state: Partial<State>) : number {
-    return fixedSteps + (state.featureCategories?.length || 0) + (state.conflictingFeatures || 0);
+    return fixedSteps + (state.featureCategories?.length || 0) + (state.conflictingFeatures || 0) + (displayMicronautToolsStep() ? 1 : 0);
+}
+
+function displayMicronautToolsStep(): boolean {
+    return micronautTools.canCheckExtensionInstalled(CONFIGURATION_SECTION) ? !micronautTools.isExtensionInstalled() : false;
 }
 
 function stepNumber(n : number, state : Partial<State>) : number {
@@ -278,6 +292,14 @@ function getFeatures(untested : boolean, projectType : string): ValueAndLabel[] 
 
 export function getMicronautVersions() : { label : string }[] {
     return [ { label : gcnApi.micronautVersion().$as('string') as string }];
+}
+
+function getInstallMicronautTools() {
+    return [
+        { label: 'Install', detail: `Install the extension to get full support for GDK projects`, value: true },
+        { label: 'Skip', detail: `Do not install now`, value: undefined },
+        { label: 'Never', detail: `Don't ask me again`, value: false }
+    ];
 }
 
 function findSelection(from: ValueAndLabel[], selected: ValueAndLabel[] | ValueAndLabel | undefined) {
@@ -579,8 +601,27 @@ export async function selectCreateOptions(): Promise<CreateOptions | undefined> 
 			shouldResume: () => Promise.resolve(false)
         });
         state.exampleCode = selected === sampleYesNo[0];
-        return undefined;
+        if (displayMicronautToolsStep()) {
+            return (input: dialogs.MultiStepInput) => pickInstallMicronautTools(input, state);
+        } else {
+            state.installMicronautTools = getInstallMicronautTools()[1];
+            return undefined;
+        }
     }
+
+    async function pickInstallMicronautTools(input: dialogs.MultiStepInput, state: Partial<State>) {
+		const selected: any = await input.showQuickPick({
+			title,
+			step: stepNumber(12, state),
+			totalSteps: totalSteps(state),
+            placeholder: `Install ${micronautTools.EXTENSION_NAME} extension?`,
+            items: getInstallMicronautTools(),
+            activeItems: state.installMicronautTools,
+			shouldResume: () => Promise.resolve(false)
+        });
+        state.installMicronautTools = selected;
+        return undefined;
+	}
 
     const s: State | undefined = await collectInputs();
     if (!s) {
@@ -610,7 +651,9 @@ export async function selectCreateOptions(): Promise<CreateOptions | undefined> 
         clouds: values(s.clouds),
         services: values(s.services),
         features: featureList.length > 0 ? featureList : undefined,
-        exampleCode: s.exampleCode
+        exampleCode: s.exampleCode,
+
+        installMicronautTools: s.installMicronautTools.value
     };
 }
 
