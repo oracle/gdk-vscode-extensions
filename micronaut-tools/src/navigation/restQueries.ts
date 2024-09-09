@@ -160,7 +160,7 @@ function findDocumentByText(text: string | undefined): vscode.TextDocument | und
     if (text) { // only search by actual text, skip empty documents
         const allDocuments = vscode.workspace.textDocuments;
         for (const document of allDocuments) {
-            if (!document.isClosed && !document.isUntitled && !document.isDirty) { // only search among opened && saved documents
+            if (!document.isClosed) { // only search among opened documents
                 if (document.getText() === text) {
                     if (foundDocument) { // report no result for multiple matches
                         return undefined;
