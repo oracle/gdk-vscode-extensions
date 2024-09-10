@@ -10,34 +10,6 @@ Tools for Micronaut® framework is a powerful extension for using [GraalVM](http
 
 Install the [Graal Development Kit for Micronaut Extension Pack](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graal-cloud-native-pack), which contains this extension and others.
 
-## Features
-* [View Suggested Code Completions](#view-suggested-code-completions)
-* [Navigate Micronaut Source Code](#navigate-micronaut-source-code)
-* [View Defined Beans and Endpoints](#view-defined-beans-and-endpoints)
-* [Compose REST Queries](#compose-rest-queries)
-* [Editor Support for Micronaut Expression Language](#editor-support-for-micronaut-expression-language)
-* [Configure and Control Your Micronaut Application](#configure-and-control-your-micronaut-application)
-* [Run Your Micronaut Application](#run-your-micronaut-application) 
-* [Live Reload Your Micronaut Application](#live-reload-your-micronaut-application)
-* [Debug Your Micronaut Application](#debug-your-micronaut-application)
-* [Connect to Your Running Micronaut Application](#connect-to-your-running-micronaut-application)
-* [Monitor and Manage Your Micronaut Application](#monitor-and-manage-your-micronaut-application)
-* [Observe Your Micronaut Application Using the Micronaut Control Panel](#observe-your-micronaut-application-using-the-micronaut-control-panel)
-* [Package Your Micronaut Application](#package-your-micronaut-application)
-* [Create a Native Executable from Your Micronaut Application](#create-a-native-executable-from-your-micronaut-application)
-* [Build a Container Image and Deploy Your Micronaut Application to a Container Registry](#build-a-container-image-and-deploy-your-micronaut-application-to-a-container-registry)
-* [Deploy Your Micronaut Application to Oracle Cloud Infrastructure](#deploy-your-micronaut-application-to-oracle-cloud-infrastructure)
-* [Connect to an Oracle Autonomous Database](#connect-to-an-oracle-autonomous-database)
-* [Create Entity Classes and Repository Interfaces from an Existing Database Schema](#create-entity-classes-and-repository-interfaces-from-an-existing-database-schema)
-* [Create Micronaut Controller Classes from Micronaut Data Repositories](#create-micronaut-controller-classes-from-micronaut-data-repositories)
-* [Create Tests for Micronaut Controller Endpoints](#create-tests-for-micronaut-controller-endpoints)
-* [Troubleshooting](#troubleshooting)
-  * [Code Lenses](#code-lenses)
-  * [Space in Path](#space-in-path)
-  * [Failed to Launch Debuggee in Terminal](#failed-to-launch-debuggee-in-terminal)
-
-To request a feature or report a bug, please [contact us](#feedback).
-
 ## Requirements
 - VS Code (version 1.76.0 or later).
 - The [Extension Pack for Java from Microsoft](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack).
@@ -57,9 +29,10 @@ You can also open this page using the Command Palette command **Micronaut Tools:
 
 > **Note**: This extension includes the _Apache NetBeans Language Server for Java_ to provide hints and code completion. It occasionally takes some time to start, its status is displayed in the VS Code Status Bar. 
 
-## Usage
+## Features
 
-### View Suggested Code Completions
+<details>
+<summary>View Suggested Code Completions</summary>
 
 The extension suggests code completions for your YAML configuration files.
 (The available configuration properties and their values are collected by scanning your source code and the Micronaut libraries.)
@@ -67,7 +40,10 @@ The extension suggests code completions for your YAML configuration files.
 The extension also provides code completion for your Java source code via the [Extension Pack for Java from Microsoft](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-java-pack).
 This gives you all the IDE features that you would expect from [IntelliSense](https://code.visualstudio.com/docs/editor/intellisense), as well as automatically highlighting errors as you type.
 
-### Navigate Micronaut Source Code
+</details>
+
+<details>
+<summary>Navigate to Micronaut Source Code</summary>
 
 You can easily navigate to Micronaut-specific elements of your source code via the **Go to Symbol in Workspace** command.
 
@@ -77,7 +53,11 @@ Run the **Go to Symbol in Workspace** command using Ctrl+T (Cmd+T on macOS) and 
 
 ![Navigate Micronaut Source Code](images/micronaut-navigation.png)
 
-### View Defined Beans and Endpoints
+</details>
+
+<details>
+<summary>View Defined Beans and Endpoints</summary>
+
 You can display all beans and request mappings defined by a Micronaut or GDK application in the **BEANS** and **ENDPOINTS** views of the Micronaut Tools activity bar.
 
 If Monitoring and Management capabilities are enabled when the extension launches an application (or connects to an existing application), beans and endpoints available in the application are indicated with a green icon. Disabled beans are indicated with an orange icon, and their tooltips provide additional information. See [Monitor and Manage Your Micronaut Application](#monitor-and-manage-micronaut-application) for details.
@@ -96,7 +76,11 @@ If an endpoint require parameters, a dialog box is provided for you to enter par
 
 ![BEANS and ENDPOINTS views](images/beans_endpoints_view.png)
 
-### Compose REST Queries
+</details>
+
+<details>
+<summary>Compose REST Queries</summary>
+
 To easily debug and test the REST API of your application, the **ENDPOINTS** view provides smooth integration with a third-party extension [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client).
 
 To compose a REST query, invoke the **Compose REST Query** action for an endpoint either from the **ENDPOINTS** view or by using the corresponding Code Lens action in the code editor. A dedicated text document is opened, and the corresponding query is inserted. For the POST and PUT queries, the necessary request body is pre-created in the code editor in a form of parameterized code snippet. Use the REST Client features to invoke and process the query.
@@ -105,7 +89,11 @@ To compose a REST query, invoke the **Compose REST Query** action for an endpoin
 
 > **Note**: If the REST Client extension is not installed when you invoke the **Compose REST Query** action, a notification is displayed offering to quickly install it.
 
-### Editor Support for Micronaut Expression Language
+</details>
+
+<details>
+<summary>Editor Support for Micronaut Expression Language</summary>
+
 Since version 4.0, Micronaut Framework enables you to embed an evaluated expression in an annotation value using the `#{...​}` syntax. This is known as the [Micronaut Expression Language](https://docs.micronaut.io/latest/guide/#evaluatedExpressions).
 
 The extension provides full editor support for the Micronaut Expression Language, including:
@@ -116,7 +104,10 @@ The extension provides full editor support for the Micronaut Expression Language
 
 ![Micronaut Expression Language Code Completion](images/micronaut-expression-language.png)
 
-### Configure and Control Your Micronaut Application
+</details>
+
+<details>
+<summary>Configure and Control Your Micronaut Application</summary>
 
 You can visually configure and control your Micronaut or GDK application using the **APPLICATIONS** view of the Micronaut Tools activity. The view displays all Micronaut and GDK applications in the current workspace:
 
@@ -160,7 +151,10 @@ The default `by project` value means the Micronaut Control Panel will be availab
 * **Edit Micronaut Control Panel Availability**: to force the application to launch with the Micronaut Control Panel enabled (`enabled`). The default `by project` value means the Micronaut Control Panel will be available as configured by the project.
 * **Open Micronaut Control Panel in Browser**: opens the Micronaut Control Panel in a web browser.
 
-### Run Your Micronaut Application
+</details>
+
+<details>
+<summary>Run Your Micronaut Application</summary>
 
 The easiest way to run your Micronaut application is to view the `Application` class in the editor and click **Run** above the `main()` method, as shown here.
 
@@ -170,7 +164,10 @@ The easiest way to run your Micronaut application is to view the `Application` c
 
 Alternatively, use the **Run Application Without Debugging** action in the **APPLICATIONS** view of the Micronaut Tools activity, or invoke **Run Without Debugging** from the **Run** menu.
 
-### Live Reload Your Micronaut Application
+</details>
+
+<details>
+<summary>Live Reload Your Micronaut Application</summary>
 
 Micronaut can automatically recompile and restart your application (or its parts) when it detects changes to your source code.
 (This is called "Continuous Mode".)
@@ -187,7 +184,10 @@ A configuration labeled with "Continuous" will be created for your Micronaut app
 
 Select the newly added configuration in the **Run and Debug** view, then click **Run**.
 
-### Debug Your Micronaut Application
+</details>
+
+<details>
+<summary>Debug Your Micronaut Application</summary>
 
 The easiest way to debug your Micronaut application is to view the `Application` class in the editor and click **Debug** above the `main()` method, as shown here.
 
@@ -195,7 +195,10 @@ The easiest way to debug your Micronaut application is to view the `Application`
 
 Alternatively, use the **Start Debugging Application** action in the **APPLICATIONS** view of the Micronaut Tools activity, or invoke **Start Debugging** from the **Run** menu.
 
-### Connect to Your Running Micronaut Application
+</details>
+
+<details>
+<summary>Connect to Your Running Micronaut Application</summary>
 
 Use the **Connect to Externally Started Application** action in the **APPLICATIONS** view of the Micronaut Tools activity to observe an application. When you have connected to an application, you can:
 * Monitor basic telemetry, such as CPU/memory usage
@@ -212,7 +215,11 @@ To stop observing the connected application, use the **Disconnect from Applicati
 
 Based on the monitoring and management capabilities or the Micronaut Control Panel availability in the connected application, various information and actions will be displayed in the Micronaut Tools activity views. See [Monitor and Manage Your Micronaut Application](#monitor-and-manage-your-micronaut-application) and [Observe Your Application using Micronaut Control Panel](#observe-your-application-using-the-micronaut-control-panel) for details.
 
-### Monitor and Manage Your Micronaut Application
+</details>
+
+<details>
+<summary>Monitor and Manage Your Micronaut Application</summary>
+
 The Micronaut Tools activity views can display data and invoke actions provided by the supported [Micronaut Management & Monitoring Endpoints](https://docs.micronaut.io/latest/guide/#management).
 
 The application must be set up and configured to provide the endpoints. This can be configured either manually (the _Monitoring & Management_ node displays `by project`), or automatically by setting the _Monitoring & Management_ node to `enabled`. This will add the required dependencies for the supported features to the project build file, and configure the launched application properties to enable the features in runtime.
@@ -240,7 +247,11 @@ The endpoints available in the running application are indicated with a green ic
   - **Loggers**: displays number of configured loggers, with details in a tooltip. Use the **Configure Loggers** action to re-configure existing loggers, or create a new logger in the running process. (Requires the [Loggers endpoint](https://docs.micronaut.io/latest/guide/#loggersEndpoint).)
   - **Caches**: displays number of available caches, with details in a tooltip. Use the **Invalidate Caches** action to invalidate selected caches in the running process. (Requires the [Caches endpoint](https://docs.micronaut.io/latest/guide/#cachesEndpoint).)
 
-### Observe Your Micronaut Application Using the Micronaut Control Panel
+</details>
+
+<details>
+<summary>Observe Your Micronaut Application Using the Micronaut Control Panel</summary>
+
 The **APPLICATIONS** view of the Micronaut Tools activity provides a link to the [Micronaut Control Panel](https://micronaut-projects.github.io/micronaut-control-panel/latest/guide/index.html) if your application is set up and configured to provide the Micronaut Control Panel module. 
 You can configure your application either manually (the _Micronaut Control Panel_ node displays `by project`), or automatically by setting the _Micronaut Control Panel_ node to `enabled`. This will add the required dependencies to the project build file, and configure the launched application properties to enable the feature at run time.
 
@@ -250,7 +261,10 @@ If available, you can open the Micronaut Control Panel in a web browser using th
 
 > **Note**: The Micronaut Control Panel was first introduced as an experimental feature of the Micronaut 4 framework, and may not work correctly with some other Micronaut features such as databases, caches, and so on. If your application fails to start, or works incorrectly after enabling the Micronaut Control Panel, you must manually disable the Micronaut Control Panel.
 
-### Package Your Micronaut Application
+</details>
+
+<details>
+<summary>Package Your Micronaut Application</summary>
 
 To package your application as a runnable JAR file, follow these steps:
 
@@ -264,7 +278,10 @@ Enter "Micronaut Tools" and invoke the **Micronaut Tools: Build...** command.
 3. When the compilation is complete, invoke the **Micronaut Tools: Build...** command again.
 This time, select the **package** goal, which will package your application into a JAR file.
 
-### Create a Native Executable from Your Micronaut Application
+</details>
+
+<details>
+<summary>Create a Native Executable from Your Micronaut Application</summary>
 
 If you have installed Oracle GraalVM, you can use GraalVM Native Image to create a native executable from your application.
 GraalVM Native Image creates an executable file with all the application classes, dependent library classes, dependent JDK classes, and a snapshot of the application heap. 
@@ -299,7 +316,10 @@ For more information, see the [Micronaut documentation](https://guides.micronaut
 
 > **Note**: If you are using VS Code on the Windows platform, invoke the **Micronaut Tools: Build Native Image** command from the Command Palette. 
 
-### Build a Container Image and Deploy Your Micronaut Application to a Container Registry
+</details>
+
+<details>
+<summary>Build a Container Image and Deploy Your Micronaut Application to a Container Registry</summary>
 
 You can build a container image of your Micronaut application, or create a container image of an executable created by GraalVM Native Image.
 You can then deploy the container image.
@@ -315,7 +335,10 @@ Enter "Micronaut Tools" and invoke the **Micronaut Tools: Deploy...** command.
 
 To configure your application's container registry, see the documentation for [Micronaut Maven Plugin](https://micronaut-projects.github.io/micronaut-maven-plugin/latest/)/[Micronaut Gradle Plugin](https://micronaut-projects.github.io/micronaut-gradle-plugin/latest/). 
 
-### Deploy Your Micronaut Application to Oracle Cloud Infrastructure
+</details>
+
+<details>
+<summary>Deploy Your Micronaut Application to Oracle Cloud Infrastructure</summary>
 
 **Prerequisites:**
 * An Oracle Cloud Infrastructure (OCI) account.
@@ -328,7 +351,103 @@ The OCI DevOps Tools extension provisions build and deployment pipelines for:
 It can also provision a cluster to run your container on Oracle's [Container Engine for Kubernetes](https://docs.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm).
 For more information about using the OCI DevOps Tools Extension, see [Using the Graal Development Kit and OCI DevOps Tools Extensions in VS Code](https://www.graal.cloud/gdk/vscode-tools/using-gdk-vscode-tools/).
 
-### Connect to an Oracle Autonomous Database
+</details>
+
+<details>
+<summary>Cloud Assets Panel</summary>
+
+**Prerequisites:**
+* An Oracle Cloud Infrastructure (OCI) account.
+
+Cloud Assets panel shows the Micronaut OCI Properties to be set. These are read from project artefacts provided in the project _pom.xml_ or _build.gradle_ configuration files. When the OCI configuration file _.oci/config_ is present, it enables you to set various OCI assets (resources) needed for the project runtime.
+
+![Cloud Assets Panel](images/cloud_assets_panel.png)
+
+Different actions are available, depending on the OCI assets (resources) that are selected.
+
+</details>
+
+<details>
+<summary>SSH to Compute Instance</summary>
+
+**Prerequisites:**
+* An Oracle Cloud Infrastructure (OCI) account
+* An SSH key pair
+* A Compute Instance in OCI
+
+To establish an SSH connection to your Compute Instance:
+
+1. Expand the **ORACLE CLOUD ASSETS** view in the Explorer panel and click **Select Compute Instance**.
+2. Choose a compartment in which your Compute Instance was created.
+3. Select your Compute Instance.
+4. Hover over the previously added Compute Instance in the **ORACLE CLOUD ASSETS** view and click the left most, "terminal", icon.
+5. A terminal window opens, as well as a guide on how to set up the SSH keys.
+
+![SSH to Compute Instance](images/ssh_to_compute_instance.png)
+
+</details>
+
+<details>
+<summary>Build and Run a Container Image on a Compute Instance</summary>
+
+**Prerequisites:**
+* An Oracle Cloud Infrastructure (OCI) account
+* An SSH key pair
+* A Compute Instance in OCI
+* Docker installed on the Compute Instance
+
+To build and run a container image on a Compute Instance:
+
+1. Expand the **ORACLE CLOUD ASSETS** view in the Explorer panel and click **Select Container Repository**.
+2. Choose a compartment in which the Container Repository was created.
+3. Select your Container Repository.
+4. Hover over the previously added Container Repository and click the left most icon.
+5. Enter the image tag name and click **Enter**.
+6. After the image is successfully pushed to the Container Repository, it will appear as a child item under the Container Repository.
+7. Hover over the container image again, and click the right most "play" icon to run the image on a Compute Instance.
+8. A terminal window opens, as well as a guide.
+  ![Build and Run Container Image](images/build_and_run_container_image.gif)
+
+</details>
+
+<details>
+<summary>Create External Config Properties</summary>
+
+**Prerequisites:**
+* An Oracle Cloud Infrastructure (OCI) account
+
+To generate application properties needed to configure the selected OCI Assets (resources), do the following:
+
+1. Click on the left most icon of the **ORACLE CLOUD ASSETS** view in the Explorer panel or run the **Create External Config Properties** command:
+
+    ![Create External Config](images/create_external_config.png)
+
+2. Select a configuration target. 
+  * If the **Open a preview of the config in the editor** option is selected, it will open a new window with generated properties where it can be copied from.
+  * If the **Upload the config to a ConfigMap artifact in an OCI DevOps Project** option is selected, it requires to select a compartment and then a DevOps project in which it will update the ConfigMap artifact.
+
+    ![Create External Config Choose Target](images/create_external_config_choose_target.png)
+
+</details>
+
+<details>
+<summary>Create OCI policies</summary>
+
+**Prerequisites:**
+* An Oracle Cloud Infrastructure (OCI) account
+
+To generate the [OCI policies](https://docs.oracle.com/en-us/iaas/Content/Identity/Concepts/policies.htm) required for the application to access OCI Assets (resources):
+
+1. Click on the "key" icon of the **ORACLE CLOUD ASSETS** view in the Explorer panel or run the **Create OCI Policies** command.
+
+    ![Create OCI Policies](images/create_oci_policies.png)
+
+2. A new window appears with a policy file. Copy the contents of the file and follow the [instructions on how to create a policy](https://docs.oracle.com/en-us/iaas/Content/Identity/policymgmt/managingpolicies_topic-To_create_a_policy.htm).
+
+</details>
+
+<details>
+<summary>Connect to an Oracle Autonomous Database</summary>
 
 By connecting to an Oracle Autonomous Database in VS Code, you can browse the schemas of any existing databases you may have and then quickly create a REST API that exposes them.
 
@@ -356,7 +475,11 @@ To select a database as the _Default Connection_, select the database in the **D
 
 When running or debugging a Micronaut application from within the editor, a temporary argument file is created that contains any properties required by the application. This may include the database username and password. The contents of this file are provided to the application when it is started. This temporary file is readable only by the user running VSCode and is deleted as soon as the run/debug session finishes.
 
-### Using OCI Vault to Store Database Connection Properties
+</details>
+
+<details>
+<summary>Using OCI Vault to Store Database Connection Properties</summary>
+
 The Micronaut Tools VS Code extension can store an application's database configuration using [OCI Vault](https://docs.oracle.com/iaas/Content/KeyManagement/Concepts/keyoverview.htm_). Vault is a service within OCI for securely managing secrets.
 
 To make use of this feature, first create an [OCI Vault](https://docs.oracle.com/iaas/Content/KeyManagement/Tasks/managingvaults_topic-To_create_a_new_vault.htm) and [Master Encryption Key](https://docs.oracle.com/iaas/Content/KeyManagement/Tasks/managingkeys_topic-To_create_a_new_key.htm) using the Oracle Cloud Console. Please consult the OCI documentation, previously linked, on how to do this.
@@ -390,7 +513,10 @@ To store your application database connection details using OCI Vault and for th
 
 > **Note**: If OKE Deployment Pipelines are modified as described above, the OKE [ConfigMap](https://kubernetes.io/docs/concepts/configuration/configmap/) named _\<project\_name\>\_oke\_configmap_ is used. The deployment then uses the database properties stored in your OCI Vault to run a Micronaut application in OKE securely and seamlessly. Learn more about this in the [OCI DevOps Tools](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.oci-devops) extension documentation.
 
-### Create Entity Classes and Repository Interfaces from an Existing Database Schema
+</details>
+
+<details>
+<summary>Create Entity Classes and Repository Interfaces from an Existing Database Schema</summary>
 
 After you have created a connection to an Oracle Autonomous Database, you can quickly create [Micronaut Data](https://micronaut-projects.github.io/micronaut-data/latest/guide/) entity classes for the tables within the database.
 
@@ -421,7 +547,10 @@ In a similar way, we can also create Micronaut Data repository interfaces - note
 
 ![Create Micronaut Data Repository Classes](./images/create-repositories.gif)
 
-### Create Micronaut Controller Classes from Micronaut Data Repositories
+</details>
+
+<details>
+<summary>Create Micronaut Controller Classes from Micronaut Data Repositories</summary>
 
 By creating Controllers that expose your Micronaut Data repository interfaces, you can quickly turn them into a REST API. Create your Micronaut Data entity and repository interfaces first and then:
 
@@ -438,11 +567,18 @@ Currently, variants of the `get()`, `save()`, `update()`, and `delete()` methods
 
 ![Create Micronaut Controller Classes](./images/create-controllers.gif)
 
-### Create Tests for Micronaut Controller Endpoints
+</details>
+
+<details>
+<summary>Create Tests for Micronaut Controller Endpoints</summary>
 
 To generate a test class with a test method for every endpoint method of a controller class, invoke **Source Action... | Generate Micronaut Endpoint Tests...** inside of the controller class opened in the editor.
 
 ![Create Tests for Micronaut Controller Endpoints](./images/controller-source-actions.png)
+
+</details>
+
+To request a feature or report a bug, please [contact us](#feedback).
 
 ## Extension Settings
 
@@ -473,7 +609,10 @@ See your docker tools documentation.
 * **Micronaut Tools: Search/Filter Endpoints**:  Search or filter the items in the Endpoints view.
 
 ## Troubleshooting
-### Code Lenses
+
+<details>
+<summary>Code Lenses</summary>
+
 This extension modifies the **Java** environment so that the application is launched using the build system (Gradle, Maven). Not all environment customizations are supported and for some projects this functionality may need to be turned off.
 
 To enable or disable the enhanced Run feature, navigate to `File - Preferences - Settings`, locate `Micronaut Tools` extension section and turn on/off the `Use build system to run or debug applications`. The relevant setting (in JSON format) is `micronaut-tools.buildsystemExecution`
@@ -481,7 +620,11 @@ To enable or disable the enhanced Run feature, navigate to `File - Preferences -
 In some configurations the Enhanced Run feature code lenses, `Run | Debug | Run with Micronaut Continuous Mode`, are not displayed for **Gradle** projects when **Gradle for Java extension** is enabled. 
 To resolve this, disable Gradle for Java extension, reload VS Code, and then enable Gradle for Java again.
 
-### Space in Path
+</details>
+
+<details>
+<summary>Space in Path</summary>
+
 The Apache NetBeans Language Server for Java fails on Linux and macOS if the path of VSCode extensions directory contains a space, for example _/User/great code/.vscode/extensions_. (The extensions directory contains all VSCode extensions are installed.) The default path is:
 
 * Windows _%USERPROFILE%\.vscode\extensions_
@@ -493,7 +636,11 @@ Change the path by removing any spaces:
 * Temporarily by launching VSCode from the command line with the option `--extensions-dir`, for example `$ code --extensions-dir "/User/code_user/extensions_dir"`.
 * It cannot be changed in VSCode Settings.
 
-### Failed to Launch Debuggee in Terminal
+</details>
+
+<details>
+<summary>Failed to Launch a Debuggee</summary>
+
 When running a Micronaut or GDK application in debug mode, you might sometimes experience this error in VS code:
 
 ![Debugee Timeout](./images/debugee_timeout.png)
@@ -514,6 +661,8 @@ In a Gradle project:
     }
   ```
   Rerun the project using Debug on the CodeLens of the application `main()` method or Debug from the Micronaut panel.
+
+</details>
 
 ## Feedback
 
