@@ -17,5 +17,7 @@ export const RESOURCES = {
     'nibuild_spec.yaml': require('../../resources/oci/nibuild_spec.yaml.handlebars'),
     'oke_configmap.yaml': require('../../resources/oci/oke_configmap.yaml.handlebars'),
     'oke_deploy_config.yaml': require('../../resources/oci/oke_deploy_config.yaml.handlebars'),
-    'oke_docker_secret_setup.yaml': require('../../resources/oci/oke_docker_secret_setup.yaml.handlebars'),
+    'oke_pod_deletion.yaml': require('../../resources/oci/oke_pod_deletion.yaml.handlebars'),
+    'oke_secret_rotation_cronjob.yaml': require('../../resources/oci/oke_secret_rotation_cronjob.yaml.handlebars'),
+    'create_secret_service_account.yaml': require('../../resources/oci/create_secret_service_account.yaml.handlebars'),
 };

@@ -718,17 +718,17 @@ export async function undeploy(folders: devopsServices.FolderData[], deployData:
                         } else if (folderData.oke_deployNativeConfigArtifact !== undefined) {
                             toCheck = true;
                         }
-                        if (folderData.oke_deploySetupCommandArtifact) {
+                        if (folderData.oke_podDeletionCommandArtifact) {
                             try {
-                                progress.report({ message: `Deleting OKE deployment setup secret command spec artifact for ${repositoryName}...` });
-                                logUtils.logInfo(`[undeploy] Deleting OKE deployment setup secret command spec artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
-                                await ociUtils.deleteDeployArtifact(provider, folderData.oke_deploySetupCommandArtifact, true);
+                                progress.report({ message: `Deleting OKE pod deletion command spec artifact for ${repositoryName}...` });
+                                logUtils.logInfo(`[undeploy] Deleting OKE pod deletion command spec artifact for ${deployData.compartment.name}/${projectName}/${repositoryName}`);
+                                await ociUtils.deleteDeployArtifact(provider, folderData.oke_podDeletionCommandArtifact, true);
                             } catch (err) {
                                 toCheck = true;
                             }
-                            delete folderData.oke_deploySetupCommandArtifact;
+                            delete folderData.oke_podDeletionCommandArtifact;
                             dump(deployData);
-                        } else if (folderData.oke_deploySetupCommandArtifact !== undefined) {
+                        } else if (folderData.oke_podDeletionCommandArtifact !== undefined) {
                             toCheck = true;
                         }
                         if (folderData.docker_jvmbuildArtifact) {

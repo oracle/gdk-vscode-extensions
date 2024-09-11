@@ -52,6 +52,9 @@ export function initialize(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.runDeployPipelineWithParameters', (node: DeploymentPipelineNode) => {
 		node.runPipelineWithParameters();
 	}));
+    context.subscriptions.push(vscode.commands.registerCommand('oci.devops.runRedeploy', (node: DeploymentPipelineNode) => {
+		node.runRedeploy();
+	}));
     context.subscriptions.push(vscode.commands.registerCommand('oci.devops.stopDeployPipeline', (node: DeploymentPipelineNode) => {
 		node.cancelPipeline();
 	}));
@@ -303,35 +306,33 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         });
     }
 
-    async function createDeploySetupCommandSpecArtifact(oci: ociContext.Context, repositoryName: string, repoEndpoint: string, cluster: string, secretName: string): Promise<string | null | undefined> {
+    async function createPodDeletionCommandSpecArtifact(oci: ociContext.Context, repositoryName: string, cluster: string): Promise<string | null | undefined> {
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: 'Creating deploy setup command specification artifact...',
+            title: 'Creating pod deletion command specification artifact...',
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
                 try {
-                    const inlineContent = deployUtils.expandTemplate(RESOURCES['oke_docker_secret_setup.yaml'], {
-                        repo_endpoint: repoEndpoint,
+                    const inlineContent = deployUtils.expandTemplate(RESOURCES['oke_pod_deletion.yaml'], {
                         region: oci.getProvider().getRegion().regionId,
                         cluster_id: cluster,
-                        secret_name: secretName,
                         app_name: repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')
                     });
                     if (!inlineContent) {
                         resolve(undefined);
-                        dialogs.showErrorMessageWithReportIssueCommand(`Failed to create OKE deployment setup command spec`, 'oci.devops.openIssueReporter');
+                        dialogs.showErrorMessageWithReportIssueCommand(`Failed to create OKE pod deletion command spec`, 'oci.devops.openIssueReporter');
                         return;
                     }
-                    const artifactName = `${repositoryName}_oke_deploy_docker_secret_setup_command`;
-                    const artifactDescription = `OKE deployment docker secret setup command specification artifact for devops project ${projectName} & repository ${repositoryName}`;
+                    const artifactName = `${repositoryName}_oke_pod_deletion_command`;
+                    const artifactDescription = `OKE deployment pod deletion command specification artifact for devops project ${projectName} & repository ${repositoryName}`;
                     const artifact = (await ociUtils.createOkeDeploySetupCommandArtifact(oci.getProvider(), oci.getDevOpsProject(), inlineContent, artifactName, artifactDescription, {
                         'devops_tooling_oke_cluster': cluster
                     })).id;
                     resolve(artifact);
                 } catch (err) {
                     resolve(null);
-                    dialogs.showErrorMessageWithReportIssueCommand('Failed to create setup command specification artifact', 'oci.devops.openIssueReporter', err);
+                    dialogs.showErrorMessageWithReportIssueCommand('Failed to create pod deletion specification artifact', 'oci.devops.openIssueReporter', err);
                 }
             });
         });
@@ -402,18 +403,19 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         });
     }
 
-    const secretName = `${repositoryName.toLowerCase().replace(/[^0-9a-z]+/g, '-')}-vscode-generated-ocirsecret`;
+    const secretName = deployUtils.BEARER_TOKEN_SECRET_NAME;
     const deployArtifacts = await listDeployArtifacts(oci);
-    let setupCommandSpecArtifact = deployArtifacts?.find(env => {
+    let podDeletionSpecArtifact = deployArtifacts?.find(env => {
         return env.deployArtifactType === devops.models.DeployArtifact.DeployArtifactType.CommandSpec && env.freeformTags?.devops_tooling_oke_cluster === okeCluster.id;
     })?.id;
-    if (!setupCommandSpecArtifact) {
-        const artifact = await createDeploySetupCommandSpecArtifact(oci, repositoryName, `${oci.getProvider().getRegion().regionCode}.ocir.io`, okeCluster.id, secretName);
+    if (!podDeletionSpecArtifact) {
+        const artifact = await createPodDeletionCommandSpecArtifact(oci, repositoryName, okeCluster.id);
         if (!artifact) {
             return undefined;
         }
-        setupCommandSpecArtifact = artifact;
+        podDeletionSpecArtifact = artifact;
     }
+
 
     let deployConfigArtifact = deployArtifacts?.find(env => {
         return env.deployArtifactType === devops.models.DeployArtifact.DeployArtifactType.KubernetesManifest && env.freeformTags?.devops_tooling_image_name === imageName;
@@ -437,7 +439,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         configMapArtifact = artifact;
     }
 
-    async function createDeployPipeline(oci: ociContext.Context, projectName: string, repositoryName: string, okeCompartmentId: string, okeClusterEnvironment: string, setupCommandSpecArtifact: string, deployConfigArtifact: string, subnet: {id: string; compartmentID: string}, buildPipeline: devops.models.BuildPipelineSummary, configMapArtifact: string): Promise<{ocid: string; displayName: string}[] | undefined> {
+    async function createDeployPipeline(oci: ociContext.Context, projectName: string, repositoryName: string, okeCompartmentId: string, okeClusterEnvironment: string, podDeletionSpecArtifact: string, deployConfigArtifact: string, subnet: {id: string; compartmentID: string}, buildPipeline: devops.models.BuildPipelineSummary, configMapArtifact: string): Promise<{ocid: string; displayName: string}[] | undefined> {
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: `Creating deployment to OKE pipeline...`,
@@ -476,15 +478,16 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     dialogs.showErrorMessageWithReportIssueCommand(`Failed to create deployment to OKE pipeline for ${repositoryName}`, 'oci.devops.openIssueReporter', err);
                     return;
                 }
-                let setupSecretStage;
+
+                let podDeletionStage;
                 try {
-                    setupSecretStage = await ociUtils.createSetupKubernetesDockerSecretStage(oci.getProvider(), deployPipeline.id, setupCommandSpecArtifact, subnet.id);
+                    podDeletionStage = await ociUtils.createSetupKubernetesPodDeletionStage(oci.getProvider(), deployPipeline.id, podDeletionSpecArtifact, subnet.id);
                 } catch (err) {
                     resolve(undefined);
                     dialogs.showErrorMessageWithReportIssueCommand(`Failed to create deployment to OKE stage for ${repositoryName}`, 'oci.devops.openIssueReporter', err);
                     return;
                 }
-                
+
                 try{
                     await ociUtils.createDeployToOkeStage('Apply ConfigMap', oci.getProvider(), deployPipeline.id, deployPipeline.id, okeClusterEnvironment, configMapArtifact);
                 } catch (err) {
@@ -495,7 +498,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                 
 
                 try {
-                    await ociUtils.createDeployToOkeStage('Deploy to OKE', oci.getProvider(), deployPipeline.id, setupSecretStage.id, okeClusterEnvironment, deployConfigArtifact);
+                    await ociUtils.createDeployToOkeStage('Deploy to OKE', oci.getProvider(), deployPipeline.id, podDeletionStage.id, okeClusterEnvironment, deployConfigArtifact);
                 } catch (err) {
                     resolve(undefined);
                     dialogs.showErrorMessageWithReportIssueCommand(`Failed to create deployment to OKE stage for ${repositoryName}`, 'oci.devops.openIssueReporter', err);
@@ -505,7 +508,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
             });
         });
     }
-    return await createDeployPipeline(oci, projectName, repositoryName, okeCluster.compartmentId, okeClusterEnvironment.id, setupCommandSpecArtifact, deployConfigArtifact, subnet, buildPipeline, configMapArtifact);
+    return await createDeployPipeline(oci, projectName, repositoryName, okeCluster.compartmentId, okeClusterEnvironment.id, podDeletionSpecArtifact, deployConfigArtifact, subnet, buildPipeline, configMapArtifact);
 }
 
 async function selectDeploymentPipelines(oci: ociContext.Context, folder: vscode.WorkspaceFolder, ignore: DeploymentPipeline[]): Promise<DeploymentPipeline[] | undefined> {
@@ -760,7 +763,102 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
     runPipelineWithParameters() {
         return this.runPipelineCommon(ociDialogs.customizeParameters);
     }
-    
+
+    async runRedeploy() {
+        const deploymentInfo = await this.getDeploymentInfo();
+        if (!deploymentInfo) {
+            return;
+        }
+        const { imageName, deploymentName } = deploymentInfo;
+        const choice = await vscode.window.showInformationMessage(`Are you sure that you want to redeploy ${imageName} image?`, "Confirm", "Cancel");
+        if (choice === "Cancel") {
+            return;
+        }
+
+        vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Redeployment in progress...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async resolve => {
+                logUtils.logInfo(`[deploy] Redeployment started for the image: ${imageName}`);
+
+                try {
+                    const kubectl = await kubernetesUtils.getKubectlAPI();
+                    if (!kubectl) {
+                        resolve(undefined);
+                        return;
+                    }
+
+                    const result = await kubectl.invokeCommand(`delete pod -l app=${deploymentName} --ignore-not-found=true`);
+                    if (!result) {
+                        resolve(false);
+                        dialogs.showErrorMessage(`Cannot redeploy '${deploymentName}' deployment.`);
+                        return;
+                    }
+
+                    logUtils.logInfo(`[deploy] Redeployment successfully finished for the image: ${imageName}`);
+                    resolve(true);
+                } catch (err: any) {
+                    dialogs.showErrorMessage('Failed redeploy latest build', err);
+                    logUtils.logError(`[deploy] Redeployment failed: ${err?.message}`);
+                    resolve(false);
+                }
+            });
+        }).then(async () => {
+            const openInBrowser = "Open The Redeployed App In Browser";
+            const choice = await vscode.window.showInformationMessage(`Redeploy finished for the image: ${imageName}`, openInBrowser, "Skip");
+            if (choice === openInBrowser) {
+                this.openDeploymentInBrowser();
+            }
+        });
+    }
+
+    getDeploymentInfo(): Promise<{deploymentName: string; imageName: string } | undefined> {
+        return Promise.resolve(
+            vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Getting deployment info...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise<{deploymentName: string; imageName: string } | undefined>(async resolve => {
+                try {
+                    const kubectl = await kubernetesUtils.getKubectlAPI();
+                    if (!kubectl) {
+                        resolve(undefined);
+                        return;
+                    }
+
+                    const deployment = this.lastDeployment ? await ociUtils.getDeployment(this.oci.getProvider(), this.lastDeployment?.ocid) : undefined;
+                    const deploymentName = this.lastDeployment?.deploymentName;
+                    if (!deployment || !deploymentName) {
+                        dialogs.showErrorMessageWithReportIssueCommand('Cannot resolve the latest deployment.', 'oci.devops.openIssueReporter');
+                        resolve(undefined);
+                        return;
+                    }
+                    const deploymentJson = await kubernetesUtils.getDeployment(deploymentName);
+                    if (!deploymentJson) {
+                        dialogs.showErrorMessage(`Cannot find deployment '${deploymentName}' in the destination OKE cluster.`);
+                        resolve(undefined);
+                        return;
+                    }
+                    
+                    const imageName = deploymentJson.spec?.template?.spec?.containers?.[0]?.image;
+                    if (!imageName) {
+                        dialogs.showErrorMessage(`Cannot find container image for the deployment '${deploymentName}' in the destination OKE cluster.`);
+                        resolve(undefined);
+                        return;
+                    }
+
+                    resolve({ deploymentName, imageName});
+                } catch(err: any) {
+                    dialogs.showErrorMessage('Failed get deployment information', err);
+                    logUtils.logError(`[deploy] Failed get deployment information: ${err?.message}`);
+                }
+            });
+        }));
+    }
+
     async runPipelineCommon(customizeParameters: ((lastProvidedParameters: string | undefined, predefinedParameters: { name: string; value: string }[], requiredParameters: { name: string; value: string }[]) => Promise<{ name: string; value: string }[] | undefined>) | undefined) {
         const currentState = this.lastDeployment?.state;
         if (currentState === devops.models.Deployment.LifecycleState.Canceling || !ociUtils.isRunning(currentState)) {
