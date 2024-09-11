@@ -40,6 +40,11 @@ The wizard will prompt you to:
   ![Micronaut Project Features](images/micronaut-project-features_view.png)
 - Pick the build tool (Gradle or Maven)
 - Pick the test framework (JUnit, Spock, or Kotlintest)
+- Install Tools for Micronaut framework extension? 
+    - Install - will install [Tools for Micronaut framework extension](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) which provides all the support to simplify and speed up Micronaut development
+    - Skip - will skip installation of Tools for Micronaut extension for now, only basic Java development support will be available.
+    - Never - will not install [Tools for Micronaut framework extension](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) and will not ask again when this wizard is invoked.
+    ![Experimental Features](images/install-tools.png)
 - Select the destination directory
 
 Finally, select whether to open the new project in a new window or add it to the current workspace.

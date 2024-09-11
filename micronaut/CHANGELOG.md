@@ -1,5 +1,8 @@
 # Change Log
 
+# Version 0.6.5
+* * Micronaut Launch: Create Micronaut Project wizard recommends installation of [Tools for Micronaut® framework extension](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools)
+
 # Version 0.6.4
 * GitHub repo name updated
 
@@ -77,3 +80,6 @@
 
 ## Version 0.5.0
 * Initial release
+
+---
+Micronaut&reg; is a registered trademark of Object Computing, Inc. Use is for referential purposes and does not imply any endorsement or affiliation with any third-party product. Unauthorized use is strictly prohibited.

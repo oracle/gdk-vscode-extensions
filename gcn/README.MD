@@ -32,6 +32,11 @@ The wizard can generate different types of GDK and serverless applications. If b
     - Select a build tool: Maven or Gradle
     - Select a unit test framework: JUnit, Spock, or Kotest
     - Select cloud providers to support: Oracle Cloud Infrastructure, Amazon Web Services, Google Cloud Platform; Note: you need to select OCI if you want OCI DevOps support
+    - Install Tools for Micronaut framework extension? 
+      - Install - will install [Tools for Micronaut framework extension](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) which provides all the support to simplify and speed up GDK/Micronaut development
+      - Skip - will skip installation of Tools for Micronaut extension for now, only basic Java development support will be available.
+      - Never - will not install [Tools for Micronaut framework extension](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools) and will not ask again when this wizard is invoked.
+      ![Experimental Features](images/install-tools.png)
 
 3. Finally, you are asked where to save your new project. You can then choose to open it in a new VS Code window or add it to a workspace in the current VS Code window.
 
