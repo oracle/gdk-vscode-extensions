@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 0.9.12
+* Microsoft Azure cloud supported
+* GDK: Create Project wizard recommends installation of [Tools for Micronaut® framework extension](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools)
+
 ## Version 0.9.11
 * Fix to make extension backward compatible with GCN branded command
 
@@ -39,3 +43,6 @@
 
 ## Version 0.9.0
 * Initial release published on Visual Studio Marketplace
+
+---
+Micronaut&reg; is a registered trademark of Object Computing, Inc. Use is for referential purposes and does not imply any endorsement or affiliation with any third-party product. Unauthorized use is strictly prohibited.

@@ -1,5 +1,12 @@
 # Change Log
 
+# Version 0.6.7
+* Extended Cloud Asssets panel to provide features like SSH to Compute instance
+* Other Cloud Assets improvements
+* Fixes in Endpoints display when Controller is added
+* Keep track of the REST queries document even if not saved yet
+* Various other fixes in Micronaut Panel
+
 # Version 0.6.6
 * Endpoints and Beans explorers display symbols originating in dependent libraries.
 * Assist at composing of REST queries in REST Client

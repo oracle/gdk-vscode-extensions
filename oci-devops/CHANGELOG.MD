@@ -1,5 +1,9 @@
 # Change Log
 
+## Version 0.9.9
+* Faster redeployments to OKE from deployment pipelines created by OCI DevOps extension
+* Various bug fixes and improvements
+
 ## Version 0.9.8
 * GitHub repo renamed to GDK
 * Various bug fixes
