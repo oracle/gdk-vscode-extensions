@@ -28,6 +28,7 @@ import * as ociFeatures from './ociFeatures';
 import * as vcnUtils from './vcnUtils';
 import * as kubernetesUtils from "../kubernetesUtils";
 import * as k8s from 'vscode-kubernetes-tools-api';
+import * as common from 'oci-common';
 import { RESOURCES } from './ociResources';
 import { DEFAULT_GRAALVM_VERSION, DEFAULT_JAVA_VERSION } from '../graalvmUtils';
 export const DEFAULT_DOCKER_TAG = 'latest';
@@ -249,6 +250,26 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
             }
             deployData.subnet = { id: subnet.id, compartmentId: subnet.compartmentID };
         }
+    }
+
+    if (deployData.okeCluster) {
+        try {
+            await verifyKubectlConfig();
+            await checkIfClusterOcidsMatching(deployData.okeCluster.id, provider);
+            logUtils.logInfo(`[deploy] Successfully checked kubectl configuration`);
+        } catch (err: any) {
+            const OPEN_DOCS = "How To Configure";
+            const CANCEL = "Cancel";
+            const choice = await dialogs.showErrorMessage(`Unable to create a DevOps project`, err, OPEN_DOCS, CANCEL);
+            if (choice === OPEN_DOCS) {
+                vscode.commands.executeCommand('vscode.open', vscode.Uri.parse('https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengdownloadkubeconfigfile.htm#localdownload'));
+            }
+            return false;
+        }
+    } else {
+        logUtils.logError(`[deploy] Failed to find OKE Cluster`);
+        dialogs.showErrorMessage(`Failed to find OKE Cluster`);
+        return false;
     }
 
     if (!incrementalDeploy) {
@@ -3701,7 +3722,7 @@ async function getCurrentClusterMinute(kubectl: k8s.KubectlV1 | undefined): Prom
         throw new Error(`Failed to get OKE cluster time`);  
     }
     let minute = undefined;
-    const match = result?.stdout?.match(/^\d+/);
+    const match = result.stdout.match(/^\d+/);
 
     try {
         if (match) {
@@ -3744,14 +3765,62 @@ async function createSvcAccount() {
     }
 }
 
-async function kubernetesResourceExist(resourceType: string, secretName: string) {
+async function kubernetesResourceExist(resourceType: string, resourceName: string) {
     const kubectl = await kubernetesUtils.getKubectlAPI();
-    const retval = await kubectl?.invokeCommand(`get ${resourceType} ${secretName}`);
+    const retval = await kubectl?.invokeCommand(`get ${resourceType} ${resourceName}`);
     if (retval?.code !== 0) {
-        logUtils.logError(`Failed to check existance for kubernetes resourceType: ${resourceType} and resourceName: ${secretName}. exited with status code: ${retval?.code}, stderr: ${retval?.stderr}`);
-        throw new Error(`Failed to check existance for kubernetes resourceType: ${resourceType} and resourceName: ${secretName}`);  
+        logUtils.logError(`Failed to check existance for kubernetes resourceType: ${resourceType} and resourceName: ${resourceName}. exited with status code: ${retval?.code}, stderr: ${retval?.stderr}`);
+        throw new Error(`Failed to check existance for kubernetes resourceType: ${resourceType} and resourceName: ${resourceName}`);  
     }
-    return retval?.stdout.includes(`${secretName}`);
+    return retval.stdout.includes(`${resourceName}`);
+}
+
+async function verifyKubectlConfig() {
+    const kubectl = await kubernetesUtils.getKubectlAPI();
+    const retval = await kubectl?.invokeCommand(`cluster-info`);
+    if (retval?.code !== 0) {
+        logUtils.logError(`Kubectl not configured properly. exited with status code: ${retval?.code}, stderr: ${retval?.stderr}`);
+        throw new Error(`Kubectl not configured properly.`);  
+    }
+}
+
+async function checkIfClusterOcidsMatching(selectedClusterOCID: string, provider: common.ConfigFileAuthenticationDetailsProvider) {
+    const kubectl = await kubernetesUtils.getKubectlAPI();
+    const retval = await kubectl?.invokeCommand(`config view -o json`);
+    if (retval?.code !== 0) {
+        logUtils.logError(`Failed to get kubectl configuration. exited with status code: ${retval?.code}, stderr: ${retval?.stderr}`);
+        throw new Error(`Failed to get kubectl configuration`);  
+    }
+    const configJson = JSON.parse(retval.stdout);
+    const currentContext = configJson['current-context'];
+    const user: string | undefined = configJson.contexts?.find((c: any)=> c.name === currentContext)?.context?.user;     
+    let args: string[] | undefined;
+    if (user) {
+        args = configJson.users?.find((u: any) => u.name === user)?.user?.exec?.args;
+    }
+
+    if (!args) {
+        logUtils.logError(`Kubectl not configured properly. Failed to extract data from kubectl config`);
+        throw new Error(`Kubectl not configured properly. Failed to extract data from kubectl config`);  
+    }
+
+    const clusterIdIndex = args.indexOf("--cluster-id");
+    if (clusterIdIndex === -1 || args.length <= clusterIdIndex + 1) {
+        logUtils.logError(`Failed to find cluster id inside kubectl config`);
+        throw new Error(`Failed to find cluster id inside kubectl config`);  
+    }
+    
+    const clusterOcid =  args.at(clusterIdIndex + 1);
+    if (clusterOcid !== selectedClusterOCID) {
+        const clusterName = await okeUtils.getOkeClusterName(provider, clusterOcid || "");
+
+        logUtils.logError(`Wrong cluster selected, cluster OCID: ${selectedClusterOCID}. Kubectl is configured to use cluster with OCID: ${clusterOcid}`);
+        if (clusterName) {
+            throw new Error(`Wrong cluster selected. Kubectl is configured to use cluster: ${clusterName}`); 
+        } else {
+            throw new Error(`Wrong cluster selected. Kubectl is configured to use cluster with OCID: ${clusterOcid}`);  
+        }
+    }
 }
 
 function removeSpaces(name: string): string {

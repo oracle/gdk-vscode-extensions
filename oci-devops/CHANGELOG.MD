@@ -1,5 +1,8 @@
 # Change Log
 
+## Version 0.9.10
+* Create OCI DevOps Project action now checks kubectl configuration in advance to prevent error when creating OKE CronJob for Secret rotation
+
 ## Version 0.9.9
 * Faster redeployments to OKE from deployment pipelines created by OCI DevOps extension
 * Various bug fixes and improvements
