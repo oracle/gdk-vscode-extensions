@@ -158,15 +158,17 @@
 				"testPatterns": "**/TestsWithSimpleWorkspace/*.test.js",
 				// Set to have a fixed deploy project name. Set to _RANDOM to generate random names for deployed projects. Use ${env:USER} so your projects
 				// cannot conflict with other users in OCI tenancy
-				"TEST_DEPLOY_PROJECT_NAME": "adm-test-project-${env:USER}",
+				"TEST_DEPLOY_PROJECT_NAME": "adm-test-project-$projectName-${env:USER}",
 				// Do not deploy the project, if the project already exists. Saves time during debugging and development.
 				// Also does not undeploy the project at the end. Currently works only for ADM projects.
 				"TEST_ADM_REUSE_PROJECTS": "true",
 				// Set to your own compartment OCID, to avoid collisions with CI or other users.
-				"TEST_DEPLOY_COMPARTMENT_OCID": "${gcn.test.compartmentOCID}",
+				"TEST_DEPLOY_COMPARTMENT_OCID": "${config:gcn.test.compartmentOCID}",
 
 				// REQUIRED for the ADM support to work. DO NOT change.
-				"ADM_SUPPRESS_AUTO_DISPLAY" : "true"
+				"ADM_SUPPRESS_AUTO_DISPLAY" : "true",
+				// REQUIRED to get data from running OCI extension
+				"TEST_VSCODE_EXTENSION" : "true"
 			},
 			"preLaunchTask": "npm: watch",
 		}

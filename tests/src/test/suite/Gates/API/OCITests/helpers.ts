@@ -152,7 +152,7 @@ export async function setupCommandSpecArtifactAndDeployConfigArtifact(
         if (!setupCommandSpecArtifact) {
           let repoEndpoint = `${provider.getRegion().regionCode}.ocir.io`;
           assert.ok(ociResources.cluster && ociResources.cluster.id, 'Cluster with given Id not Found - Line 259');
-          const inlineContent = deployUtils.expandTemplate(RESOURCES['oke_docker_secret_setup.yaml'], {
+          const inlineContent = deployUtils.expandTemplate(RESOURCES['oke_pod_deletion.yaml'], {
             repo_endpoint: repoEndpoint,
             region: provider.getRegion().regionId,
             cluster_id: ociResources.cluster.id,
@@ -298,7 +298,7 @@ export async function createJVMDeploymentPipeline(deploy: DeploymentResources): 
 
         let setupSecretStage;
         try {
-          setupSecretStage = await ociUtils.createSetupKubernetesDockerSecretStage(
+          setupSecretStage = await ociUtils.createSetupKubernetesPodDeletionStage(
             deploy.auth.provider,
             deployPipeline.id,
             deploy.okeConfig.setupCommandSpecArtifact,
