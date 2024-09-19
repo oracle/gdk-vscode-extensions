@@ -116,3 +116,13 @@ export async function selectOkeCluster(authenticationDetailsProvider: common.Con
     }
     return undefined;
 }
+
+export async function getOkeClusterName(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, clusterId: string): Promise<string | undefined> {
+    try {
+        const okeCluster = await ociUtils.getCluster(authenticationDetailsProvider, clusterId);
+        return okeCluster?.name;
+    } catch(err: any) {
+        logUtils.logError(`Failed to get cluster name for cluster with OCID: ${clusterId}`);
+        return undefined;
+    }
+}
