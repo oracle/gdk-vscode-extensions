@@ -28,6 +28,7 @@ import * as ociFeatures from './ociFeatures';
 import * as vcnUtils from './vcnUtils';
 import * as kubernetesUtils from "../kubernetesUtils";
 import * as k8s from 'vscode-kubernetes-tools-api';
+import * as common from 'oci-common';
 import { RESOURCES } from './ociResources';
 import { DEFAULT_GRAALVM_VERSION, DEFAULT_JAVA_VERSION } from '../graalvmUtils';
 export const DEFAULT_DOCKER_TAG = 'latest';
@@ -251,6 +252,26 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
         }
     }
 
+    if (deployData.okeCluster) {
+        try {
+            await verifyKubectlConfig();
+            await checkIfClusterOcidsMatching(deployData.okeCluster.id, provider);
+            logUtils.logInfo(`[deploy] Successfully checked kubectl configuration`);
+        } catch (err: any) {
+            const OPEN_DOCS = "How To Configure";
+            const CANCEL = "Cancel";
+            const choice = await dialogs.showErrorMessage(`Unable to create a DevOps project`, err, OPEN_DOCS, CANCEL);
+            if (choice === OPEN_DOCS) {
+                vscode.commands.executeCommand('vscode.open', vscode.Uri.parse('https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengdownloadkubeconfigfile.htm#localdownload'));
+            }
+            return false;
+        }
+    } else {
+        logUtils.logError(`[deploy] Failed to find OKE Cluster`);
+        dialogs.showErrorMessage(`Failed to find OKE Cluster`);
+        return false;
+    }
+
     if (!incrementalDeploy) {
         if (deployData.project && !devopsProjectName) {
             try {
@@ -417,10 +438,12 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                     try {
                         logUtils.logInfo(`[deploy] Creating service account that allows secret creation`);
                         await createSvcAccount();
+                        logUtils.logInfo(`[deploy] Created service account that allows secret creation`);
+
                         logUtils.logInfo(`[deploy] Creating CronJob: ${SECRET_ROTATION_CRONJOB_NAME}, that will rotate secret`);
                         await applySecretRotationCronJob(BEARER_TOKEN_SECRET_NAME, SECRET_ROTATION_CRONJOB_NAME, `${provider.getRegion().regionCode}.ocir.io`);
+                        logUtils.logInfo(`[deploy] Created CronJob: ${SECRET_ROTATION_CRONJOB_NAME}, that will rotate secret`);
                     } catch (err: any) {
-                        logUtils.logError(`[deploy] Failed to create secret rotation CronJob: ${err?.message}`);
                         resolve(dialogs.showErrorMessage(`Failed to create secret rotation CronJob`, err));
                         return;
                     }
@@ -436,7 +459,6 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         throw new Error("Secret rotation CronJob does not exist");
                     }
                 } catch (err: any) {
-                    logUtils.logError(`[deploy] Failed to create secret rotation CronJob: ${err?.message}`);
                     resolve(dialogs.showErrorMessage(`Failed to create secret rotation CronJob`, err));
                     return;
                 }
@@ -3659,6 +3681,7 @@ async function selectProjectName(actionName: string, suggestedName?: string): Pr
 async function applySecretRotationCronJob(secretName: string, cronJobName: string, repoEndpoint: string) {
     const kubectl = await kubernetesUtils.getKubectlAPI();
     const cronStartMinute = await getCurrentClusterMinute(kubectl);
+    logUtils.logInfo(`[deploy] Scheduled cronjob at every ${cronStartMinute}th minute`);
 
     const inlineContent = expandTemplate(RESOURCES['oke_secret_rotation_cronjob.yaml'], {
         repo_endpoint: repoEndpoint,
@@ -3667,7 +3690,25 @@ async function applySecretRotationCronJob(secretName: string, cronJobName: strin
         cron_start_minute: cronStartMinute,
         service_account_name: SECRET_ROTATION_SVC_ACCOUNT
     });
-    return await kubectl?.invokeCommand(`apply -f - <<EOF\n${inlineContent}\nEOF`);
+
+    if (!inlineContent) {
+        logUtils.logError(`[deploy] Failed to create service account k8s manifest`);
+        throw new Error(`Failed to create service account k8s manifest`);  
+    }
+
+    const tmpDir = os.tmpdir();
+    const tmpFilePath = path.join(tmpDir, 'tmp-cronjob.yaml');
+    fs.writeFileSync(tmpFilePath, inlineContent);
+
+    try {
+        const resp = await kubectl?.invokeCommand(`apply -f ${tmpFilePath}`);
+        if (resp?.code !== 0) {
+            logUtils.logError(`[deploy] Failed to create secret rotation CronJob, exited with code: ${resp?.code} stderr: ${resp?.stderr}`);
+            throw new Error(`Failed to create secret rotation CronJob`);  
+        }
+    } finally {
+        fs.unlinkSync(tmpFilePath);
+    }
 }
 
 // Function returns OKE cluster time (minute part), and we add 2 minutes to it, to ensure that CronJob will be ran right after creation
@@ -3676,7 +3717,25 @@ async function getCurrentClusterMinute(kubectl: k8s.KubectlV1 | undefined): Prom
 
     const command = `run time-check --rm -it --image=busybox --restart=Never -- date +%M`;
     const result: k8s.KubectlV1.ShellResult | undefined = await kubectl.invokeCommand(command);
-    const minute = Number(result?.stdout?.split('\r')[0]);
+    if (result?.code !== 0) {
+        logUtils.logError(`[deploy] Failed to get OKE cluster time, exited with status code: ${result?.code}, stderr: ${result?.stderr}`);
+        throw new Error(`Failed to get OKE cluster time`);  
+    }
+    let minute = undefined;
+    const match = result.stdout.match(/^\d+/);
+
+    try {
+        if (match) {
+            minute = parseInt(match[0], 10);
+        } 
+    } catch (err: any) {
+        logUtils.logError(`[deploy] Failed to extract cluster time: ${err?.message}`);
+    }
+
+    if (!minute) {
+        throw new Error("Failed to parse OKE cluster time");
+    }
+
     return `${(minute + 2) % 60}`;
 }
 
@@ -3685,13 +3744,83 @@ async function createSvcAccount() {
     const inlineContent = expandTemplate(RESOURCES['create_secret_service_account.yaml'], {
         service_account_name: SECRET_ROTATION_SVC_ACCOUNT
     });
-    return kubectl?.invokeCommand(`apply -f - <<EOF\n${inlineContent}\nEOF`);
+
+    if (!inlineContent) {
+        logUtils.logError(`[deploy] Failed to create service account k8s manifest`);
+        throw new Error(`Failed to create service account k8s manifest`);  
+    }
+
+    const tmpDir = os.tmpdir();
+    const tmpFilePath = path.join(tmpDir, 'tmp-svc-account.yaml');
+    fs.writeFileSync(tmpFilePath, inlineContent);
+
+    try {
+        const resp = await kubectl?.invokeCommand(`apply -f ${tmpFilePath}`);
+        if (resp?.code !== 0) {
+            logUtils.logError(`[deploy] Failed to create service account. exited with code: ${resp?.code} stderr: ${resp?.stderr}`);
+            throw new Error(`Failed to create service account`);  
+        }
+    } finally {
+        fs.unlinkSync(tmpFilePath);
+    }
 }
 
-async function kubernetesResourceExist(resourceType: string, secretName: string) {
+async function kubernetesResourceExist(resourceType: string, resourceName: string) {
     const kubectl = await kubernetesUtils.getKubectlAPI();
-    const retval = await kubectl?.invokeCommand(`get ${resourceType} ${secretName}`);
-    return retval?.stdout.includes(`${secretName}`);
+    const retval = await kubectl?.invokeCommand(`get ${resourceType} ${resourceName}`);
+    if (retval?.code !== 0) {
+        logUtils.logError(`Failed to check existance for kubernetes resourceType: ${resourceType} and resourceName: ${resourceName}. exited with status code: ${retval?.code}, stderr: ${retval?.stderr}`);
+        throw new Error(`Failed to check existance for kubernetes resourceType: ${resourceType} and resourceName: ${resourceName}`);  
+    }
+    return retval.stdout.includes(`${resourceName}`);
+}
+
+async function verifyKubectlConfig() {
+    const kubectl = await kubernetesUtils.getKubectlAPI();
+    const retval = await kubectl?.invokeCommand(`cluster-info`);
+    if (retval?.code !== 0) {
+        logUtils.logError(`Kubectl not configured properly. exited with status code: ${retval?.code}, stderr: ${retval?.stderr}`);
+        throw new Error(`Kubectl not configured properly.`);  
+    }
+}
+
+async function checkIfClusterOcidsMatching(selectedClusterOCID: string, provider: common.ConfigFileAuthenticationDetailsProvider) {
+    const kubectl = await kubernetesUtils.getKubectlAPI();
+    const retval = await kubectl?.invokeCommand(`config view -o json`);
+    if (retval?.code !== 0) {
+        logUtils.logError(`Failed to get kubectl configuration. exited with status code: ${retval?.code}, stderr: ${retval?.stderr}`);
+        throw new Error(`Failed to get kubectl configuration`);  
+    }
+    const configJson = JSON.parse(retval.stdout);
+    const currentContext = configJson['current-context'];
+    const user: string | undefined = configJson.contexts?.find((c: any)=> c.name === currentContext)?.context?.user;     
+    let args: string[] | undefined;
+    if (user) {
+        args = configJson.users?.find((u: any) => u.name === user)?.user?.exec?.args;
+    }
+
+    if (!args) {
+        logUtils.logError(`Kubectl not configured properly. Failed to extract data from kubectl config`);
+        throw new Error(`Kubectl not configured properly. Failed to extract data from kubectl config`);  
+    }
+
+    const clusterIdIndex = args.indexOf("--cluster-id");
+    if (clusterIdIndex === -1 || args.length <= clusterIdIndex + 1) {
+        logUtils.logError(`Failed to find cluster id inside kubectl config`);
+        throw new Error(`Failed to find cluster id inside kubectl config`);  
+    }
+    
+    const clusterOcid =  args.at(clusterIdIndex + 1);
+    if (clusterOcid !== selectedClusterOCID) {
+        const clusterName = await okeUtils.getOkeClusterName(provider, clusterOcid || "");
+
+        logUtils.logError(`Wrong cluster selected, cluster OCID: ${selectedClusterOCID}. Kubectl is configured to use cluster with OCID: ${clusterOcid}`);
+        if (clusterName) {
+            throw new Error(`Wrong cluster selected. Kubectl is configured to use cluster: ${clusterName}`); 
+        } else {
+            throw new Error(`Wrong cluster selected. Kubectl is configured to use cluster with OCID: ${clusterOcid}`);  
+        }
+    }
 }
 
 function removeSpaces(name: string): string {
