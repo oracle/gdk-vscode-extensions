@@ -1335,6 +1335,7 @@ export async function updateCompartmentAccessPolicies(authenticationDetailsProvi
             `Allow any-user to manage generic-artifacts in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
             `Allow any-user to manage repos in compartment id ${compartmentID} where ALL {request.principal.type='devopsbuildpipeline', request.principal.compartment.id='${compartmentID}'}`,
             `Allow any-user to manage repos in compartment id ${compartmentID} where ALL {request.principal.type='instance', request.principal.compartment.id='${compartmentID}'}`,
+            `Allow any-user to manage repos in compartment id ${compartmentID} where ALL {request.principal.type='instance', request.principal.compartment.id='${okeCompartmentID}'}`,
             `Allow any-user to manage compute-container-instances in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
             `Allow any-user to manage compute-containers in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
             `Allow any-user to read all-artifacts in compartment id ${compartmentID} where ALL {request.principal.type='devopsdeploypipeline', request.principal.compartment.id='${compartmentID}'}`,
