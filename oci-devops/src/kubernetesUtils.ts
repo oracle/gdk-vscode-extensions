@@ -7,6 +7,7 @@
 
 import * as k8s from 'vscode-kubernetes-tools-api';
 import * as dialogs from '../../common/lib/dialogs';
+import * as logUtils from '../../common/lib/logUtils';
 
 export async function getKubectlAPI(): Promise<k8s.KubectlV1 | undefined> {
     const kubectl = await k8s.extension.kubectl.v1;
@@ -29,10 +30,10 @@ export async function getConfig(): Promise<any> {
     return undefined;
 }
 
-export async function getDeployment(deploymentName: string): Promise<any> {
+export async function getDeployment(deploymentName: string, contextName?: string): Promise<any> {
     const kubectl = await getKubectlAPI();
     if (kubectl) {
-        const command = `get deployment ${deploymentName} -o json`;
+        const command = `get deployment ${deploymentName} ${contextName ? `--context=${contextName}` : ""} -o json`;
         const result: k8s.KubectlV1.ShellResult | undefined = await kubectl.invokeCommand(command);
         if (result && result.code === 0) {
             return JSON.parse(result.stdout);
@@ -53,4 +54,14 @@ export async function isCurrentCluster(clusterId: string): Promise<boolean> {
         }
     }
     return false;
+}
+
+export async function kubernetesResourceExist(resourceType: string, resourceName: string, contextName?: string) {
+    const kubectl = await getKubectlAPI();
+    const retval = await kubectl?.invokeCommand(`get ${resourceType} ${resourceName} ${contextName ? `--context=${contextName}` : ""}`);
+    if (retval?.code !== 0) {
+        logUtils.logError(`Failed to check existance for kubernetes resourceType: ${resourceType} and resourceName: ${resourceName}. exited with status code: ${retval?.code}, stderr: ${retval?.stderr}`);
+        throw new Error(`Failed to check existance for kubernetes resourceType: ${resourceType} and resourceName: ${resourceName}`);  
+    }
+    return retval.stdout.includes(`${resourceName}`);
 }

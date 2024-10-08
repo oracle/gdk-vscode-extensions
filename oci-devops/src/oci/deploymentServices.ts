@@ -25,9 +25,12 @@ import * as ociFeatures from './ociFeatures';
 import * as vcnUtils from './vcnUtils';
 import * as k8s from 'vscode-kubernetes-tools-api';
 import { RESOURCES } from './ociResources';
+import { BEARER_TOKEN_SECRET_NAME, createSecretRotationCronJob, getContextForClusterId } from './secretRotationCronjob';
+import { kubernetesResourceExist } from '../kubernetesUtils';
 
 
 export const DATA_NAME = 'deploymentPipelines';
+const SECRET_ROTATION_CRONJOB_NAME = 'secret-rotation-cronjob';
 
 const ICON = 'rocket';
 const ICON_IN_PROGRESS = 'gear~spin';
@@ -130,6 +133,62 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
     if (!okeCluster?.id || !okeCluster?.vcnID) {
         return undefined;
     }
+
+    async function addSecretRotationCronJobToCluster(contextName: string, oci: ociContext.Context): Promise<boolean> {
+        return await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Creating secret rotation CronJob...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async (resolve) => {
+                try {
+                    await createSecretRotationCronJob(SECRET_ROTATION_CRONJOB_NAME, oci.getProvider().getRegion().regionCode || "", contextName);
+                    resolve(true);
+                } catch (err: any) {
+                    resolve(false);
+                    dialogs.showErrorMessage(`Failed to create secret rotation CronJob`, err);
+                    return;
+                }
+            });
+        });
+    }
+
+    async function cronJobResourceExist(contextName: string): Promise<boolean> {
+        return await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Verifying CronJob existance...',
+            cancellable: false
+        }, (_progress, _token) => {
+            return new Promise(async (resolve) => {
+                try {
+                    if (!await kubernetesResourceExist('cronjob', SECRET_ROTATION_CRONJOB_NAME, contextName)) {                        
+                        throw new Error("Secret rotation CronJob does not exist");
+                    }
+                    resolve(true);
+                } catch (err: any) {
+                    resolve(false);
+                    dialogs.showErrorMessage(`Failed to create secret rotation CronJob`, err)
+                    return;
+                }
+            });
+        });
+    }
+
+    const contextName = await getContextForClusterId(okeCluster.id, oci.getProvider());
+    if (!contextName) {
+       return undefined;
+    }
+
+    const cronJobAdded = await addSecretRotationCronJobToCluster(contextName, oci);
+    if (!cronJobAdded) {
+        return undefined;
+    }
+
+    const cronJobExist = await cronJobResourceExist(contextName);
+    if (!cronJobExist) {
+        return undefined;
+    }
+
     async function getProjectAndRepositoryName(oci: ociContext.Context): Promise<string[] | undefined> {
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
@@ -403,7 +462,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
         });
     }
 
-    const secretName = deployUtils.BEARER_TOKEN_SECRET_NAME;
+    const secretName = BEARER_TOKEN_SECRET_NAME;
     const deployArtifacts = await listDeployArtifacts(oci);
     let podDeletionSpecArtifact = deployArtifacts?.find(env => {
         return env.deployArtifactType === devops.models.DeployArtifact.DeployArtifactType.CommandSpec && env.freeformTags?.devops_tooling_oke_cluster === okeCluster.id;
@@ -765,7 +824,11 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
     }
 
     async runRedeploy() {
-        const deploymentInfo = await this.getDeploymentInfo();
+        const contextName = await this.getKubeContextName();
+        if (!contextName) {
+            return;
+        }
+        const deploymentInfo = await this.getDeploymentInfo(contextName);
         if (!deploymentInfo) {
             return;
         }
@@ -790,7 +853,7 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
                         return;
                     }
 
-                    const result = await kubectl.invokeCommand(`delete pod -l app=${deploymentName} --ignore-not-found=true`);
+                    const result = await kubectl.invokeCommand(`delete pod -l app=${deploymentName} --context=${contextName} --ignore-not-found=true`);
                     if (!result) {
                         resolve(false);
                         dialogs.showErrorMessage(`Cannot redeploy '${deploymentName}' deployment.`);
@@ -814,7 +877,24 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
         });
     }
 
-    getDeploymentInfo(): Promise<{deploymentName: string; imageName: string } | undefined> {
+    async getKubeContextName(): Promise<string | undefined> {
+        const deployment = this.lastDeployment ? await ociUtils.getDeployment(this.oci.getProvider(), this.lastDeployment?.ocid) : undefined;
+        const deploymentName = this.lastDeployment?.deploymentName;
+        if (!deployment || !deploymentName) {
+            dialogs.showErrorMessageWithReportIssueCommand('Cannot resolve the latest deployment.', 'oci.devops.openIssueReporter');
+            return undefined;
+        }
+        const deployEnvId = deployment?.deployPipelineEnvironments?.items.find(env => env.deployEnvironmentId)?.deployEnvironmentId;
+        const deployEnvironment = deployEnvId ? await ociUtils.getDeployEnvironment(this.oci.getProvider(), deployEnvId) : undefined;
+        const okeDeployEnvironment = ociUtils.asOkeDeployEnvironemnt(deployEnvironment);
+        if (!okeDeployEnvironment?.clusterId) {
+            dialogs.showErrorMessageWithReportIssueCommand('Cannot resolve destination OKE cluster.', 'oci.devops.openIssueReporter');
+            return undefined;
+        }
+        return await getContextForClusterId(okeDeployEnvironment.clusterId, this.oci.getProvider());
+    }
+
+    getDeploymentInfo(contextName: string): Promise<{deploymentName: string; imageName: string } | undefined> {
         return Promise.resolve(
             vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
@@ -836,7 +916,7 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
                         resolve(undefined);
                         return;
                     }
-                    const deploymentJson = await kubernetesUtils.getDeployment(deploymentName);
+                    const deploymentJson = await kubernetesUtils.getDeployment(deploymentName, contextName);
                     if (!deploymentJson) {
                         dialogs.showErrorMessage(`Cannot find deployment '${deploymentName}' in the destination OKE cluster.`);
                         resolve(undefined);
