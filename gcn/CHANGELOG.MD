@@ -1,5 +1,8 @@
 # Change Log
 
+## Version 0.9.13
+* GDK BOM updated to 4.6.0.3
+
 ## Version 0.9.12
 * Microsoft Azure cloud supported
 * GDK: Create Project wizard recommends installation of [Tools for Micronaut® framework extension](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools)
