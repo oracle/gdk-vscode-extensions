@@ -563,7 +563,7 @@ export async function selectCreateOptions(): Promise<CreateOptions | undefined> 
 	}
 
     async function pickCloud(input: dialogs.MultiStepInput, state: Partial<State>) {
-        const choices = getClouds() || [];
+        const choices = cloudsWithoutSelectAllAndEmptyLabel(getClouds() || []);
 		const selected: any = await input.showQuickPick({
 			title,
 			step: stepNumber(10, state),
@@ -655,6 +655,10 @@ export async function selectCreateOptions(): Promise<CreateOptions | undefined> 
 
         installMicronautTools: s.installMicronautTools.value
     };
+}
+
+function cloudsWithoutSelectAllAndEmptyLabel(clouds: ValueAndLabel[]): ValueAndLabel[] {
+    return clouds.filter(cloud => cloud.label !== "" && cloud.value !== 'ALL')
 }
 
 async function validateFeature(s : Partial<State>) : Promise<ValueAndLabel[]> {
