@@ -578,6 +578,34 @@ To generate a test class with a test method for every endpoint method of a contr
 
 </details>
 
+<details>
+<summary>Test overview with Test Matrix</summary>
+
+**Prerequisites:**
+* Opened GDK project
+
+Test Matrix allows table view for the project tests. It's designed to work with multicloud [GDK](https://graal.cloud/gdk/) projects.
+
+Each column represents different cloud/module and each row represents different Test Suite or Test Method.
+When [GDK](https://graal.cloud/gdk/) project is detected, the Test Matrix panel automatically appears in the bottom panel area, alongside the Debug Console and Terminal.
+
+A new default test-running profile is registered. This profile enables running tests in **parallel**, for each [GDK](https://graal.cloud/gdk/) project module. This significantly speeds up test execution.
+
+![Running Tests in Parallel](./images/run_tests_parallel.gif)
+
+Test Matrix provides couple of actions:
+* Opening test case by clicking on Test Matrix cell
+
+  ![Test Matrix Cell Click](./images/test_case_click.gif)
+* Shorcut for running tests in parallel
+
+  ![Running Tests in Parallel Shortcut](./images/run_tests_parallel_shortcut.png)
+* Shorcut for clearing test results from Test Matrix
+
+  ![Clear test results](./images/clear_all_results.png)
+
+</details>
+
 To request a feature or report a bug, please [contact us](#feedback).
 
 ## Extension Settings

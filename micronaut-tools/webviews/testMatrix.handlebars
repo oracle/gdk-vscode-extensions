@@ -1,0 +1,82 @@
+<!--
+Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+-->
+
+<html lang="en">
+    <head>
+       <meta charset="UTF-8" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'none'; style-src {{cspSource}} 'self' 'unsafe-inline'; font-src {{cspSource}}; img-src {{cspSource}}; script-src {{cspSource}}"
+        />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="{{cssUri}}" />
+        <link rel="stylesheet"  href="{{codiconsUri}}" />
+        <title>Test Matrix</title>
+    </head>
+    <body>
+        <p class="elem"></p>
+        <table>
+            <thead class="thead">
+                <tr>
+                    <th>Test Case</th>
+                    {{#each modules}}
+                        {{#if this.show}}
+                            <th class="module-names">
+                                <i class="codicon codicon-project structure-icon structure-icon-module"></i>
+                                <b>{{this.name}}</b>
+                            </th>
+                        {{/if}}
+                    {{/each}}
+                </tr>
+            </thead>
+            <tbody class="table-body">
+                {{#each testSuites}}
+                    {{#if (shouldShowModule ../modules this)}}
+                        <tr>
+                            <td style="text-align: left;">
+                                <i class="codicon codicon-symbol-class structure-icon structure-icon-class"></i>
+                                {{name}}
+                            </td>
+                            {{#each ../modules}}
+                                {{#if this.show}}
+                                    {{#if (lookup ../this this.name)}}
+                                        <td class="clickable-td" data-state='{{{lookup (lookup ../this this.name) "stringify"}}}' id="{{../name}}-{{this.name}}">
+                                            <i class="codicon {{lookup ../../icons (lookup (lookup ../this this.name) "state")}} {{lookup ../../colors (lookup (lookup ../this this.name) "state")}}"></i>
+                                        </td>
+                                    {{else}}
+                                        <td>-</td>
+                                    {{/if}}
+                                {{/if}}
+                            {{/each}}
+                        </tr>
+                        {{#each tests}}
+                            <tr>
+                                <td style="text-align: left; padding-left: 3vw">
+                                    <i class="codicon codicon-symbol-method structure-icon structure-icon-method"></i>
+                                    {{name}}
+                                </td>
+                                {{#each ../../modules}}
+                                    {{#if this.show}}
+                                        {{#if (lookup ../this this.name)}}
+                                            <td class="clickable-td" data-state='{{{lookup (lookup ../this this.name) "stringify"}}}' id="{{../../name}}-{{../name}}-{{this.name}}">
+                                                <i class="codicon {{lookup ../../../icons (lookup (lookup ../this this.name) "state")}} {{lookup ../../../colors (lookup (lookup ../this this.name) "state")}}"></i>
+                                            </td>
+                                        {{else}}
+                                            <td>-</td>
+                                        {{/if}}
+                                    {{/if}}
+                                {{/each}}
+                            </tr>
+                        {{/each}}
+                    {{/if}}
+                {{/each}}
+            </tbody>
+        </table>
+
+        <script src="{{javascriptUri}}"></script>
+    </body>
+</html>

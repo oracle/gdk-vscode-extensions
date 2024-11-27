@@ -25,6 +25,12 @@ import * as kubernetes from 'vscode-kubernetes-tools-api';
 import * as launcher from './launcher/extension';
 import * as dbSupport from './database/dbsupport';
 import * as logUtils from '../../common/lib/logUtils';
+import { TestMatrixViewProvider } from './test-matrix/TestMatrixViewProvider';
+import { toggleMatrixHideForModule } from './test-matrix/vscodeUtils';
+import { checkConflicts, getGdkProjectFromWorkspace, initializeTestMatrix, isNblsEnabled } from './test-matrix/initializer';
+
+let provider: TestMatrixViewProvider | undefined;
+const TEST_ADAPTER_CREATED_EVENT: string = "testAdapterCreated";
 
 export function activate(context: vscode.ExtensionContext) {
 	logUtils.registerExtensionForLogging(context);
@@ -92,6 +98,28 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.executeCommand('nbls.workspace.new', ctx, 'Micronaut/ControllerFromRepository');
 	}));
 
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools-test-matrix.test-adapter-created', () => {
+		initializeTestMatrix(context).then(toSet => (provider = toSet));	
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools-test-matrix.test-progress-event', (ctx) => {
+		provider?.testEvent(ctx);
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools-test-matrix.runTestsInParallel', () => {
+		vscode.commands.executeCommand("nbls.run.test.parallel");
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools-test-matrix.clearAllResults', () => {
+		provider?.clearAllTestResults();
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools-test-matrix.showLibTests', () => {
+		toggleMatrixHideForModule("lib").then(() => provider?.moduleVisibilityChanged());
+		vscode.commands.executeCommand('setContext', 'hiddenLibTests', false);
+		
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools-test-matrix.hideLibTests', () => {
+		toggleMatrixHideForModule("lib").then(() => provider?.moduleVisibilityChanged());
+		vscode.commands.executeCommand('setContext', 'hiddenLibTests', true);
+	}));
+
 	dbSupport.activate(context);
 
 	const graalVmExt = vscode.extensions.getExtension('oracle-labs-graalvm.graalvm');
@@ -120,6 +148,19 @@ export function activate(context: vscode.ExtensionContext) {
 			logUtils.logWarning(`[micronaut-project] Project doesn't exist.`);
 		}
 	});
+
+	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(async (event) => {
+		if (event.affectsConfiguration("netbeans.javaSupport.enabled")) {
+			if (!isNblsEnabled()) {
+				getGdkProjectFromWorkspace().then((projects) => projects.length === 0 ? Promise.reject() : checkConflicts());
+			}
+		}
+	}));
+	if (!provider) {
+		initializeTestMatrix(context).then(toSet => (provider = toSet));	
+		vscode.commands.executeCommand("nbls.addEventListener", TEST_ADAPTER_CREATED_EVENT, "extension.micronaut-tools-test-matrix.test-adapter-created");
+	}
+
 	logUtils.logInfo(`Activated Extension.`);
 }
 
