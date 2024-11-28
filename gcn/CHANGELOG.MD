@@ -1,7 +1,7 @@
 # Change Log
 
 ## Version 0.9.14
-* GDK BOM updated to 4.6.0.5
+* GDK BOM updated to 4.6.0.6
 
 ## Version 0.9.13
 * GDK BOM updated to 4.6.0.3
