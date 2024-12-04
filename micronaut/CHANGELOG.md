@@ -1,5 +1,8 @@
 # Change Log
 
+# Version 0.6.6
+* Dependency updated
+
 # Version 0.6.5
 * * Micronaut Launch: Create Micronaut Project wizard recommends installation of [Tools for Micronaut® framework extension](https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.micronaut-tools)
 

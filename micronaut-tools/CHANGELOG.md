@@ -1,5 +1,8 @@
 # Change Log
 
+# Version 0.6.8
+* Dependency updated
+ 
 # Version 0.6.7
 * Extended Cloud Asssets panel to provide features like SSH to Compute instance
 * Other Cloud Assets improvements
