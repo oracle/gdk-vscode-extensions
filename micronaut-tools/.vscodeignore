@@ -16,3 +16,6 @@ buildagent
 # Ignore output of code sign
 server/*.md
 mochawesome-report/**
+
+# Include @vscode/codicons from node_modules
+!node_modules/@vscode/codicons/**

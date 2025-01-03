@@ -1,0 +1,87 @@
+/* 
+Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. 
+*/
+
+body {
+	background-color: transparent;
+}
+
+table {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+}
+
+table th {
+	border-top:  1px solid black;
+	border-bottom:  1px solid black;
+	border-right:  1px solid black;
+}
+
+table th:first-child,
+table td:first-child {
+  border-left: 1px solid black;
+}
+
+tbody td {
+	border-bottom: 1px solid black;
+  	border-right: 1px solid black;
+}
+
+.thead th {
+	position: sticky;
+	top: 0;
+	background-color: var(--vscode-panel-background);
+}
+
+tr i,b {
+	vertical-align: middle;
+}
+
+.structure-icon {
+	margin-right: 0.25vw;
+}
+
+.structure-icon-module {
+	color:  var(--vscode-symbolIcon-moduleForeground);
+}
+
+.structure-icon-class {
+	color:  var(--vscode-symbolIcon-classForeground);
+}
+
+.structure-icon-method {
+	color:  var(--vscode-symbolIcon-methodForeground);
+}
+
+th, td {
+	text-align: center;
+	padding: 8px;
+}
+
+.clickable-td {
+	cursor: pointer;
+}
+
+.codicon {
+	font-size: 32px;
+}
+
+.codicon.green {
+	color: var(--vscode-testing-iconPassed);
+}
+
+.codicon.yellow {
+	color: var(--vscode-testing-iconQueued);
+}
+
+.codicon.red {
+	color: var(--vscode-testing-iconFailed);
+}
+
+.codicon.grey {
+	color: var(--vscode-testing-iconSkipped);
+}

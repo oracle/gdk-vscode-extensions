@@ -14,14 +14,14 @@
 		"color": "#000000",
 		"theme": "dark"
 	},
-    "homepage": "https://github.com/oracle/gdk-vscode-extensions/blob/main/micronaut-tools/README.md",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/oracle/gdk-vscode-extensions"
-    },
-    "bugs": {
-        "url": "https://github.com/oracle/gdk-vscode-extensions/issues"
-    },
+	"homepage": "https://github.com/oracle/gdk-vscode-extensions/blob/main/micronaut-tools/README.md",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/oracle/gdk-vscode-extensions"
+	},
+	"bugs": {
+		"url": "https://github.com/oracle/gdk-vscode-extensions/issues"
+	},
 	"engines": {
 		"vscode": "^1.76.0"
 	},
@@ -78,9 +78,9 @@
 				],
 				"scopeName": "inline.mexp",
 				"path": "./syntaxes/mexp-injection.json",
-                "embeddedLanguages": {
-                    "meta.embedded.mexp": "mexp"
-                }
+				"embeddedLanguages": {
+					"meta.embedded.mexp": "mexp"
+				}
 			}
 		],
 		"debuggers": [
@@ -88,20 +88,20 @@
 				"type": "micronaut",
 				"label": "Micronaut",
 				"languages": [
-				  "java"
+					"java"
 				],
 				"configurationSnippets": [
 					{
 						"label": "Micronaut: Launch Program - Continuous",
 						"description": "%micronaut.debugger.snippet.launch.description%",
 						"body": {
-						  "type": "java",
-						  "name": "Launch Micronaut Program - Continuous",
-						  "request": "launch",
-						  "mainClass": "",
-						  "env": {
+							"type": "java",
+							"name": "Launch Micronaut Program - Continuous",
+							"request": "launch",
+							"mainClass": "",
+							"env": {
 								"JDT_LAUNCHWRAP_MICRONAUT_CONTINUOUS": true
-						   }
+							}
 						}
 					}
 				]
@@ -113,16 +113,16 @@
 					"launch": {
 						"properties": {
 							"build-maven-dependencies": {
-							  "type": "boolean",
-							  "description": "Build dependencies before run",
-							  "default": true
+								"type": "boolean",
+								"description": "Build dependencies before run",
+								"default": true
 							}
 						}
 					}
 				}
 			}
 		],
- 		"configuration": {
+		"configuration": {
 			"type": "object",
 			"title": "Micronaut Tools",
 			"properties": {
@@ -151,6 +151,12 @@
 						"Ignore any OKE port forwards in OCI DevOps Tools extension"
 					],
 					"description": "Update application address for a new OKE port forward in OCI DevOps Tools extension",
+					"scope": "window"
+				},
+				"micronaut-tools.test-matrix.hiddenModules": {
+					"type": "array",
+					"description": "List of modules that will not be shown",
+					"default": ["lib"],
 					"scope": "window"
 				}
 			}
@@ -398,6 +404,30 @@
 				"command": "extension.micronaut-tools.new.controller.data",
 				"title": "New Controller Classes from Data Repositories...",
 				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools-test-matrix.runTestsInParallel",
+				"title": "Run Tests In Parallel",
+				"icon": "$(run-all)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools-test-matrix.clearAllResults",
+				"title": "Clear All Results",
+				"icon": "$(clear-all)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools-test-matrix.showLibTests",
+				"title": "Show Lib Tests",
+				"icon": "$(eye-closed)",
+				"category": "Micronaut Tools"
+			},
+			{
+				"command": "extension.micronaut-tools-test-matrix.hideLibTests",
+				"title": "Hide Lib Tests",
+				"icon": "$(eye)",
+				"category": "Micronaut Tools"
 			}
 		],
 		"viewsContainers": {
@@ -405,6 +435,13 @@
 				{
 					"id": "extension-micronaut-tools",
 					"title": "%extension.micronaut-tools.navigation.view.title%",
+					"icon": "images/micronaut.png"
+				}
+			],
+			"panel": [
+				{
+					"id": "extension-micronaut-tools-test-matrix",
+					"title": "Test Matrix",
 					"icon": "images/micronaut.png"
 				}
 			]
@@ -436,6 +473,14 @@
 					"name": "VisualVM",
 					"icon": "images/micronaut.png",
 					"when": "visualvm.view == extension-micronaut-tools-visualvm"
+				}
+			],
+			"extension-micronaut-tools-test-matrix": [
+				{
+					"id": "testMatrix.testMatrixView",
+					"type": "webview",
+					"name": "Test Matrix",
+					"when": "nbJavaLSReady && isGdkProject && withoutConflicts"
 				}
 			]
 		},
@@ -697,6 +742,25 @@
 					"command": "extension.micronaut-tools.navigation.visualvmIntegration",
 					"when": "view == extension-micronaut-tools-management && visualvm.view != extension-micronaut-tools-visualvm",
 					"group": "navigation@1"
+				},				{
+					"command": "extension.micronaut-tools-test-matrix.runTestsInParallel",
+					"group": "navigation@1",
+					"when": "view == testMatrix.testMatrixView"
+				},
+				{
+					"command": "extension.micronaut-tools-test-matrix.clearAllResults",
+					"group": "navigation@2",
+					"when": "view == testMatrix.testMatrixView"
+				},
+				{
+					"command": "extension.micronaut-tools-test-matrix.showLibTests",
+					"group": "navigation@3",
+					"when": "view == testMatrix.testMatrixView && hiddenLibTests"
+				},
+				{
+					"command": "extension.micronaut-tools-test-matrix.hideLibTests",
+					"group": "navigation@3",
+					"when": "view == testMatrix.testMatrixView && !hiddenLibTests"
 				}
 			],
 			"view/item/context": [
@@ -954,7 +1018,7 @@
 		}
 	},
 	"vsce": {
-	  "baseImagesUrl": "https://github.com/oracle/gdk-vscode-extensions/raw/main/micronaut-tools"
+		"baseImagesUrl": "https://github.com/oracle/gdk-vscode-extensions/raw/main/micronaut-tools"
 	},
 	"config": {
 		"winBuildPath": "..\\node_modules\\.bin\\vsce",
@@ -987,26 +1051,27 @@
 		"@vscode/l10n": "^0.0.10",
 		"fs-extra": "^10.1.0",
 		"jdk-utils": "^0.5.1",
-		"vscode-kubernetes-tools-api": "^1.3.0"
+		"vscode-kubernetes-tools-api": "^1.3.0",
+		"@vscode/codicons": "0.0.20"
 	},
 	"devDependencies": {
-		"@vscode/l10n-dev": "^0.0.29",
 		"@types/fs-extra": "^9.0.13",
 		"@types/glob": "^7.1.1",
 		"@types/node": "^14.16.0",
 		"@types/vscode": "^1.76.0",
 		"@typescript-eslint/eslint-plugin": "^5.54.1",
 		"@typescript-eslint/parser": "^5.54.1",
+		"@vscode/l10n-dev": "^0.0.29",
 		"ajv": "^8.12.0",
 		"copy-webpack-plugin": "^10.2.4",
 		"cross-os": "^1.5.0",
 		"eslint": "^8.35.0",
 		"eslint-webpack-plugin": "^4.0.0",
 		"glob": "^7.1.4",
-		"maven": "^5.0.0",
-		"ts-loader": "^9.4.2",
 		"handlebars": "^4.7.8",
 		"handlebars-loader": "^1.7.3",
+		"maven": "^5.0.0",
+		"ts-loader": "^9.4.2",
 		"typescript": "^4.9.5",
 		"webpack": "^5.76.0",
 		"webpack-cli": "^5.0.1"
