@@ -5,6 +5,7 @@
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  */
 
+import * as vscode from 'vscode';
 import { FilePosition, FlattenTestCase, FlattenTestSuite, ClickableState, TestState } from "./types";
 
 export function getModulesFrom(test: FlattenTestCase | FlattenTestSuite): string[] {
@@ -51,4 +52,12 @@ export function fillModuleState(test: FlattenTestCase | FlattenTestSuite, fillWi
         state: fillWith?.state
     } as ClickableState;
     test[moduleName].stringify = JSON.stringify(test[moduleName]);
+}
+
+export function checkLibTestExistence(modules: string[]) {
+    if (modules.includes("lib")) {
+        vscode.commands.executeCommand('setContext', 'containsLibTests', true);
+    } else {
+        vscode.commands.executeCommand('setContext', 'containsLibTests', false);
+    }
 }

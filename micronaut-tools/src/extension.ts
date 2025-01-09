@@ -98,11 +98,14 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.executeCommand('nbls.workspace.new', ctx, 'Micronaut/ControllerFromRepository');
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools-test-matrix.test-adapter-created', () => {
-		initializeTestMatrix(context).then(toSet => (provider = toSet));	
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools-test-matrix.test-adapter-created', async () => {
+		await testMatrixInitializationAtempt;
+		if (!provider) {
+			initializeTestMatrix(context).then(toSet => (provider = toSet));
+		}
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools-test-matrix.test-progress-event', (ctx) => {
-		provider?.testEvent(ctx);
+		provider?.ensureWebview().then(() => provider?.testEvent(ctx));
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools-test-matrix.runTestsInParallel', () => {
 		vscode.commands.executeCommand("nbls.run.test.parallel");
@@ -157,12 +160,18 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	}));
 	if (!provider) {
-		initializeTestMatrix(context).then(toSet => (provider = toSet));	
+		initializeTestMatrix(context).then(toSet => (provider = toSet)).finally(() => testMatrixInitAtempted());
 		vscode.commands.executeCommand("nbls.addEventListener", TEST_ADAPTER_CREATED_EVENT, "extension.micronaut-tools-test-matrix.test-adapter-created");
 	}
 
 	logUtils.logInfo(`Activated Extension.`);
 }
+
+// waiting mechanism between two initialization of the Test Matrix
+let testMatrixInitAtempted: () => void;
+let testMatrixInitializationAtempt = new Promise<void>((resolve) => {
+    testMatrixInitAtempted = resolve;
+});
 
 export function deactivate() {
 	dbSupport.deactivate();
