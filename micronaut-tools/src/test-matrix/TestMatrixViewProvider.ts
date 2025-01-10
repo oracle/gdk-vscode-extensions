@@ -10,7 +10,8 @@ import path = require('path');
 import { shouldHideModule } from './vscodeUtils';
 import * as Handlebars from 'handlebars/runtime';
 import { FlattenTestCase, FlattenTestSuite, ClickableState, ModuleWithVisibility, TestSuite, TestCase, CurrentTestState } from './types';
-import { fillModuleState, getMethodName, getModuleName, getModulesFrom, getParameterizedMethodName, getTestSuiteName } from './testUtils';
+import { checkLibTestExistence, fillModuleState, getMethodName, getModuleName, getModulesFrom, getParameterizedMethodName, getTestSuiteName } from './testUtils';
+import { delay } from './initializer';
 
 const iconsPerState = {
 	enqueued: 'codicon-history',
@@ -72,9 +73,8 @@ export class TestMatrixViewProvider implements vscode.WebviewViewProvider {
 		this.tests = (context.state as {storedTests: FlattenTestSuite[]} | undefined)?.storedTests || [];
 		this.checkTestsState(this.testSuites);
 		this.testSuites.forEach(test => this.appendTestCase(test));
-
-		this.modules = this.getModuleList();
-
+		this.refreshModuleList();
+		
 		webviewView.webview.html = await this.getHtmlForWebview(webviewView.webview);
 
 		webviewView.webview.onDidReceiveMessage(async data => {
@@ -95,6 +95,20 @@ export class TestMatrixViewProvider implements vscode.WebviewViewProvider {
 					}
 			}
 		});
+	}
+
+	public async ensureWebview(): Promise<void> {
+		if (!this.view) {
+			await vscode.commands.executeCommand(`${TestMatrixViewProvider.viewType}.focus`);
+		}
+
+		// Need to explicitly check if html is rendered to avoid event colision between resolveWebviewView and testEvent methods
+		for (let i = 0; i < 10; i++) {
+			if (this.view?.webview.html) {
+				return;
+			}
+			await delay(100);
+		}
 	}
 
 	private checkTestsState(testsToLoad: TestSuite[]) {
@@ -183,7 +197,14 @@ export class TestMatrixViewProvider implements vscode.WebviewViewProvider {
 			this.tests = this.tests.map(test => test.name === existingTestSuite.name ? existingTestSuite : test);
 		} else if (testSuite.moduleName) {
 			this.addNewTestSuite(testSuite);
+			this.refreshModuleList();
 		}
+	}
+
+	private refreshModuleList() {
+		this.modules = this.getModuleList();
+		const moduleNames = this.modules.map(module => module.name);
+		checkLibTestExistence(moduleNames);
 	}
 
 	private processOtherStates(testSuite: TestSuite): FlattenTestCase[] {

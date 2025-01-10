@@ -11,6 +11,8 @@ import { disableSwitchingToDifferentPanel, shouldHideModule, toggleMatrixHideFor
 import { TestMatrixViewProvider } from './TestMatrixViewProvider';
 import { TestSuite } from './types';
 
+let registeredProvider: vscode.Disposable | undefined;
+
 export async function initializeTestMatrix(context: vscode.ExtensionContext): Promise<TestMatrixViewProvider | undefined> {
     let provider: TestMatrixViewProvider | undefined;
     let projects: vscode.WorkspaceFolder[];
@@ -30,10 +32,13 @@ export async function initializeTestMatrix(context: vscode.ExtensionContext): Pr
         .then(() => disableSwitchingToDifferentPanel())
         .then(() => loadWorkspaceTests(projects))
         .then((tests) => {
+            if (registeredProvider) {
+                registeredProvider.dispose();
+            }
             provider = new TestMatrixViewProvider(context.extensionUri, tests);
             vscode.commands.executeCommand("nbls.addEventListener", "testProgress", "extension.micronaut-tools-test-matrix.test-progress-event");
-            context.subscriptions.push(
-                vscode.window.registerWebviewViewProvider(TestMatrixViewProvider.viewType, provider));		
+            registeredProvider =  vscode.window.registerWebviewViewProvider(TestMatrixViewProvider.viewType, provider);
+            context.subscriptions.push(registeredProvider);
         })
         .then(() => hideLibModule(provider));
 
@@ -119,6 +124,6 @@ export async function waitForNblsCommand(command: string) {
     throw new Error('Timed out waiting for project support. Check whether the Language Server for Java by Apache NetBeans extension is active and initialized.');
 }
 
-function delay(ms: number) {
+export function delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
 }

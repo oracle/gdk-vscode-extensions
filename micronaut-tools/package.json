@@ -755,12 +755,12 @@
 				{
 					"command": "extension.micronaut-tools-test-matrix.showLibTests",
 					"group": "navigation@3",
-					"when": "view == testMatrix.testMatrixView && hiddenLibTests"
+					"when": "view == testMatrix.testMatrixView && containsLibTests && hiddenLibTests"
 				},
 				{
 					"command": "extension.micronaut-tools-test-matrix.hideLibTests",
 					"group": "navigation@3",
-					"when": "view == testMatrix.testMatrixView && !hiddenLibTests"
+					"when": "view == testMatrix.testMatrixView && containsLibTests && !hiddenLibTests"
 				}
 			],
 			"view/item/context": [
