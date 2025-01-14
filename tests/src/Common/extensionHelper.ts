@@ -115,7 +115,8 @@ function getExtensionNameFromURL(url: string): ExtensionName | undefined {
 export async function obtainLatestArtifactsURLs(): Promise<ExtensionMap<string>> {
   let urls = (process.env['TEST_JENKINS_BUILDERS'] || '').split(";");
 
-  let parsed : [ name : string, ver : string, dir : string][] = [];
+  
+  let parsed : [ name : string, ver : string, dir : string, build : number][] = [];
   (process.env['TEST_EXTENSION_DOWNLOADS'] || '').split(path.delimiter).forEach(dir => {
     if (!dir || dir.length == 0) {
       return;
@@ -125,6 +126,7 @@ export async function obtainLatestArtifactsURLs(): Promise<ExtensionMap<string>>
     for (let m of globSync(dir)) {
      let stat;
      
+      console.log(`Searching directory: ${m}`);
       try {
         stat = fs.statSync(m);
       } catch (e : any) {
@@ -141,9 +143,10 @@ export async function obtainLatestArtifactsURLs(): Promise<ExtensionMap<string>>
     for (let n of listed) {
       let base = path.basename(n);
       let d = path.dirname(n);
-      let re = /([-A-z]*)-([0-9.]*).vsix/.exec(base);
+      let re = /([-A-z]*)-([0-9.]*)(?:-([0-9]*))?.vsix/.exec(base);
       if (re) {
-        parsed.push([ re[1], re[2], d]);
+        console.log(`Found extension: ${n}`);
+        parsed.push([ re[1], re[2], d, re[3] ? Number(re[3]) : 10000]);
       }
     }
 });
@@ -156,15 +159,24 @@ export async function obtainLatestArtifactsURLs(): Promise<ExtensionMap<string>>
       return 1;
     }
     let r =  -semver.compare(a[1], b[1]);
-    return r;
+    if (r != 0) {
+      return r;
+    }
+    return b[3] - a[3];
   });
+  console.log(`Ordered extensions: ${parsed}`);
   let last = undefined;
-  for (let [n, v, d] of parsed) {
+  for (let [n, v, d, b] of parsed) {
     if (n === last) {
       continue;
     }
     last = n;
-    files.push(path.join(d, `${n}-${v}.vsix`));
+    let fn = `${n}-${v}`;
+    if (b < 10000) {
+      fn = `${fn}-${b}`;
+    }
+    console.log(`Will install: ${fn}`);
+    files.push(path.join(d, `${fn}.vsix`));
   }
 
   let fileMap = await mapExtensionURLS(files);
@@ -179,6 +191,7 @@ export async function obtainLatestArtifactsURLs(): Promise<ExtensionMap<string>>
   for (let k in fileMap) {
     urlMap[k as ExtensionName] = fileMap[k as ExtensionName];
   }
+  console.log(`URLMap: ${urlMap}`);
   return urlMap;
     /*
         obtainArtifactURLsFromURL(
