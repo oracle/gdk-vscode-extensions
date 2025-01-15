@@ -101,7 +101,7 @@ export function isNblsEnabled() {
 async function suggestToDisableMSTestRunner() {
     const DISABLE_EXTENSION = `Manually Disable Extension`;
     const DISABLE_LATER = `Later`;
-    const selected = await vscode.window.showInformationMessage(`Disable Java and Language Support for Java(TM) by Red Hat in order to use GDK Test Matrix.`, DISABLE_EXTENSION, DISABLE_LATER);
+    const selected = await vscode.window.showInformationMessage(`Disable Java and Language Support for Java(TM) by Red Hat in order to use Multicloud Tester.`, DISABLE_EXTENSION, DISABLE_LATER);
     if (DISABLE_EXTENSION === selected) {
         vscode.commands.executeCommand('workbench.view.extensions');
     }
