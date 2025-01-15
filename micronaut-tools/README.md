@@ -579,7 +579,7 @@ To generate a test class with a test method for every endpoint method of a contr
 </details>
 
 <details>
-<summary>Test overview with Test Matrix</summary>
+<summary>Test overview with Multicloud Tester</summary>
 
 **Prerequisites:**
 * Opened GDK project
