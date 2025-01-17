@@ -180,7 +180,7 @@ function terminalMavenCommandFor(wrapper: vscode.Uri, goal: string): string | un
 }
 
 function getAvailableGradleGoals(wrapper: vscode.Uri): Promise<Goals> {
-    const out = cp.execFileSync(wrapper.fsPath, ['tasks', `--project-dir=${path.dirname(wrapper.fsPath)}`]);
+    const out = cp.execFileSync(wrapper.fsPath, ['tasks', `--project-dir=${path.dirname(wrapper.fsPath)}`], { shell: true });
     const buildGoals: vscode.QuickPickItem[] = parseAvailableGradleGoals(out.toString(), 'Build tasks');
     const deployGoals: vscode.QuickPickItem[] = parseAvailableGradleGoals(out.toString(), 'Upload tasks');
     return Promise.resolve({ build: buildGoals, deploy: deployGoals });
