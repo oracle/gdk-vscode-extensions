@@ -179,8 +179,34 @@ function terminalMavenCommandFor(wrapper: vscode.Uri, goal: string): string | un
     return undefined;
 }
 
+// TODO: move this to common & use consistently everywhere once tested & stable
+function getProjectJavaHome(): string | undefined {
+    const NETBEANS_PROJECT_JDK_PATH_KEY = 'netbeans.project.jdkhome';
+    const NETBEANS_JDK_PATH_KEY = 'netbeans.jdkhome';
+    const JDT_JS_JDK_PATH_KEY = 'java.jdt.ls.java.home';
+    const JDK_JDK_PATH_KEY = 'java.home';
+    const GRAALVM_PATH_KEY = 'graalvm.home';
+    const JDK_KEYS = [ NETBEANS_PROJECT_JDK_PATH_KEY, NETBEANS_JDK_PATH_KEY, JDT_JS_JDK_PATH_KEY, JDK_JDK_PATH_KEY, GRAALVM_PATH_KEY ];
+
+    const configuration = vscode.workspace.getConfiguration();
+    for (const jdkPathKey of JDK_KEYS) {
+        const jdkPath = configuration.get<string>(jdkPathKey);
+        if (jdkPath) {
+            return jdkPath;
+        }
+    }
+
+    return undefined;
+}
+
 function getAvailableGradleGoals(wrapper: vscode.Uri): Promise<Goals> {
-    const out = cp.execFileSync(wrapper.fsPath, ['tasks', `--project-dir=${path.dirname(wrapper.fsPath)}`], { shell: true });
+    const env = Object.assign({}, process.env);
+    const projectJavaHome = getProjectJavaHome();
+    if (projectJavaHome) {
+        env.JAVA_HOME = projectJavaHome;
+        env.PATH = `${path.join(projectJavaHome, 'bin')}${path.delimiter}${process.env.PATH}`;
+    }
+    const out = cp.execFileSync(wrapper.fsPath, ['tasks', `--project-dir=${path.dirname(wrapper.fsPath)}`], { shell: true, env });
     const buildGoals: vscode.QuickPickItem[] = parseAvailableGradleGoals(out.toString(), 'Build tasks');
     const deployGoals: vscode.QuickPickItem[] = parseAvailableGradleGoals(out.toString(), 'Upload tasks');
     return Promise.resolve({ build: buildGoals, deploy: deployGoals });
