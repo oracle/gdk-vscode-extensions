@@ -10,7 +10,7 @@ import path = require('path');
 import { shouldHideModule } from './vscodeUtils';
 import * as Handlebars from 'handlebars/runtime';
 import { FlattenTestCase, FlattenTestSuite, ClickableState, ModuleWithVisibility, TestSuite, TestCase, CurrentTestState } from './types';
-import { checkLibTestExistence, fillModuleState, getMethodName, getModuleName, getModulesFrom, getParameterizedMethodName, getTestSuiteName } from './testUtils';
+import { checkLibTestExistence, fillModuleState, getMethodName, getModuleName, getModulesFrom, getParameterizedMethodName, getTestSuiteName, loadWorkspaceTests } from './testUtils';
 import { delay } from './initializer';
 
 const iconsPerState = {
@@ -54,7 +54,7 @@ export class TestMatrixViewProvider implements vscode.WebviewViewProvider {
 
 	constructor(
 		private readonly extensionUri: vscode.Uri,
-		private readonly testSuites: TestSuite[]
+		private readonly worspaceFolders: vscode.WorkspaceFolder[]
 	) { }
 
 	public async resolveWebviewView(
@@ -71,8 +71,9 @@ export class TestMatrixViewProvider implements vscode.WebviewViewProvider {
 		};
  
 		this.tests = (context.state as {storedTests: FlattenTestSuite[]} | undefined)?.storedTests || [];
-		this.checkTestsState(this.testSuites);
-		this.testSuites.forEach(test => this.appendTestCase(test));
+		const testSuites = await loadWorkspaceTests(this.worspaceFolders);
+		this.checkTestsState(testSuites);
+		testSuites.forEach(test => this.appendTestCase(test));
 		this.refreshModuleList();
 		
 		webviewView.webview.html = await this.getHtmlForWebview(webviewView.webview);
@@ -179,7 +180,9 @@ export class TestMatrixViewProvider implements vscode.WebviewViewProvider {
 		this.appendTestCase(event);
 
 		if (this.view) {
-			this.view.show?.(true);
+			if (event.state !== 'loaded') {
+				this.view.show?.(true);
+			}
 			this.view.webview.html = await this.getHtmlForWebview(this.view?.webview);
 			this.view.webview.postMessage({ type: 'updateTests', tests: this.tests });
 		}
