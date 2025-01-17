@@ -579,28 +579,38 @@ To generate a test class with a test method for every endpoint method of a contr
 </details>
 
 <details>
-<summary>Test overview with Multicloud Tester</summary>
+<summary>Run Tests with Multicloud Tester</summary>
 
-**Prerequisites:**
-* Opened GDK project
+The Multicloud Tester is a feature provided by the extension to run application tests.
+It is specifically designed for multicloud [GDK](https://graal.cloud/gdk/) applications.
+This feature introduces a new **Text Matrix** output window, which displays a table view of all project tests.
 
-Test Matrix allows table view for the project tests. It's designed to work with multicloud [GDK](https://graal.cloud/gdk/) projects.
+To start using this feature:
+1. Disable the [Language Support for Java(TM) by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.java). Open the Extensions window in Visual Studio Code and disable the extension.
+2. Enable the [Apache NetBeans Language Server Extension](https://marketplace.visualstudio.com/items?itemName=ASF.apache-netbeans-java) if it is not already enabled.
+3. Open a GDK project developed for one or more supported cloud platforms (OCI, AWS, GCP, or Azure).
 
-Each column represents different cloud/module and each row represents different Test Suite or Test Method.
-When [GDK](https://graal.cloud/gdk/) project is detected, the Test Matrix panel automatically appears in the bottom panel area, alongside the Debug Console and Terminal.
+Once the project is detected, the Text Matrix panel will appear automatically in the bottom panel area of VS Code, alongside the Debug Console and Terminal.
 
-A new default test-running profile is registered. This profile enables running tests in **parallel**, for each [GDK](https://graal.cloud/gdk/) project module. This significantly speeds up test execution.
+The Text Matrix organizes test results in a table format:
+* Columns represent different clouds or modules.
+* Rows represent test suites or individual test methods.
+
+A new default test-running profile is registered, which includes a new action **Run Tests in Parallel** for each GDK project module. 
+Running tests in parallel significantly speeds up test execution.
 
 ![Running Tests in Parallel](./images/run_tests_parallel.gif)
 
-Test Matrix provides couple of actions:
-* Opening test case by clicking on Test Matrix cell
+The Text Matrix provides the following actions to streamline your testing workflow:
+* Opening a test case: click on any cell in the matrix to open the corresponding test case source code.
 
   ![Test Matrix Cell Click](./images/test_case_click.gif)
-* Shorcut for running tests in parallel
+
+* Running tests in parallel shortcut:
 
   ![Running Tests in Parallel Shortcut](./images/run_tests_parallel_shortcut.png)
-* Shorcut for clearing test results from Test Matrix
+
+* Clearing test results shortcut:
 
   ![Clear test results](./images/clear_all_results.png)
 
