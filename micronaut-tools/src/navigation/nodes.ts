@@ -839,7 +839,7 @@ export class EndpointsFolderNode extends BaseNode {
         this.folderData = folder;
         folder.onUpdated((kind: string[], _beans: symbols.Bean[], endpoints: symbols.Endpoint[]) => {
             if (symbols.isEndpointKind(kind)) {
-                this.reloadSymbol(endpoints, this.folderData.getApplication().getManagement().getRoutesEndpoint().getRuntimeEndpoints() || [], treeChanged);
+                this.reloadSymbol(endpoints, this.folderData.getApplication().getManagement().getRoutesEndpoint().getRuntimeEndpoints(), treeChanged);
             }
         });
         this.folderData.getApplication().onStateChanged(state => {
