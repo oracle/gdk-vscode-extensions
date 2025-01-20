@@ -1,5 +1,9 @@
 # Change Log
 
+# Version 0.6.9
+* Multicloud Tester added - supports running Graal Development Kit for Micronaut tests in parallel and visualizes tests in Test matrix
+* Various fixes and improvements
+
 # Version 0.6.8
 * Dependency updated
  
