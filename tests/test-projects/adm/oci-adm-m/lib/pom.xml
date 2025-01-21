@@ -71,12 +71,27 @@ limitations under the License.
     </dependency>
     <dependency>
       <groupId>io.micronaut</groupId>
+      <artifactId>micronaut-http-client</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.micronaut</groupId>
+      <artifactId>micronaut-http-server-netty</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.micronaut</groupId>
       <artifactId>micronaut-management</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.micronaut.micrometer</groupId>
       <artifactId>micronaut-micrometer-core</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.micronaut.oraclecloud</groupId>
+      <artifactId>micronaut-oraclecloud-atp</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -87,6 +102,11 @@ limitations under the License.
     <dependency>
       <groupId>io.micronaut.tracing</groupId>
       <artifactId>micronaut-tracing-opentelemetry</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.micronaut.tracing</groupId>
+      <artifactId>micronaut-tracing-opentelemetry-http</artifactId>
       <scope>compile</scope>
     </dependency>
     <dependency>

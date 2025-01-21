@@ -78,6 +78,7 @@ let knowledgeBaseOcid: string;
  * Project subfolder whose audit will be inspected.
  */
 let auditedSubprojectUri: vscode.Uri;
+let auditedSubprojectName : string = '';
 
 /**
  * Location of the gradle / maven buildscript that will be manipulated
@@ -89,6 +90,39 @@ let buildscript: vscode.Uri;
  * or Springboot project.
  */
 // let simpleProject : boolean;
+
+/**
+ * Describes expected vulnerabilities counts for individual test projects
+ * - artifacts: number of affected artifacts
+ * - diags: diagnostics reported (all cves for each artifact)
+ * - vulnerabilitiesLocallyRemoved: vulnerabilities after removing locally some of the dependencies
+ * - vulnerabilitiesAfterUpdate: after removing and re-running the audit
+ * - diagsAfterUpdate: diagnostics after re-running the audit
+ */
+let expectedCounts : any = {
+  'oci-adm-g': {
+    // vulnerable artifacts reported
+    artifacts: 2,
+    diags: 5,
+    vulnerabilitiesLocallyRemoved: 1,
+    vulnerabilitiesAfterUpdate : 1,
+    diagsAfterUpdate : 2
+  },
+  'oci-adm-g-simple': {
+    artifacts: 2,
+    diags: 4,
+    vulnerabilitiesLocallyRemoved: 1,
+    vulnerabilitiesAfterUpdate : 1,
+    diagsAfterUpdate : 2
+  },
+  'oci-adm-m': {
+    artifacts: 8,
+    diags: 18,
+    vulnerabilitiesLocallyRemoved: 3,
+    vulnerabilitiesAfterUpdate : 3,
+    diagsAfterUpdate : 5
+  }
+};
 
 /**
  * Deletes all vulnerabilities in the knowledge base
@@ -115,12 +149,12 @@ async function deleteNblsAuditCache() {
  */
 function findCacheTime() {
   let kbSegment;
-
+  let suffix = auditedSubprojectName ? `.${auditedSubprojectName}` : '';
   fs.readFileSync(path.join(admCacheDir, 'segments'))
     .toString()
     .split('\n')
     .map((s) => {
-      let re = new RegExp(`knowledge.segment.${knowledgeBaseOcid}=(.*)$`).exec(s);
+      let re = new RegExp(`knowledge.segment.${knowledgeBaseOcid}${suffix}=(.*)$`).exec(s);
       if (re) {
         kbSegment = re[1];
       }
@@ -161,6 +195,7 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
       // simpleProject = true;
     } else {
       auditedSubprojectUri = vscode.Uri.joinPath(folderUri, 'lib');
+      auditedSubprojectName = 'lib';
       // simpleProject = false;
     }
 
@@ -210,6 +245,7 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
     if (deployProjectName === '__RANDOM') {
       deployProjectName = 'gcn-adm-test-project' + (Math.random() + 1).toString(36).substring(7);
     }
+    deployProjectName = deployProjectName.replace("$projectName", path.basename(projectRoot));
 
     const p = auth.getProvider();
     assert.ok(p);
@@ -427,6 +463,15 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
     assert.strictEqual(cacheCreated, refetched, 'No OCI fetch should happen');
   });
 
+  function expectedVulnerableCounts(kind : string) : number {
+    let f = vscode.workspace.workspaceFolders?.[0];
+    if (!f) {
+      return -1;
+    }
+    let x : any = (expectedCounts[f.name] as any)[kind];
+    return x ? Number(x) : -1;
+  }
+
   test('Test forced audit update', async () => {
     let f = vscode.workspace.workspaceFolders?.[0];
     assert.ok(f, 'Project workspace folder exists');
@@ -488,40 +533,10 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
       let gav = `${item.groupId}:${item.artifactId}:${item.versionSpec}`;
       artifacts.set(gav, 1);
     }
-    let expectedCount = 4;
-    switch (f.name) {
-      case 'oci-adm-g':
-        expectedCount = 5;
-        break;
-      case 'oci-adm-g-simple':
-        expectedCount = 5;
-        break;
-      case 'oci-adm-m':
-        expectedCount = 4;
-        break;
-    }
+    let expectedCount = expectedVulnerableCounts('artifacts');
     assert.strictEqual(artifacts.size, expectedCount);
   });
 
-  /**
-   * Diags:
-   * 1/ netty-codec-http through micronaut-oraclecloud-atp,
-   * 2/ opentelemetry-sdk through micronaut-tracing-opentelemetry
-   * 3/ opentelemetry-sdk through micronaut-tracing-opentelemetry-http
-   * 4/ netty-codec-http through micronaut-tracing-opentelemetry-http
-   * 5/ logback-core through logback-classic
-   * 6/ logback-classic through logback-classic
-   * 7/ netty-codec-http through micronaut-http-client,
-   * 
-   * Artifacts:
-   * - netty-codec-http
-   * - opentelemetry-sdk
-   * - logback-core
-   * - logbacj-classic
-   */
-  // oci-adm-g-simple: 4 / 6
-  // oci-adm-g: 4 / 7
-  // oci-adm-m: 4 / 4
   test('Check reported vulnerability lines', async () => {
     let f = vscode.workspace.workspaceFolders?.[0];
     assert.ok(f, 'Project workspace folder exists');
@@ -530,20 +545,7 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
 
     let diags: any[] = await vscode.commands.executeCommand('nbls.get.diagnostics', buildscript.toString());
 
-    let expectedCount = 4;
-
-    switch (f.name) {
-      case 'oci-adm-g':
-        expectedCount = 8;
-        break;
-      case 'oci-adm-g-simple':
-        expectedCount = 7;
-        break;
-      case 'oci-adm-m':
-        expectedCount = 4;
-        break;
-    }
-
+    let expectedCount = expectedVulnerableCounts('diags');
     for (let d of diags) {
       let groupAndArtifact;
 
@@ -596,11 +598,9 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
         }
         lines.splice(x, 1);
       }
-      removeGradleDependency('micronaut-tracing-opentelemetry-http');
       removeGradleDependency('micronaut-http-client');
-      removeGradleDependency('micronaut-http-server-netty');
+      removeGradleDependency('netty-codec-http');
       removeGradleDependency('micronaut-oraclecloud-atp');
-      removeGradleDependency('logback-classic');
       fs.writeFileSync(buildGradle, lines.join('\n'));
     } else {
       let pomXml = path.resolve(auditedSubprojectUri.fsPath, 'pom.xml');
@@ -618,11 +618,10 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
         }
         lines.splice(x - 2, 5);
       }
-      removeMavenDependency('micronaut-tracing-opentelemetry-http');
       removeMavenDependency('micronaut-http-client');
       removeMavenDependency('micronaut-http-server-netty');
       removeMavenDependency('micronaut-oraclecloud-atp');
-      removeMavenDependency('logback-classic');
+      removeMavenDependency('micronaut-tracing-opentelemetry-http');
 
       fs.writeFileSync(pomXml, lines.join('\n'));
     }
@@ -660,12 +659,8 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
         suppressErrors: true,
       },
     );
-    let expectedCount = 4;
-    if (/-adm-g/.exec(f.name)) {
-      // different dependency structure in gradle
-      expectedCount++;
-    }
-    assert.strictEqual(auditData.vulnerableCount, expectedCount, 'Audit report was not recomputed, should still show old data');
+    let expectedCount = expectedVulnerableCounts('vulnerabilitiesLocallyRemoved');
+    assert.strictEqual(auditData.vulnerabilities.length, expectedCount, 'Audit report was not recomputed, should still show old data');
   });
 
   test('Update vulnerability report', async () => {
@@ -682,14 +677,17 @@ suite('ADM Test Suite: ' + wf![0].name, function () {
         suppressErrors: true,
       },
     );
-    assert.strictEqual(1, auditData.vulnerableCount, 'Renewed report must contain just single vulnerability');
+    let expectedCount = expectedVulnerableCounts('vulnerabilitiesAfterUpdate');
+    assert.strictEqual(expectedCount, auditData.vulnerabilities.length, 'Renewed report must contain just single vulnerability');
   });
 
   test('Updated report diagnostics', async () => {
     let f = vscode.workspace.workspaceFolders?.[0];
     assert.ok(f, 'Project workspace folder exists');
     let diags: any[] = await vscode.commands.executeCommand('nbls.get.diagnostics', buildscript.toString());
-    assert.strictEqual(1, diags.length, 'Diagnostics updated according to newer audit');
+    // 2 diagnostics for logback-classic
+    let expectedCount = expectedVulnerableCounts('diagsAfterUpdate');
+    assert.strictEqual(expectedCount, diags.length, 'Diagnostics updated according to newer audit');
   });
 
   // Unable to run the following test, as knowledgeBaseServices.findByFolder() runs in some weird context,

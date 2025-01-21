@@ -417,7 +417,6 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                 });
                 logUtils.logInfo(`[deploy] Using already created devops project ${deployData.compartment.name}/${projectName}`);
             } else {
-
                 // -- Create secret rotation CronJob
                 if (deployData.okeCluster && !deployOptions?.skipOKESupport) {
                     try {
