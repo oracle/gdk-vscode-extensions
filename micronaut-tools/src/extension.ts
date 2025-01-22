@@ -102,10 +102,15 @@ export function activate(context: vscode.ExtensionContext) {
 		await testMatrixInitializationAtempt;
 		if (!provider) {
 			initializeTestMatrix(context).then(toSet => (provider = toSet));
+		} else {
+			vscode.commands.executeCommand("nbls.run.test.parallel.createProfile");
 		}
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools-test-matrix.test-progress-event', (ctx) => {
-		provider?.ensureWebview().then(() => provider?.testEvent(ctx));
+	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools-test-matrix.test-progress-event', async (ctx) => {
+		if (ctx.state !== 'loaded') {
+			await provider?.ensureWebview();
+		}
+		provider?.testEvent(ctx);
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('extension.micronaut-tools-test-matrix.runTestsInParallel', () => {
 		vscode.commands.executeCommand("nbls.run.test.parallel");

@@ -9,7 +9,6 @@ import * as vscode from 'vscode';
 import { getGdkProjects } from './gdkProjectUtils';
 import { disableSwitchingToDifferentPanel, shouldHideModule, toggleMatrixHideForModule } from './vscodeUtils';
 import { TestMatrixViewProvider } from './TestMatrixViewProvider';
-import { TestSuite } from './types';
 
 let registeredProvider: vscode.Disposable | undefined;
 
@@ -30,12 +29,11 @@ export async function initializeTestMatrix(context: vscode.ExtensionContext): Pr
         .then(() => checkConflicts())
         .then(() => vscode.commands.executeCommand("nbls.run.test.parallel.createProfile"))
         .then(() => disableSwitchingToDifferentPanel())
-        .then(() => loadWorkspaceTests(projects))
-        .then((tests) => {
+        .then(() => {
             if (registeredProvider) {
                 registeredProvider.dispose();
             }
-            provider = new TestMatrixViewProvider(context.extensionUri, tests);
+            provider = new TestMatrixViewProvider(context.extensionUri, projects);
             vscode.commands.executeCommand("nbls.addEventListener", "testProgress", "extension.micronaut-tools-test-matrix.test-progress-event");
             registeredProvider =  vscode.window.registerWebviewViewProvider(TestMatrixViewProvider.viewType, provider);
             context.subscriptions.push(registeredProvider);
@@ -43,18 +41,6 @@ export async function initializeTestMatrix(context: vscode.ExtensionContext): Pr
         .then(() => hideLibModule(provider));
 
     return provider;
-}
-
-const COMMAND_LOAD_TESTS = 'nbls.load.workspace.tests';
-
-async function loadWorkspaceTests(gdkWorkspaceFolders: vscode.WorkspaceFolder[]): Promise<TestSuite[]> {
-    const tests: TestSuite[] = [];
-    for (let workspaceFolder of gdkWorkspaceFolders) {
-        await waitForNblsCommand(COMMAND_LOAD_TESTS);
-        const toAdd: TestSuite[] = await vscode.commands.executeCommand(COMMAND_LOAD_TESTS, workspaceFolder.uri.toString());
-        tests.push(...toAdd);
-    }
-    return tests.length > 0 ? tests : Promise.reject();
 }
 
 export async function getGdkProjectFromWorkspace() {

@@ -583,6 +583,14 @@
 			],
 			"commandPalette": [
 				{
+					"command": "extension.micronaut-tools-test-matrix.hideLibTests",
+					"when": "containsLibTests && !hiddenLibTests"
+				},
+				{
+					"command": "extension.micronaut-tools-test-matrix.showLibTests",
+					"when": "containsLibTests && hiddenLibTests"
+				},
+				{
 					"command": "extension.micronaut-tools.build",
 					"when": "micronautProjectExists && javaHomeSet"
 				},

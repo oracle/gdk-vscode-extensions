@@ -6,7 +6,8 @@
  */
 
 import * as vscode from 'vscode';
-import { FilePosition, FlattenTestCase, FlattenTestSuite, ClickableState, TestState } from "./types";
+import { FilePosition, FlattenTestCase, FlattenTestSuite, ClickableState, TestState, TestSuite } from "./types";
+import { waitForNblsCommand } from './initializer';
 
 export function getModulesFrom(test: FlattenTestCase | FlattenTestSuite): string[] {
     return Object.keys(test).filter(key => !["name", "tests"].includes(key));
@@ -60,4 +61,16 @@ export function checkLibTestExistence(modules: string[]) {
     } else {
         vscode.commands.executeCommand('setContext', 'containsLibTests', false);
     }
+}
+
+const COMMAND_LOAD_TESTS = 'nbls.load.workspace.tests';
+
+export async function loadWorkspaceTests(gdkWorkspaceFolders: vscode.WorkspaceFolder[]): Promise<TestSuite[]> {
+    const tests: TestSuite[] = [];
+    for (let workspaceFolder of gdkWorkspaceFolders) {
+        await waitForNblsCommand(COMMAND_LOAD_TESTS);
+        const toAdd: TestSuite[] = await vscode.commands.executeCommand(COMMAND_LOAD_TESTS, workspaceFolder.uri.toString());
+        tests.push(...toAdd);
+    }
+    return tests.length > 0 ? tests : Promise.reject();
 }
