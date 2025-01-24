@@ -57,7 +57,7 @@
 		]
 	},
 	"vsce": {
-		"baseImagesUrl": "https://github.com/oracle/gdk-vscode-extensions/raw/main/gcn"
+		"baseImagesUrl": "https://github.com/oracle/gdk-vscode-extensions/raw/release/v4.7.3/gcn"
 	},
 	"config": {
 		"winBuildPath": "..\\node_modules\\.bin\\vsce",
