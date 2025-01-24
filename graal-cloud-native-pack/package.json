@@ -25,7 +25,7 @@
         "Extension Packs"
     ],
     "vsce": {
-        "baseImagesUrl": "https://github.com/oracle/gdk-vscode-extensions/raw/main/graal-cloud-native-pack"
+        "baseImagesUrl": "https://github.com/oracle/gdk-vscode-extensions/raw/release/v4.7.3/graal-cloud-native-pack"
     },
     "config": {
         "winBuildPath": "..\\node_modules\\.bin\\vsce",
