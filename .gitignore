@@ -29,3 +29,4 @@ tests/test-projects/**/buildSrc/build
 oci-devops/fixtures/oci-adm-g/lib/bin/
 oci-devops/fixtures/oci-adm-g/oci/bin/
 tests/test-projects/adm/oci-adm-g-simple/bin/
+gcn/lib
