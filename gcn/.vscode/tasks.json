@@ -38,6 +38,26 @@
 			"label": "tasks: tests-ui-prerequisites",
 			"type": "shell",
 			"command": "node node_modules/vscode-extension-tester/out/cli.js get-vscode; node node_modules/vscode-extension-tester/out/cli.js get-chromedriver; npm run test-compile"
+		},
+		{
+			"label": "tasks: prepare-launcher",
+			"type": "npm",
+			"script": "prepare-launcher"
+		},
+		{
+			"label": "tasks: compile",
+			"type": "npm",
+			"script": "compile"
+		},
+		{
+			"label": "tasks: prepare-for-launch",
+			"type": "shell",
+			"dependsOrder": "sequence",
+			"dependsOn": ["tasks: prepare-launcher", "tasks: compile"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
 		}
 	]
 }
