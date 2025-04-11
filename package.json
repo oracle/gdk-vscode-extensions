@@ -29,7 +29,7 @@
 		"pretests": "npm run build:common && npm run build:gcn-extension-tests",
 
 		"tests": "npm run tests:gcn && npm run tests:oci-devops",
-		"tests:gcn": "cd gcn; npm install; npm run compile; npm run test-compile; npm run pre-test ; xvfb-run -a npm run test",
+		"tests:gcn": "cd gcn; npm install; npm run prepare-launcher; npm run compile; npm run test-compile; npm run pre-test ; xvfb-run -a npm run test",
 		"tests:oci-devops": "cd oci-devops; npm install; npm run compile; npm run test-compile; npm run pre-test ; xvfb-run -a npm run test",
 		"tests:api-tests": "cd tests && npm install && npm run compile && npm run prepare-vscode ; npm run headless generate ; npm run test",
 
