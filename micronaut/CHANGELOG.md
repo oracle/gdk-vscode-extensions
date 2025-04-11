@@ -1,5 +1,8 @@
 # Change Log
 
+# Version 0.6.7
+* Documentation update
+
 # Version 0.6.6
 * Dependency updated
 
