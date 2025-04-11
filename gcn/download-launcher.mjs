@@ -10,7 +10,7 @@ import fs from "fs";
 import https from "https";
 import path from "path";
 
-const defaultLauncherVersion = 'v4.7.3.2';
+const defaultLauncherVersion = 'v4.7.3.3';
 const defaultBucketUrl = 'https://objectstorage.us-phoenix-1.oraclecloud.com/n/oraclelabs/b/gcn-js-files';
 
 const launcherVersion = process.env['GDK_LAUNCHER_VERSION'] || defaultLauncherVersion;
@@ -33,7 +33,7 @@ if (fs.existsSync(dest)) {
     fs.mkdirSync(path.join(dirname, 'lib'));
   }
   const file = fs.createWriteStream(dest);
-  console.log("Downloading file...");
+  console.log(`Downloading [${`${launcherVersion}/${filename}`}] file...`);
   https.get(fileUrl, (response) => {
     response.pipe(file);
     file.on("finish", () => {
