@@ -246,6 +246,22 @@ export async function selectCodeRepositories(authenticationDetailsProvider: comm
     return undefined;
 }
 
+export async function selectEnableTests() {
+    const choices = [
+        new dialogs.QuickPickObject('Yes', 'Disable tests', undefined),
+        new dialogs.QuickPickObject('No', 'Enable tests', undefined)
+    ]; 
+
+    const selected: any = await vscode.window.showQuickPick(choices, {
+        title: 'Disable tests?',
+        placeHolder: 'Disable tests for this pipeline'
+    });
+    if (selected) {
+        return selected.label === choices[1].label;
+    }
+    return undefined;
+}
+
 export async function getUserCredentials(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, actionName?: string, namespace?: string): Promise<{ username: string; password: string } | undefined> {
     try {
         const token = await ociUtils.createBearerToken(authenticationDetailsProvider);

@@ -215,6 +215,32 @@ export async function getProjectBuildCommand(folder: ProjectFolder, subfolder: s
     return undefined;
 }
 
+export async function getProjectBuildCommandWithTests(folder: ProjectFolder, subfolder: string = 'oci'):  Promise<string | undefined> {
+    if (isMaven(folder)) {
+        if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {
+            return 'chmod 777 ./mvnw && ./mvnw package --no-transfer-progress';
+        }
+        // Helidon wizard has no mvnw
+        if (folder.projectType === 'Helidon') {
+            return 'mvn package --no-transfer-progress';
+        }
+        if (folder.projectType === 'GDK') {
+            return `chmod 777 ./mvnw && ./mvnw package -pl ${subfolder} -am --no-transfer-progress`;
+        }
+        return await vscode.window.showInputBox({ title: 'Provide Command to Build Project', value: 'mvn package'});
+    }
+    if (isGradle(folder)) {
+        if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {
+            return 'chmod 777 ./gradlew && ./gradlew build';
+        }
+        if (folder.projectType === 'GDK') {
+            return `chmod 777 ./gradlew && ./gradlew ${subfolder}:build`;
+        }
+        return await vscode.window.showInputBox({ title: 'Provide Command to Build Project', value: 'gradle build'});
+    }
+    return undefined;
+}
+
 export async function getProjectBuildNativeExecutableCommand(folder: ProjectFolder, subfolder: string = 'oci'):  Promise<string | undefined> {
     if (isMaven(folder)) {
         if (folder.projectType === 'Micronaut') {
@@ -246,6 +272,43 @@ export async function getProjectBuildNativeExecutableCommand(folder: ProjectFold
         }
         if (folder.projectType === 'GDK') {
             return `chmod 777 ./gradlew && ./gradlew ${subfolder || 'oci'}:nativeCompile -x test`;
+        }
+        return await vscode.window.showInputBox({ title: 'Provide Command to Build Native Executable for Project', value: 'gradle nativeCompile'});
+    }
+    return undefined;
+}
+
+export async function getProjectBuildNativeExecutableCommandWithTests(folder: ProjectFolder, subfolder: string = 'oci'):  Promise<string | undefined> {
+    if (isMaven(folder)) {
+        if (folder.projectType === 'Micronaut') {
+            return 'chmod 777 ./mvnw && ./mvnw install --no-transfer-progress -Dpackaging=native-image';
+        }
+        if (folder.projectType === 'SpringBoot') {
+            return 'chmod 777 ./mvnw && ./mvnw --no-transfer-progress native:compile -Pnative';
+        }
+        if (folder.projectType === 'Helidon') {
+            return 'mvn --no-transfer-progress package -Pnative-image';
+        }
+        if (folder.projectType === 'GDK') {
+            let appName = undefined;
+            if (fs.existsSync(path.join(folder.uri.fsPath, 'app'))) {
+                appName = 'app';
+            } else if (fs.existsSync(path.join(folder.uri.fsPath, 'lib'))) {
+                appName = 'lib';
+            }
+            if (subfolder) {
+                return `chmod 777 ./mvnw && ./mvnw install -pl ${appName} -am --no-transfer-progress && ./mvnw install -pl ${subfolder} --no-transfer-progress -Dpackaging=native-image`;
+            }
+            return `chmod 777 ./mvnw && ./mvnw install -pl ${appName} -am --no-transfer-progress -Dpackaging=native-image`;
+        }
+        return await vscode.window.showInputBox({ title: 'Provide Command to Build Native Executable for Project', value: 'mvn install -Dpackaging=native-image'});
+    }
+    if (isGradle(folder)) {
+        if (folder.projectType === 'Micronaut' || folder.projectType === 'SpringBoot') {
+            return 'chmod 777 ./gradlew && ./gradlew nativeCompile';
+        }
+        if (folder.projectType === 'GDK') {
+            return `chmod 777 ./gradlew && ./gradlew ${subfolder || 'oci'}:nativeCompile`;
         }
         return await vscode.window.showInputBox({ title: 'Provide Command to Build Native Executable for Project', value: 'gradle nativeCompile'});
     }
