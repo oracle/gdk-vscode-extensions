@@ -72,6 +72,7 @@ Many tools used to work on Java projects, such as Git, Maven, Gradle, `kubectl`,
 * Select target OCI Compartment for the project
 * Select an existing OKE Cluster or create a new one.
 * Provide a name for the DevOps Project to be created, must be unique within the Tenancy
+* Disable tests in the build pipeline (Yes, No) 
 * If requested, confirm the SSH keys for Git operations and add the Oracle Cloud Infrastructure DevOps Git server to your SSH _config_ and _known_hosts_ file.
 * Wait for the DevOps Project and the related resources to be created.
 

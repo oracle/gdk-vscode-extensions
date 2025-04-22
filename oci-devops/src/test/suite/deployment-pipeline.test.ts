@@ -523,7 +523,8 @@ suite("Test OCI Devops Tools Features", function() {
             skipOKESupport: true,
             projectName: DEPLOY_PROJECT_NAME,
             selectProfile: selectedProfile,
-            autoConfirmDeploy: true
+            autoConfirmDeploy: true,
+            enableTests: false,
         };
 
         await vscode.commands.executeCommand("oci.devops.deployToCloud_GlobalSync", deployOptions);

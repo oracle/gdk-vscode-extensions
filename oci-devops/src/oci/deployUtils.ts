@@ -54,6 +54,7 @@ export type DeployOptions = {
     projectName : string;
     selectProfile : string;
     autoConfirmDeploy : boolean;
+    enableTests? : boolean;
 };
 
 export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExisting: boolean, saveConfig: SaveConfig, dump: model.DumpDeployData, deployOptions? : DeployOptions): Promise<boolean> {
@@ -289,7 +290,11 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
 
     let enableTests: boolean | undefined = false;
     if (!incrementalDeploy) {
-        enableTests = await ociDialogs.selectEnableTests();
+        if (deployOptions?.enableTests === undefined) {
+            enableTests = await ociDialogs.selectEnableTests();
+        } else {
+            enableTests = deployOptions.enableTests;
+        }
     }
 
     if (enableTests) {
