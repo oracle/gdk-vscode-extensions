@@ -54,7 +54,7 @@ export type DeployOptions = {
     projectName : string;
     selectProfile : string;
     autoConfirmDeploy : boolean;
-    enableTests? : boolean;
+    includeTests : boolean;
 };
 
 export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExisting: boolean, saveConfig: SaveConfig, dump: model.DumpDeployData, deployOptions? : DeployOptions): Promise<boolean> {
@@ -288,16 +288,16 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
 
     logUtils.logInfo(`[deploy] Configured to create devops project '${projectName}' with ${folders.length} code repository(s) in compartment '${deployData.compartment.name}', OKE cluster ${deployData.okeCluster ? 'selected' : 'not selected'}`);
 
-    let enableTests: boolean | undefined = false;
+    let includeTests: boolean | undefined = false;
     if (!incrementalDeploy) {
-        if (deployOptions?.enableTests === undefined) {
-            enableTests = await ociDialogs.selectEnableTests();
+        if (deployOptions?.includeTests === undefined) {
+            includeTests = await ociDialogs.selectEnableTests();
         } else {
-            enableTests = deployOptions.enableTests;
+            includeTests = deployOptions.includeTests;
         }
     }
 
-    if (enableTests) {
+    if (includeTests) {
         logUtils.logInfo(`[deploy] Enabling tests for the project`);
     } else {
         logUtils.logInfo(`[deploy] Disabling tests for the project`);
@@ -380,9 +380,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         buildCommand = folderData.projectBuildCommand;
                     } else {
                         if (baLocation) {
-                            buildCommand = enableTests ? 
-                            await projectUtils.getProjectBuildCommandWithTests(projectFolder) : 
-                            await projectUtils.getProjectBuildCommand(projectFolder);
+                            buildCommand = await projectUtils.getProjectBuildCommand(projectFolder, undefined, includeTests);
                         } else {
                             buildCommand = undefined;
                         }
@@ -404,9 +402,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                         niBuildCommand = folderData.projectBuildNativeExecutableCommand;
                     } else {
                         if (niLocation) {
-                            niBuildCommand = enableTests ? 
-                            await projectUtils.getProjectBuildNativeExecutableCommandWithTests(projectFolder) :
-                            await projectUtils.getProjectBuildNativeExecutableCommand(projectFolder);
+                            niBuildCommand = await projectUtils.getProjectBuildNativeExecutableCommand(projectFolder, undefined, includeTests);
                         } else {
                             niBuildCommand = undefined;
                         }
@@ -954,7 +950,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                     dialogs.showErrorMessage(`Failed to resolve ${FAT_JAR_NAME_LC} artifact for folder ${folder.uri.fsPath}`);
                 }
                 const project_devbuild_command = folder.projectType === 'Unknown' ? buildCommands.get(folder) : 
-                (enableTests ? await projectUtils.getProjectBuildCommandWithTests(folder) : await projectUtils.getProjectBuildCommand(folder));
+                    await projectUtils.getProjectBuildCommand(folder, undefined, includeTests);
                 if (!project_devbuild_command && folder.projectType !== 'Unknown') {
                     dialogs.showErrorMessage(`Failed to resolve ${FAT_JAR_NAME_LC} build command for folder ${folder.uri.fsPath}`);
                 }
@@ -1160,7 +1156,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                     dialogs.showErrorMessage(`Failed to resolve ${NI_NAME_LC} artifact for folder ${folder.uri.fsPath}`);
                 }
                 const project_build_native_executable_command = folder.projectType === 'Unknown' ? niBuildCommands.get(folder) : 
-                (enableTests ? await projectUtils.getProjectBuildNativeExecutableCommandWithTests(folder): await projectUtils.getProjectBuildNativeExecutableCommand(folder) );
+                    await projectUtils.getProjectBuildNativeExecutableCommand(folder, undefined, includeTests);
                 if (!project_build_native_executable_command && folder.projectType !== 'Unknown') {
                     dialogs.showErrorMessage(`Failed to resolve ${NI_NAME_LC} build command for folder ${folder.uri.fsPath}`);
                 }
@@ -1446,9 +1442,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                             if (!project_native_executable_artifact_location) {
                                 dialogs.showErrorMessage(`Failed to resolve ${NI_NAME_LC} artifact for folder ${folder.uri.fsPath} & subproject ${subName}`);
                             }
-                            const project_build_native_executable_command = enableTests ? 
-                                await projectUtils.getProjectBuildNativeExecutableCommandWithTests(folder, subName) : 
-                                await projectUtils.getProjectBuildNativeExecutableCommand(folder, subName);
+                            const project_build_native_executable_command = await projectUtils.getProjectBuildNativeExecutableCommand(folder, subName, includeTests);
                             if (!project_build_native_executable_command) {
                                 dialogs.showErrorMessage(`Failed to resolve ${NI_NAME_LC} build command for folder ${folder.uri.fsPath} & subproject ${subName}`);
                             }
@@ -1976,9 +1970,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                                 if (!project_devbuild_artifact_location) {
                                     dialogs.showErrorMessage(`Failed to resolve jvm image artifact for folder ${folder.uri.fsPath} & subproject ${subName}`);
                                 }
-                                const project_devbuild_command = enableTests ? 
-                                    await projectUtils.getProjectBuildCommandWithTests(folder, subName):
-                                    await projectUtils.getProjectBuildCommand(folder, subName);
+                                const project_devbuild_command = await projectUtils.getProjectBuildCommand(folder, subName, includeTests);
                                 if (!project_devbuild_command) {
                                     dialogs.showErrorMessage(`Failed to resolve jvm image build command for folder ${folder.uri.fsPath} & subproject ${subName}`);
                                 }
