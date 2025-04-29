@@ -156,7 +156,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
     async function cronJobResourceExist(contextName: string): Promise<boolean> {
         return await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: 'Verifying CronJob existance...',
+            title: 'Verifying CronJob existence...',
             cancellable: false
         }, (_progress, _token) => {
             return new Promise(async (resolve) => {
@@ -167,7 +167,7 @@ async function createOkeDeploymentPipelines(oci: ociContext.Context, folder: vsc
                     resolve(true);
                 } catch (err: any) {
                     resolve(false);
-                    dialogs.showErrorMessage(`Failed to create secret rotation CronJob`, err)
+                    dialogs.showErrorMessage(`Failed to create secret rotation CronJob`, err);
                     return;
                 }
             });
@@ -886,7 +886,7 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
         }
         const deployEnvId = deployment?.deployPipelineEnvironments?.items.find(env => env.deployEnvironmentId)?.deployEnvironmentId;
         const deployEnvironment = deployEnvId ? await ociUtils.getDeployEnvironment(this.oci.getProvider(), deployEnvId) : undefined;
-        const okeDeployEnvironment = ociUtils.asOkeDeployEnvironemnt(deployEnvironment);
+        const okeDeployEnvironment = ociUtils.asOkeDeployEnvironment(deployEnvironment);
         if (!okeDeployEnvironment?.clusterId) {
             dialogs.showErrorMessageWithReportIssueCommand('Cannot resolve destination OKE cluster.', 'oci.devops.openIssueReporter');
             return undefined;
@@ -1057,7 +1057,7 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
                     }
                     const deployEnvId = deployment.deployPipelineEnvironments?.items.find(env => env.deployEnvironmentId)?.deployEnvironmentId;
                     const deployEnvironment = deployEnvId ? await ociUtils.getDeployEnvironment(this.oci.getProvider(), deployEnvId) : undefined;
-                    const okeDeployEnvironment = ociUtils.asOkeDeployEnvironemnt(deployEnvironment);
+                    const okeDeployEnvironment = ociUtils.asOkeDeployEnvironment(deployEnvironment);
                     if (!okeDeployEnvironment?.clusterId) {
                         resolve(false);
                         dialogs.showErrorMessageWithReportIssueCommand('Cannot resolve destination OKE cluster.', 'oci.devops.openIssueReporter');
@@ -1182,7 +1182,7 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
 
             if (localDebugPort === -1) {
                 this.redeployWithDebugPortOpened(kubectl, deploymentName);
-                vscode.window.showWarningMessage(`Deployment wll be restarted with debugger enabled. Try again later.`);
+                vscode.window.showWarningMessage(`Deployment will be restarted with debugger enabled. Try again later.`);
             }
 
             await vscode.commands.executeCommand('setContext', 'oci.devops.portForward', true);
@@ -1400,7 +1400,7 @@ export class DeploymentPipelineNode extends nodes.ChangeableNode implements node
             if (this.lastDeployment?.ocid === deploymentId) {
                 this.updateLastDeployment(deploymentId, state, this.lastDeployment?.output, this.lastDeployment?.deploymentName);
                 // Some messages can appear in the log minutes after the deployment finished.
-                // Wating for 10 minutes periodiccaly polling for them.
+                // Waiting for 10 minutes periodiccaly polling for them.
                 for (let i = 0; i < 60; i++) {
                     if (this.lastDeployment?.ocid !== deploymentId) {
                         return;

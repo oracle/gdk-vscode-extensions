@@ -19,8 +19,8 @@ import { logError, logInfo } from '../../../common/lib/logUtils';
 // Windows 'chmod' equivalent
 const icacls_exe = 'icacls';
 
-const defaultConfigDiretory = path.join(os.homedir(), '.ssh');
-const defaultConfigLocation = path.join(defaultConfigDiretory, 'config');
+const defaultConfigDirectory = path.join(os.homedir(), '.ssh');
+const defaultConfigLocation = path.join(defaultConfigDirectory, 'config');
 
 export async function checkSshConfigured(provider: common.ConfigFileAuthenticationDetailsProvider, sshUrl: string): Promise<boolean> {
     const r = /ssh:\/\/([^/]+)\//.exec(sshUrl);
@@ -158,10 +158,10 @@ async function addCloudKnownHosts(hostname : string, ask : boolean) : Promise<nu
     if (!await sshUtilitiesPresent()) {
         return -1;
     }
-    const hostsLocation = path.join(defaultConfigDiretory, 'known_hosts');
+    const hostsLocation = path.join(defaultConfigDirectory, 'known_hosts');
     if (fs.existsSync(hostsLocation)) {
         try {
-            // attemp to find host's key in the known_hosts file
+            // attempt to find host's key in the known_hosts file
             await outputOf(`ssh-keygen -f ${hostsLocation} -F ${hostname}`);
             logInfo(`[ssh] Hostkey found for host ${hostname}`);
             return 1;
@@ -217,7 +217,7 @@ class ParsedKnownHosts {
     checkHostIPIndex?: number;
     strictHostsIndex?: number;
     userIndex?: number;
-    indentityFileIndex?: number;
+    identityFileIndex?: number;
     checkOK = false;
     strictOK = false;
     modified = false;
@@ -247,7 +247,7 @@ class ParsedKnownHosts {
                 } else if (/^\s*User/i.test(line)) {
                     this.userIndex = index;
                 } else if (/^\s*IdentityFile/i.test(line)) {
-                    this.indentityFileIndex = index;
+                    this.identityFileIndex = index;
                 } else if (/^(Host|Match)/i.test(line)) {
                     // terminate at the next host
                     break;
@@ -293,18 +293,18 @@ class ParsedKnownHosts {
 
     addOrUpdateIdentityFileDirective(identityFile: string) {
         const l : string[] = this.lines || [];
-        if (this.indentityFileIndex) {
-            let s = l[this.indentityFileIndex];
+        if (this.identityFileIndex) {
+            let s = l[this.identityFileIndex];
             let r = /\s*IdentityFile\s+\"?([^"]+)\"?\s*?/.exec(s);
             if (!r || r.length !== 2 || r[1] !== identityFile) {
-                l[this.indentityFileIndex] = `  IdentityFile "${identityFile}"`;
+                l[this.identityFileIndex] = `  IdentityFile "${identityFile}"`;
                 this.lines = l;
                 this.modified = true;
             }
         } else {
             let fi = this.foundIndex + 1;
             l.splice(fi, 0, `  IdentityFile "${identityFile}"`);
-            this.indentityFileIndex = fi;
+            this.identityFileIndex = fi;
             this.lines = l;
             this.modified = true;
         }
@@ -410,7 +410,7 @@ export async function checkPrivateKeyFileAndConfig(privateKey : string) : Promis
 }
 
 /**
- * Checks SSH/SSL-related files for insecure file permisions. Returns map of filename > description of files that have
+ * Checks SSH/SSL-related files for insecure file permissions. Returns map of filename > description of files that have
  * incorrect permissions. Empty map means everything is OK. Checks ssh config (~/.ssh/config), known hosts (~/.ssh/known_hosts) and
  * the private key file itself. 
  * @param privateKey private key filename
@@ -419,7 +419,7 @@ export async function checkPrivateKeyFileAndConfig(privateKey : string) : Promis
 export function checkSshConfigOrPrivateKeyExposed(privateKey : string) : Map<string, string> {
     let r : Map<string, string> = new Map<string, string>();
 
-    let cfg = path.join(defaultConfigDiretory, 'config');
+    let cfg = path.join(defaultConfigDirectory, 'config');
     if (isFileReadableByOthers(cfg)) {
         r.set(cfg, 'SSH Config (config)');
     }
@@ -536,7 +536,7 @@ function makeFileOwnerReadable(filename : string) : void {
     try {
         if (process.platform === 'win32') {
             const username = process.env['USERNAME'] || process.env['LOGNAME'];
-            // reset all permisions
+            // reset all permissions
             logInfo(`[ssh] executing: ${icacls_exe} "${filename}" /reset`);
             cp.execSync(`${icacls_exe} "${filename}" /reset`);
             // remove inheritance: stupid command cannot do more operations 

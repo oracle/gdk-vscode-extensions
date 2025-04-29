@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-export async function waitForStatup(wf? : vscode.WorkspaceFolder) : Promise<void> {
+export async function waitForStartup(wf? : vscode.WorkspaceFolder) : Promise<void> {
     if (!wf) {
             return;
     }

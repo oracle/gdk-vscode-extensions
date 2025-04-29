@@ -569,7 +569,7 @@ export async function undeploy(folders: devopsServices.FolderData[], deployData:
                         await ociUtils.deleteBuildPipelineStagesByDeployIDTag(provider, deployData.compartment.ocid, deployData.tag);
                         await ociUtils.deleteBuildPipelinesByDeployIDTag(provider, deployData.compartment.ocid, deployData.tag);
                     } catch (err) {
-                        resolve(dialogs.getErrorMessage(`Failed to delete build pipelins`, err));
+                        resolve(dialogs.getErrorMessage(`Failed to delete build pipelines`, err));
                         return;
                     }
                 }
@@ -1346,7 +1346,7 @@ export async function undeployFolder(folder: devopsServices.FolderData) {
                 return ociUtils.deleteLog(authProvider, l.id, l.logGroupId, true);
             });
             if (logPromises) {
-                logUtils.logInfo(`[undeploy] Wating to complete deletion of all logs in ${projectLogname}`);
+                logUtils.logInfo(`[undeploy] Waiting to complete deletion of all logs in ${projectLogname}`);
                 await Promise.all(logPromises);
                 logUtils.logInfo(`[undeploy] All logs in ${projectLogname} deleted`);
             }

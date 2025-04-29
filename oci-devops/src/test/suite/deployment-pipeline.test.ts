@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { waitForStatup } from './common';
+import { waitForStartup } from './common';
 import * as ociAuthentication from '../../oci/ociAuthentication';
 import * as ociUtils from '../../oci/ociUtils';
 import * as vcnUtils from '../../oci/vcnUtils';
@@ -17,50 +17,50 @@ import { containerengine } from 'oci-sdk';
  */
 
 type AuthCredentials = {
-    provider: ConfigFileAuthenticationDetailsProvider,
-    compartmentID: string,
-}
+    provider: ConfigFileAuthenticationDetailsProvider;
+    compartmentID: string;
+};
 
 type ProjectProvider = {
-    provider: ConfigFileAuthenticationDetailsProvider,
-    projectId: string,
-}
+    provider: ConfigFileAuthenticationDetailsProvider;
+    projectId: string;
+};
 
 type ProjectInfo = {
-    project: devops.models.Project,
-    projectFolder: projectUtils.ProjectFolder, 
-}
+    project: devops.models.Project;
+    projectFolder: projectUtils.ProjectFolder; 
+};
 
 type OciResources = {
-    cluster?: containerengine.models.Cluster,
-    secretName: string,
-    image: string,
-}
+    cluster?: containerengine.models.Cluster;
+    secretName: string;
+    image: string;
+};
 
 type Repository = {
-    id: string,
-    name: string
-}
+    id: string;
+    name: string;
+};
 
 type Subnet = {
-    id: string,
-    compartmentID: string
-}
+    id: string;
+    compartmentID: string;
+};
 
 type OkeConfig = {
-    okeClusterEnvironment?: devops.models.DeployEnvironmentSummary, 
-    setupCommandSpecArtifact: string, 
-    deployConfigArtifact: string,
-}
+    okeClusterEnvironment?: devops.models.DeployEnvironmentSummary; 
+    setupCommandSpecArtifact: string; 
+    deployConfigArtifact: string;
+};
 
 type DeploymentResources = {
-    auth: AuthCredentials,
-    projectInfo: ProjectInfo,
-    pipeline: devops.models.BuildPipelineSummary,
-    repository: Repository,
-    subnet: Subnet,
-    okeConfig: OkeConfig
-}
+    auth: AuthCredentials;
+    projectInfo: ProjectInfo;
+    pipeline: devops.models.BuildPipelineSummary;
+    repository: Repository;
+    subnet: Subnet;
+    okeConfig: OkeConfig;
+};
 
 /**
  * Methods used to interact with OCI and read/write the appropriate resources
@@ -107,7 +107,7 @@ async function getProviderWhenAuthenticate(action: string, profile: string): Pro
         assert.ok(auth, "Authentication failed! Check your oci config. - Line 108");
         let provider = auth.getProvider();
         resolve(provider);
-    })
+    });
 }
 
 async function undeployProjectIfExist(auth: AuthCredentials, projectName: string ): Promise<void> {
@@ -135,7 +135,7 @@ async function assertCodeRepositoryCreation(project: ProjectProvider): Promise<s
         let codeRepositories = await ociUtils.listCodeRepositories(project.provider, project.projectId);
         assert.ok(codeRepositories.length > 0, "Code Repository Not Found - Line 137");
         resolve(codeRepositories[0].id);        
-    })
+    });
 
 }
 
@@ -144,7 +144,7 @@ async function getDevopsProject(input: ProjectProvider): Promise<devops.models.P
         let project = await ociUtils.getDevopsProject(input.provider, input.projectId);
         assert.ok(project.id, "Project Not Found in OCI - Line 146");
         resolve(project);
-    })
+    });
 }
 
 async function getProjectId(auth: AuthCredentials, projectName: string): Promise<string> {
@@ -158,7 +158,7 @@ async function getProjectId(auth: AuthCredentials, projectName: string): Promise
         }
 
         resolve(projectId);
-    })
+    });
 
 }
 
@@ -166,14 +166,14 @@ async function getCluster(auth: AuthCredentials): Promise<containerengine.models
     return new Promise(async (resolve) => {
         let clusters = await ociUtils.listClusters(auth.provider, auth.compartmentID);
         assert.ok(clusters && clusters.length > 0, "No cluster Found in your compartment - Line 169");
-        resolve(clusters[0] as containerengine.models.Cluster )
-    })
+        resolve(clusters[0] as containerengine.models.Cluster );
+    });
 }
 
-async function getJVMBuildPipeline(input: ProjectProvider, repositryId: string): Promise<devops.models.BuildPipelineSummary> {
+async function getJVMBuildPipeline(input: ProjectProvider, repositoryId: string): Promise<devops.models.BuildPipelineSummary> {
 
     return new Promise(async (resolve) => {
-        let buildPipelines = await ociUtils.listBuildPipelinesByCodeRepository(input.provider, input.projectId, repositryId);
+        let buildPipelines = await ociUtils.listBuildPipelinesByCodeRepository(input.provider, input.projectId, repositoryId);
         assert.ok(buildPipelines.length > 0, "Build Pipelines Not Created - Line 178");
 
         const existingBuildPipelines = buildPipelines?.filter(item => 'oci' === item.freeformTags?.devops_tooling_docker_image);
@@ -181,8 +181,8 @@ async function getJVMBuildPipeline(input: ProjectProvider, repositryId: string):
 
         let pipeline = existingBuildPipelines.filter(pipe => pipe.displayName?.includes("JVM Container"))[0];
         assert.ok(pipeline, "Build Pipeline JVM Not Created - Line 184");
-        resolve(pipeline)
-    })
+        resolve(pipeline);
+    });
 
 }
 
@@ -194,7 +194,7 @@ async function getJVMBuildPipelineStage(provider: ConfigFileAuthenticationDetail
         const item = pipelineStages.find(item => item.buildPipelineStageType === devops.models.DeliverArtifactStageSummary.buildPipelineStageType) as devops.models.DeliverArtifactStageSummary;
         assert.ok(item?.deliverArtifactCollection.items.length, "Item Not Found - Line 196");
         resolve(item);
-    })
+    });
 }
 
 async function getDeployArtifactImage(provider: ConfigFileAuthenticationDetailsProvider, artifactId: string): Promise<string> {
@@ -204,7 +204,7 @@ async function getDeployArtifactImage(provider: ConfigFileAuthenticationDetailsP
         let image = (artifact.deployArtifactSource as devops.models.OcirDeployArtifactSource).imageUri;
         assert.ok(image, "No Image Found - Line 206");
         resolve(image);        
-    })
+    });
 
 }
 
@@ -228,7 +228,7 @@ async function getOkeClusterEnvironment(provider: ConfigFileAuthenticationDetail
         assert.ok(okeClusterEnvironment, " okeClusterEnvironment  Undefined - Line 229");
 
         resolve(okeClusterEnvironment);    
-    })
+    });
 
     
 }
@@ -301,10 +301,10 @@ async function setupCommandSpecArtifactAndDeployConfigArtifact(provider: ConfigF
                 okeClusterEnvironment: undefined,
                 setupCommandSpecArtifact, 
                 deployConfigArtifact
-            }
+            };
             resolve(okeConfig);
-        })
-    })
+        });
+    });
 }
 
 async function getDeploymentResources(auth: AuthCredentials, projectProvider: ProjectProvider, repositoryId: string,wf: readonly vscode.WorkspaceFolder[]): Promise<DeploymentResources> {
@@ -343,20 +343,20 @@ async function getDeploymentResources(auth: AuthCredentials, projectProvider: Pr
             let repository: Repository = {
                 id: repositoryId,
                 name: repositoryName
-            }
+            };
             
             let ociResources: OciResources = {
                 image: image,
                 secretName: secretName,
                 cluster: cluster
-            }
-            let okeConfig: OkeConfig = await setupCommandSpecArtifactAndDeployConfigArtifact(auth.provider, project, repository, ociResources )
+            };
+            let okeConfig: OkeConfig = await setupCommandSpecArtifactAndDeployConfigArtifact(auth.provider, project, repository, ociResources );
             okeConfig.okeClusterEnvironment = okeClusterEnvironment;
     
             let projectInfo: ProjectInfo = {
                 project: project,
                 projectFolder: projectFolder
-            }
+            };
 
             let deploy: DeploymentResources = {
                 auth: auth,
@@ -365,11 +365,11 @@ async function getDeploymentResources(auth: AuthCredentials, projectProvider: Pr
                 projectInfo: projectInfo,
                 repository: repository,
                 subnet: subnet
-            }
+            };
 
             resolve(deploy);
-        })
-    })
+        });
+    });
 }
 
 async function createJVMDeploymentPipeline(deploy: DeploymentResources): Promise<string> {
@@ -431,8 +431,8 @@ async function createJVMDeploymentPipeline(deploy: DeploymentResources): Promise
             assert.ok(deployPipelines.length > 0, "Deployment pipelines not created - Line 433");
 
             resolve(deployPipelines[0].id);
-        })
-    })
+        });
+    });
 }
 
 async function deletePipelineStages(auth: AuthCredentials, deploymentId: string): Promise<void> {
@@ -474,7 +474,7 @@ suite("Test OCI Devops Tools Features", function() {
     /* Wait for the NBLS to start */
 	this.timeout(5*60*1000);
 	this.beforeAll(async () => {
-	        await waitForStatup(wf![0]);
+	        await waitForStartup(wf![0]);
 	});
 
     /**
@@ -498,7 +498,7 @@ suite("Test OCI Devops Tools Features", function() {
         await activateExtension();
 
         // assert that COMPARTMENT_OCID is added to the environment variable
-        assert.ok(COMPARTMENT_OCID, "require your OCID to be as environment variable under name TEST_DEPLOY_COMPARTMENT_OCID - Line 503")
+        assert.ok(COMPARTMENT_OCID, "require your OCID to be as environment variable under name TEST_DEPLOY_COMPARTMENT_OCID - Line 503");
         
         // Get profile
         selectedProfile = selectDefaultProfile();
@@ -508,9 +508,9 @@ suite("Test OCI Devops Tools Features", function() {
         auth = {
             provider: provider,
             compartmentID: COMPARTMENT_OCID
-        }
+        };
 
-        // left from previous unsuccessfull runs
+        // left from previous unsuccessful runs
         await undeployProjectIfExist(auth, DEPLOY_PROJECT_NAME);
 
         DEPLOY_COMPARTMENT_NAME = await getCompartmentName(auth);
@@ -532,12 +532,12 @@ suite("Test OCI Devops Tools Features", function() {
         projectProvider = {
             projectId: projectId,
             provider: provider
-        }
+        };
         
     });
 
     test("Check build pipelines",  async function() {
-        await assertBuildCreation(projectProvider)
+        await assertBuildCreation(projectProvider);
     });
 
     test("Check Code Repository", async function() {

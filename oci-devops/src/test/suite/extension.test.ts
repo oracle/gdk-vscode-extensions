@@ -10,7 +10,7 @@ import * as assert from 'assert';
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from 'vscode';
-import { waitForStatup } from './common';
+import { waitForStartup } from './common';
 import { logError } from '../../../../common/lib/logUtils';
 // import * as myExtension from '../../extension';
 
@@ -26,7 +26,7 @@ suite('Extension Test Suite', function() {
 	// the timeout will propagate to beforeAll hook
 	this.timeout(30000);
 	this.beforeAll(async () => {
-	        await waitForStatup(wf![0]);
+	        await waitForStartup(wf![0]);
 	});
         
         // This test must be run first, in order to activate the extension (and wait for the activation to complete)

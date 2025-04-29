@@ -12,7 +12,7 @@ import * as fs from 'fs';
 import * as ociAuthentication from '../../oci/ociAuthentication';
 import { ConfigFileAuthenticationDetailsProvider, devops, identity } from 'oci-sdk';
 import { DeployOptions } from '../../oci/deployUtils';
-import { waitForStatup, getProfile } from './common';
+import { waitForStartup, getProfile } from './common';
 import { getDefaultConfigFile, listProfiles } from '../../oci/ociAuthentication';
 
 let wf = vscode.workspace.workspaceFolders;
@@ -24,7 +24,7 @@ suite('Deployment Test Suite', function() {
 	// the timeout will propagate to beforeAll hook
 	this.timeout(30000);
 	this.beforeAll(async () => {
-	    await waitForStatup(wf![0]);
+	    await waitForStartup(wf![0]);
 	});
     
 	// revert for tests (deployment/undeployment might take some time)
@@ -97,7 +97,7 @@ suite('Deployment Test Suite', function() {
         if (provider) {
             const DevOpsProjects : devops.models.ProjectSummary[] = await ociUtils.listDevOpsProjects(provider, comaprtmentOCID);
 
-            // left from previos unsuccessfull runs
+            // left from previous unsuccessful runs
             for (let project of DevOpsProjects) {
                 if (project.name === DEPLOY_PROJECT_NAME) {
                     await vscode.commands.executeCommand("oci.devops.undeployFromCloudSync");

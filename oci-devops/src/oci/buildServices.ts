@@ -772,7 +772,7 @@ export class BuildPipelineNode extends nodes.ChangeableNode implements nodes.Rem
             if (this.lastRun?.ocid === buildRunId) {
                 this.updateLastRun(buildRunId, state, this.lastRun?.output, deliveredArtifacts);
                 // Some messages can appear in the log minutes after the build run finished.
-                // Wating for 10 minutes periodiccaly polling for them.
+                // Waiting for 10 minutes periodiccaly polling for them.
                 for (let i = 0; i < 60; i++) {
                     if (this.lastRun?.ocid !== buildRunId) {
                         return;

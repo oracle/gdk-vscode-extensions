@@ -276,7 +276,7 @@ export async function populateNewRepository(address: string, sourceUri: vscode.U
             const command = `${gitPath} commit -m "Initial commit from VS Code"`;
             await execute(command, source);
         } catch (err) {
-            return dialogs.getErrorMessage('Error while commiting changes', err);
+            return dialogs.getErrorMessage('Error while committing changes', err);
         }
         folderData.git.committed = true;
     }
