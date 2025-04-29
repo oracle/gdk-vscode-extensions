@@ -583,7 +583,7 @@ class Service extends ociService.Service {
                 }
             ).then(result => reportAuditResults(result), error => reportAuditError(error)));
         }
-        // complete this function only afer 
+        // complete this function only after 
         await Promise.all(l);
     }
 

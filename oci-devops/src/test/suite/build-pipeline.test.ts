@@ -7,7 +7,7 @@
 
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { waitForStatup, getProfile } from './common';
+import { waitForStartup, getProfile } from './common';
 import * as ociAuthentication from '../../oci/ociAuthentication';
 import * as ociUtils from '../../oci/ociUtils';
 import { ConfigFileAuthenticationDetailsProvider, devops} from 'oci-sdk';
@@ -19,7 +19,7 @@ import { BuildPipelineNode } from '../../oci/buildServices';
 let wf = vscode.workspace.workspaceFolders;
 
 /**
- * Waits for the pipeline context to swtich from an old state
+ * Waits for the pipeline context to switch from an old state
  * @param oldValue 
  * @param buildPipeline 
  * @param timeout 
@@ -42,7 +42,7 @@ suite('Build pipeline Test Suite', function() {
     /* Wait for the NBLS to start */
 	this.timeout(5*60*1000);
 	this.beforeAll(async () => {
-	        await waitForStatup(wf![0]);
+	        await waitForStartup(wf![0]);
 	});
 
     const DEPLOY_COMPARTMENT_NAME : string = "tests";
@@ -83,7 +83,7 @@ suite('Build pipeline Test Suite', function() {
 
         provider = auth.getProvider();
 
-        // left from previos unsuccessfull runs
+        // left from previous unsuccessful runs
         let DevOpsProjects : devops.models.ProjectSummary[] = await ociUtils.listDevOpsProjects(provider, COMPARTMENT_OCID);
         for (let project of DevOpsProjects) {
             if (project.name === DEPLOY_PROJECT_NAME) {

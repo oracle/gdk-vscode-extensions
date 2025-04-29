@@ -60,8 +60,8 @@ export async function kubernetesResourceExist(resourceType: string, resourceName
     const kubectl = await getKubectlAPI();
     const retval = await kubectl?.invokeCommand(`get ${resourceType} ${resourceName} ${contextName ? `--context=${contextName}` : ""}`);
     if (retval?.code !== 0) {
-        logUtils.logError(`Failed to check existance for kubernetes resourceType: ${resourceType} and resourceName: ${resourceName}. exited with status code: ${retval?.code}, stderr: ${retval?.stderr}`);
-        throw new Error(`Failed to check existance for kubernetes resourceType: ${resourceType} and resourceName: ${resourceName}`);  
+        logUtils.logError(`Failed to check existence for kubernetes resourceType: ${resourceType} and resourceName: ${resourceName}. exited with status code: ${retval?.code}, stderr: ${retval?.stderr}`);
+        throw new Error(`Failed to check existence for kubernetes resourceType: ${resourceType} and resourceName: ${resourceName}`);  
     }
     return retval.stdout.includes(`${resourceName}`);
 }

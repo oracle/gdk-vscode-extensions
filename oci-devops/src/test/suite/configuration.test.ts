@@ -53,7 +53,7 @@ suite("Start Testing Configuration", function() {
         assert.ok(provider, "Provider not authenticated");
 
         let vcns = await ociUtils.listVCNs(provider, COMPARTMENT_OCID);
-        assert.ok(vcns.length > 0, "Virual Networks Not Found");
+        assert.ok(vcns.length > 0, "Virtual Networks Not Found");
 
     });
 

@@ -327,7 +327,7 @@ export async function getDeployEnvironment(authenticationDetailsProvider: common
     return client.getDeployEnvironment(request).then(response => response.deployEnvironment);
 }
 
-export function asOkeDeployEnvironemnt(env?: devops.models.DeployEnvironment): devops.models.OkeClusterDeployEnvironment | undefined {
+export function asOkeDeployEnvironment(env?: devops.models.DeployEnvironment): devops.models.OkeClusterDeployEnvironment | undefined {
     if (env?.deployEnvironmentType === devops.models.OkeClusterDeployEnvironment.deployEnvironmentType) {
         return env as devops.models.OkeClusterDeployEnvironment;
     }
@@ -1072,7 +1072,7 @@ export async function getFqnCompartmentName(authenticationDetailsProvider: commo
 
 export async function createCompartmentNotificationTopic(authenticationDetailsProvider: common.ConfigFileAuthenticationDetailsProvider, compartmentID: string, description?: string): Promise<ons.models.NotificationTopic> {
     // // PENDING: Creating a notification with a name already used within the tenancy (although in a different compartment) fails - whether it is a feature or a bug is not known.
-    // // Let's default the name to <FQN-Compartment-Name>-constant -- althoug even compartment name may not be unique (clearing non-allowed characters).
+    // // Let's default the name to <FQN-Compartment-Name>-constant -- although even compartment name may not be unique (clearing non-allowed characters).
     // // TODO: check whether `${compartmentName}-${DEFAULT_NOTIFICATION_TOPIC}` exceeds 256 characters & shorten
     // let compartmentName = await getFqnCompartmentName(authenticationDetailsProvider, compartmentID);
     // if (compartmentName.length === 0) {

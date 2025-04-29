@@ -405,7 +405,7 @@ export async function deployFolders(folders: vscode.WorkspaceFolder[], addToExis
                 totalSteps += 1; // list of generated resources
             }
             totalSteps += 8; // notification topic, devops project, project log, policies, artifact repository, OKE cluster environment, knowledge base, list of generated resources
-            logUtils.logInfo(`[deploy] Computed total nuber of steps: ${totalSteps}`);
+            logUtils.logInfo(`[deploy] Computed total number of steps: ${totalSteps}`);
             const increment = 100 / totalSteps;
 
             const projectResources: any = {}; // list of generated resources for the devops project (generic inline artifact)
