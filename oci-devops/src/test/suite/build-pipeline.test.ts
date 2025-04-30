@@ -100,7 +100,8 @@ suite('Build pipeline Test Suite', function() {
             skipOKESupport: true,
             projectName: DEPLOY_PROJECT_NAME,
             selectProfile: selectProfile,
-            autoConfirmDeploy: true
+            autoConfirmDeploy: true,
+            includeTests: false,
         };
 
         await vscode.commands.executeCommand("oci.devops.deployToCloud_GlobalSync", deployOptions);
