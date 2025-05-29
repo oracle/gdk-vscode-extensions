@@ -1,5 +1,8 @@
 # Change Log
 
+# Version 0.6.11
+* MySQL Connector/J updated to version 9.3.0
+
 # Version 0.6.10
 * Documentation update
 
