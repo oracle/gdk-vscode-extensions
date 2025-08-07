@@ -1,5 +1,8 @@
 # Change Log
 
+# Version 0.9.13
+* Updates of various dependencies
+
 # Version 0.9.12
 * Faster redeployments to OKE from deployment pipelines created by OCI DevOps extension
 npm
