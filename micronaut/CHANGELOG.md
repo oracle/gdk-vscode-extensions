@@ -1,5 +1,8 @@
 # Change Log
 
+# Version 0.6.8
+* Updates of various dependencies
+
 # Version 0.6.7
 * Documentation update
 
