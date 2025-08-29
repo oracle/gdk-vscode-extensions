@@ -1,5 +1,8 @@
 # Change Log
 
+## Version 0.9.20
+* GDK updated to 4.9.1.2, several 3rd party libraries updated
+
 ## Version 0.9.19
 * GDK updated to Micronaut 4.9.1
 
