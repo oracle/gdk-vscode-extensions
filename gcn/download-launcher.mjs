@@ -10,7 +10,7 @@ import fs from "fs";
 import https from "https";
 import path from "path";
 
-const defaultLauncherVersion = 'v4.9.1.2';
+const defaultLauncherVersion = 'v4.9.1.3';
 const defaultBucketUrl = 'https://objectstorage.us-phoenix-1.oraclecloud.com/n/oraclelabs/b/gcn-js-files';
 
 const launcherVersion = process.env['GDK_LAUNCHER_VERSION'] || defaultLauncherVersion;
