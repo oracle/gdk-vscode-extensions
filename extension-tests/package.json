@@ -21,13 +21,13 @@
     "@types/vscode": "^1.76.0",
     "@vscode/test-electron": "^2.3.10",
     "eslint": "^8.35.0",
-    "glob": "^10.3.12",
+    "glob": "^12.0.0",
     "mocha": "^10.1.0",
     "node-abort-controller": "^3.1.1",
     "nodejs-file-downloader": "^4.12.1",
     "semver": "^7.6.0",
     "shx": "^0.3.4",
     "typescript": "^5.5.2",
-    "vscode-extension-tester": "^8.3.0"
+    "vscode-extension-tester": "^8.19.0"
   }
 }
