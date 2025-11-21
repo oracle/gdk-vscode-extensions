@@ -2,7 +2,7 @@
 	"name": "gcn",
 	"displayName": "Graal Development Kit for Micronaut Launcher",
 	"description": "Oracle Graal Development Kit for Micronaut Project Creation Wizard",
-	"version": "0.9.21",
+	"version": "0.9.22",
 	"preview": true,
 	"license": "UPL-1.0",
 	"publisher": "oracle-labs-graalvm",
@@ -96,20 +96,20 @@
 		"@types/node": "^18.14",
 		"@types/uuid": "^9.0.5",
 		"@types/vscode": "^1.76.0",
-		"@typescript-eslint/eslint-plugin": "^7.16.0",
-		"@typescript-eslint/parser": "^7.16.0",
+		"@typescript-eslint/eslint-plugin": "^8.47.0",
+		"@typescript-eslint/parser": "^8.47.0",
 		"@vscode/codicons": "0.0.20",
 		"@vscode/test-electron": "^2.3.10",
 		"ajv": "^8.12.0",
 		"cross-env": "^7.0.3",
 		"cross-os": "^1.5.0",
 		"encoding": "^0.1.13",
-		"eslint": "^8.35.0",
-		"eslint-webpack-plugin": "^4.0.0",
+		"eslint": "^9.39.1",
+		"eslint-webpack-plugin": "^5.0.2",
 		"gcn-extension-tests": "file:../extension-tests",
 		"global-agent": "^3.0.0",
 		"jdk-utils": "^0.5.1",
-		"mocha": "^10.1.0",
+		"mocha": "^11.7.5",
 		"mocha-each": "^2.0.1",
 		"mochawesome": "^7.1.3",
 		"node-abort-controller": "^3.1.1",
@@ -121,5 +121,8 @@
 		"webpack": "^5.74.0",
 		"webpack-cli": "^4.10.0"
 	},
-	"extensionDependencies": []
+	"extensionDependencies": [],
+	"dependencies": {
+		"@stylistic/eslint-plugin": "^5.6.1"
+	}
 }

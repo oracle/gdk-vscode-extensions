@@ -62,7 +62,12 @@ const config = {
         noParse: path.resolve(__dirname, 'lib', 'cloud.graal.gdk.ui.api-single.js')
     },
     plugins: [
-        new ESLintPlugin({extensions: ['ts']})
+        new ESLintPlugin({
+        context: __dirname,                                   
+        extensions: ['ts'],
+        configType: 'flat',                                   
+        overrideConfigFile: path.resolve(__dirname, 'eslint.config.cjs'),
+    })
     ]
 };
 const devConf = {

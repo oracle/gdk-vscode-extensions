@@ -1,5 +1,8 @@
 # Change Log
  
+## Version 0.9.22
+* GDK updated to 4.9.1.4, several 3rd party libraries updated
+
 ## Version 0.9.21
 * GDK updated to 4.9.1.3, several 3rd party libraries updated
 

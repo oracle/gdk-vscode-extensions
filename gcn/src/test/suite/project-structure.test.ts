@@ -129,7 +129,7 @@ suite('Project structure Test Suite', function() {
 
             // check if the command for project creation is present
             let commands : string[] = await vscode.commands.getCommands(true);
-            assert(commands.indexOf("gdk.createGdkProject") != -1, "Command to create GDK project not found");
+            assert(commands.indexOf("gdk.createGdkProject") !== -1, "Command to create GDK project not found");
         });
 
         // configuration for creating a project

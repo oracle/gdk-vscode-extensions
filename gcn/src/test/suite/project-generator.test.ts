@@ -101,7 +101,7 @@ async function selectJavaRuntime (java: SupportedJavas): Promise<jdkUtils.IJavaR
     }
 
     const selectedJavaRuntime = javaRuntimes.find((x) => 
-        major == undefined || (x.version && x.version.major >= major)
+        major === undefined || (x.version && x.version.major >= major)
     );
 
     if (selectedJavaRuntime === null || selectedJavaRuntime === undefined) {

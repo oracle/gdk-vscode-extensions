@@ -24,7 +24,7 @@ import { NodeFileHandler } from '../../gcnProjectCreate';
  */
 function valueExists(arrayOfValues: Common.ValueAndLabel[], search: string): boolean {
         for (let arrayElem of arrayOfValues) {
-                if (arrayElem.value == search)
+                if (arrayElem.value === search)
                         return true;
         }
         return false;
