@@ -1076,7 +1076,7 @@
 		"eslint": "^8.35.0",
 		"eslint-webpack-plugin": "^4.0.0",
 		"glob": "^7.1.4",
-		"handlebars": "^4.7.8",
+		"handlebars": "^4.7.10",
 		"handlebars-loader": "^1.7.3",
 		"maven": "^5.0.0",
 		"ts-loader": "^9.4.2",
