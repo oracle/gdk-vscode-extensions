@@ -28,6 +28,6 @@
     "semver": "^7.6.0",
     "shx": "^0.3.4",
     "typescript": "^5.5.2",
-    "vscode-extension-tester": "^8.3.0"
+    "vscode-extension-tester": "^8.28.1"
   }
 }
